@@ -1,0 +1,32 @@
+import { createColumnHelper, type ColumnDef } from '@tanstack/react-table'
+
+import {
+  createActionsColumn,
+  createIdColumn,
+  createIsActiveColumn,
+  createSelectColumn,
+  createSortOrderColumn,
+} from '@/views/settings/components/settingsTableColumns'
+import type { SettingsTableHandlers } from '@/views/settings/hooks/useSettingsCrudTable'
+import type { Denomination } from '@/views/settings/types'
+
+const helper = createColumnHelper<Denomination>()
+
+export function buildDenominationColumns(handlers: SettingsTableHandlers<Denomination>) {
+  return [
+    createSelectColumn<Denomination>(),
+    createIdColumn<Denomination>(),
+    helper.accessor('value', {
+      header: 'Value',
+      cell: ({ getValue }) => <span className="fw-semibold">{getValue().toLocaleString('vi-VN')}</span>,
+    }),
+    helper.accessor('displayName', { header: 'Display name' }),
+    helper.accessor('currencyCode', {
+      header: 'Currency',
+      cell: ({ getValue }) => <code>{getValue()}</code>,
+    }),
+    createSortOrderColumn<Denomination>(),
+    createIsActiveColumn<Denomination>(),
+    createActionsColumn(handlers),
+  ] as ColumnDef<Denomination>[]
+}
