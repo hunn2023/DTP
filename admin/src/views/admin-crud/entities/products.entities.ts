@@ -1,6 +1,6 @@
 import { defineAdminEntity } from '@/views/admin-crud/schema/defineEntity'
 import { labels } from '@/views/admin-crud/entities/shared'
-import { isActiveField, saleStatusMap, sortOrderField, statusOptions } from '@/views/admin-crud/entities/fieldHelpers'
+import { isActiveField, sortOrderField, statusField } from '@/views/admin-crud/entities/fieldHelpers'
 import { carriersData } from '@/views/settings/carriers/data'
 import { countriesData } from '@/views/settings/countries/data'
 import { denominationsData } from '@/views/settings/denominations/data'
@@ -16,13 +16,6 @@ const denominationOptions = denominationsData.map((d) => ({
   value: String(d.id),
   label: d.displayName,
 }))
-
-const statusField = (table = true): EntityFieldDef<SettingsEntityBase> => ({
-  name: 'status',
-  type: 'select',
-  table: table ? { variant: 'badge', badgeMap: saleStatusMap } : false,
-  form: { required: true, options: statusOptions(saleStatusMap) },
-})
 
 export type EsimPackage = SettingsEntityBase & {
   name: string
@@ -179,7 +172,7 @@ export const esimPackagesEntity = defineAdminEntity<EsimPackage>({
       table: true,
       form: { col: 12, options: activeTagOptions },
     },
-    statusField() as EntityFieldDef<EsimPackage>,
+    statusField<EsimPackage>(),
     isActiveField<EsimPackage>(),
   ],
 })
@@ -235,9 +228,8 @@ export const esimFaqEntity = defineAdminEntity<FaqItem>({
   ],
 })
 
-const cardProductFields = (brandKey: 'carrierBrand' | 'publisherBrand', brandLabel: string): EntityFieldDef<TelecomCard>[] => [
+const sharedCardProductFields = [
   { name: 'name', label: 'Name', type: 'text', table: { variant: 'primary' }, form: { required: true } },
-  { name: brandKey, label: brandLabel, type: 'text', table: true, form: { required: true } },
   {
     name: 'denominationId',
     label: 'DenominationId',
@@ -249,8 +241,20 @@ const cardProductFields = (brandKey: 'carrierBrand' | 'publisherBrand', brandLab
   { name: 'salePrice', label: 'SalePrice', type: 'number', table: true, form: { required: true, col: 6 } },
   { name: 'discountRate', label: 'DiscountRate', type: 'number', table: true, form: { col: 6 } },
   { name: 'maxQuantity', label: 'MaxQuantity', type: 'number', table: true, form: { col: 6 } },
-  statusField() as EntityFieldDef<TelecomCard>,
+] as const
+
+const telecomCardFields: EntityFieldDef<TelecomCard>[] = [
+  ...sharedCardProductFields,
+  { name: 'carrierBrand', label: 'CarrierBrand', type: 'text', table: true, form: { required: true } },
+  statusField<TelecomCard>(),
   isActiveField<TelecomCard>(),
+]
+
+const gameCardFields: EntityFieldDef<GameCard>[] = [
+  ...sharedCardProductFields,
+  { name: 'publisherBrand', label: 'PublisherBrand', type: 'text', table: true, form: { required: true } },
+  statusField<GameCard>(),
+  isActiveField<GameCard>(),
 ]
 
 export const telecomCardsEntity = defineAdminEntity<TelecomCard>({
@@ -274,7 +278,7 @@ export const telecomCardsEntity = defineAdminEntity<TelecomCard>({
       isActive: true,
     },
   ],
-  fields: cardProductFields('carrierBrand', 'CarrierBrand'),
+  fields: telecomCardFields,
 })
 
 export const gameCardsEntity = defineAdminEntity<GameCard>({
@@ -298,7 +302,7 @@ export const gameCardsEntity = defineAdminEntity<GameCard>({
       isActive: true,
     },
   ],
-  fields: cardProductFields('publisherBrand', 'PublisherBrand') as EntityFieldDef<GameCard>[],
+  fields: gameCardFields,
 })
 
 export const dataPackagesEntity = defineAdminEntity<DataPackage>({
@@ -334,7 +338,7 @@ export const dataPackagesEntity = defineAdminEntity<DataPackage>({
     { name: 'validityDays', label: 'ValidityDays', type: 'number', table: true, form: { col: 6 } },
     { name: 'price', label: 'Price', type: 'number', table: true, form: { col: 6 } },
     { name: 'activationMethod', label: 'ActivationMethod', type: 'text', table: true, form: { required: true } },
-    statusField() as EntityFieldDef<DataPackage>,
+    statusField<DataPackage>(),
     isActiveField<DataPackage>(),
   ],
 })

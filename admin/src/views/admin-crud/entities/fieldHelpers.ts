@@ -24,3 +24,14 @@ export const statusOptions = (map: Record<string, string>) =>
 
 export const saleStatusMap = { active: 'On sale', hidden: 'Hidden', draft: 'Draft' }
 export const providerStatusMap = { active: 'Active', inactive: 'Inactive' }
+
+export function statusField<T extends SettingsEntityBase & { status: string }>(
+  table = true,
+): EntityFieldDef<T> {
+  return {
+    name: 'status',
+    type: 'select',
+    table: table ? { variant: 'badge', badgeMap: saleStatusMap } : false,
+    form: { required: true, options: statusOptions(saleStatusMap) },
+  }
+}

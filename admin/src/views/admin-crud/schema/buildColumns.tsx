@@ -32,7 +32,13 @@ function renderTagIdsCell(tagIds: unknown): ReactNode {
   )
 }
 
-function renderCellValue(value: unknown, field: EntityFieldDef<SettingsEntityBase>): ReactNode {
+type FieldCellMeta = {
+  name: string
+  type: EntityFieldDef<SettingsEntityBase>['type']
+  table?: EntityFieldDef<SettingsEntityBase>['table']
+}
+
+function renderCellValue(value: unknown, field: FieldCellMeta): ReactNode {
   if (field.type === 'multiselect' || field.name === 'tagIds') {
     return renderTagIdsCell(value)
   }
@@ -63,11 +69,11 @@ export function buildColumnsFromFields<T extends SettingsEntityBase>(
   const cols: ColumnDef<T>[] = []
 
   if (caps.delete) {
-    cols.push(createSelectColumn<T>())
+    cols.push(createSelectColumn<T>() as ColumnDef<T>)
   }
 
   if (fields.some((f) => f.name === 'id' && f.table)) {
-    cols.push(createIdColumn<T>())
+    cols.push(createIdColumn<T>() as ColumnDef<T>)
   }
 
   fields.forEach((field) => {
@@ -93,9 +99,13 @@ export function buildColumnsFromFields<T extends SettingsEntityBase>(
           if (variant === 'code') {
             return <code className="fs-xs">{String(value)}</code>
           }
-          return renderCellValue(value, field as EntityFieldDef<SettingsEntityBase>)
+          return renderCellValue(value, {
+            name: field.name,
+            type: field.type,
+            table: field.table,
+          })
         },
-      }),
+      }) as ColumnDef<T>,
     )
   })
 
@@ -103,12 +113,12 @@ export function buildColumnsFromFields<T extends SettingsEntityBase>(
     cols.push(createSortOrderColumn<T & { sortOrder: number }>() as ColumnDef<T>)
   }
   if (fields.some((f) => f.name === 'isActive')) {
-    cols.push(createIsActiveColumn<T>())
+    cols.push(createIsActiveColumn<T>() as ColumnDef<T>)
   }
 
   const hasRowActions = caps.edit || caps.delete || caps.toggleActive !== false
   if (hasRowActions) {
-    cols.push(createActionsColumn(handlers, caps))
+    cols.push(createActionsColumn(handlers, caps) as ColumnDef<T>)
   }
 
   return cols as ColumnDef<T>[]
