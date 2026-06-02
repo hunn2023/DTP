@@ -28,7 +28,7 @@ export function buildTagColumns(handlers: SettingsTableHandlers<Tag>) {
     }),
     helper.accessor('slug', { header: 'Slug', cell: ({ getValue }) => <code className="fs-xxs">/{getValue()}</code> }),
     helper.accessor('type', {
-      header: 'Type',
+      header: 'Loại',
       cell: ({ getValue }) => <span className="badge badge-soft-info fs-xxs">{getTagTypeLabel(getValue())}</span>,
     }),
     createSortOrderColumn<Tag>(),

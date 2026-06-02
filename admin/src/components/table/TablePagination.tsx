@@ -22,7 +22,7 @@ const TablePagination = ({
   totalItems,
   start,
   end,
-  itemsName = 'items',
+  itemsName = 'mục',
   showInfo,
   previousPage,
   canPreviousPage,
@@ -37,7 +37,7 @@ const TablePagination = ({
       {showInfo && (
         <Col sm>
           <div className="text-muted">
-            Showing <span className="fw-semibold">{start}</span> to <span className="fw-semibold">{end}</span> of{' '}
+            Hiển thị <span className="fw-semibold">{start}</span>–<span className="fw-semibold">{end}</span> trong tổng{' '}
             <span className="fw-semibold">{totalItems}</span> {itemsName}
           </div>
         </Col>

@@ -22,8 +22,8 @@ export function withIdFields<T extends SettingsEntityBase>(fields: EntityFieldDe
 export const statusOptions = (map: Record<string, string>) =>
   Object.entries(map).map(([value, label]) => ({ value, label }))
 
-export const saleStatusMap = { active: 'On sale', hidden: 'Hidden', draft: 'Draft' }
-export const providerStatusMap = { active: 'Active', inactive: 'Inactive' }
+export const saleStatusMap = { active: 'Đang bán', hidden: 'Ẩn', draft: 'Nháp' }
+export const providerStatusMap = { active: 'Hoạt động', inactive: 'Ngừng hoạt động' }
 
 export function statusField<T extends SettingsEntityBase & { status: string }>(
   table = true,

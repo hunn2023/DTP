@@ -6,7 +6,7 @@ import type { SettingsEntityBase } from '@/views/settings/types'
 import type { FormFieldConfig, FormModalMode } from '@/views/settings/form/types'
 
 function resolveLabel<T>(field: FormFieldConfig<T>): string {
-  return getFieldLabel(field.name)
+  return field.label ?? getFieldLabel(field.name)
 }
 
 type SettingsEntityFormModalProps<T extends SettingsEntityBase> = {
@@ -94,7 +94,7 @@ function FormFieldInput<T extends SettingsEntityBase>({
             </option>
           ))}
         </Form.Select>
-        <Form.Text className="text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple tags.</Form.Text>
+        <Form.Text className="text-muted">Giữ Ctrl (Windows) hoặc Cmd (Mac) để chọn nhiều mục.</Form.Text>
       </>
     )
   }
@@ -108,7 +108,7 @@ function FormFieldInput<T extends SettingsEntityBase>({
           const v = e.target.value
           onChange(field.name, field.parseAsNumber ? Number(v) : v)
         }}>
-        <option value="">-- Select --</option>
+        <option value="">-- Chọn --</option>
         {field.options?.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
@@ -160,9 +160,9 @@ const SettingsEntityFormModal = <T extends SettingsEntityBase>({
   }, [show, initialValues])
 
   const titleMap: Record<FormModalMode, string> = {
-    create: `Add ${entityName}`,
-    edit: `Edit ${entityName}`,
-    view: `${entityName} details`,
+    create: `Thêm ${entityName}`,
+    edit: `Sửa ${entityName}`,
+    view: `Chi tiết ${entityName}`,
   }
 
   const handleChange = (name: keyof T & string, raw: string | boolean | number | number[]) => {
@@ -180,12 +180,12 @@ const SettingsEntityFormModal = <T extends SettingsEntityBase>({
       if (!field.required || field.type === 'checkbox') return
       if (field.type === 'multiselect') {
         if (getMultiSelectIds(values, field.name).length === 0) {
-          next[field.name] = 'This field is required'
+          next[field.name] = 'Trường này là bắt buộc'
         }
         return
       }
       const val = getFieldValue(values, field.name)
-      if (!val.trim()) next[field.name] = 'This field is required'
+      if (!val.trim()) next[field.name] = 'Trường này là bắt buộc'
     })
     setErrors(next)
     return Object.keys(next).length === 0
@@ -232,11 +232,11 @@ const SettingsEntityFormModal = <T extends SettingsEntityBase>({
         </ModalBody>
         <ModalFooter>
           <Button variant="light" onClick={onHide}>
-            {readOnly ? 'Close' : 'Cancel'}
+            {readOnly ? 'Đóng' : 'Hủy'}
           </Button>
           {!readOnly && (
             <Button variant="primary" type="submit">
-              {mode === 'create' ? 'Create' : 'Save changes'}
+              {mode === 'create' ? 'Tạo mới' : 'Lưu thay đổi'}
             </Button>
           )}
         </ModalFooter>

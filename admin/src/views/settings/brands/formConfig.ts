@@ -17,7 +17,7 @@ export const brandFormConfig: SettingsFormConfig<Brand> = {
   fields: [
     { name: 'name', label: 'Tên brand', type: 'text', required: true },
     { name: 'slug', label: 'Slug', type: 'text', required: true },
-    { name: 'logoUrl', label: 'Logo URL', type: 'url', placeholder: 'https://...' },
+    { name: 'logoUrl', label: 'URL logo', type: 'url', placeholder: 'https://...' },
     { name: 'brandColor', label: 'Màu thương hiệu', type: 'color', col: 6 },
     { name: 'sortOrder', label: 'Thứ tự', type: 'number', required: true, col: 6 },
     { name: 'websiteUrl', label: 'Website', type: 'url', placeholder: 'https://...' },

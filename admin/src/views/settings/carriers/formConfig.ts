@@ -31,7 +31,7 @@ export const carrierFormConfig: SettingsFormConfig<Carrier> = {
     { name: 'name', label: 'Tên nhà mạng', type: 'text', required: true },
     { name: 'slug', label: 'Slug', type: 'text', required: true },
     { name: 'countryId', label: 'Quốc gia', type: 'select', required: true, parseAsNumber: true, options: countryOptions },
-    { name: 'logoUrl', label: 'Logo URL', type: 'url' },
+    { name: 'logoUrl', label: 'URL logo', type: 'url' },
     { name: 'support5G', label: 'Hỗ trợ 5G', type: 'checkbox', col: 6 },
     { name: 'sortOrder', label: 'Thứ tự', type: 'number', required: true, col: 6 },
     { name: 'coverageNote', label: 'Ghi chú phủ sóng', type: 'textarea' },

@@ -17,7 +17,7 @@ export function buildBrandColumns(handlers: SettingsTableHandlers<Brand>) {
     createSelectColumn<Brand>(),
     createIdColumn<Brand>(),
     helper.accessor('name', {
-      header: 'Brand',
+      header: 'Thương hiệu',
       cell: ({ row }) => (
         <div className="d-flex align-items-center gap-2">
           <img src={row.original.logoUrl} alt="" width={32} height={32} className="rounded object-fit-contain bg-light p-1" />
@@ -29,7 +29,7 @@ export function buildBrandColumns(handlers: SettingsTableHandlers<Brand>) {
       ),
     }),
     helper.accessor('brandColor', {
-      header: 'Color',
+      header: 'Màu',
       cell: ({ getValue }) => (
         <span className="d-inline-flex align-items-center gap-2">
           <span className="rounded-circle border" style={{ width: 16, height: 16, backgroundColor: getValue() }} />

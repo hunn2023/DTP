@@ -21,7 +21,7 @@ export function buildFormConfigFromFields<T extends SettingsEntityBase>(
       const form = f.form === false || f.form === undefined ? {} : f.form
       return {
         name: f.name,
-        label: getFieldLabel(f.name),
+        label: f.label ?? getFieldLabel(f.name),
         type: toFormFieldType(f.type),
         required: form.required,
         col: form.col,

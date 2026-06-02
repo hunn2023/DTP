@@ -52,7 +52,7 @@ function renderCellValue(value: unknown, field: FieldCellMeta): ReactNode {
   if (typeof value === 'boolean') {
     return (
       <span className={`badge ${value ? 'badge-soft-success' : 'badge-soft-secondary'} fs-xxs`}>
-        {value ? 'Yes' : 'No'}
+        {value ? 'Có' : 'Không'}
       </span>
     )
   }
@@ -84,7 +84,7 @@ export function buildColumnsFromFields<T extends SettingsEntityBase>(
     cols.push(
       helper.accessor((row) => row[field.name as keyof T], {
         id: field.name,
-        header: getFieldLabel(field.name),
+        header: field.label ?? getFieldLabel(field.name),
         cell: ({ getValue, row }) => {
           const value = getValue()
           if (variant === 'primary' && field.name === 'name') {

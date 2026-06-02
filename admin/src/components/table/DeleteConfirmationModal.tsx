@@ -20,21 +20,21 @@ const DeleteConfirmationModal = ({
   onHide,
   onConfirm,
   selectedCount,
-  itemName = 'row',
+  itemName = 'dòng',
   confirmButtonVariant = 'danger',
   cancelButtonVariant = 'light',
-  modalTitle = 'Confirm Deletion',
-  confirmButtonText = 'Delete',
-  cancelButtonText = 'Cancel',
+  modalTitle = 'Xác nhận xóa',
+  confirmButtonText = 'Xóa',
+  cancelButtonText = 'Hủy',
   children,
 }: DeleteConfirmationModalProps) => {
   const getConfirmationMessage = () => {
     if (children) return children
 
     if (selectedCount > 1) {
-      return `Are you sure you want to delete these ${selectedCount} ${itemName}s?`
+      return `Bạn có chắc muốn xóa ${selectedCount} ${itemName} đã chọn?`
     }
-    return `Are you sure you want to delete this ${itemName}?`
+    return `Bạn có chắc muốn xóa ${itemName} này?`
   }
 
   return (

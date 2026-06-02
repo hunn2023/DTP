@@ -17,7 +17,7 @@ export function buildCategoryColumns(handlers: SettingsTableHandlers<Category>) 
     createSelectColumn<Category>(),
     createIdColumn<Category>(),
     helper.accessor('name', {
-      header: 'Category name',
+      header: 'Tên danh mục',
       cell: ({ row }) => (
         <div className="d-flex align-items-center gap-2">
           <span className="fs-4 lh-1">{row.original.icon}</span>
@@ -29,7 +29,7 @@ export function buildCategoryColumns(handlers: SettingsTableHandlers<Category>) 
       ),
     }),
     helper.accessor('description', {
-      header: 'Description',
+      header: 'Mô tả',
       cell: ({ getValue }) => <span className="text-muted">{getValue()}</span>,
     }),
     createSortOrderColumn<Category>(),

@@ -2,12 +2,12 @@ import type { Country } from '@/views/settings/types'
 import type { SettingsFormConfig } from '@/views/settings/form/types'
 
 const regionOptions = [
-  { value: 'ASIA', label: 'Asia (ASIA)' },
-  { value: 'EU', label: 'Europe (EU)' },
-  { value: 'NA', label: 'North America (NA)' },
-  { value: 'OC', label: 'Oceania (OC)' },
-  { value: 'AF', label: 'Africa (AF)' },
-  { value: 'SA', label: 'South America (SA)' },
+  { value: 'ASIA', label: 'Châu Á (ASIA)' },
+  { value: 'EU', label: 'Châu Âu (EU)' },
+  { value: 'NA', label: 'Bắc Mỹ (NA)' },
+  { value: 'OC', label: 'Châu Đại Dương (OC)' },
+  { value: 'AF', label: 'Châu Phi (AF)' },
+  { value: 'SA', label: 'Nam Mỹ (SA)' },
 ]
 
 export const countryFormConfig: SettingsFormConfig<Country> = {
@@ -34,10 +34,10 @@ export const countryFormConfig: SettingsFormConfig<Country> = {
     { name: 'isoCode', label: 'Mã ISO', type: 'text', required: true, placeholder: 'JP', col: 6 },
     { name: 'flagEmoji', label: 'Cờ (emoji)', type: 'text', placeholder: '🇯🇵', col: 6 },
     { name: 'regionCode', label: 'Khu vực', type: 'select', required: true, options: regionOptions },
-    { name: 'bannerUrl', label: 'Banner URL', type: 'url' },
+    { name: 'bannerUrl', label: 'URL banner', type: 'url' },
     { name: 'sortOrder', label: 'Thứ tự', type: 'number', required: true, col: 6 },
-    { name: 'seoTitle', label: 'SEO Title', type: 'text' },
-    { name: 'seoDescription', label: 'SEO Description', type: 'textarea' },
+    { name: 'seoTitle', label: 'Tiêu đề SEO', type: 'text' },
+    { name: 'seoDescription', label: 'Mô tả SEO', type: 'textarea' },
     { name: 'isActive', label: 'Hiển thị', type: 'checkbox', col: 12 },
   ],
 }

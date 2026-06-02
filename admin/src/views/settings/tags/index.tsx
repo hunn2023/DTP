@@ -6,7 +6,9 @@ import { tagFormConfig } from '@/views/settings/tags/formConfig'
 
 const TagsPage = () => {
   return (
-    <SettingsPageLayout title="Tag" description="Nhãn gắn sản phẩm qua bảng ProductTags. Có thể hardcode ở MVP nếu chưa cần CRUD đầy đủ.">
+    <SettingsPageLayout
+      title="Tag"
+      description="Nhãn gắn sản phẩm qua bảng ProductTags. Có thể hardcode ở MVP nếu chưa cần CRUD đầy đủ.">
       <SettingsCrudTable initialData={tagsData} buildColumns={buildTagColumns} formConfig={tagFormConfig} labels={tagsLabels} />
     </SettingsPageLayout>
   )

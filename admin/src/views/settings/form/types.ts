@@ -18,7 +18,7 @@ export type FormFieldOption = {
 
 export type FormFieldConfig<T> = {
   name: keyof T & string
-  /** Omit to use English label from getFieldLabel(name). */
+  /** Bỏ trống để dùng nhãn từ getFieldLabel(name). */
   label?: string
   type: FormFieldType
   required?: boolean

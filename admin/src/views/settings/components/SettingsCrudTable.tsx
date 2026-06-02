@@ -61,14 +61,14 @@ function SettingsTableToolbar<T extends SettingsEntityBase>({
         </div>
         {selectedCount > 0 && (
           <Button variant="danger" size="sm" onClick={onBulkDelete}>
-            Delete ({selectedCount})
+            Xóa ({selectedCount})
           </Button>
         )}
       </div>
       <div className="card-action d-flex flex-nowrap align-items-center gap-2">
         <select
           className="form-select form-select-sm w-auto"
-          aria-label="Rows per page"
+          aria-label="Số dòng mỗi trang"
           value={table.getState().pagination.pageSize}
           onChange={(e) => table.setPageSize(Number(e.target.value))}>
           {[5, 10, 15, 20].map((size) => (
@@ -81,15 +81,15 @@ function SettingsTableToolbar<T extends SettingsEntityBase>({
           <select
             className="form-select form-select-sm"
             style={{ minWidth: '9.75rem', width: 'auto' }}
-            aria-label="Active filter"
+            aria-label="Lọc theo trạng thái"
             value={String(statusColumn.getFilterValue() ?? 'all')}
             onChange={(e) => {
               const value = e.target.value
               statusColumn.setFilterValue(value === 'all' ? undefined : value === 'true')
             }}>
-            <option value="all">All (active)</option>
-            <option value="true">Active</option>
-            <option value="false">Hidden</option>
+            <option value="all">Tất cả</option>
+            <option value="true">Đang hiển thị</option>
+            <option value="false">Đang ẩn</option>
           </select>
         )}
         {showAdd && (

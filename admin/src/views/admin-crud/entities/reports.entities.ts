@@ -110,8 +110,8 @@ export const providersReportEntity = defineAdminEntity<ProviderReportRow>({
     { id: 1, providerName: 'Airalo', successRate: 98, failedCount: 4, revenue: 5000000, isActive: true },
   ],
   fields: [
-    { name: 'providerName', label: 'Provider', type: 'text', table: { variant: 'primary' }, form: false },
-    { name: 'successRate', label: 'Success %', type: 'number', table: true, form: false },
+    { name: 'providerName', label: 'Nhà cung cấp', type: 'text', table: { variant: 'primary' }, form: false },
+    { name: 'successRate', label: 'Tỷ lệ thành công (%)', type: 'number', table: true, form: false },
     { name: 'failedCount', label: 'Lỗi', type: 'number', table: true, form: false },
     { name: 'revenue', label: 'Doanh thu', type: 'number', table: true, form: false },
     { name: 'isActive', label: '—', type: 'checkbox', form: false, table: false },

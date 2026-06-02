@@ -17,7 +17,7 @@ export function buildCountryColumns(handlers: SettingsTableHandlers<Country>) {
     createSelectColumn<Country>(),
     createIdColumn<Country>(),
     helper.accessor('name', {
-      header: 'Country',
+      header: 'Quốc gia',
       cell: ({ row }) => (
         <div className="d-flex align-items-center gap-2">
           <span className="fs-4">{row.original.flagEmoji}</span>
@@ -28,9 +28,9 @@ export function buildCountryColumns(handlers: SettingsTableHandlers<Country>) {
         </div>
       ),
     }),
-    helper.accessor('isoCode', { header: 'ISO', cell: ({ getValue }) => <code>{getValue()}</code> }),
+    helper.accessor('isoCode', { header: 'Mã ISO', cell: ({ getValue }) => <code>{getValue()}</code> }),
     helper.accessor('regionCode', {
-      header: 'Region',
+      header: 'Khu vực',
       cell: ({ getValue }) => <span className="badge badge-soft-primary fs-xxs">{getValue()}</span>,
     }),
     helper.accessor('seoTitle', {

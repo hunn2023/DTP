@@ -78,12 +78,12 @@ export const customersOrdersEntity = defineAdminEntity<CustomerOrderView>({
     },
   ],
   fields: [
-    { name: 'orderNo', label: 'OrderNo', type: 'text', table: { variant: 'code' }, form: false },
-    { name: 'customerId', label: 'CustomerId', type: 'number', table: { variant: 'primary' }, form: false },
-    { name: 'productName', label: 'Product', type: 'text', table: true, form: false },
+    { name: 'orderNo', label: 'Mã đơn', type: 'text', table: { variant: 'code' }, form: false },
+    { name: 'customerId', label: 'ID khách hàng', type: 'number', table: { variant: 'primary' }, form: false },
+    { name: 'productName', label: 'Sản phẩm', type: 'text', table: true, form: false },
     { name: 'amount', label: 'Số tiền', type: 'number', table: true, form: false },
-    { name: 'status', label: 'TT', type: 'text', table: true, form: false },
-    { name: 'createdAt', label: 'Ngày', type: 'text', table: true, form: false },
+    { name: 'status', label: 'Trạng thái', type: 'text', table: true, form: false },
+    { name: 'createdAt', label: 'Ngày tạo', type: 'text', table: true, form: false },
     { name: 'isActive', label: '—', type: 'checkbox', form: false, table: false },
   ],
 })
@@ -106,10 +106,10 @@ export const customersNotesEntity = defineAdminEntity<CustomerNote>({
     },
   ],
   fields: [
-    { name: 'customerId', label: 'CustomerId', type: 'number', table: { variant: 'primary' }, form: { required: true } },
-    { name: 'note', label: 'Note', type: 'textarea', form: { required: true } },
+    { name: 'customerId', label: 'ID khách hàng', type: 'number', table: { variant: 'primary' }, form: { required: true } },
+    { name: 'note', label: 'Ghi chú', type: 'textarea', form: { required: true } },
     { name: 'createdBy', label: 'Người tạo', type: 'text', form: { required: true } },
-    { name: 'createdAt', label: 'Ngày', type: 'text', table: true, form: false },
+    { name: 'createdAt', label: 'Ngày tạo', type: 'text', table: true, form: false },
     { name: 'isActive', label: '—', type: 'checkbox', form: false, table: false },
   ],
 })

@@ -17,7 +17,7 @@ export function buildCarrierColumns(handlers: SettingsTableHandlers<Carrier>) {
     createSelectColumn<Carrier>(),
     createIdColumn<Carrier>(),
     helper.accessor('name', {
-      header: 'Carrier',
+      header: 'Nhà mạng',
       cell: ({ row }) => (
         <div className="d-flex align-items-center gap-2">
           <img src={row.original.logoUrl} alt="" width={28} height={28} className="rounded bg-light p-1" />
@@ -28,17 +28,17 @@ export function buildCarrierColumns(handlers: SettingsTableHandlers<Carrier>) {
         </div>
       ),
     }),
-    helper.accessor('countryName', { header: 'Country' }),
+    helper.accessor('countryName', { header: 'Quốc gia' }),
     helper.accessor('support5G', {
       header: '5G',
       cell: ({ getValue }) => (
         <span className={`badge ${getValue() ? 'badge-soft-success' : 'badge-soft-secondary'} fs-xxs`}>
-          {getValue() ? 'Yes' : 'No'}
+          {getValue() ? 'Có' : 'Không'}
         </span>
       ),
     }),
     helper.accessor('coverageNote', {
-      header: 'Coverage note',
+      header: 'Ghi chú phủ sóng',
       cell: ({ getValue }) => <span className="text-muted fs-xs">{getValue()}</span>,
     }),
     createSortOrderColumn<Carrier>(),

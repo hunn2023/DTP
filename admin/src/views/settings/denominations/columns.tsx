@@ -17,12 +17,12 @@ export function buildDenominationColumns(handlers: SettingsTableHandlers<Denomin
     createSelectColumn<Denomination>(),
     createIdColumn<Denomination>(),
     helper.accessor('value', {
-      header: 'Value',
+      header: 'Giá trị',
       cell: ({ getValue }) => <span className="fw-semibold">{getValue().toLocaleString('vi-VN')}</span>,
     }),
-    helper.accessor('displayName', { header: 'Display name' }),
+    helper.accessor('displayName', { header: 'Tên hiển thị' }),
     helper.accessor('currencyCode', {
-      header: 'Currency',
+      header: 'Tiền tệ',
       cell: ({ getValue }) => <code>{getValue()}</code>,
     }),
     createSortOrderColumn<Denomination>(),

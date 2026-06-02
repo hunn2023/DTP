@@ -51,13 +51,13 @@ export function createIsActiveColumn<T extends SettingsEntityBase>() {
   const helper = createColumnHelper<T>()
   return helper.accessor((row) => row.isActive, {
     id: 'isActive',
-    header: 'Active',
+    header: 'Hiển thị',
     filterFn: 'equals',
     cell: ({ getValue }) => {
       const active = getValue()
       return (
         <span className={`badge ${active ? 'badge-soft-success' : 'badge-soft-secondary'} fs-xxs`}>
-          {active ? 'Active' : 'Hidden'}
+          {active ? 'Đang hiển thị' : 'Đang ẩn'}
         </span>
       )
     },
@@ -68,7 +68,7 @@ export function createSortOrderColumn<T extends { sortOrder: number }>() {
   const helper = createColumnHelper<T>()
   return helper.accessor((row) => row.sortOrder, {
     id: 'sortOrder',
-    header: 'Sort order',
+    header: 'Thứ tự',
     cell: ({ getValue }) => <span className="text-muted">{getValue()}</span>,
   })
 }
@@ -82,7 +82,7 @@ export function createActionsColumn<T extends SettingsEntityBase>(
 
   return {
     id: 'actions',
-    header: 'Actions',
+    header: 'Thao tác',
     enableSorting: false,
     cell: ({ row }: { row: Row<T> }) => (
       <div className="d-flex gap-1" onClick={(e) => e.stopPropagation()}>
@@ -91,7 +91,7 @@ export function createActionsColumn<T extends SettingsEntityBase>(
             variant="light"
             size="sm"
             className="btn-icon rounded-circle"
-            title="Edit"
+            title="Sửa"
             onClick={() => handlers.onEdit(row.original)}>
             <TbEdit className="fs-lg" />
           </Button>
@@ -101,7 +101,7 @@ export function createActionsColumn<T extends SettingsEntityBase>(
             variant="light"
             size="sm"
             className="btn-icon rounded-circle"
-            title={row.original.isActive ? 'Hide' : 'Show'}
+            title={row.original.isActive ? 'Ẩn' : 'Hiện'}
             onClick={() => handlers.onToggleActive(row.original)}>
             {row.original.isActive ? <TbEyeOff className="fs-lg" /> : <TbEye className="fs-lg" />}
           </Button>
@@ -111,7 +111,7 @@ export function createActionsColumn<T extends SettingsEntityBase>(
             variant="light"
             size="sm"
             className="btn-icon rounded-circle"
-            title="Delete"
+            title="Xóa"
             onClick={() => handlers.onDeleteRequest(String(row.original.id))}>
             <TbTrash className="fs-lg" />
           </Button>

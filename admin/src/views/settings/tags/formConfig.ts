@@ -24,9 +24,9 @@ export const tagFormConfig: SettingsFormConfig<Tag> = {
       type: 'select',
       required: true,
       options: [
-        { value: 'product', label: 'Product' },
+        { value: 'product', label: 'Sản phẩm' },
         { value: 'marketing', label: 'Marketing' },
-        { value: 'technical', label: 'Technical' },
+        { value: 'technical', label: 'Kỹ thuật' },
       ],
     },
     { name: 'sortOrder', label: 'Thứ tự', type: 'number', required: true, col: 6 },

@@ -30,7 +30,7 @@ export const readonlyCrudCapabilities: CrudCapabilities = {
 
 export type EntityFieldDef<T> = {
   name: keyof T & string
-  /** Omit to use English label from getFieldLabel(name). */
+  /** Bỏ trống để dùng nhãn từ getFieldLabel(name). */
   label?: string
   type: FormFieldType | 'badge' | 'date' | 'multiselect'
   table?: boolean | { variant?: 'primary' | 'code' | 'badge'; badgeMap?: Record<string, string> }
