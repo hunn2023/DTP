@@ -1,0 +1,68 @@
+﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
+using DTP.Modules.Catalog.Domain.Entities;
+using DTP.Modules.Catalog.Infrastructure.Persistence;
+using DTP.Shared.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DTP.Modules.Catalog.Infrastructure.Repositories
+{
+    public class ProductPriceRepository
+     : RepositoryBase<ProductPrice>,
+       IProductPriceRepository
+    {
+        private readonly CatalogDbContext _context;
+
+        public ProductPriceRepository(CatalogDbContext context)
+            : base(context)
+        {
+            _context = context;
+        }
+
+        public async Task<List<ProductPrice>> GetListAsync(
+            Guid? productId,
+            Guid? productVariantId,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _context.ProductPrices
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (productId.HasValue)
+            {
+                query = query.Where(x => x.ProductId == productId.Value);
+            }
+
+            if (productVariantId.HasValue)
+            {
+                query = query.Where(x => x.ProductVariantId == productVariantId.Value);
+            }
+
+            return await query
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<bool> ExistsActivePriceAsync(
+            Guid productId,
+            Guid? productVariantId,
+            string currency,
+            Guid? excludeId = null,
+            CancellationToken cancellationToken = default)
+        {
+            currency = currency.Trim().ToUpper();
+
+            return await _context.ProductPrices.AnyAsync(x =>
+                x.ProductId == productId &&
+                x.ProductVariantId == productVariantId &&
+                x.Currency == currency &&
+                x.IsActive &&
+                (!excludeId.HasValue || x.Id != excludeId.Value),
+                cancellationToken);
+        }
+    }
+}

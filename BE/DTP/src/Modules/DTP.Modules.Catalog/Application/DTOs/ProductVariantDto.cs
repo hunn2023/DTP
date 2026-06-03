@@ -1,0 +1,25 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DTP.Modules.Catalog.Application.DTOs
+{
+    public class ProductVariantDto
+    {
+        public Guid Id { get; set; }
+
+        public Guid ProductId { get; set; }
+        public string? Sku { get; set; }
+        public string Name { get; set; } = default!;
+        public decimal Price { get; set; }
+        public decimal? OriginalPrice { get; set; }
+        public int? DurationDays { get; set; }
+        public decimal? DataAmount { get; set; }
+        public string? DataUnit { get; set; }
+        public bool IsUnlimited { get; set; }
+        public int SortOrder { get; set; }
+        public bool IsActive { get; set; }
+    }
+}

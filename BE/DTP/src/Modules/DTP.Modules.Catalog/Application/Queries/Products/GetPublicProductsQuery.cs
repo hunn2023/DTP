@@ -1,0 +1,48 @@
+﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application.Pagination;
+using MediatR;
+
+namespace DTP.Modules.Catalog.Application.Queries.Products
+{
+    public class GetPublicProductsQuery
+         : IRequest<PagedResultDto<ProductDto>>
+    {
+        public string? Keyword { get; set; }
+
+        public Guid? CategoryId { get; set; }
+
+        public Guid? CountryId { get; set; }
+
+        public Guid? CarrierId { get; set; }
+
+        public int PageIndex { get; set; } = 1;
+
+        public int PageSize { get; set; } = 20;
+    }
+
+    public class GetPublicProductsQueryHandler
+        : IRequestHandler<GetPublicProductsQuery, PagedResultDto<ProductDto>>
+    {
+        private readonly IProductService _productService;
+
+        public GetPublicProductsQueryHandler(IProductService productService)
+        {
+            _productService = productService;
+        }
+
+        public async Task<PagedResultDto<ProductDto>> Handle(
+            GetPublicProductsQuery request,
+            CancellationToken cancellationToken)
+        {
+            return await _productService.GetPublicPagedAsync(
+                request.Keyword,
+                request.CategoryId,
+                request.CountryId,
+                request.CarrierId,
+                request.PageIndex,
+                request.PageSize,
+                cancellationToken);
+        }
+    }
+}
