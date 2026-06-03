@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DTP.Api/DTP.Api.csproj" />
+    <Project Path="src/DTP.BuildingBlocks/DTP.BuildingBlocks.csproj" />
+    <Project Path="src/DTP.Infrastructure/DTP.Infrastructure.csproj" />
+    <Project Path="src/DTP.Shared/DTP.Shared.csproj" />
+    <Project Path="src/DTP.Worker/DTP.Worker.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/">
+    <Project Path="src/Modules/DTP.Modules.Catalog/DTP.Modules.Catalog.csproj" />
+  </Folder>
+</Solution>
