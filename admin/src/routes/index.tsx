@@ -1,6 +1,6 @@
 import { lazy } from 'react'
 import { Navigate, type RouteObject } from 'react-router'
-import { dtpAdminRoutes } from '@/views/admin-crud/registry'
+import { dtpAdminRoutes } from '@/modules/crud/registry'
 import MainLayout from '@/layouts/MainLayout.tsx'
 
 // Dashboards
@@ -17,13 +17,6 @@ const ProductGrid = lazy(() => import('@/views/ecommerce/products-grid'))
 const ProductDetails = lazy(() => import('@/views/ecommerce/products/[productId]'))
 const AddProduct = lazy(() => import('@/views/ecommerce/add-product'))
 const Categories = lazy(() => import('@/views/ecommerce/categories'))
-const SettingsCategories = lazy(() => import('@/views/settings/categories'))
-const SettingsBrands = lazy(() => import('@/views/settings/brands'))
-const SettingsTags = lazy(() => import('@/views/settings/tags'))
-const SettingsCountries = lazy(() => import('@/views/settings/countries'))
-const SettingsCarriers = lazy(() => import('@/views/settings/carriers'))
-const SettingsDenominations = lazy(() => import('@/views/settings/denominations'))
-const SettingsSupportedDevices = lazy(() => import('@/views/settings/supported-devices'))
 const Orders = lazy(() => import('@/views/ecommerce/orders'))
 const OrderDetails = lazy(() => import('@/views/ecommerce/orders/[orderId]'))
 const Customers = lazy(() => import('@/views/ecommerce/customers'))
@@ -308,17 +301,6 @@ const dashboardRoutes: RouteObject[] = [
 
 const landingRoute: RouteObject[] = [{ path: '/landing', element: <Landing /> }]
 
-const settingsRoutes: RouteObject[] = [
-  { path: '/settings', element: <Navigate to="/settings/categories" replace /> },
-  { path: '/settings/categories', element: <SettingsCategories /> },
-  { path: '/settings/brands', element: <SettingsBrands /> },
-  { path: '/settings/tags', element: <SettingsTags /> },
-  { path: '/settings/countries', element: <SettingsCountries /> },
-  { path: '/settings/carriers', element: <SettingsCarriers /> },
-  { path: '/settings/denominations', element: <SettingsDenominations /> },
-  { path: '/settings/supported-devices', element: <SettingsSupportedDevices /> },
-]
-
 const ecommerceRoutes: RouteObject[] = [
   { path: '/products', element: <ProductList /> },
   { path: '/products-grid', element: <ProductGrid /> },
@@ -536,7 +518,6 @@ const allRoutes: RouteObject[] = [
         element: <Navigate to="/dashboard" replace />,
       },
       ...dashboardRoutes,
-      ...settingsRoutes,
       ...dtpAdminRoutes,
       ...ecommerceRoutes,
       ...appsRoutes,

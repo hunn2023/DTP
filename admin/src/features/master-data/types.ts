@@ -1,0 +1,68 @@
+import type { CrudEntityBase } from '@/modules/crud/types'
+
+export type Category = CrudEntityBase & {
+  name: string
+  slug: string
+  icon: string
+  description: string
+  sortOrder: number
+}
+
+export type Brand = CrudEntityBase & {
+  name: string
+  slug: string
+  logoUrl: string
+  brandColor: string
+  websiteUrl: string
+  sortOrder: number
+}
+
+export type TagType = 'product' | 'marketing' | 'technical'
+
+export type Tag = CrudEntityBase & {
+  name: string
+  slug: string
+  color: string
+  icon: string
+  type: TagType
+  sortOrder: number
+}
+
+export type Country = CrudEntityBase & {
+  name: string
+  englishName: string
+  slug: string
+  isoCode: string
+  flagEmoji: string
+  regionCode: string
+  bannerUrl: string
+  seoTitle: string
+  seoDescription: string
+  sortOrder: number
+}
+
+export type Carrier = CrudEntityBase & {
+  name: string
+  slug: string
+  countryId: number
+  countryName: string
+  logoUrl: string
+  support5G: boolean
+  coverageNote: string
+  sortOrder: number
+}
+
+export type Denomination = CrudEntityBase & {
+  value: number
+  displayName: string
+  currencyCode: string
+  sortOrder: number
+}
+
+export type SupportedDevice = CrudEntityBase & {
+  brandName: string
+  deviceName: string
+  modelCode: string
+  supportEsim: boolean
+  note: string
+}
