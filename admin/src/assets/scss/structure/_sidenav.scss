@@ -13,6 +13,30 @@
     border-right: $card-border-width solid $sidenav-border-color;
     transition: width .25s ease-in-out;
 
+    > .logo {
+        flex-shrink: 0;
+        justify-content: flex-start;
+        padding: 1rem 1.25rem 0.75rem;
+
+        .logo-lg img {
+            height: $logo-lg-height;
+            width: auto;
+            max-width: calc(100% - 0.5rem);
+            object-fit: contain;
+        }
+
+        .logo-sm img {
+            height: $logo-sm-height;
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        img {
+            display: block;
+        }
+    }
+
     [data-simplebar] {
         height: calc(100% - $topbar-height);
     }
@@ -224,8 +248,8 @@ html[data-sidenav-size="condensed"] {
         .logo {
             z-index: 1;
             background: $sidenav-bg;
-            text-align: center;
-            padding: 0;
+            justify-content: center;
+            padding: 0 0.5rem;
 
             span.logo-lg {
                 display: none;
@@ -446,6 +470,9 @@ html[data-sidenav-size="on-hover"] {
         }
 
         .logo {
+            justify-content: center;
+            padding: 0 0.5rem;
+
             .logo-sm {
                 display: block;
             }

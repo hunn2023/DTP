@@ -27,19 +27,19 @@ const Sidenav = () => {
       <Link to="/" className="logo">
         <span className="logo logo-light">
           <span className="logo-lg">
-            <Image src={logo} alt="logo" width={92.3} height={26} />
+            <Image src={logo} alt="logo" className="brand-logo-img" />
           </span>
           <span className="logo-sm">
-            <Image src={logoSm} alt="small logo" width={30.55} height={26} />
+            <Image src={logoSm} alt="small logo" className="brand-logo-img" />
           </span>
         </span>
 
         <span className="logo logo-dark">
           <span className="logo-lg">
-            <Image src={logoDark} alt="dark logo" width={92.3} height={26} />
+            <Image src={logoDark} alt="dark logo" className="brand-logo-img" />
           </span>
           <span className="logo-sm">
-            <Image src={logoSm} alt="small logo" width={30.55} height={26} />
+            <Image src={logoSm} alt="small logo" className="brand-logo-img" />
           </span>
         </span>
       </Link>
