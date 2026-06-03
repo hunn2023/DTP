@@ -23,9 +23,18 @@ type DataTableProps<TData> = {
    * @default true
    */
   showHeaders?: boolean
+
+  /** Click row to open detail (e.g. view modal). Ignored for checkbox/action clicks. */
+  onRowClick?: (row: TData) => void
 }
 
-const DataTable = <TData,>({ table, className = '', emptyMessage = 'Nothing found.', showHeaders = true }: DataTableProps<TData>) => {
+const DataTable = <TData,>({
+  table,
+  className = '',
+  emptyMessage = 'Nothing found.',
+  showHeaders = true,
+  onRowClick,
+}: DataTableProps<TData>) => {
   const columns = table.getAllColumns()
 
   return (
@@ -61,7 +70,10 @@ const DataTable = <TData,>({ table, className = '', emptyMessage = 'Nothing foun
         <tbody>
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
-              <tr key={row.id}>
+              <tr
+                key={row.id}
+                className={onRowClick ? 'cursor-pointer' : undefined}
+                onClick={() => onRowClick?.(row.original)}>
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
                 ))}

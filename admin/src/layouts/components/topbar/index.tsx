@@ -40,19 +40,19 @@ const Topbar = () => {
           <div className="logo-topbar">
             <Link to="/" className="logo-light">
               <span className="logo-lg">
-                <Image src={logo} alt="logo" width={92.3} height={26} />
+                <Image src={logo} alt="logo" className="brand-logo-img" />
               </span>
               <span className="logo-sm">
-                <Image src={logoSm} alt="small logo" width={30.55} height={26} />
+                <Image src={logoSm} alt="small logo" className="brand-logo-img" />
               </span>
             </Link>
 
             <Link to="/" className="logo-dark">
               <span className="logo-lg">
-                <Image src={logoDark} alt="dark logo" width={92.3} height={26} />
+                <Image src={logoDark} alt="dark logo" className="brand-logo-img" />
               </span>
               <span className="logo-sm">
-                <Image src={logoSm} alt="small logo" width={30.55} height={26} />
+                <Image src={logoSm} alt="small logo" className="brand-logo-img" />
               </span>
             </Link>
           </div>

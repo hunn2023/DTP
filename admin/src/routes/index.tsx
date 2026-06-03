@@ -1,5 +1,6 @@
 import { lazy } from 'react'
 import { Navigate, type RouteObject } from 'react-router'
+import { dtpAdminRoutes } from '@/modules/crud/registry'
 import MainLayout from '@/layouts/MainLayout.tsx'
 
 // Dashboards
@@ -517,6 +518,7 @@ const allRoutes: RouteObject[] = [
         element: <Navigate to="/dashboard" replace />,
       },
       ...dashboardRoutes,
+      ...dtpAdminRoutes,
       ...ecommerceRoutes,
       ...appsRoutes,
       ...otherAppsRoutes,
