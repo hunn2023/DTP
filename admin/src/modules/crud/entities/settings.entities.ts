@@ -5,9 +5,6 @@ import { brandFormConfig } from '@/features/master-data/brands/formConfig'
 import { buildCarrierColumns } from '@/features/master-data/carriers/columns'
 import { carriersData, carriersLabels } from '@/features/master-data/carriers/data'
 import { carrierFormConfig } from '@/features/master-data/carriers/formConfig'
-import { buildCategoryColumns } from '@/features/master-data/categories/columns'
-import { categoriesData, categoriesLabels } from '@/features/master-data/categories/data'
-import { categoryFormConfig } from '@/features/master-data/categories/formConfig'
 import { buildCountryColumns } from '@/features/master-data/countries/columns'
 import { countriesData, countriesLabels } from '@/features/master-data/countries/data'
 import { countryFormConfig } from '@/features/master-data/countries/formConfig'
@@ -23,7 +20,6 @@ import { tagFormConfig } from '@/features/master-data/tags/formConfig'
 import type {
   Brand,
   Carrier,
-  Category,
   Country,
   Denomination,
   SupportedDevice,
@@ -31,20 +27,6 @@ import type {
 } from '@/features/master-data/types'
 
 const sub = 'Cấu hình hệ thống'
-
-export const settingsCategoriesEntity = defineAdminEntity<Category>({
-  path: '/settings/categories',
-  title: 'Danh mục',
-  breadcrumbSubtitle: sub,
-  description:
-    'Phân loại sản phẩm chính: eSIM, thẻ game, thẻ viễn thông, data. Dùng cho Products / EsimPackages / GameCards.',
-  entityName: 'danh mục',
-  labels: categoriesLabels,
-  seedData: categoriesData,
-  fields: [],
-  buildColumns: buildCategoryColumns,
-  formConfig: categoryFormConfig,
-})
 
 export const settingsBrandsEntity = defineAdminEntity<Brand>({
   path: '/settings/brands',
@@ -126,7 +108,6 @@ export const settingsSupportedDevicesEntity = defineAdminEntity<SupportedDevice>
 })
 
 export const settingsEntities = [
-  settingsCategoriesEntity,
   settingsBrandsEntity,
   settingsTagsEntity,
   settingsCountriesEntity,

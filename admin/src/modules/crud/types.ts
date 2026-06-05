@@ -3,6 +3,11 @@ import type { EntityTableHandlers } from '@/modules/crud/hooks/useEntityCrud'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { FormFieldType } from '@/modules/crud/form/types'
 
+export type TableRowBase = {
+  id: number | string
+  isActive: boolean
+}
+
 export type CrudEntityBase = {
   id: number
   isActive: boolean

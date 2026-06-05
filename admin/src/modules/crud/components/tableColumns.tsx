@@ -2,16 +2,16 @@ import { createColumnHelper, type Row, type Table } from '@tanstack/react-table'
 import { Button } from 'react-bootstrap'
 import { TbEdit, TbEye, TbEyeOff, TbTrash } from 'react-icons/tb'
 
-import type { CrudCapabilities, CrudEntityBase } from '@/modules/crud/types'
+import type { CrudCapabilities, TableRowBase } from '@/modules/crud/types'
 import { defaultCrudCapabilities } from '@/modules/crud/types'
 
-type ActionHandlers<T extends CrudEntityBase> = {
+export type ActionHandlers<T extends TableRowBase> = {
   onToggleActive: (row: T) => void
   onDeleteRequest: (rowId: string) => void
   onEdit: (row: T) => void
 }
 
-export function createIdColumn<T extends CrudEntityBase>() {
+export function createIdColumn<T extends TableRowBase>() {
   const helper = createColumnHelper<T>()
   return helper.accessor((row) => row.id, {
     id: 'id',
@@ -46,7 +46,7 @@ export function createSelectColumn<T>() {
   }
 }
 
-export function createIsActiveColumn<T extends CrudEntityBase>() {
+export function createIsActiveColumn<T extends TableRowBase>() {
   const helper = createColumnHelper<T>()
   return helper.accessor((row) => row.isActive, {
     id: 'isActive',
@@ -72,7 +72,7 @@ export function createSortOrderColumn<T extends { sortOrder: number }>() {
   })
 }
 
-export function createActionsColumn<T extends CrudEntityBase>(
+export function createActionsColumn<T extends TableRowBase>(
   handlers: ActionHandlers<T>,
   capabilities: CrudCapabilities = defaultCrudCapabilities,
 ) {

@@ -1,5 +1,3 @@
-import type { CrudEntityBase } from '@/modules/crud/types'
-
 export type FormFieldType =
   | 'text'
   | 'textarea'
@@ -30,7 +28,7 @@ export type FormFieldConfig<T> = {
 
 export type FormModalMode = 'create' | 'edit' | 'view'
 
-export type EntityFormConfig<T extends CrudEntityBase> = {
+export type EntityFormConfig<T extends { isActive: boolean }> = {
   entityName: string
   fields: FormFieldConfig<T>[]
   viewFields?: FormFieldConfig<T>[]
@@ -40,4 +38,4 @@ export type EntityFormConfig<T extends CrudEntityBase> = {
 }
 
 /** @deprecated Use EntityFormConfig */
-export type SettingsFormConfig<T extends CrudEntityBase> = EntityFormConfig<T>
+export type SettingsFormConfig<T extends { isActive: boolean }> = EntityFormConfig<T>

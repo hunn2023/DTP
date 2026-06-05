@@ -1,8 +1,11 @@
 import type { CrudEntityBase } from '@/modules/crud/types'
 
-export type Category = CrudEntityBase & {
+export type Category = {
+  id: string
+  isActive: boolean
   name: string
   slug: string
+  code: string
   icon: string
   description: string
   sortOrder: number

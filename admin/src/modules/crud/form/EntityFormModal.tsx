@@ -3,13 +3,11 @@ import { Button, Col, Form, Modal, ModalBody, ModalFooter, ModalHeader, ModalTit
 
 import { getFieldLabel } from '@/modules/crud/entities/fieldLabels'
 import type { FormFieldConfig, FormModalMode } from '@/modules/crud/form/types'
-import type { CrudEntityBase } from '@/modules/crud/types'
-
 function resolveLabel<T>(field: FormFieldConfig<T>): string {
   return field.label ?? getFieldLabel(field.name)
 }
 
-type EntityFormModalProps<T extends CrudEntityBase> = {
+type EntityFormModalProps<T extends { isActive: boolean }> = {
   show: boolean
   mode: FormModalMode
   entityName: string
@@ -34,7 +32,7 @@ function getMultiSelectIds<T>(values: T, name: keyof T & string): number[] {
   return raw.map((id) => Number(id)).filter((id) => !Number.isNaN(id))
 }
 
-function FormFieldInput<T extends CrudEntityBase>({
+function FormFieldInput<T extends { isActive: boolean }>({
   field,
   value,
   selectedIds,
@@ -140,7 +138,7 @@ function FormFieldInput<T extends CrudEntityBase>({
   )
 }
 
-const EntityFormModal = <T extends CrudEntityBase>({
+const EntityFormModal = <T extends { isActive: boolean }>({
   show,
   mode,
   entityName,

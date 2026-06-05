@@ -7,23 +7,25 @@ import {
   createSelectColumn,
   createSortOrderColumn,
 } from '@/modules/crud/components/tableColumns'
-import type { EntityTableHandlers } from '@/modules/crud/hooks/useEntityCrud'
+import type { ActionHandlers } from '@/modules/crud/components/tableColumns'
 import type { Category } from '@/features/master-data/types'
+
+export type CategoryTableHandlers = ActionHandlers<Category>
 
 const helper = createColumnHelper<Category>()
 
-export function buildCategoryColumns(handlers: EntityTableHandlers<Category>) {
+export function buildCategoryColumns(handlers: CategoryTableHandlers) {
   return [
     createSelectColumn<Category>(),
     createIdColumn<Category>(),
     helper.accessor('name', {
       header: 'Tên danh mục',
       cell: ({ row }) => (
-        <div className="d-flex align-items-center gap-2">
-          <span className="fs-4 lh-1">{row.original.icon}</span>
-          <div>
-            <div className="fw-semibold">{row.original.name}</div>
-            <div className="text-muted fs-xxs">/{row.original.slug}</div>
+        <div>
+          <div className="fw-semibold">{row.original.name}</div>
+          <div className="text-muted fs-xxs">
+            /{row.original.slug}
+            {row.original.code ? ` · ${row.original.code}` : ''}
           </div>
         </div>
       ),

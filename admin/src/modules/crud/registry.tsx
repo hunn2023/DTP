@@ -1,5 +1,6 @@
 import { Navigate, type RouteObject } from 'react-router'
 
+import CategoriesPage from '@/features/master-data/categories/CategoriesPage'
 import ReportPage from '@/modules/crud/components/ReportPage'
 import { createCrudPage } from '@/modules/crud/createCrudPage'
 import { customerEntities } from '@/modules/crud/entities/customers.entities'
@@ -67,7 +68,13 @@ const redirectRoutes: RouteObject[] = [
   { path: '/system', element: <Navigate to="/system/admin-users" replace /> },
 ]
 
+const categoriesRoute: RouteObject = {
+  path: '/settings/categories',
+  element: <CategoriesPage />,
+}
+
 export const dtpAdminRoutes: RouteObject[] = [
   ...redirectRoutes,
+  categoriesRoute,
   ...allAdminEntities.map(entityRoute),
 ]

@@ -1,5 +1,5 @@
 import { type ChildrenType } from '@/types'
-import { createContext, use, useState } from 'react'
+import { createContext, use, useCallback, useMemo, useState } from 'react'
 import { ToastBody, ToastHeader } from 'react-bootstrap'
 import Toast, { type ToastProps } from 'react-bootstrap/Toast'
 import ToastContainer from 'react-bootstrap/ToastContainer'
@@ -54,27 +54,33 @@ export function NotificationProvider({ children }: ChildrenType) {
   }
 
   const [config, setConfig] = useState<ToastrProps>(defaultConfig)
-  const hideNotification = () => {
+
+  const hideNotification = useCallback(() => {
     setConfig({ show: false, message: '', title: '' })
-  }
+  }, [])
 
-  const showNotification = ({ title, message, variant, delay = 2000 }: ShowNotificationType) => {
-    setConfig({
-      show: true,
-      title,
-      message,
-      variant: variant ?? 'light',
-      onClose: hideNotification,
-      delay,
-    })
+  const showNotification = useCallback(
+    ({ title, message, variant, delay = 2000 }: ShowNotificationType) => {
+      setConfig({
+        show: true,
+        title,
+        message,
+        variant: variant ?? 'light',
+        onClose: hideNotification,
+        delay,
+      })
 
-    setTimeout(() => {
-      setConfig(defaultConfig)
-    }, delay)
-  }
+      setTimeout(() => {
+        setConfig(defaultConfig)
+      }, delay)
+    },
+    [hideNotification],
+  )
+
+  const contextValue = useMemo(() => ({ showNotification }), [showNotification])
 
   return (
-    <NotificationContext.Provider value={{ showNotification }}>
+    <NotificationContext.Provider value={contextValue}>
       <Toastr {...config} />
       {children}
     </NotificationContext.Provider>
