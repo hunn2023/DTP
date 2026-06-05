@@ -89,17 +89,29 @@ export type CategoriesPageResult = {
   pageSize: number
 }
 
+const inflightPages = new Map<string, Promise<CategoriesPageResult>>()
+
 /** Admin GET hiện trả [] — dùng public API phân trang (FE-only). */
 export async function fetchCategoriesPage(
   pageIndex = 1,
   pageSize = 10,
 ): Promise<CategoriesPageResult> {
-  const paged = await fetchPublicCategories(pageIndex, pageSize)
-  return {
+  const key = `${pageIndex}:${pageSize}`
+  const cached = inflightPages.get(key)
+  if (cached) return cached
+
+  const request = fetchPublicCategories(pageIndex, pageSize).then((paged) => ({
     items: paged.items.map(mapDto),
     totalCount: paged.totalCount,
     pageIndex: paged.pageIndex,
     pageSize: paged.pageSize,
+  }))
+
+  inflightPages.set(key, request)
+  try {
+    return await request
+  } finally {
+    inflightPages.delete(key)
   }
 }
 

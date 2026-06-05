@@ -88,25 +88,31 @@ export function useCategoriesCrud({ buildColumns, formConfig, pageSize = 10 }: U
   const notifyErrorRef = useRef(notifyError)
   notifyErrorRef.current = notifyError
 
-  const loadData = useCallback(async (pageIndex: number, size: number) => {
+  const loadSeqRef = useRef(0)
+
+  const loadData = useCallback(async (pageIndex: number, size: number, seq: number) => {
     setIsLoading(true)
     try {
       const result = await categoriesApi.fetchCategoriesPage(pageIndex + 1, size)
+      if (seq !== loadSeqRef.current) return
       setData(result.items)
       setTotalCount(result.totalCount)
     } catch (e) {
+      if (seq !== loadSeqRef.current) return
       notifyErrorRef.current(getErrorMessage(e, 'Không tải được danh sách danh mục'))
     } finally {
-      setIsLoading(false)
+      if (seq === loadSeqRef.current) setIsLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    void loadData(pagination.pageIndex, pagination.pageSize)
+    const seq = ++loadSeqRef.current
+    void loadData(pagination.pageIndex, pagination.pageSize, seq)
   }, [pagination.pageIndex, pagination.pageSize, loadData])
 
   const reload = useCallback(() => {
-    void loadData(pagination.pageIndex, pagination.pageSize)
+    const seq = ++loadSeqRef.current
+    void loadData(pagination.pageIndex, pagination.pageSize, seq)
   }, [loadData, pagination.pageIndex, pagination.pageSize])
 
   const toggleActive = useCallback(
