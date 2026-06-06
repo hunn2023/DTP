@@ -1,7 +1,9 @@
 import { Navigate, type RouteObject } from 'react-router'
 
+import CarriersPage from '@/features/master-data/carriers/CarriersPage'
 import CategoriesPage from '@/features/master-data/categories/CategoriesPage'
 import CountriesPage from '@/features/master-data/countries/CountriesPage'
+import EsimPackagesPage from '@/features/products/esim-packages/EsimPackagesPage'
 import ReportPage from '@/modules/crud/components/ReportPage'
 import { createCrudPage } from '@/modules/crud/createCrudPage'
 import { customerEntities } from '@/modules/crud/entities/customers.entities'
@@ -79,9 +81,21 @@ const countriesRoute: RouteObject = {
   element: <CountriesPage />,
 }
 
+const esimPackagesRoute: RouteObject = {
+  path: '/products/esim/packages',
+  element: <EsimPackagesPage />,
+}
+
+const carriersRoute: RouteObject = {
+  path: '/settings/carriers',
+  element: <CarriersPage />,
+}
+
 export const dtpAdminRoutes: RouteObject[] = [
   ...redirectRoutes,
   categoriesRoute,
   countriesRoute,
+  carriersRoute,
+  esimPackagesRoute,
   ...allAdminEntities.map(entityRoute),
 ]

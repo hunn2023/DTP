@@ -1,40 +1,40 @@
-import { countriesData } from '@/features/master-data/countries/data'
-import type { Carrier, Country } from '@/features/master-data/types'
-import type { EntityFormConfig } from '@/modules/crud/form/types'
+import type { Carrier } from '@/features/master-data/types'
+import type { EntityFormConfig, FormFieldOption } from '@/modules/crud/form/types'
 
-const countryOptions = countriesData.map((c: Country) => ({
-  value: String(c.id),
-  label: `${c.isoCode} ${c.name}`,
-}))
-
-export const carrierFormConfig: EntityFormConfig<Carrier> = {
-  entityName: 'nhà mạng',
-  slugFromName: true,
-  getDefaultValues: () => ({
-    id: 0,
+export function getDefaultCarrierValues(): Carrier {
+  return {
+    id: '',
     name: '',
     slug: '',
-    countryId: Number(countriesData[0]?.id) || 0,
-    countryName: countriesData[0]?.name ?? '',
+    code: '',
+    countryId: '',
+    countryName: '',
     logoUrl: '',
-    support5G: false,
-    coverageNote: '',
     sortOrder: 1,
     isActive: true,
-  }),
-  onBeforeSave: (values) => ({
-    ...values,
-    countryId: Number(values.countryId),
-    countryName: countriesData.find((c: Country) => String(c.id) === String(values.countryId))?.name ?? values.countryName,
-  }),
-  fields: [
-    { name: 'name', label: 'Tên nhà mạng', type: 'text', required: true },
-    { name: 'slug', label: 'Slug', type: 'text', required: true },
-    { name: 'countryId', label: 'Quốc gia', type: 'select', required: true, parseAsNumber: true, options: countryOptions },
-    { name: 'logoUrl', label: 'URL logo', type: 'url' },
-    { name: 'support5G', label: 'Hỗ trợ 5G', type: 'checkbox', col: 6 },
-    { name: 'sortOrder', label: 'Thứ tự', type: 'number', required: true, col: 6 },
-    { name: 'coverageNote', label: 'Ghi chú phủ sóng', type: 'textarea' },
-    { name: 'isActive', label: 'Hiển thị', type: 'checkbox', col: 12 },
-  ],
+  }
+}
+
+export function buildCarrierFormConfig(countryOptions: FormFieldOption[]): EntityFormConfig<Carrier> {
+  return {
+    entityName: 'nhà mạng',
+    slugFromName: true,
+    getDefaultValues: getDefaultCarrierValues,
+    fields: [
+      { name: 'name', label: 'Tên nhà mạng', type: 'text', required: true },
+      { name: 'slug', label: 'Slug', type: 'text', required: true },
+      { name: 'code', label: 'Mã (Code)', type: 'text', placeholder: 'SOFTBANK', col: 6 },
+      {
+        name: 'countryId',
+        label: 'Quốc gia',
+        type: 'select',
+        required: true,
+        col: 6,
+        options: countryOptions,
+      },
+      { name: 'logoUrl', label: 'URL logo', type: 'url' },
+      { name: 'sortOrder', label: 'Thứ tự', type: 'number', required: true, col: 6 },
+      { name: 'isActive', label: 'Hiển thị', type: 'checkbox', col: 6 },
+    ],
+  }
 }

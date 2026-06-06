@@ -2,37 +2,17 @@ import { defineAdminEntity } from '@/modules/crud/schema/defineEntity'
 import { labels } from '@/modules/crud/entities/shared'
 import { isActiveField, sortOrderField, statusField } from '@/modules/crud/entities/fieldHelpers'
 import { carriersData } from '@/features/master-data/carriers/data'
-import { countriesData } from '@/features/master-data/countries/data'
-import type { Country } from '@/features/master-data/types'
 import { denominationsData } from '@/features/master-data/denominations/data'
-import { activeTagOptions } from '@/features/master-data/tags/tagOptions'
 import type { EntityFieldDef } from '@/modules/crud/types'
 import type { SettingsEntityBase } from '@/modules/crud/types'
 
 const sub = 'Sản phẩm bán'
 
-const countryOptions = countriesData.map((c: Country) => ({ value: String(c.id), label: `${c.isoCode} ${c.name}` }))
-const carrierOptions = carriersData.map((c) => ({ value: String(c.id), label: `${c.name} (${c.countryName})` }))
+const carrierOptions = carriersData.map((c) => ({ value: String(c.id), label: c.name }))
 const denominationOptions = denominationsData.map((d) => ({
   value: String(d.id),
   label: d.displayName,
 }))
-
-export type EsimPackage = SettingsEntityBase & {
-  name: string
-  code: string
-  countryId: number
-  carrierId: number
-  dataAmount: string
-  dataUnit: string
-  validityDays: number
-  isUnlimited: boolean
-  support5G: boolean
-  supportHotspot: boolean
-  hasPhoneNumber: boolean
-  tagIds: number[]
-  status: string
-}
 
 export type ProductPrice = SettingsEntityBase & {
   productType: string
@@ -104,79 +84,6 @@ const priceFields: EntityFieldDef<ProductPrice>[] = [
   { name: 'endDate', label: 'Đến ngày', type: 'text', table: true, form: { col: 6 } },
   isActiveField<ProductPrice>(),
 ]
-
-export const esimPackagesEntity = defineAdminEntity<EsimPackage>({
-  path: '/products/esim/packages',
-  title: 'Gói eSIM',
-  breadcrumbSubtitle: sub,
-  description: 'Quản lý gói eSIM du lịch. Liên kết Country, Carrier, giá bán và mapping provider.',
-  entityName: 'gói eSIM',
-  labels: labels('gói eSIM', 'Tìm tên, mã, quốc gia...', 'Thêm gói eSIM'),
-  seedData: [
-    {
-      id: 1,
-      name: 'eSIM Nhật Bản 5GB 7 ngày',
-      code: 'JP_5GB_7D',
-      countryId: 1,
-      carrierId: 1,
-      dataAmount: '5',
-      dataUnit: 'GB',
-      validityDays: 7,
-      isUnlimited: false,
-      support5G: true,
-      supportHotspot: true,
-      hasPhoneNumber: false,
-      tagIds: [1, 3],
-      status: 'active',
-      isActive: true,
-    },
-  ],
-  fields: [
-    { name: 'name', label: 'Tên', type: 'text', table: { variant: 'primary' }, form: { required: true } },
-    { name: 'code', label: 'Mã', type: 'text', table: { variant: 'code' }, form: { required: true } },
-    {
-      name: 'countryId',
-      label: 'Quốc gia',
-      type: 'select',
-      table: true,
-      form: { required: true, parseAsNumber: true, options: countryOptions },
-    },
-    {
-      name: 'carrierId',
-      label: 'Nhà mạng',
-      type: 'select',
-      table: true,
-      form: { required: true, parseAsNumber: true, options: carrierOptions },
-    },
-    { name: 'dataAmount', label: 'Dung lượng', type: 'text', table: true, form: { required: true, col: 6 } },
-    {
-      name: 'dataUnit',
-      label: 'Đơn vị',
-      type: 'select',
-      table: true,
-      form: {
-        col: 6,
-        options: [
-          { value: 'GB', label: 'GB' },
-          { value: 'MB', label: 'MB' },
-        ],
-      },
-    },
-    { name: 'validityDays', label: 'Số ngày', type: 'number', table: true, form: { required: true, col: 6 } },
-    { name: 'isUnlimited', label: 'Không giới hạn', type: 'checkbox', table: true, form: { col: 6 } },
-    { name: 'support5G', label: 'Hỗ trợ 5G', type: 'checkbox', table: true, form: { col: 6 } },
-    { name: 'supportHotspot', label: 'Phát hotspot', type: 'checkbox', table: true, form: { col: 6 } },
-    { name: 'hasPhoneNumber', label: 'Có số điện thoại', type: 'checkbox', table: true, form: { col: 6 } },
-    {
-      name: 'tagIds',
-      type: 'multiselect',
-      table: true,
-      form: { col: 12, options: activeTagOptions },
-    },
-    statusField<EsimPackage>(),
-    isActiveField<EsimPackage>(),
-  ],
-})
 
 export const esimPricesEntity = defineAdminEntity<ProductPrice>({
   path: '/products/esim/prices',
@@ -377,7 +284,6 @@ export const cardPricesEntity = defineAdminEntity<CardProductPrice>({
 })
 
 export const productEntities = [
-  esimPackagesEntity,
   esimPricesEntity,
   esimFaqEntity,
   telecomCardsEntity,

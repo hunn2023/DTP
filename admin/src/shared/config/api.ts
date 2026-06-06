@@ -12,4 +12,8 @@ export const API_PATHS = {
   publicCategories: '/api/catalog/categories',
   adminCountries: '/api/admin/catalog/countries',
   publicCountries: '/api/catalog/countries',
+  adminEsimPackages: '/api/admin/catalog/esim-packages',
+  adminCarriers: '/api/admin/catalog/carriers',
+  adminProducts: '/api/admin/catalog/products',
+  adminProductVariantsByProduct: '/api/admin/catalog/product-variants/by-product',
 } as const

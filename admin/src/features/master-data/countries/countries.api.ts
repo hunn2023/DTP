@@ -93,6 +93,9 @@ export type CountriesPageResult = {
 
 const inflightPages = new Map<string, Promise<CountriesPageResult>>()
 
+let cachedCountries: Country[] | null = null
+let inflightCountries: Promise<Country[]> | null = null
+
 export async function fetchCountriesPage(
   pageIndex = 1,
   pageSize = 10,
@@ -141,6 +144,22 @@ export async function deleteCountry(id: string): Promise<void> {
 }
 
 export async function fetchCountries(): Promise<Country[]> {
-  const result = await fetchCountriesPage(1, 500)
-  return result.items
+  if (cachedCountries) return cachedCountries
+  if (inflightCountries) return inflightCountries
+
+  inflightCountries = fetchCountriesPage(1, 500)
+    .then((result) => {
+      cachedCountries = result.items
+      return result.items
+    })
+    .finally(() => {
+      inflightCountries = null
+    })
+
+  return inflightCountries
+}
+
+/** Xóa cache sau create/update/delete country — gọi từ hook nếu cần dropdown mới. */
+export function invalidateCountriesCache(): void {
+  cachedCountries = null
 }

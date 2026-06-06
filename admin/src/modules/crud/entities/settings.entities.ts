@@ -2,9 +2,6 @@ import { defineAdminEntity } from '@/modules/crud/schema/defineEntity'
 import { buildBrandColumns } from '@/features/master-data/brands/columns'
 import { brandsData, brandsLabels } from '@/features/master-data/brands/data'
 import { brandFormConfig } from '@/features/master-data/brands/formConfig'
-import { buildCarrierColumns } from '@/features/master-data/carriers/columns'
-import { carriersData, carriersLabels } from '@/features/master-data/carriers/data'
-import { carrierFormConfig } from '@/features/master-data/carriers/formConfig'
 import { buildDenominationColumns } from '@/features/master-data/denominations/columns'
 import { denominationsData, denominationsLabels } from '@/features/master-data/denominations/data'
 import { denominationFormConfig } from '@/features/master-data/denominations/formConfig'
@@ -16,7 +13,6 @@ import { tagsData, tagsLabels } from '@/features/master-data/tags/data'
 import { tagFormConfig } from '@/features/master-data/tags/formConfig'
 import type {
   Brand,
-  Carrier,
   Denomination,
   SupportedDevice,
   Tag,
@@ -50,19 +46,6 @@ export const settingsTagsEntity = defineAdminEntity<Tag>({
   formConfig: tagFormConfig,
 })
 
-export const settingsCarriersEntity = defineAdminEntity<Carrier>({
-  path: '/settings/carriers',
-  title: 'Nhà mạng',
-  breadcrumbSubtitle: sub,
-  description: 'Hiển thị, lọc và SEO — không phải provider API. Liên kết CountryId.',
-  entityName: 'nhà mạng',
-  labels: carriersLabels,
-  seedData: carriersData,
-  fields: [],
-  buildColumns: buildCarrierColumns,
-  formConfig: carrierFormConfig,
-})
-
 export const settingsDenominationsEntity = defineAdminEntity<Denomination>({
   path: '/settings/denominations',
   title: 'Mệnh giá',
@@ -92,7 +75,6 @@ export const settingsSupportedDevicesEntity = defineAdminEntity<SupportedDevice>
 export const settingsEntities = [
   settingsBrandsEntity,
   settingsTagsEntity,
-  settingsCarriersEntity,
   settingsDenominationsEntity,
   settingsSupportedDevicesEntity,
 ]

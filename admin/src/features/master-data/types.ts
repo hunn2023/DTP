@@ -41,14 +41,15 @@ export type Country = {
   sortOrder: number
 }
 
-export type Carrier = CrudEntityBase & {
+export type Carrier = {
+  id: string
+  isActive: boolean
   name: string
   slug: string
-  countryId: number
+  code: string
+  countryId: string
   countryName: string
   logoUrl: string
-  support5G: boolean
-  coverageNote: string
   sortOrder: number
 }
 

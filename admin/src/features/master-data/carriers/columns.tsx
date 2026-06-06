@@ -6,13 +6,15 @@ import {
   createIsActiveColumn,
   createSelectColumn,
   createSortOrderColumn,
+  type ActionHandlers,
 } from '@/modules/crud/components/tableColumns'
-import type { EntityTableHandlers } from '@/modules/crud/hooks/useEntityCrud'
 import type { Carrier } from '@/features/master-data/types'
+
+export type CarrierTableHandlers = ActionHandlers<Carrier>
 
 const helper = createColumnHelper<Carrier>()
 
-export function buildCarrierColumns(handlers: EntityTableHandlers<Carrier>) {
+export function buildCarrierColumns(handlers: CarrierTableHandlers) {
   return [
     createSelectColumn<Carrier>(),
     createIdColumn<Carrier>(),
@@ -20,7 +22,15 @@ export function buildCarrierColumns(handlers: EntityTableHandlers<Carrier>) {
       header: 'Nhà mạng',
       cell: ({ row }) => (
         <div className="d-flex align-items-center gap-2">
-          <img src={row.original.logoUrl} alt="" width={28} height={28} className="rounded bg-light p-1" />
+          {row.original.logoUrl ? (
+            <img
+              src={row.original.logoUrl}
+              alt=""
+              width={28}
+              height={28}
+              className="rounded bg-light p-1"
+            />
+          ) : null}
           <div>
             <div className="fw-semibold">{row.original.name}</div>
             <div className="text-muted fs-xxs">/{row.original.slug}</div>
@@ -28,18 +38,10 @@ export function buildCarrierColumns(handlers: EntityTableHandlers<Carrier>) {
         </div>
       ),
     }),
-    helper.accessor('countryName', { header: 'Quốc gia' }),
-    helper.accessor('support5G', {
-      header: '5G',
-      cell: ({ getValue }) => (
-        <span className={`badge ${getValue() ? 'badge-soft-success' : 'badge-soft-secondary'} fs-xxs`}>
-          {getValue() ? 'Có' : 'Không'}
-        </span>
-      ),
-    }),
-    helper.accessor('coverageNote', {
-      header: 'Ghi chú phủ sóng',
-      cell: ({ getValue }) => <span className="text-muted fs-xs">{getValue()}</span>,
+    helper.accessor('code', { header: 'Mã', cell: ({ getValue }) => <code>{getValue() || '—'}</code> }),
+    helper.accessor('countryName', {
+      header: 'Quốc gia',
+      cell: ({ getValue }) => getValue() || <span className="text-muted">—</span>,
     }),
     createSortOrderColumn<Carrier>(),
     createIsActiveColumn<Carrier>(),
