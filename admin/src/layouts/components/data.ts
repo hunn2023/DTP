@@ -130,11 +130,12 @@ export const menuItems: MenuItemType[] = [
     icon: TbSettings,
     children: [
       { key: 'categories', label: 'Danh mục', url: '/settings/categories' },
+      { key: 'products', label: 'Sản phẩm (catalog)', url: '/settings/products' },
+      { key: 'product-prices', label: 'Giá sản phẩm', url: '/settings/product-prices' },
       { key: 'brands', label: 'Brand / Nhà phát hành', url: '/settings/brands' },
       { key: 'tags', label: 'Tag', url: '/settings/tags' },
       { key: 'countries', label: 'Quốc gia', url: '/settings/countries' },
       { key: 'carriers', label: 'Nhà mạng', url: '/settings/carriers' },
-      { key: 'denominations', label: 'Mệnh giá', url: '/settings/denominations' },
       { key: 'supported-devices', label: 'Thiết bị hỗ trợ', url: '/settings/supported-devices' },
     ],
   },
@@ -151,7 +152,6 @@ export const menuItems: MenuItemType[] = [
     icon: TbDeviceSim,
     children: [
       { key: 'esim-packages', label: 'Gói eSIM', url: '/products/esim/packages' },
-      { key: 'esim-prices', label: 'Giá bán eSIM', url: '/products/esim/prices' },
       { key: 'esim-faq', label: 'FAQ eSIM', url: '/products/esim/faq' },
     ],
   },
@@ -165,7 +165,6 @@ export const menuItems: MenuItemType[] = [
       { key: 'telecom-cards', label: 'Thẻ viễn thông', url: '/products/cards-data/telecom-cards' },
       { key: 'game-cards', label: 'Thẻ game', url: '/products/cards-data/game-cards' },
       { key: 'data-packages', label: 'Data 4G/5G', url: '/products/cards-data/data-packages' },
-      { key: 'card-prices', label: 'Giá bán / Chiết khấu', url: '/products/cards-data/prices' },
     ],
   },
 

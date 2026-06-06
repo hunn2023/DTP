@@ -2,9 +2,6 @@ import { defineAdminEntity } from '@/modules/crud/schema/defineEntity'
 import { buildBrandColumns } from '@/features/master-data/brands/columns'
 import { brandsData, brandsLabels } from '@/features/master-data/brands/data'
 import { brandFormConfig } from '@/features/master-data/brands/formConfig'
-import { buildDenominationColumns } from '@/features/master-data/denominations/columns'
-import { denominationsData, denominationsLabels } from '@/features/master-data/denominations/data'
-import { denominationFormConfig } from '@/features/master-data/denominations/formConfig'
 import { buildSupportedDeviceColumns } from '@/features/master-data/supported-devices/columns'
 import { supportedDevicesData, supportedDevicesLabels } from '@/features/master-data/supported-devices/data'
 import { supportedDeviceFormConfig } from '@/features/master-data/supported-devices/formConfig'
@@ -13,7 +10,6 @@ import { tagsData, tagsLabels } from '@/features/master-data/tags/data'
 import { tagFormConfig } from '@/features/master-data/tags/formConfig'
 import type {
   Brand,
-  Denomination,
   SupportedDevice,
   Tag,
 } from '@/features/master-data/types'
@@ -46,19 +42,6 @@ export const settingsTagsEntity = defineAdminEntity<Tag>({
   formConfig: tagFormConfig,
 })
 
-export const settingsDenominationsEntity = defineAdminEntity<Denomination>({
-  path: '/settings/denominations',
-  title: 'Mệnh giá',
-  breadcrumbSubtitle: sub,
-  description: 'Dùng cho thẻ game và thẻ viễn thông (TelecomCards / GameCards).',
-  entityName: 'mệnh giá',
-  labels: denominationsLabels,
-  seedData: denominationsData,
-  fields: [],
-  buildColumns: buildDenominationColumns,
-  formConfig: denominationFormConfig,
-})
-
 export const settingsSupportedDevicesEntity = defineAdminEntity<SupportedDevice>({
   path: '/settings/supported-devices',
   title: 'Thiết bị hỗ trợ',
@@ -75,6 +58,5 @@ export const settingsSupportedDevicesEntity = defineAdminEntity<SupportedDevice>
 export const settingsEntities = [
   settingsBrandsEntity,
   settingsTagsEntity,
-  settingsDenominationsEntity,
   settingsSupportedDevicesEntity,
 ]

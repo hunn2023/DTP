@@ -2,6 +2,8 @@ import type { Category } from '@/features/master-data/types'
 import { API_PATHS } from '@/shared/config/api'
 import { httpDelete, httpGet, httpPost, httpPut } from '@/shared/lib/http'
 
+import type { FormFieldOption } from '@/modules/crud/form/types'
+
 type CategoryDtoRaw = Record<string, unknown>
 
 export type CategoryDto = {
@@ -123,6 +125,14 @@ export async function fetchPublicCategories(
     params: { pageIndex, pageSize },
   })
   return normalizePaged(raw)
+}
+
+export async function fetchCategoryOptions(): Promise<FormFieldOption[]> {
+  const paged = await fetchCategoriesPage(1, 500)
+  return paged.items.map((item) => ({
+    value: item.id,
+    label: item.name,
+  }))
 }
 
 export async function createCategory(payload: CategoryPayload): Promise<Category> {

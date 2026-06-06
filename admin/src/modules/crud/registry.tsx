@@ -5,6 +5,9 @@ import CategoriesPage from '@/features/master-data/categories/CategoriesPage'
 import CountriesPage from '@/features/master-data/countries/CountriesPage'
 import EsimPackagesPage from '@/features/products/esim-packages/EsimPackagesPage'
 import PhoneCardsPage from '@/features/products/phone-cards/PhoneCardsPage'
+import ProductDetailPage from '@/features/master-data/products/ProductDetailPage'
+import ProductsPage from '@/features/master-data/products/ProductsPage'
+import ProductPricesPage from '@/features/master-data/product-prices/ProductPricesPage'
 import ProvidersPage from '@/features/providers/ProvidersPage'
 import ReportPage from '@/modules/crud/components/ReportPage'
 import { createCrudPage } from '@/modules/crud/createCrudPage'
@@ -103,13 +106,33 @@ const providersListRoute: RouteObject = {
   element: <ProvidersPage />,
 }
 
+const productsRoute: RouteObject = {
+  path: '/settings/products',
+  element: <ProductsPage />,
+}
+
+const productDetailRoute: RouteObject = {
+  path: '/settings/products/:productId',
+  element: <ProductDetailPage />,
+}
+
+const productPricesRoute: RouteObject = {
+  path: '/settings/product-prices',
+  element: <ProductPricesPage />,
+}
+
 export const dtpAdminRoutes: RouteObject[] = [
   ...redirectRoutes,
   categoriesRoute,
   countriesRoute,
   carriersRoute,
+  productsRoute,
+  productDetailRoute,
+  productPricesRoute,
   esimPackagesRoute,
   phoneCardsRoute,
   providersListRoute,
+  { path: '/products/esim/prices', element: <Navigate to="/settings/product-prices" replace /> },
+  { path: '/products/cards-data/prices', element: <Navigate to="/settings/product-prices" replace /> },
   ...allAdminEntities.map(entityRoute),
 ]

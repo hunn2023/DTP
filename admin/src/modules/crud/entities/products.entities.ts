@@ -14,26 +14,6 @@ const denominationOptions = denominationsData.map((d) => ({
   label: d.displayName,
 }))
 
-export type ProductPrice = SettingsEntityBase & {
-  productType: string
-  productId: number
-  currencyCode: string
-  originalPrice: number
-  salePrice: number
-  startDate: string
-  endDate: string
-}
-
-export type CardProductPrice = SettingsEntityBase & {
-  productType: string
-  productId: number
-  originalPrice: number
-  salePrice: number
-  discountRate: number
-  startDate: string
-  endDate: string
-}
-
 export type FaqItem = SettingsEntityBase & {
   question: string
   answer: string
@@ -62,40 +42,6 @@ export type DataPackage = SettingsEntityBase & {
   activationMethod: string
   status: string
 }
-
-const priceFields: EntityFieldDef<ProductPrice>[] = [
-  { name: 'productType', label: 'Loại SP', type: 'text', table: true, form: { required: true, col: 6 } },
-  { name: 'productId', label: 'ID sản phẩm', type: 'number', table: true, form: { required: true, parseAsNumber: true, col: 6 } },
-  { name: 'currencyCode', label: 'Tiền tệ', type: 'text', table: true, form: { required: true, col: 6 } },
-  { name: 'originalPrice', label: 'Giá gốc', type: 'number', table: true, form: { required: true, col: 6 } },
-  { name: 'salePrice', label: 'Giá bán', type: 'number', table: true, form: { required: true, col: 6 } },
-  { name: 'startDate', label: 'Từ ngày', type: 'text', table: true, form: { col: 6 } },
-  { name: 'endDate', label: 'Đến ngày', type: 'text', table: true, form: { col: 6 } },
-  isActiveField<ProductPrice>(),
-]
-
-export const esimPricesEntity = defineAdminEntity<ProductPrice>({
-  path: '/products/esim/prices',
-  title: 'Giá bán eSIM',
-  breadcrumbSubtitle: sub,
-  description: 'Bảng giá theo sản phẩm (ProductPrices).',
-  entityName: 'bản ghi giá',
-  labels: labels('bản ghi giá', 'Tìm ProductId...', 'Thêm giá'),
-  seedData: [
-    {
-      id: 1,
-      productType: 'EsimPackage',
-      productId: 1,
-      currencyCode: 'VND',
-      originalPrice: 120000,
-      salePrice: 99000,
-      startDate: '2026-01-01',
-      endDate: '2026-12-31',
-      isActive: true,
-    },
-  ],
-  fields: priceFields as EntityFieldDef<ProductPrice>[],
-})
 
 export const esimFaqEntity = defineAdminEntity<FaqItem>({
   path: '/products/esim/faq',
@@ -209,42 +155,4 @@ export const dataPackagesEntity = defineAdminEntity<DataPackage>({
   ],
 })
 
-export const cardPricesEntity = defineAdminEntity<CardProductPrice>({
-  path: '/products/cards-data/prices',
-  title: 'Giá bán / Chiết khấu',
-  breadcrumbSubtitle: sub,
-  description: 'ProductPrices cho thẻ & data.',
-  entityName: 'bản ghi giá',
-  labels: labels('bản ghi giá', 'Tìm ProductId...', 'Thêm giá'),
-  seedData: [
-    {
-      id: 1,
-      productType: 'TelecomCard',
-      productId: 1,
-      originalPrice: 100000,
-      salePrice: 92000,
-      discountRate: 8,
-      startDate: '2026-01-01',
-      endDate: '',
-      isActive: true,
-    },
-  ],
-  fields: [
-    { name: 'productType', label: 'Loại sản phẩm', type: 'text', table: true, form: { required: true, col: 6 } },
-    { name: 'productId', label: 'ID sản phẩm', type: 'number', table: true, form: { required: true, col: 6 } },
-    { name: 'originalPrice', label: 'Giá gốc', type: 'number', table: true, form: { col: 6 } },
-    { name: 'salePrice', label: 'Giá bán', type: 'number', table: true, form: { col: 6 } },
-    { name: 'discountRate', label: 'Chiết khấu (%)', type: 'number', table: true, form: { col: 6 } },
-    { name: 'startDate', label: 'Từ ngày', type: 'text', table: true, form: { col: 6 } },
-    { name: 'endDate', label: 'Đến ngày', type: 'text', table: true, form: { col: 6 } },
-    isActiveField<CardProductPrice>(),
-  ],
-})
-
-export const productEntities = [
-  esimPricesEntity,
-  esimFaqEntity,
-  gameCardsEntity,
-  dataPackagesEntity,
-  cardPricesEntity,
-]
+export const productEntities = [esimFaqEntity, gameCardsEntity, dataPackagesEntity]
