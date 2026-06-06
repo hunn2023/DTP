@@ -31,16 +31,13 @@ export type Tag = CrudEntityBase & {
   sortOrder: number
 }
 
-export type Country = CrudEntityBase & {
+export type Country = {
+  id: string
+  isActive: boolean
   name: string
-  englishName: string
   slug: string
   isoCode: string
-  flagEmoji: string
-  regionCode: string
-  bannerUrl: string
-  seoTitle: string
-  seoDescription: string
+  flagUrl: string
   sortOrder: number
 }
 

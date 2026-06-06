@@ -10,4 +10,6 @@ export const API_REQUEST_BASE = import.meta.env.DEV ? '' : API_BASE_URL
 export const API_PATHS = {
   adminCategories: '/api/admin/catalog/categories',
   publicCategories: '/api/catalog/categories',
+  adminCountries: '/api/admin/catalog/countries',
+  publicCountries: '/api/catalog/countries',
 } as const

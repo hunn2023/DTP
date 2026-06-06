@@ -3,6 +3,7 @@ import { labels } from '@/modules/crud/entities/shared'
 import { isActiveField, sortOrderField, statusField } from '@/modules/crud/entities/fieldHelpers'
 import { carriersData } from '@/features/master-data/carriers/data'
 import { countriesData } from '@/features/master-data/countries/data'
+import type { Country } from '@/features/master-data/types'
 import { denominationsData } from '@/features/master-data/denominations/data'
 import { activeTagOptions } from '@/features/master-data/tags/tagOptions'
 import type { EntityFieldDef } from '@/modules/crud/types'
@@ -10,7 +11,7 @@ import type { SettingsEntityBase } from '@/modules/crud/types'
 
 const sub = 'Sản phẩm bán'
 
-const countryOptions = countriesData.map((c) => ({ value: String(c.id), label: `${c.flagEmoji} ${c.name}` }))
+const countryOptions = countriesData.map((c: Country) => ({ value: String(c.id), label: `${c.isoCode} ${c.name}` }))
 const carrierOptions = carriersData.map((c) => ({ value: String(c.id), label: `${c.name} (${c.countryName})` }))
 const denominationOptions = denominationsData.map((d) => ({
   value: String(d.id),

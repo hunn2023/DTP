@@ -2,12 +2,13 @@ import { defineAdminEntity } from '@/modules/crud/schema/defineEntity'
 import { labels } from '@/modules/crud/entities/shared'
 import { isActiveField, sortOrderField } from '@/modules/crud/entities/fieldHelpers'
 import { countriesData } from '@/features/master-data/countries/data'
+import type { Country } from '@/features/master-data/types'
 import type { EntityFieldDef } from '@/modules/crud/types'
 import type { SettingsEntityBase } from '@/modules/crud/types'
 
 const contentSub = 'Website & SEO'
 
-const countryOptions = countriesData.map((c) => ({ value: String(c.id), label: c.name }))
+const countryOptions = countriesData.map((c: Country) => ({ value: String(c.id), label: c.name }))
 
 export type Post = SettingsEntityBase & {
   title: string

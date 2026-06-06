@@ -6,13 +6,15 @@ import {
   createIsActiveColumn,
   createSelectColumn,
   createSortOrderColumn,
+  type ActionHandlers,
 } from '@/modules/crud/components/tableColumns'
-import type { EntityTableHandlers } from '@/modules/crud/hooks/useEntityCrud'
 import type { Country } from '@/features/master-data/types'
+
+export type CountryTableHandlers = ActionHandlers<Country>
 
 const helper = createColumnHelper<Country>()
 
-export function buildCountryColumns(handlers: EntityTableHandlers<Country>) {
+export function buildCountryColumns(handlers: CountryTableHandlers) {
   return [
     createSelectColumn<Country>(),
     createIdColumn<Country>(),
@@ -20,27 +22,24 @@ export function buildCountryColumns(handlers: EntityTableHandlers<Country>) {
       header: 'Quốc gia',
       cell: ({ row }) => (
         <div className="d-flex align-items-center gap-2">
-          <span className="fs-4">{row.original.flagEmoji}</span>
+          {row.original.flagUrl ? (
+            <img
+              src={row.original.flagUrl}
+              alt=""
+              width={28}
+              height={20}
+              className="rounded border"
+              style={{ objectFit: 'cover' }}
+            />
+          ) : null}
           <div>
             <div className="fw-semibold">{row.original.name}</div>
-            <div className="text-muted fs-xxs">{row.original.englishName}</div>
+            <div className="text-muted fs-xxs">{row.original.slug}</div>
           </div>
         </div>
       ),
     }),
-    helper.accessor('isoCode', { header: 'Mã ISO', cell: ({ getValue }) => <code>{getValue()}</code> }),
-    helper.accessor('regionCode', {
-      header: 'Khu vực',
-      cell: ({ getValue }) => <span className="badge badge-soft-primary fs-xxs">{getValue()}</span>,
-    }),
-    helper.accessor('seoTitle', {
-      header: 'SEO',
-      cell: ({ row }) => (
-        <div className="fs-xs text-muted" style={{ maxWidth: 220 }}>
-          <div className="text-truncate">{row.original.seoTitle}</div>
-        </div>
-      ),
-    }),
+    helper.accessor('isoCode', { header: 'Mã', cell: ({ getValue }) => <code>{getValue()}</code> }),
     createSortOrderColumn<Country>(),
     createIsActiveColumn<Country>(),
     createActionsColumn(handlers),

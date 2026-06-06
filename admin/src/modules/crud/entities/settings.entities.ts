@@ -5,9 +5,6 @@ import { brandFormConfig } from '@/features/master-data/brands/formConfig'
 import { buildCarrierColumns } from '@/features/master-data/carriers/columns'
 import { carriersData, carriersLabels } from '@/features/master-data/carriers/data'
 import { carrierFormConfig } from '@/features/master-data/carriers/formConfig'
-import { buildCountryColumns } from '@/features/master-data/countries/columns'
-import { countriesData, countriesLabels } from '@/features/master-data/countries/data'
-import { countryFormConfig } from '@/features/master-data/countries/formConfig'
 import { buildDenominationColumns } from '@/features/master-data/denominations/columns'
 import { denominationsData, denominationsLabels } from '@/features/master-data/denominations/data'
 import { denominationFormConfig } from '@/features/master-data/denominations/formConfig'
@@ -20,7 +17,6 @@ import { tagFormConfig } from '@/features/master-data/tags/formConfig'
 import type {
   Brand,
   Carrier,
-  Country,
   Denomination,
   SupportedDevice,
   Tag,
@@ -52,20 +48,6 @@ export const settingsTagsEntity = defineAdminEntity<Tag>({
   fields: [],
   buildColumns: buildTagColumns,
   formConfig: tagFormConfig,
-})
-
-export const settingsCountriesEntity = defineAdminEntity<Country>({
-  path: '/settings/countries',
-  title: 'Quốc gia',
-  breadcrumbSubtitle: sub,
-  description:
-    'Danh mục quốc gia cho eSIM và nhà mạng. RegionCode dùng enum (ASIA, EU, ...) — không cần bảng Regions riêng ở MVP.',
-  entityName: 'quốc gia',
-  labels: countriesLabels,
-  seedData: countriesData,
-  fields: [],
-  buildColumns: buildCountryColumns,
-  formConfig: countryFormConfig,
 })
 
 export const settingsCarriersEntity = defineAdminEntity<Carrier>({
@@ -110,7 +92,6 @@ export const settingsSupportedDevicesEntity = defineAdminEntity<SupportedDevice>
 export const settingsEntities = [
   settingsBrandsEntity,
   settingsTagsEntity,
-  settingsCountriesEntity,
   settingsCarriersEntity,
   settingsDenominationsEntity,
   settingsSupportedDevicesEntity,

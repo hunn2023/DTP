@@ -1,10 +1,10 @@
 import { countriesData } from '@/features/master-data/countries/data'
-import type { Carrier } from '@/features/master-data/types'
+import type { Carrier, Country } from '@/features/master-data/types'
 import type { EntityFormConfig } from '@/modules/crud/form/types'
 
-const countryOptions = countriesData.map((c) => ({
+const countryOptions = countriesData.map((c: Country) => ({
   value: String(c.id),
-  label: `${c.flagEmoji} ${c.name}`,
+  label: `${c.isoCode} ${c.name}`,
 }))
 
 export const carrierFormConfig: EntityFormConfig<Carrier> = {
@@ -14,7 +14,7 @@ export const carrierFormConfig: EntityFormConfig<Carrier> = {
     id: 0,
     name: '',
     slug: '',
-    countryId: countriesData[0]?.id ?? 1,
+    countryId: Number(countriesData[0]?.id) || 0,
     countryName: countriesData[0]?.name ?? '',
     logoUrl: '',
     support5G: false,
@@ -25,7 +25,7 @@ export const carrierFormConfig: EntityFormConfig<Carrier> = {
   onBeforeSave: (values) => ({
     ...values,
     countryId: Number(values.countryId),
-    countryName: countriesData.find((c) => c.id === Number(values.countryId))?.name ?? values.countryName,
+    countryName: countriesData.find((c: Country) => String(c.id) === String(values.countryId))?.name ?? values.countryName,
   }),
   fields: [
     { name: 'name', label: 'Tên nhà mạng', type: 'text', required: true },
