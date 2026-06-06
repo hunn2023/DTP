@@ -2,13 +2,17 @@ import clsx from 'clsx'
 import { Col, Row } from 'react-bootstrap'
 import { TbChevronLeft, TbChevronRight } from 'react-icons/tb'
 
+import TablePageSizeSelect from '@/components/table/TablePageSizeSelect'
+
 export type TablePaginationProps = {
   totalItems: number
   start: number
   end: number
   itemsName?: string
   showInfo?: boolean
-  // Pagination control props
+  pageSize?: number
+  pageSizeOptions?: readonly number[]
+  onPageSizeChange?: (size: number) => void
   previousPage: () => void
   canPreviousPage: boolean
   pageCount: number
@@ -24,6 +28,9 @@ const TablePagination = ({
   end,
   itemsName = 'mục',
   showInfo,
+  pageSize,
+  pageSizeOptions,
+  onPageSizeChange,
   previousPage,
   canPreviousPage,
   pageCount,
@@ -32,9 +39,30 @@ const TablePagination = ({
   nextPage,
   canNextPage,
 }: TablePaginationProps) => {
+  const showPageSizeSelect =
+    pageSize !== undefined &&
+    pageSizeOptions !== undefined &&
+    pageSizeOptions.length > 0 &&
+    onPageSizeChange !== undefined
+
+  const showLeftColumn = showPageSizeSelect || showInfo
+
   return (
-    <Row className={clsx('align-items-center text-center text-sm-start', showInfo ? 'justify-content-between' : 'justify-content-end')}>
-      {showInfo && (
+    <Row
+      className={clsx(
+        'align-items-center text-center text-sm-start',
+        showLeftColumn ? 'justify-content-between' : 'justify-content-end',
+      )}>
+      {showPageSizeSelect && (
+        <Col sm="auto" className="mt-3 mt-sm-0">
+          <TablePageSizeSelect
+            pageSize={pageSize}
+            pageSizeOptions={pageSizeOptions}
+            onPageSizeChange={onPageSizeChange}
+          />
+        </Col>
+      )}
+      {!showPageSizeSelect && showInfo && (
         <Col sm>
           <div className="text-muted">
             Hiển thị <span className="fw-semibold">{start}</span>–<span className="fw-semibold">{end}</span> trong tổng{' '}

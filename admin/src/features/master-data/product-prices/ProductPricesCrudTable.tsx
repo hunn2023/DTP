@@ -19,6 +19,8 @@ const ProductPricesCrudTable = () => {
       ? `Bạn có chắc muốn xóa ${crud.pendingDeleteCount} ${productPricesLabels.itemName} đã chọn?`
       : `Bạn có chắc muốn xóa ${productPricesLabels.itemName} này?`
 
+  const statusColumn = crud.table.getColumn('isActive')
+
   return (
     <Card>
       <CardHeader className="border-light justify-content-between">
@@ -40,17 +42,22 @@ const ProductPricesCrudTable = () => {
           )}
         </div>
         <div className="card-action d-flex flex-nowrap align-items-center gap-2">
-          <select
-            className="form-select form-select-sm w-auto"
-            value={crud.pageSize}
-            onChange={(e) => crud.setPageSize(Number(e.target.value))}>
-            {PAGE_SIZE_OPTIONS.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
-          <Button variant="primary" size="sm" onClick={crud.openCreate}>
+          {statusColumn && (
+            <select
+              className="form-select form-select-sm"
+              style={{ minWidth: '9.75rem', width: 'auto' }}
+              aria-label="Lọc theo trạng thái"
+              value={String(statusColumn.getFilterValue() ?? 'all')}
+              onChange={(e) => {
+                const value = e.target.value
+                statusColumn.setFilterValue(value === 'all' ? undefined : value === 'true')
+              }}>
+              <option value="all">Tất cả</option>
+              <option value="true">Đang kích hoạt</option>
+              <option value="false">Đang tắt</option>
+            </select>
+          )}
+          <Button variant="primary" size="sm" className="text-nowrap" onClick={crud.openCreate}>
             <LuPlus className="fs-sm me-1" />
             {productPricesLabels.addButton}
           </Button>
@@ -77,7 +84,9 @@ const ProductPricesCrudTable = () => {
             start={crud.paginationInfo.start}
             end={crud.paginationInfo.end}
             itemsName={productPricesLabels.itemName}
-            showInfo
+            pageSize={crud.pageSize}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            onPageSizeChange={crud.setPageSize}
             previousPage={crud.table.previousPage}
             canPreviousPage={crud.table.getCanPreviousPage()}
             pageCount={crud.pageCount}

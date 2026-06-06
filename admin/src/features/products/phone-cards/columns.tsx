@@ -27,10 +27,21 @@ export function buildPhoneCardColumns(handlers: PhoneCardTableHandlers) {
       cell: ({ row }) => (
         <div>
           <div className="fw-semibold">{row.original.name}</div>
-          <div className="text-muted fs-xxs">{row.original.providerName || row.original.slug}</div>
+          <div className="text-muted fs-xxs">
+            <code>{row.original.slug}</code>
+          </div>
         </div>
       ),
     }),
+    helper.accessor('providerName', {
+      header: 'Nhà cung cấp',
+      cell: ({ getValue }) => getValue() || <span className="text-muted">—</span>,
+    }),
+    helper.accessor('productVariantName', {
+      header: 'Biến thể SP',
+      cell: ({ getValue }) => getValue() || <span className="text-muted">—</span>,
+    }),
+    helper.accessor('currency', { header: 'Tiền tệ' }),
     helper.display({
       id: 'faceValue',
       header: 'Mệnh giá',

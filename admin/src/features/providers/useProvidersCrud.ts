@@ -95,7 +95,7 @@ export function useProvidersCrud({ buildColumns, pageSize = 10 }: UseProvidersCr
       setTotalCount(result.totalCount)
     } catch (e) {
       if (seq !== loadSeqRef.current) return
-      notifyErrorRef.current(getErrorMessage(e, 'Không tải được danh sách provider'))
+      notifyErrorRef.current(getErrorMessage(e, 'Không tải được danh sách nhà cung cấp'))
     } finally {
       if (seq === loadSeqRef.current) setIsLoading(false)
     }
@@ -123,7 +123,7 @@ export function useProvidersCrud({ buildColumns, pageSize = 10 }: UseProvidersCr
         setData((prev) =>
           prev.map((item) => (item.id === row.id ? { ...item, isActive: !item.isActive } : item)),
         )
-        notifySuccess(!row.isActive ? 'Đã kích hoạt provider' : 'Đã tắt provider')
+        notifySuccess(!row.isActive ? 'Đã kích hoạt nhà cung cấp' : 'Đã tắt nhà cung cấp')
         if (row.isActive) reload()
       } catch (e) {
         notifyError(getErrorMessage(e, 'Không cập nhật được trạng thái'))
@@ -165,7 +165,7 @@ export function useProvidersCrud({ buildColumns, pageSize = 10 }: UseProvidersCr
       try {
         if (formMode === 'create') {
           await providersApi.createProvider(toCreatePayload(rawValues))
-          notifySuccess('Đã thêm provider thành công')
+          notifySuccess('Đã thêm nhà cung cấp thành công')
           if (pagination.pageIndex === 0) {
             reload()
           } else {
@@ -173,12 +173,12 @@ export function useProvidersCrud({ buildColumns, pageSize = 10 }: UseProvidersCr
           }
         } else {
           await providersApi.updateProvider(rawValues.id, toUpdatePayload(rawValues))
-          notifySuccess('Đã cập nhật provider thành công')
+          notifySuccess('Đã cập nhật nhà cung cấp thành công')
           reload()
         }
         closeFormModal()
       } catch (e) {
-        notifyError(getErrorMessage(e, 'Không lưu được provider'))
+        notifyError(getErrorMessage(e, 'Không lưu được nhà cung cấp'))
       } finally {
         setIsSaving(false)
       }
@@ -244,8 +244,8 @@ export function useProvidersCrud({ buildColumns, pageSize = 10 }: UseProvidersCr
       setShowDeleteModal(false)
       notifySuccess(
         pendingDeleteIds.size > 1
-          ? `Đã xóa ${pendingDeleteIds.size} provider`
-          : 'Đã xóa provider thành công',
+          ? `Đã xóa ${pendingDeleteIds.size} nhà cung cấp`
+          : 'Đã xóa nhà cung cấp thành công',
       )
 
       const remainingOnPage = data.length - pendingDeleteIds.size
@@ -255,7 +255,7 @@ export function useProvidersCrud({ buildColumns, pageSize = 10 }: UseProvidersCr
         reload()
       }
     } catch (e) {
-      notifyError(getErrorMessage(e, 'Không xóa được provider'))
+      notifyError(getErrorMessage(e, 'Không xóa được nhà cung cấp'))
     }
   }, [pendingDeleteIds, data.length, pagination.pageIndex, reload, notifySuccess, notifyError])
 

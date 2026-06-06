@@ -1,5 +1,6 @@
 import {
   type ColumnDef,
+  type ColumnFiltersState,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
@@ -60,6 +61,7 @@ export function useProductPricesCrud({ buildColumns, pageSize = 10 }: Params) {
   const [isLoading, setIsLoading] = useState(true)
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize })
   const [formMode, setFormMode] = useState<FormModalMode | null>(null)
@@ -162,9 +164,10 @@ export function useProductPricesCrud({ buildColumns, pageSize = 10 }: Params) {
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, globalFilter, rowSelection, pagination },
+    state: { sorting, globalFilter, columnFilters, rowSelection, pagination },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
+    onColumnFiltersChange: setColumnFilters,
     onRowSelectionChange: setRowSelection,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),

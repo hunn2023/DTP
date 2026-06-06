@@ -18,7 +18,7 @@ export function buildProviderColumns(handlers: ProviderTableHandlers) {
     createSelectColumn<CatalogProvider>(),
     createIdColumn<CatalogProvider>(),
     helper.accessor('name', {
-      header: 'Provider',
+      header: 'Nhà cung cấp',
       cell: ({ row }) => (
         <div>
           <div className="fw-semibold">{row.original.name}</div>

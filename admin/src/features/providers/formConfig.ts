@@ -16,10 +16,10 @@ export function getDefaultProviderValues(): CatalogProvider {
 }
 
 export const providerFormConfig: EntityFormConfig<CatalogProvider> = {
-  entityName: 'provider',
+  entityName: 'nhà cung cấp',
   getDefaultValues: getDefaultProviderValues,
   fields: [
-    { name: 'name', label: 'Tên provider', type: 'text', required: true },
+    { name: 'name', label: 'Tên nhà cung cấp', type: 'text', required: true },
     { name: 'code', label: 'Mã (Code)', type: 'text', required: true, col: 6 },
     { name: 'supportEmail', label: 'Email hỗ trợ', type: 'text', col: 6 },
     { name: 'apiBaseUrl', label: 'API Base URL', type: 'url', col: 12 },

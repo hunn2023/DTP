@@ -24,6 +24,15 @@ export function buildProductFormConfig(
     entityName: 'sản phẩm',
     slugFromName: true,
     getDefaultValues: getDefaultProductValues,
+    viewFields: [
+      { name: 'code', label: 'Mã (Code)', type: 'text', col: 6 },
+      { name: 'categoryName', label: 'Danh mục', type: 'text', col: 6 },
+      { name: 'shortDescription', label: 'Mô tả ngắn', type: 'textarea' },
+      { name: 'description', label: 'Mô tả chi tiết', type: 'textarea' },
+      { name: 'thumbnailUrl', label: 'URL thumbnail', type: 'url' },
+      { name: 'sortOrder', label: 'Thứ tự', type: 'number', col: 6 },
+      { name: 'isActive', label: 'Hiển thị', type: 'checkbox', col: 6 },
+    ],
     fields: [
       { name: 'name', label: 'Tên sản phẩm', type: 'text', required: true },
       { name: 'slug', label: 'Slug', type: 'text', required: true },

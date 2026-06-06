@@ -12,6 +12,8 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
         Task<PagedResultDto<ProductDto>> GetPublicPagedAsync(
             string? keyword,
             Guid? categoryId,
+            Guid? countryId,
+            Guid? carrierId,
             int pageIndex,
             int pageSize,
             CancellationToken cancellationToken = default);
@@ -23,6 +25,8 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
         Task<PagedResultDto<ProductDto>> GetPagedAsync(
             string? keyword,
             Guid? categoryId,
+            Guid? countryId,
+            Guid? carrierId,
             bool? isActive,
             int pageIndex,
             int pageSize,

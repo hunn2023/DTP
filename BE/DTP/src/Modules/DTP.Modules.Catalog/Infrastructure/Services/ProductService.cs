@@ -59,6 +59,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             var result = await _productRepository.GetPublicPagedAsync(
                 keyword,
                 categoryId,
+                countryId,
+                carrierId,
                 pageIndex,
                 pageSize,
                 cancellationToken);
@@ -121,6 +123,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             return await _productRepository.GetPagedAsync(
                 keyword,
                 categoryId,
+                countryId,
+                carrierId,
                 isActive,
                 pageIndex,
                 pageSize,

@@ -2,7 +2,6 @@ import {
   type ColumnDef,
   type ColumnFiltersState,
   getCoreRowModel,
-  getFilteredRowModel,
   getSortedRowModel,
   type SortingState,
   useReactTable,
@@ -11,10 +10,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useNotificationContext } from '@/context/useNotificationContext'
 import { fetchCategoryOptions } from '@/features/master-data/categories/categories.api'
+import { fetchCarrierOptions } from '@/features/master-data/carriers/carriers.api'
+import { fetchCountries } from '@/features/master-data/countries/countries.api'
 import type { ProductTableHandlers } from '@/features/master-data/products/columns'
 import { buildProductFormConfig, getDefaultProductValues } from '@/features/master-data/products/formConfig'
 import * as productsApi from '@/features/master-data/products/products.api'
 import type { CatalogProduct } from '@/features/master-data/products/types'
+import {
+  activeFilterToBool,
+  type ActiveFilterValue,
+} from '@/modules/crud/components/ActiveFilterSelect'
 import { slugify } from '@/modules/crud/form/slugify'
 import type { EntityFormConfig, FormFieldOption, FormModalMode } from '@/modules/crud/form/types'
 
@@ -81,6 +86,13 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
   const [formValues, setFormValues] = useState<CatalogProduct | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [categoryOptions, setCategoryOptions] = useState<FormFieldOption[]>([])
+  const [countryFilterOptions, setCountryFilterOptions] = useState<FormFieldOption[]>([])
+  const [carrierFilterOptions, setCarrierFilterOptions] = useState<FormFieldOption[]>([])
+  const [filtersReady, setFiltersReady] = useState(false)
+  const [categoryFilter, setCategoryFilter] = useState('')
+  const [countryFilter, setCountryFilter] = useState('')
+  const [carrierFilter, setCarrierFilter] = useState('')
+  const [activeFilter, setActiveFilter] = useState<ActiveFilterValue>('all')
   const [lookupsReady, setLookupsReady] = useState(false)
 
   const notifySuccess = useCallback(
@@ -101,33 +113,79 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
   notifyErrorRef.current = notifyError
   const loadSeqRef = useRef(0)
 
-  const loadData = useCallback(async (pageIndex: number, size: number, keyword: string, seq: number) => {
-    setIsLoading(true)
-    try {
-      const result = await productsApi.fetchProductsPage(pageIndex + 1, size, keyword || undefined)
-      if (seq !== loadSeqRef.current) return
-      setData(result.items)
-      setTotalCount(result.totalCount)
-    } catch (e) {
-      if (seq !== loadSeqRef.current) return
-      notifyErrorRef.current(getErrorMessage(e, 'Không tải được danh sách sản phẩm'))
-    } finally {
-      if (seq === loadSeqRef.current) setIsLoading(false)
-    }
+  useEffect(() => {
+    void Promise.all([fetchCategoryOptions(), fetchCountries(), fetchCarrierOptions()])
+      .then(([categories, countries, carriers]) => {
+        setCategoryOptions(categories)
+        setCountryFilterOptions(
+          countries.map((item) => ({
+            value: item.id,
+            label: `${item.isoCode} ${item.name}`,
+          })),
+        )
+        setCarrierFilterOptions(carriers)
+        setFiltersReady(true)
+      })
+      .catch((e) => {
+        notifyErrorRef.current(getErrorMessage(e, 'Không tải được bộ lọc'))
+      })
   }, [])
+
+  const categoryNameById = useMemo(
+    () => new Map(categoryOptions.map((item) => [item.value, item.label])),
+    [categoryOptions],
+  )
+
+  const listFilters = useMemo(
+    () => ({
+      keyword: globalFilter || undefined,
+      categoryId: categoryFilter || undefined,
+      countryId: countryFilter || undefined,
+      carrierId: carrierFilter || undefined,
+      isActive: activeFilterToBool(activeFilter),
+    }),
+    [globalFilter, categoryFilter, countryFilter, carrierFilter, activeFilter],
+  )
+
+  const loadData = useCallback(
+    async (pageIndex: number, size: number, filters: productsApi.ProductListFilters, seq: number) => {
+      setIsLoading(true)
+      try {
+        const result = await productsApi.fetchProductsPage(pageIndex + 1, size, filters)
+        if (seq !== loadSeqRef.current) return
+        setData(
+          result.items.map((item) => ({
+            ...item,
+            categoryName: item.categoryName || categoryNameById.get(item.categoryId) || '',
+          })),
+        )
+        setTotalCount(result.totalCount)
+      } catch (e) {
+        if (seq !== loadSeqRef.current) return
+        notifyErrorRef.current(getErrorMessage(e, 'Không tải được danh sách sản phẩm'))
+      } finally {
+        if (seq === loadSeqRef.current) setIsLoading(false)
+      }
+    },
+    [categoryNameById],
+  )
 
   useEffect(() => {
     const seq = ++loadSeqRef.current
-    void loadData(pagination.pageIndex, pagination.pageSize, globalFilter, seq)
-  }, [pagination.pageIndex, pagination.pageSize, globalFilter, loadData])
+    void loadData(pagination.pageIndex, pagination.pageSize, listFilters, seq)
+  }, [pagination.pageIndex, pagination.pageSize, listFilters, loadData])
 
   const reload = useCallback(() => {
     const seq = ++loadSeqRef.current
-    void loadData(pagination.pageIndex, pagination.pageSize, globalFilter, seq)
-  }, [loadData, pagination.pageIndex, pagination.pageSize, globalFilter])
+    void loadData(pagination.pageIndex, pagination.pageSize, listFilters, seq)
+  }, [loadData, pagination.pageIndex, pagination.pageSize, listFilters])
 
   const ensureLookups = useCallback(async () => {
     if (lookupsReady) return
+    if (categoryOptions.length > 0) {
+      setLookupsReady(true)
+      return
+    }
     try {
       const options = await fetchCategoryOptions()
       setCategoryOptions(options)
@@ -135,7 +193,7 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
     } catch (e) {
       notifyError(getErrorMessage(e, 'Không tải được danh mục'))
     }
-  }, [lookupsReady, notifyError])
+  }, [lookupsReady, categoryOptions.length, notifyError])
 
   const formConfig = useMemo(
     () => getFormConfig(formMode, categoryOptions),
@@ -242,15 +300,34 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
     onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     getRowId: (row) => String(row.id),
-    globalFilterFn: 'includesString',
     enableRowSelection: true,
     manualPagination: true,
+    manualFiltering: true,
   })
 
   const setGlobalFilterAndReset = useCallback((value: string) => {
     setGlobalFilter(value)
+    setPagination((p) => ({ ...p, pageIndex: 0 }))
+  }, [])
+
+  const setCategoryFilterAndReset = useCallback((value: string) => {
+    setCategoryFilter(value)
+    setPagination((p) => ({ ...p, pageIndex: 0 }))
+  }, [])
+
+  const setCountryFilterAndReset = useCallback((value: string) => {
+    setCountryFilter(value)
+    setPagination((p) => ({ ...p, pageIndex: 0 }))
+  }, [])
+
+  const setCarrierFilterAndReset = useCallback((value: string) => {
+    setCarrierFilter(value)
+    setPagination((p) => ({ ...p, pageIndex: 0 }))
+  }, [])
+
+  const setActiveFilterAndReset = useCallback((value: ActiveFilterValue) => {
+    setActiveFilter(value)
     setPagination((p) => ({ ...p, pageIndex: 0 }))
   }, [])
 
@@ -321,6 +398,18 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
     formConfig,
     isLoading,
     isSaving,
+    filtersReady,
+    categoryFilterOptions: categoryOptions,
+    countryFilterOptions,
+    carrierFilterOptions,
+    categoryFilter,
+    setCategoryFilter: setCategoryFilterAndReset,
+    countryFilter,
+    setCountryFilter: setCountryFilterAndReset,
+    carrierFilter,
+    setCarrierFilter: setCarrierFilterAndReset,
+    activeFilter,
+    setActiveFilter: setActiveFilterAndReset,
     reload,
   }
 }

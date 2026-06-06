@@ -45,17 +45,6 @@ const CategoriesCrudTable = () => {
           )}
         </div>
         <div className="card-action d-flex flex-nowrap align-items-center gap-2">
-          <select
-            className="form-select form-select-sm w-auto"
-            aria-label="Số dòng mỗi trang"
-            value={crud.pageSize}
-            onChange={(e) => crud.setPageSize(Number(e.target.value))}>
-            {CATEGORY_PAGE_SIZE_OPTIONS.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
           {statusColumn && (
             <select
               className="form-select form-select-sm"
@@ -98,7 +87,9 @@ const CategoriesCrudTable = () => {
             start={crud.paginationInfo.start}
             end={crud.paginationInfo.end}
             itemsName={categoriesLabels.itemName}
-            showInfo
+            pageSize={crud.pageSize}
+            pageSizeOptions={CATEGORY_PAGE_SIZE_OPTIONS}
+            onPageSizeChange={crud.setPageSize}
             previousPage={crud.table.previousPage}
             canPreviousPage={crud.table.getCanPreviousPage()}
             pageCount={crud.pageCount}

@@ -2,7 +2,6 @@ import {
   type ColumnDef,
   type ColumnFiltersState,
   getCoreRowModel,
-  getFilteredRowModel,
   getSortedRowModel,
   type SortingState,
   useReactTable,
@@ -13,13 +12,18 @@ import { useNotificationContext } from '@/context/useNotificationContext'
 import type { PhoneCardTableHandlers } from '@/features/products/phone-cards/columns'
 import { buildPhoneCardFormConfig, getDefaultPhoneCardValues } from '@/features/products/phone-cards/formConfig'
 import {
+  fetchPhoneCardFilterOptions,
   fetchPhoneCardLookups,
   type PhoneCardLookups,
 } from '@/features/products/phone-cards/lookups.api'
 import * as phoneCardsApi from '@/features/products/phone-cards/phone-cards.api'
 import type { PhoneCard } from '@/features/products/phone-cards/types'
+import {
+  activeFilterToBool,
+  type ActiveFilterValue,
+} from '@/modules/crud/components/ActiveFilterSelect'
 import { slugify } from '@/modules/crud/form/slugify'
-import type { FormModalMode } from '@/modules/crud/form/types'
+import type { FormFieldOption, FormModalMode } from '@/modules/crud/form/types'
 
 type UsePhoneCardsCrudParams = {
   buildColumns: (handlers: PhoneCardTableHandlers) => ColumnDef<PhoneCard>[]
@@ -67,7 +71,13 @@ export function usePhoneCardsCrud({ buildColumns, pageSize = 10 }: UsePhoneCards
   const [totalCount, setTotalCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [lookups, setLookups] = useState<PhoneCardLookups>(emptyLookups)
+  const [providerFilterOptions, setProviderFilterOptions] = useState<FormFieldOption[]>([])
+  const [variantFilterOptions, setVariantFilterOptions] = useState<FormFieldOption[]>([])
+  const [filtersReady, setFiltersReady] = useState(false)
   const [isLoadingLookups, setIsLoadingLookups] = useState(false)
+  const [providerFilter, setProviderFilter] = useState('')
+  const [variantFilter, setVariantFilter] = useState('')
+  const [activeFilter, setActiveFilter] = useState<ActiveFilterValue>('all')
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -100,30 +110,52 @@ export function usePhoneCardsCrud({ buildColumns, pageSize = 10 }: UsePhoneCards
   const lookupsLoadedRef = useRef(false)
   const lookupsRef = useRef<PhoneCardLookups>(emptyLookups)
 
-  const loadData = useCallback(async (pageIndex: number, size: number, keyword: string, seq: number) => {
-    setIsLoading(true)
-    try {
-      const result = await phoneCardsApi.fetchPhoneCardsPage(pageIndex + 1, size, keyword || undefined)
-      if (seq !== loadSeqRef.current) return
-      setData(result.items)
-      setTotalCount(result.totalCount)
-    } catch (e) {
-      if (seq !== loadSeqRef.current) return
-      notifyErrorRef.current(getErrorMessage(e, 'Không tải được danh sách thẻ viễn thông'))
-    } finally {
-      if (seq === loadSeqRef.current) setIsLoading(false)
-    }
+  useEffect(() => {
+    void fetchPhoneCardFilterOptions()
+      .then((opts) => setProviderFilterOptions(opts.providerOptions))
+      .catch((e) => {
+        notifyErrorRef.current(getErrorMessage(e, 'Không tải được bộ lọc'))
+      })
+      .finally(() => setFiltersReady(true))
   }, [])
+
+  const listFilters = useMemo(
+    () => ({
+      keyword: globalFilter || undefined,
+      providerId: providerFilter || undefined,
+      productVariantId: variantFilter || undefined,
+      isActive: activeFilterToBool(activeFilter),
+    }),
+    [globalFilter, providerFilter, variantFilter, activeFilter],
+  )
+
+  const loadData = useCallback(
+    async (pageIndex: number, size: number, filters: phoneCardsApi.PhoneCardListFilters, seq: number) => {
+      setIsLoading(true)
+      try {
+        const result = await phoneCardsApi.fetchPhoneCardsPage(pageIndex + 1, size, filters)
+        if (seq !== loadSeqRef.current) return
+        setData(result.items)
+        setTotalCount(result.totalCount)
+      } catch (e) {
+        if (seq !== loadSeqRef.current) return
+        notifyErrorRef.current(getErrorMessage(e, 'Không tải được danh sách thẻ viễn thông'))
+      } finally {
+        if (seq === loadSeqRef.current) setIsLoading(false)
+      }
+    },
+    [],
+  )
 
   useEffect(() => {
     const seq = ++loadSeqRef.current
-    void loadData(pagination.pageIndex, pagination.pageSize, globalFilter, seq)
-  }, [pagination.pageIndex, pagination.pageSize, globalFilter, loadData])
+    void loadData(pagination.pageIndex, pagination.pageSize, listFilters, seq)
+  }, [pagination.pageIndex, pagination.pageSize, listFilters, loadData])
 
   const reload = useCallback(() => {
     const seq = ++loadSeqRef.current
-    void loadData(pagination.pageIndex, pagination.pageSize, globalFilter, seq)
-  }, [loadData, pagination.pageIndex, pagination.pageSize, globalFilter])
+    void loadData(pagination.pageIndex, pagination.pageSize, listFilters, seq)
+  }, [loadData, pagination.pageIndex, pagination.pageSize, listFilters])
 
   const ensureLookups = useCallback(async () => {
     if (lookupsLoadedRef.current) return
@@ -250,17 +282,41 @@ export function usePhoneCardsCrud({ buildColumns, pageSize = 10 }: UsePhoneCards
     onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     getRowId: (row) => String(row.id),
-    globalFilterFn: 'includesString',
     enableRowSelection: true,
     manualPagination: true,
+    manualFiltering: true,
   })
 
   const setGlobalFilterAndReset = useCallback((value: string) => {
     setGlobalFilter(value)
     setPagination((p) => ({ ...p, pageIndex: 0 }))
   }, [])
+
+  const setProviderFilterAndReset = useCallback((value: string) => {
+    setProviderFilter(value)
+    setPagination((p) => ({ ...p, pageIndex: 0 }))
+  }, [])
+
+  const setVariantFilterAndReset = useCallback((value: string) => {
+    setVariantFilter(value)
+    setPagination((p) => ({ ...p, pageIndex: 0 }))
+  }, [])
+
+  const setActiveFilterAndReset = useCallback((value: ActiveFilterValue) => {
+    setActiveFilter(value)
+    setPagination((p) => ({ ...p, pageIndex: 0 }))
+  }, [])
+
+  const loadVariantFilterOptions = useCallback(async () => {
+    if (variantFilterOptions.length > 0) return
+    try {
+      const loaded = await fetchPhoneCardLookups()
+      setVariantFilterOptions(loaded.productVariantOptions)
+    } catch (e) {
+      notifyError(getErrorMessage(e, 'Không tải được biến thể'))
+    }
+  }, [variantFilterOptions.length, notifyError])
 
   const paginationInfo = useMemo(() => {
     const { pageIndex, pageSize: size } = pagination
@@ -331,6 +387,16 @@ export function usePhoneCardsCrud({ buildColumns, pageSize = 10 }: UsePhoneCards
     isLoading,
     isSaving,
     isLoadingLookups,
+    filtersReady,
+    providerFilterOptions,
+    variantFilterOptions,
+    providerFilter,
+    setProviderFilter: setProviderFilterAndReset,
+    variantFilter,
+    setVariantFilter: setVariantFilterAndReset,
+    activeFilter,
+    setActiveFilter: setActiveFilterAndReset,
+    loadVariantFilterOptions,
     reload,
   }
 }

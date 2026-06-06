@@ -7,6 +7,11 @@ export type PhoneCardLookups = {
   providerOptions: FormFieldOption[]
 }
 
+export async function fetchPhoneCardFilterOptions(): Promise<Pick<PhoneCardLookups, 'providerOptions'>> {
+  const providerOptions = await fetchProviderOptions()
+  return { providerOptions }
+}
+
 export async function fetchPhoneCardLookups(): Promise<PhoneCardLookups> {
   const [productVariantOptions, providerOptions] = await Promise.all([
     fetchProductVariantOptions(),

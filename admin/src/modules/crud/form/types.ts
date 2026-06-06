@@ -5,6 +5,7 @@ export type FormFieldType =
   | 'checkbox'
   | 'color'
   | 'url'
+  | 'date'
   | 'select'
   | 'multiselect'
   | 'password'

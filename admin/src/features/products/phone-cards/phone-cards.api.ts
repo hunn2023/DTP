@@ -97,16 +97,23 @@ export type PhoneCardsPageResult = {
 
 const inflightPages = new Map<string, Promise<PhoneCardsPageResult>>()
 
+export type PhoneCardListFilters = {
+  keyword?: string
+  productVariantId?: string
+  providerId?: string
+  isActive?: boolean
+}
+
 export async function fetchPhoneCardsPage(
   pageIndex = 1,
   pageSize = 10,
-  keyword?: string,
+  filters: PhoneCardListFilters = {},
 ): Promise<PhoneCardsPageResult> {
-  const key = `${pageIndex}:${pageSize}:${keyword ?? ''}`
+  const key = `${pageIndex}:${pageSize}:${JSON.stringify(filters)}`
   const cached = inflightPages.get(key)
   if (cached) return cached
 
-  const request = fetchAdminPhoneCards(pageIndex, pageSize, keyword).then((paged) => ({
+  const request = fetchAdminPhoneCards(pageIndex, pageSize, filters).then((paged) => ({
     items: paged.items.map(mapDto),
     totalCount: paged.totalCount,
     pageIndex: paged.pageIndex,
@@ -124,10 +131,17 @@ export async function fetchPhoneCardsPage(
 export async function fetchAdminPhoneCards(
   pageIndex = 1,
   pageSize = 10,
-  keyword?: string,
+  filters: PhoneCardListFilters = {},
 ): Promise<PagedPhoneCardsDto> {
   const raw = await httpGet<Record<string, unknown>>(API_PATHS.adminPhoneCards, {
-    params: { pageIndex, pageSize, keyword: keyword?.trim() || undefined },
+    params: {
+      pageIndex,
+      pageSize,
+      keyword: filters.keyword?.trim() || undefined,
+      productVariantId: filters.productVariantId || undefined,
+      providerId: filters.providerId || undefined,
+      isActive: filters.isActive,
+    },
   })
   return normalizePaged(raw)
 }

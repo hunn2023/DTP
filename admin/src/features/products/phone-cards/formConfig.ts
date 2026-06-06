@@ -49,7 +49,8 @@ export function buildPhoneCardFormConfig(
     getDefaultValues: getDefaultPhoneCardValues,
     viewFields: [
       { name: 'productVariantName', label: 'Biến thể SP', type: 'text', col: 6 },
-      { name: 'providerName', label: 'Provider', type: 'text', col: 6 },
+      { name: 'providerName', label: 'Nhà cung cấp', type: 'text', col: 6 },
+      { name: 'slug', label: 'Slug', type: 'text', col: 12 },
     ],
     fields: [
       ...createOnlyFields,
@@ -57,7 +58,7 @@ export function buildPhoneCardFormConfig(
       { name: 'slug', label: 'Slug', type: 'text', required: true, col: 12 },
       {
         name: 'providerId',
-        label: 'Provider',
+        label: 'Nhà cung cấp',
         type: 'select',
         required: true,
         col: 12,

@@ -3,6 +3,8 @@ import clsx from 'clsx'
 import { Table } from 'react-bootstrap'
 import { TbArrowDown, TbArrowUp } from 'react-icons/tb'
 
+import { isHiddenTableColumn } from '@/modules/crud/components/tableColumns'
+
 type DataTableProps<TData> = {
   /**
    * The table instance from useReactTable
@@ -35,7 +37,10 @@ const DataTable = <TData,>({
   showHeaders = true,
   onRowClick,
 }: DataTableProps<TData>) => {
-  const columns = table.getAllColumns()
+  const headerGroup = table.getHeaderGroups()[0]
+  const visibleHeaders =
+    headerGroup?.headers.filter((header) => !isHiddenTableColumn(header.column.columnDef.meta)) ?? []
+  const visibleColumnCount = visibleHeaders.length || table.getAllColumns().length
 
   return (
     <div className={clsx('table-responsive', className)}>
@@ -44,7 +49,9 @@ const DataTable = <TData,>({
           <thead className="bg-light align-middle bg-opacity-25 thead-sm">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="text-uppercase fs-xxs">
-                {headerGroup.headers.map((header) => (
+                {headerGroup.headers
+                  .filter((header) => !isHiddenTableColumn(header.column.columnDef.meta))
+                  .map((header) => (
                   <th
                     key={header.id}
                     onClick={header.column.getToggleSortingHandler()}
@@ -74,14 +81,17 @@ const DataTable = <TData,>({
                 key={row.id}
                 className={onRowClick ? 'cursor-pointer' : undefined}
                 onClick={() => onRowClick?.(row.original)}>
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-                ))}
+                {row
+                  .getVisibleCells()
+                  .filter((cell) => !isHiddenTableColumn(cell.column.columnDef.meta))
+                  .map((cell) => (
+                    <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                  ))}
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={columns.length} className="text-center py-3 text-muted">
+              <td colSpan={visibleColumnCount} className="text-center py-3 text-muted">
                 {emptyMessage}
               </td>
             </tr>

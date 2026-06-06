@@ -11,6 +11,15 @@ export type ActionHandlers<T extends TableRowBase> = {
   onEdit: (row: T) => void
 }
 
+export type TableColumnMeta = {
+  /** Ẩn cột trên UI bảng (vẫn giữ trong column def để getRowId / logic khác). */
+  hideInTable?: boolean
+}
+
+export function isHiddenTableColumn(meta: unknown): boolean {
+  return Boolean((meta as TableColumnMeta | undefined)?.hideInTable)
+}
+
 export function createIdColumn<T extends TableRowBase>() {
   const helper = createColumnHelper<T>()
   return helper.accessor((row) => row.id, {
@@ -18,6 +27,7 @@ export function createIdColumn<T extends TableRowBase>() {
     header: 'ID',
     cell: ({ getValue }) => <span className="text-muted fw-medium">{getValue()}</span>,
     size: 72,
+    meta: { hideInTable: true },
   })
 }
 

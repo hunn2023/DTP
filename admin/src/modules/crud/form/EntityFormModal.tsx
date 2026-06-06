@@ -126,7 +126,9 @@ function FormFieldInput<T extends { isActive: boolean }>({
           ? 'url'
           : field.type === 'password'
             ? 'password'
-            : 'text'
+            : field.type === 'date'
+              ? 'date'
+              : 'text'
 
   return (
     <Form.Control

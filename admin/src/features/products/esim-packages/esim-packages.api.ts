@@ -113,16 +113,24 @@ export type EsimPackagesPageResult = {
 
 const inflightPages = new Map<string, Promise<EsimPackagesPageResult>>()
 
+export type EsimPackageListFilters = {
+  keyword?: string
+  countryId?: string
+  carrierId?: string
+  productVariantId?: string
+  isActive?: boolean
+}
+
 export async function fetchEsimPackagesPage(
   pageIndex = 1,
   pageSize = 10,
-  keyword?: string,
+  filters: EsimPackageListFilters = {},
 ): Promise<EsimPackagesPageResult> {
-  const key = `${pageIndex}:${pageSize}:${keyword ?? ''}`
+  const key = `${pageIndex}:${pageSize}:${JSON.stringify(filters)}`
   const cached = inflightPages.get(key)
   if (cached) return cached
 
-  const request = fetchAdminEsimPackages(pageIndex, pageSize, keyword).then((paged) => ({
+  const request = fetchAdminEsimPackages(pageIndex, pageSize, filters).then((paged) => ({
     items: paged.items.map(mapDto),
     totalCount: paged.totalCount,
     pageIndex: paged.pageIndex,
@@ -140,10 +148,18 @@ export async function fetchEsimPackagesPage(
 export async function fetchAdminEsimPackages(
   pageIndex = 1,
   pageSize = 10,
-  keyword?: string,
+  filters: EsimPackageListFilters = {},
 ): Promise<PagedEsimPackagesDto> {
   const raw = await httpGet<Record<string, unknown>>(API_PATHS.adminEsimPackages, {
-    params: { pageIndex, pageSize, keyword: keyword?.trim() || undefined },
+    params: {
+      pageIndex,
+      pageSize,
+      keyword: filters.keyword?.trim() || undefined,
+      countryId: filters.countryId || undefined,
+      carrierId: filters.carrierId || undefined,
+      productVariantId: filters.productVariantId || undefined,
+      isActive: filters.isActive,
+    },
   })
   return normalizePaged(raw)
 }

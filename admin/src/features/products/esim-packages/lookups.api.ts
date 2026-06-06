@@ -17,6 +17,14 @@ export type EsimPackageLookups = {
   productVariantOptions: Awaited<ReturnType<typeof fetchAllProductVariantOptions>>
 }
 
+export async function fetchEsimFilterOptions(): Promise<Pick<EsimPackageLookups, 'countryOptions' | 'carrierOptions'>> {
+  const [countryOptions, carrierOptions] = await Promise.all([
+    fetchCountryOptions(),
+    fetchCarrierOptions(),
+  ])
+  return { countryOptions, carrierOptions }
+}
+
 export async function fetchEsimPackageLookups(): Promise<EsimPackageLookups> {
   const [countryOptions, carrierOptions, productVariantOptions] = await Promise.all([
     fetchCountryOptions(),

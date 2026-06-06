@@ -79,17 +79,24 @@ export function invalidateProductsCache(): void {
   inflightProductOptions = null
 }
 
+export type ProductListFilters = {
+  keyword?: string
+  categoryId?: string
+  countryId?: string
+  carrierId?: string
+  isActive?: boolean
+}
+
 export async function fetchProductsPage(
   pageIndex = 1,
   pageSize = 10,
-  keyword?: string,
-  categoryId?: string,
+  filters: ProductListFilters = {},
 ): Promise<ProductsPageResult> {
-  const key = `${pageIndex}:${pageSize}:${keyword ?? ''}:${categoryId ?? ''}`
+  const key = `${pageIndex}:${pageSize}:${JSON.stringify(filters)}`
   const cached = inflightPages.get(key)
   if (cached) return cached
 
-  const request = fetchAdminProducts(pageIndex, pageSize, keyword, categoryId).then((paged) => ({
+  const request = fetchAdminProducts(pageIndex, pageSize, filters).then((paged) => ({
     items: paged.items.map(mapDto),
     totalCount: paged.totalCount,
     pageIndex: paged.pageIndex,
@@ -107,15 +114,17 @@ export async function fetchProductsPage(
 export async function fetchAdminProducts(
   pageIndex = 1,
   pageSize = 10,
-  keyword?: string,
-  categoryId?: string,
+  filters: ProductListFilters = {},
 ) {
   const raw = await httpGet<Raw>(API_PATHS.adminProducts, {
     params: {
       pageIndex,
       pageSize,
-      keyword: keyword?.trim() || undefined,
-      categoryId: categoryId || undefined,
+      keyword: filters.keyword?.trim() || undefined,
+      categoryId: filters.categoryId || undefined,
+      countryId: filters.countryId || undefined,
+      carrierId: filters.carrierId || undefined,
+      isActive: filters.isActive,
     },
   })
   return normalizePaged(raw, normalizeProductDto)

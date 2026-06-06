@@ -29,6 +29,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         public async Task<PagedResultDto<ProductDto>> GetPublicPagedAsync(
             string? keyword,
             Guid? categoryId,
+            Guid? countryId,
+            Guid? carrierId,
             int pageIndex,
             int pageSize,
             CancellationToken cancellationToken = default)
@@ -42,6 +44,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 query,
                 keyword,
                 categoryId,
+                countryId,
+                carrierId,
                 null);
 
             return await ToPagedDtoAsync(
@@ -82,6 +86,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         public async Task<PagedResultDto<ProductDto>> GetPagedAsync(
             string? keyword,
             Guid? categoryId,
+            Guid? countryId,
+            Guid? carrierId,
             bool? isActive,
             int pageIndex,
             int pageSize,
@@ -95,6 +101,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 query,
                 keyword,
                 categoryId,
+                countryId,
+                carrierId,
                 isActive);
 
             return await ToPagedDtoAsync(
@@ -214,10 +222,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             return true;
         }
 
-        private static IQueryable<Product> ApplyFilters(
+        private IQueryable<Product> ApplyFilters(
             IQueryable<Product> query,
             string? keyword,
             Guid? categoryId,
+            Guid? countryId,
+            Guid? carrierId,
             bool? isActive)
         {
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -234,6 +244,30 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             {
                 query = query.Where(x =>
                     x.CategoryId == categoryId.Value);
+            }
+
+            if (countryId.HasValue)
+            {
+                var productIdsQuery =
+                    from esim in _context.EsimPackages
+                    join variant in _context.ProductVariants
+                        on esim.ProductVariantId equals variant.Id
+                    where esim.CountryId == countryId.Value
+                    select variant.ProductId;
+
+                query = query.Where(product => productIdsQuery.Contains(product.Id));
+            }
+
+            if (carrierId.HasValue)
+            {
+                var productIdsQuery =
+                    from esim in _context.EsimPackages
+                    join variant in _context.ProductVariants
+                        on esim.ProductVariantId equals variant.Id
+                    where esim.CarrierId == carrierId.Value
+                    select variant.ProductId;
+
+                query = query.Where(product => productIdsQuery.Contains(product.Id));
             }
 
             if (isActive.HasValue)

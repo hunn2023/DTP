@@ -5,6 +5,8 @@ import { LuPlus, LuSearch } from 'react-icons/lu'
 import DataTable from '@/components/table/DataTable'
 import DeleteConfirmationModal from '@/components/table/DeleteConfirmationModal'
 import TablePagination from '@/components/table/TablePagination'
+
+const DEFAULT_PAGE_SIZE_OPTIONS = [5, 10, 15, 20] as const
 import EntityFormModal from '@/modules/crud/form/EntityFormModal'
 import type { EntityFormConfig } from '@/modules/crud/form/types'
 import { useEntityCrud, type EntityTableHandlers } from '@/modules/crud/hooks/useEntityCrud'
@@ -62,17 +64,6 @@ function EntityTableToolbar<T extends CrudEntityBase>({
         )}
       </div>
       <div className="card-action d-flex flex-nowrap align-items-center gap-2">
-        <select
-          className="form-select form-select-sm w-auto"
-          aria-label="Số dòng mỗi trang"
-          value={table.getState().pagination.pageSize}
-          onChange={(e) => table.setPageSize(Number(e.target.value))}>
-          {[5, 10, 15, 20].map((size) => (
-            <option key={size} value={size}>
-              {size}
-            </option>
-          ))}
-        </select>
         {statusColumn && (
           <select
             className="form-select form-select-sm"
@@ -140,7 +131,9 @@ const EntityCrudTable = <T extends CrudEntityBase>({
             start={crud.paginationInfo.start}
             end={crud.paginationInfo.end}
             itemsName={labels.itemName}
-            showInfo
+            pageSize={crud.table.getState().pagination.pageSize}
+            pageSizeOptions={DEFAULT_PAGE_SIZE_OPTIONS}
+            onPageSizeChange={crud.table.setPageSize}
             previousPage={crud.table.previousPage}
             canPreviousPage={crud.table.getCanPreviousPage()}
             pageCount={crud.table.getPageCount()}

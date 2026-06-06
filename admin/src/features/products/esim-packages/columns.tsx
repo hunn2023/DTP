@@ -38,6 +38,19 @@ export function buildEsimPackageColumns(handlers: EsimPackageTableHandlers) {
         </div>
       ),
     }),
+    helper.accessor('productVariantName', {
+      header: 'Biến thể / SP',
+      cell: ({ row }) => (
+        <div className="fs-xs">
+          <div>{row.original.productVariantName || '—'}</div>
+          <div className="text-muted">{row.original.productName || '—'}</div>
+        </div>
+      ),
+    }),
+    helper.accessor('slug', {
+      header: 'Slug',
+      cell: ({ getValue }) => <code className="fs-xxs">{getValue()}</code>,
+    }),
     helper.display({
       id: 'data',
       header: 'Data',
@@ -51,6 +64,11 @@ export function buildEsimPackageColumns(handlers: EsimPackageTableHandlers) {
       id: 'price',
       header: 'Giá',
       cell: ({ row }) => <span className="fw-medium">{formatPrice(row.original)}</span>,
+    }),
+    helper.accessor('currency', { header: 'Tiền tệ' }),
+    helper.accessor('isUnlimited', {
+      header: 'Unlimited',
+      cell: ({ getValue }) => (getValue() ? '✓' : '—'),
     }),
     createSortOrderColumn<EsimPackage>(),
     createIsActiveColumn<EsimPackage>(),

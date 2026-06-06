@@ -8,6 +8,8 @@ import { buildEsimPackageColumns } from '@/features/products/esim-packages/colum
 import { esimPackagesLabels } from '@/features/products/esim-packages/data'
 import { ESIM_PACKAGE_PAGE_SIZE_OPTIONS } from '@/features/products/esim-packages/esim-packages.api'
 import { useEsimPackagesCrud } from '@/features/products/esim-packages/useEsimPackagesCrud'
+import ActiveFilterSelect from '@/modules/crud/components/ActiveFilterSelect'
+import ListFilterSelect from '@/modules/crud/components/ListFilterSelect'
 import EntityFormModal from '@/modules/crud/form/EntityFormModal'
 
 const EsimPackagesCrudTable = () => {
@@ -20,11 +22,10 @@ const EsimPackagesCrudTable = () => {
       ? `Bạn có chắc muốn xóa ${crud.pendingDeleteCount} ${esimPackagesLabels.itemName} đã chọn?`
       : `Bạn có chắc muốn xóa ${esimPackagesLabels.itemName} này?`
 
-  const statusColumn = crud.table.getColumn('isActive')
-
   return (
     <Card>
-      <CardHeader className="border-light justify-content-between">
+      <CardHeader className="border-light flex-column align-items-stretch gap-2">
+        <div className="d-flex justify-content-between flex-wrap gap-2">
         <div className="d-flex align-items-center gap-2 flex-wrap">
           <div className="app-search">
             <input
@@ -43,41 +44,42 @@ const EsimPackagesCrudTable = () => {
           )}
         </div>
         <div className="card-action d-flex flex-nowrap align-items-center gap-2">
-          <select
-            className="form-select form-select-sm w-auto"
-            aria-label="Số dòng mỗi trang"
-            value={crud.pageSize}
-            onChange={(e) => crud.setPageSize(Number(e.target.value))}>
-            {ESIM_PACKAGE_PAGE_SIZE_OPTIONS.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
-          {statusColumn && (
-            <select
-              className="form-select form-select-sm"
-              style={{ minWidth: '9.75rem', width: 'auto' }}
-              aria-label="Lọc theo trạng thái"
-              value={String(statusColumn.getFilterValue() ?? 'all')}
-              onChange={(e) => {
-                const value = e.target.value
-                statusColumn.setFilterValue(value === 'all' ? undefined : value === 'true')
-              }}>
-              <option value="all">Tất cả</option>
-              <option value="true">Đang hiển thị</option>
-              <option value="false">Đang ẩn</option>
-            </select>
-          )}
+          <ActiveFilterSelect value={crud.activeFilter} onChange={crud.setActiveFilter} />
           <Button
             variant="primary"
             size="sm"
             className="text-nowrap"
             onClick={crud.openCreate}
-            disabled={!crud.lookupsReady}>
+            disabled={!crud.filtersReady}>
             <LuPlus className="fs-sm me-1" />
             {esimPackagesLabels.addButton}
           </Button>
+        </div>
+        </div>
+        <div className="d-flex align-items-end gap-2 flex-wrap">
+          <ListFilterSelect
+            label="Quốc gia"
+            value={crud.countryFilter}
+            onChange={crud.setCountryFilter}
+            options={crud.filterOptions.countryOptions}
+            allLabel="Tất cả quốc gia"
+          />
+          <ListFilterSelect
+            label="Nhà mạng"
+            value={crud.carrierFilter}
+            onChange={crud.setCarrierFilter}
+            options={crud.filterOptions.carrierOptions}
+            allLabel="Tất cả nhà mạng"
+          />
+          <ListFilterSelect
+            label="Biến thể"
+            value={crud.variantFilter}
+            onChange={crud.setVariantFilter}
+            options={crud.variantFilterOptions}
+            allLabel="Tất cả biến thể"
+            minWidth="12rem"
+            onFocus={() => void crud.loadVariantFilterOptions()}
+          />
         </div>
       </CardHeader>
 
@@ -101,7 +103,9 @@ const EsimPackagesCrudTable = () => {
             start={crud.paginationInfo.start}
             end={crud.paginationInfo.end}
             itemsName={esimPackagesLabels.itemName}
-            showInfo
+            pageSize={crud.pageSize}
+            pageSizeOptions={ESIM_PACKAGE_PAGE_SIZE_OPTIONS}
+            onPageSizeChange={crud.setPageSize}
             previousPage={crud.table.previousPage}
             canPreviousPage={crud.table.getCanPreviousPage()}
             pageCount={crud.pageCount}

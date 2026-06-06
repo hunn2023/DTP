@@ -8,6 +8,8 @@ import { buildProductColumns } from '@/features/master-data/products/columns'
 import { productsLabels } from '@/features/master-data/products/data'
 import { PRODUCT_PAGE_SIZE_OPTIONS } from '@/features/master-data/products/products.api'
 import { useProductsCrud } from '@/features/master-data/products/useProductsCrud'
+import ActiveFilterSelect from '@/modules/crud/components/ActiveFilterSelect'
+import ListFilterSelect from '@/modules/crud/components/ListFilterSelect'
 import EntityFormModal from '@/modules/crud/form/EntityFormModal'
 
 const ProductsCrudTable = () => {
@@ -18,11 +20,10 @@ const ProductsCrudTable = () => {
       ? `Bạn có chắc muốn xóa ${crud.pendingDeleteCount} ${productsLabels.itemName} đã chọn?`
       : `Bạn có chắc muốn xóa ${productsLabels.itemName} này?`
 
-  const statusColumn = crud.table.getColumn('isActive')
-
   return (
     <Card>
-      <CardHeader className="border-light justify-content-between">
+      <CardHeader className="border-light flex-column align-items-stretch gap-2">
+        <div className="d-flex justify-content-between flex-wrap gap-2">
         <div className="d-flex align-items-center gap-2 flex-wrap">
           <div className="app-search">
             <input
@@ -41,36 +42,35 @@ const ProductsCrudTable = () => {
           )}
         </div>
         <div className="card-action d-flex flex-nowrap align-items-center gap-2">
-          <select
-            className="form-select form-select-sm w-auto"
-            aria-label="Số dòng mỗi trang"
-            value={crud.pageSize}
-            onChange={(e) => crud.setPageSize(Number(e.target.value))}>
-            {PRODUCT_PAGE_SIZE_OPTIONS.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
-          {statusColumn && (
-            <select
-              className="form-select form-select-sm"
-              style={{ minWidth: '9.75rem', width: 'auto' }}
-              aria-label="Lọc theo trạng thái"
-              value={String(statusColumn.getFilterValue() ?? 'all')}
-              onChange={(e) => {
-                const value = e.target.value
-                statusColumn.setFilterValue(value === 'all' ? undefined : value === 'true')
-              }}>
-              <option value="all">Tất cả</option>
-              <option value="true">Đang kích hoạt</option>
-              <option value="false">Đang tắt</option>
-            </select>
-          )}
+          <ActiveFilterSelect value={crud.activeFilter} onChange={crud.setActiveFilter} />
           <Button variant="primary" size="sm" className="text-nowrap" onClick={crud.openCreate}>
             <LuPlus className="fs-sm me-1" />
             {productsLabels.addButton}
           </Button>
+        </div>
+        </div>
+        <div className="d-flex align-items-end gap-2 flex-wrap">
+          <ListFilterSelect
+            label="Danh mục"
+            value={crud.categoryFilter}
+            onChange={crud.setCategoryFilter}
+            options={crud.categoryFilterOptions}
+            allLabel="Tất cả danh mục"
+          />
+          <ListFilterSelect
+            label="Quốc gia"
+            value={crud.countryFilter}
+            onChange={crud.setCountryFilter}
+            options={crud.countryFilterOptions}
+            allLabel="Tất cả quốc gia"
+          />
+          <ListFilterSelect
+            label="Nhà mạng"
+            value={crud.carrierFilter}
+            onChange={crud.setCarrierFilter}
+            options={crud.carrierFilterOptions}
+            allLabel="Tất cả nhà mạng"
+          />
         </div>
       </CardHeader>
 
@@ -94,7 +94,9 @@ const ProductsCrudTable = () => {
             start={crud.paginationInfo.start}
             end={crud.paginationInfo.end}
             itemsName={productsLabels.itemName}
-            showInfo
+            pageSize={crud.pageSize}
+            pageSizeOptions={PRODUCT_PAGE_SIZE_OPTIONS}
+            onPageSizeChange={crud.setPageSize}
             previousPage={crud.table.previousPage}
             canPreviousPage={crud.table.getCanPreviousPage()}
             pageCount={crud.pageCount}
