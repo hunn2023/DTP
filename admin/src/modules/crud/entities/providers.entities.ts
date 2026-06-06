@@ -1,6 +1,6 @@
 import { defineAdminEntity } from '@/modules/crud/schema/defineEntity'
 import { labels } from '@/modules/crud/entities/shared'
-import { isActiveField, providerStatusMap, statusOptions } from '@/modules/crud/entities/fieldHelpers'
+import { isActiveField } from '@/modules/crud/entities/fieldHelpers'
 import { readonlyCrudCapabilities } from '@/modules/crud/types'
 import type { SettingsEntityBase } from '@/modules/crud/types'
 
@@ -62,42 +62,6 @@ export type ProviderLog = SettingsEntityBase & {
   errorMessage: string
   createdAt: string
 }
-
-export const providersListEntity = defineAdminEntity<Provider>({
-  path: '/providers/list',
-  title: 'Danh sách nhà cung cấp',
-  breadcrumbSubtitle: sub,
-  description: 'Provider là nguồn hàng/API — không phải carrier hiển thị.',
-  entityName: 'provider',
-  labels: labels('provider', 'Tìm tên, mã...', 'Thêm provider'),
-  seedData: [
-    {
-      id: 1,
-      name: 'Airalo',
-      code: 'AIRALO',
-      providerType: 'ESIM',
-      priority: 1,
-      balance: '1,250 USD',
-      status: 'active',
-      isActive: true,
-    },
-  ],
-  fields: [
-    { name: 'name', label: 'Tên', type: 'text', table: { variant: 'primary' }, form: { required: true } },
-    { name: 'code', label: 'Mã', type: 'text', table: { variant: 'code' }, form: { required: true } },
-    { name: 'providerType', label: 'Loại provider', type: 'text', table: true, form: { required: true } },
-    { name: 'priority', label: 'Ưu tiên', type: 'number', table: true, form: { col: 6 } },
-    { name: 'balance', label: 'Số dư', type: 'text', table: true, form: { col: 6 } },
-    {
-      name: 'status',
-      label: 'Trạng thái',
-      type: 'select',
-      table: { variant: 'badge', badgeMap: providerStatusMap },
-      form: { options: statusOptions(providerStatusMap) },
-    },
-    isActiveField<Provider>(),
-  ],
-})
 
 export const providerProductsEntity = defineAdminEntity<ProviderProduct>({
   path: '/providers/products',
@@ -278,7 +242,6 @@ export const providerLogsEntity = defineAdminEntity<ProviderLog>({
 })
 
 export const providerEntities = [
-  providersListEntity,
   providerProductsEntity,
   providerMappingEntity,
   providerApiConfigsEntity,

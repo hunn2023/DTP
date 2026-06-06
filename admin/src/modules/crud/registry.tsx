@@ -5,6 +5,7 @@ import CategoriesPage from '@/features/master-data/categories/CategoriesPage'
 import CountriesPage from '@/features/master-data/countries/CountriesPage'
 import EsimPackagesPage from '@/features/products/esim-packages/EsimPackagesPage'
 import PhoneCardsPage from '@/features/products/phone-cards/PhoneCardsPage'
+import ProvidersPage from '@/features/providers/ProvidersPage'
 import ReportPage from '@/modules/crud/components/ReportPage'
 import { createCrudPage } from '@/modules/crud/createCrudPage'
 import { customerEntities } from '@/modules/crud/entities/customers.entities'
@@ -97,6 +98,11 @@ const phoneCardsRoute: RouteObject = {
   element: <PhoneCardsPage />,
 }
 
+const providersListRoute: RouteObject = {
+  path: '/providers/list',
+  element: <ProvidersPage />,
+}
+
 export const dtpAdminRoutes: RouteObject[] = [
   ...redirectRoutes,
   categoriesRoute,
@@ -104,5 +110,6 @@ export const dtpAdminRoutes: RouteObject[] = [
   carriersRoute,
   esimPackagesRoute,
   phoneCardsRoute,
+  providersListRoute,
   ...allAdminEntities.map(entityRoute),
 ]
