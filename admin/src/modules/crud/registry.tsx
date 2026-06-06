@@ -4,6 +4,7 @@ import CarriersPage from '@/features/master-data/carriers/CarriersPage'
 import CategoriesPage from '@/features/master-data/categories/CategoriesPage'
 import CountriesPage from '@/features/master-data/countries/CountriesPage'
 import EsimPackagesPage from '@/features/products/esim-packages/EsimPackagesPage'
+import PhoneCardsPage from '@/features/products/phone-cards/PhoneCardsPage'
 import ReportPage from '@/modules/crud/components/ReportPage'
 import { createCrudPage } from '@/modules/crud/createCrudPage'
 import { customerEntities } from '@/modules/crud/entities/customers.entities'
@@ -91,11 +92,17 @@ const carriersRoute: RouteObject = {
   element: <CarriersPage />,
 }
 
+const phoneCardsRoute: RouteObject = {
+  path: '/products/cards-data/telecom-cards',
+  element: <PhoneCardsPage />,
+}
+
 export const dtpAdminRoutes: RouteObject[] = [
   ...redirectRoutes,
   categoriesRoute,
   countriesRoute,
   carriersRoute,
   esimPackagesRoute,
+  phoneCardsRoute,
   ...allAdminEntities.map(entityRoute),
 ]

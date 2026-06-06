@@ -42,17 +42,6 @@ export type FaqItem = SettingsEntityBase & {
   sortOrder: number
 }
 
-export type TelecomCard = SettingsEntityBase & {
-  name: string
-  carrierBrand: string
-  denominationId: number
-  faceValue: number
-  salePrice: number
-  discountRate: number
-  maxQuantity: number
-  status: string
-}
-
 export type GameCard = SettingsEntityBase & {
   name: string
   publisherBrand: string
@@ -151,43 +140,12 @@ const sharedCardProductFields = [
   { name: 'maxQuantity', label: 'Số lượng tối đa', type: 'number', table: true, form: { col: 6 } },
 ] as const
 
-const telecomCardFields: EntityFieldDef<TelecomCard>[] = [
-  ...sharedCardProductFields,
-  { name: 'carrierBrand', label: 'Thương hiệu nhà mạng', type: 'text', table: true, form: { required: true } },
-  statusField<TelecomCard>(),
-  isActiveField<TelecomCard>(),
-]
-
 const gameCardFields: EntityFieldDef<GameCard>[] = [
   ...sharedCardProductFields,
   { name: 'publisherBrand', label: 'Nhà phát hành', type: 'text', table: true, form: { required: true } },
   statusField<GameCard>(),
   isActiveField<GameCard>(),
 ]
-
-export const telecomCardsEntity = defineAdminEntity<TelecomCard>({
-  path: '/products/cards-data/telecom-cards',
-  title: 'Thẻ viễn thông',
-  breadcrumbSubtitle: sub,
-  description: 'TelecomCards — digital code sau thanh toán.',
-  entityName: 'thẻ viễn thông',
-  labels: labels('thẻ', 'Tìm tên...', 'Thêm thẻ'),
-  seedData: [
-    {
-      id: 1,
-      name: 'Thẻ Viettel 100.000đ',
-      carrierBrand: 'Viettel',
-      denominationId: 4,
-      faceValue: 100000,
-      salePrice: 92000,
-      discountRate: 8,
-      maxQuantity: 10,
-      status: 'active',
-      isActive: true,
-    },
-  ],
-  fields: telecomCardFields,
-})
 
 export const gameCardsEntity = defineAdminEntity<GameCard>({
   path: '/products/cards-data/game-cards',
@@ -286,7 +244,6 @@ export const cardPricesEntity = defineAdminEntity<CardProductPrice>({
 export const productEntities = [
   esimPricesEntity,
   esimFaqEntity,
-  telecomCardsEntity,
   gameCardsEntity,
   dataPackagesEntity,
   cardPricesEntity,
