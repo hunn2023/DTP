@@ -1,11 +1,8 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using DTP.Shared.Application;
+
 
 namespace DTP.Modules.Catalog.Infrastructure.Services
 {
@@ -19,7 +16,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             _cacheInvalidator = cacheInvalidator;
         }
 
-        public async Task<Guid> CreateAsync(
+        public async Task<Result<Guid>> CreateAsync(
             Guid productId,
             string name,
             string value,
@@ -27,13 +24,14 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             CancellationToken cancellationToken = default)
         {
             if (productId == Guid.Empty)
-                throw new Exception("ProductId không hợp lệ.");
+                return Result<Guid>.Failure("ProductId không hợp lệ.");
 
             if (string.IsNullOrWhiteSpace(name))
-                throw new Exception("Vui lòng nhập tên thuộc tính.");
+                return Result<Guid>.Failure("Vui lòng nhập tên thuộc tính.");
 
             if (string.IsNullOrWhiteSpace(value))
-                throw new Exception("Vui lòng nhập giá trị thuộc tính.");
+                return Result<Guid>.Failure("Vui lòng nhập giá trị thuộc tính.");
+
 
             var attribute = new ProductAttribute(
                 productId,
@@ -51,10 +49,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await _cacheInvalidator.ClearProductDetailAsync(
                 productId,
                 cancellationToken);
-            return attribute.Id;
+            return Result<Guid>.Success(attribute.Id);
         }
 
-        public async Task UpdateAsync(
+        public async Task<Result> UpdateAsync(
             Guid id,
             string name,
             string value,
@@ -66,7 +64,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (attribute == null)
-                throw new Exception("Không tìm thấy thuộc tính sản phẩm.");
+                return Result.Failure("Không tìm thấy thuộc tính sản phẩm.");
 
             attribute.Update(
                 name,
@@ -77,9 +75,11 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             await _cacheInvalidator.ClearProductDetailAsync(attribute.ProductId, cancellationToken);
+
+            return Result.Success();
         }
 
-        public async Task DeleteAsync(
+        public async Task<Result> DeleteAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
@@ -88,7 +88,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (attribute == null)
-                throw new Exception("Không tìm thấy thuộc tính sản phẩm.");
+                return Result.Failure("Không tìm thấy thuộc tính sản phẩm.");
 
             _repository.Remove(attribute);
 
@@ -97,6 +97,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             await _cacheInvalidator.ClearProductDetailAsync(attribute.ProductId, cancellationToken);
 
+            return Result.Success();
         }
     }
 }

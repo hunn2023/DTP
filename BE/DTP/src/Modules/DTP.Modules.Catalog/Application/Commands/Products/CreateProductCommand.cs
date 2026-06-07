@@ -1,10 +1,11 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 
 
 namespace DTP.Modules.Catalog.Application.Commands.Products
 {
-    public class CreateProductCommand : IRequest<Guid>
+    public class CreateProductCommand : IRequest<Result<Guid>>
     {
         public string? Code { get; set; }
 
@@ -27,7 +28,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Products
 
 
     public class CreateProductCommandHandler
-    : IRequestHandler<CreateProductCommand, Guid>
+    : IRequestHandler<CreateProductCommand, Result<Guid>>
     {
         private readonly IProductService _productService;
         private readonly IProductCacheInvalidator _productCacheInvalidator; 
@@ -38,7 +39,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Products
             _productCacheInvalidator = productCacheInvalidator;
         }
 
-        public async Task<Guid> Handle(
+        public async Task<Result<Guid>> Handle(
             CreateProductCommand request,
             CancellationToken cancellationToken)
         {

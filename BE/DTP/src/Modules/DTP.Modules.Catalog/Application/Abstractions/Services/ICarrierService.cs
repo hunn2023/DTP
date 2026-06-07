@@ -1,34 +1,33 @@
 ﻿using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 
 namespace DTP.Modules.Catalog.Application.Abstractions.Services
 {
     public interface ICarrierService
     {
-        Task<PagedResultDto<CarrierDto>> GetPagedAsync(
+        Task<Result<PagedResultDto<CarrierDto>>> GetPagedAsync(
             string? keyword,
             int pageIndex,
             int pageSize,
             CancellationToken cancellationToken = default);
 
-        Task<PagedResultDto<CarrierDto>> GetPublicAsync(
+        Task<Result<PagedResultDto<CarrierDto>>> GetPublicAsync(
             int pageIndex,
             int pageSize,
             CancellationToken cancellationToken = default);
 
-
-
-        Task<List<CarrierDto>> GetActiveAsync(
+        Task<Result<List<CarrierDto>>> GetActiveAsync(
         CancellationToken cancellationToken = default);
 
-        Task<CarrierDto?> GetByIdAsync(
+        Task<Result<CarrierDto?>> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken = default);
 
         Task ClearCarrierCacheAsync(
         CancellationToken cancellationToken = default);
 
-        Task<Guid> CreateAsync(
+        Task<Result<Guid>> CreateAsync(
             string? code,
             string name,
             string slug,
@@ -37,7 +36,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
             int sortOrder,
             CancellationToken cancellationToken = default);
 
-        Task UpdateAsync(
+        Task<Result> UpdateAsync(
             Guid id,
             string? code,
             string name,
@@ -48,7 +47,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
             bool isActive,
             CancellationToken cancellationToken = default);
 
-        Task DeleteAsync(
+        Task<Result> DeleteAsync(
             Guid id,
             CancellationToken cancellationToken = default);
     }

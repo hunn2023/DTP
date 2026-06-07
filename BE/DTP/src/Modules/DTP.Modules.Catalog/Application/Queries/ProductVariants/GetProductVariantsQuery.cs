@@ -1,15 +1,11 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Catalog.Application.Queries.ProductVariants
 {
-    public class GetProductVariantsQuery : IRequest<List<ProductVariantDto>>
+    public class GetProductVariantsQuery : IRequest<Result<List<ProductVariantDto>>>
     {
         public Guid ProductId { get; set; }
 
@@ -20,7 +16,7 @@ namespace DTP.Modules.Catalog.Application.Queries.ProductVariants
     }
 
     public class GetProductVariantsQueryHandler
-    : IRequestHandler<GetProductVariantsQuery, List<ProductVariantDto>>
+    : IRequestHandler<GetProductVariantsQuery, Result<List<ProductVariantDto>>>
     {
         private readonly IProductVariantRepository _repository;
 
@@ -29,7 +25,7 @@ namespace DTP.Modules.Catalog.Application.Queries.ProductVariants
             _repository = repository;
         }
 
-        public async Task<List<ProductVariantDto>> Handle(
+        public async Task<Result<List<ProductVariantDto>>> Handle(
             GetProductVariantsQuery request,
             CancellationToken cancellationToken)
         {
@@ -37,7 +33,7 @@ namespace DTP.Modules.Catalog.Application.Queries.ProductVariants
                 request.ProductId,
                 cancellationToken);
 
-            return variants.Select(x => new ProductVariantDto
+            var result = variants.Select(x => new ProductVariantDto
             {
                 Id = x.Id,
                 Sku = x.Sku,
@@ -51,6 +47,8 @@ namespace DTP.Modules.Catalog.Application.Queries.ProductVariants
                 SortOrder = x.SortOrder,
                 IsActive = x.IsActive
             }).ToList();
+
+            return Result<List<ProductVariantDto>>.Success(result);
         }
     }
 }

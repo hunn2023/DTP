@@ -1,12 +1,13 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using MediatR;
 
 namespace DTP.Modules.Catalog.Application.Queries.Countries
 {
     public class GetAdminCountriesQuery
-      : IRequest<PagedResultDto<CountryDto>>
+      : IRequest<Result<PagedResultDto<CountryDto>>>
     {
         public string? Keyword { get; set; }
 
@@ -15,7 +16,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Countries
         public int PageSize { get; set; } = 20;
     }
     public class GetAdminCountriesQueryHandler
-        : IRequestHandler<GetAdminCountriesQuery, PagedResultDto<CountryDto>>
+        : IRequestHandler<GetAdminCountriesQuery, Result<PagedResultDto<CountryDto>>>
     {
         private readonly ICountryService _countryService;
 
@@ -25,7 +26,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Countries
             _countryService = countryService;
         }
 
-        public async Task<PagedResultDto<CountryDto>> Handle(
+        public async Task<Result<PagedResultDto<CountryDto>>> Handle(
             GetAdminCountriesQuery request,
             CancellationToken cancellationToken)
         {

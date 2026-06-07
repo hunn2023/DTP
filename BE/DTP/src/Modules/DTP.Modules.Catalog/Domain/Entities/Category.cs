@@ -21,35 +21,37 @@ namespace DTP.Modules.Catalog.Domain.Entities
 
         public bool IsActive { get;  set; }
 
-  
+        public Category() { }
 
-        //public Category(
-        //    string name,
-        //    string slug,
-        //    Guid? parentId,
-        //    int sortOrder)
-        //{
-        //    Name = name.Trim();
-        //    Slug = slug.Trim();
-        //    ParentId = parentId;
-        //    SortOrder = sortOrder;
-        //    IsActive = true;
-        //}
 
-        //public void Update(
-        //    string name,
-        //    string slug,
-        //    Guid? parentId,
-        //    int sortOrder,
-        //    bool isActive)
-        //{
-        //    Name = name.Trim();
-        //    Slug = slug.Trim();
-        //    ParentId = parentId;
-        //    SortOrder = sortOrder;
-        //    IsActive = isActive;
+        public Category(
+            string code,
+            string name,
+            string slug,
+            Guid? parentId,
+            int sortOrder)
+        {
+            Name = name.Trim();
+            Slug = slug.Trim();
+            ParentId = parentId;
+            SortOrder = sortOrder;
+            IsActive = true;
+        }
 
-        //    SetUpdated();
-        //}
+        public void Update(
+            string code,
+            string name,
+            string slug,
+            Guid? parentId,
+            int sortOrder)
+        {
+            Code = code.Trim();
+            Name = name.Trim();
+            Slug = slug.Trim();
+            ParentId = parentId;
+            SortOrder = sortOrder;
+
+            SetUpdated();
+        }
     }
 }

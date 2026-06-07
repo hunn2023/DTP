@@ -1,13 +1,17 @@
-﻿using DTP.Infrastructure.Caching;
+﻿using Amazon.Runtime;
+using Amazon.S3;
+using DTP.Infrastructure.Caching;
 using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Infrastructure.Persistence;
 using DTP.Modules.Catalog.Infrastructure.Repositories;
 using DTP.Modules.Catalog.Infrastructure.Services;
 using DTP.Shared.Caching;
+using DTP.Shared.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
 namespace DTP.Modules.Catalog
@@ -33,6 +37,35 @@ namespace DTP.Modules.Catalog
 
                 services.AddScoped<ICacheService, RedisCacheService>();
             }
+
+            //services.AddSingleton<IAmazonS3>(sp =>
+            //{
+            //    var settings = sp.GetRequiredService<IOptions<CloudflareR2Settings>>().Value;
+
+            //    var credentials = new BasicAWSCredentials(
+            //        settings.AccessKey,
+            //        settings.SecretKey);
+
+            //    var config = new AmazonS3Config
+            //    {
+            //        ServiceURL = settings.ServiceUrl,
+            //        ForcePathStyle = true,
+            //        AuthenticationRegion = "auto"
+            //    };
+
+            //    return new AmazonS3Client(credentials, config);
+            //});
+
+
+
+            // Cloudflare R2
+            services.Configure<CloudflareR2Settings>(
+                configuration.GetSection("CloudflareR2"));
+
+            services.AddScoped<IFileStorageService, CloudflareR2StorageService>();
+
+
+
 
             services.AddScoped<ICatalogUnitOfWork, CatalogUnitOfWork>();
 

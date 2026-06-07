@@ -1,17 +1,13 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Catalog.Application.Queries.Carriers
 {
     public class GetAdminCarriersQuery
-        : IRequest<PagedResultDto<CarrierDto>>
+        : IRequest<Result<PagedResultDto<CarrierDto>>>
     {
         public string? Keyword { get; set; }
 
@@ -22,7 +18,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Carriers
 
 
     public class GetAdminCarriersQueryHandler
-        : IRequestHandler<GetAdminCarriersQuery, PagedResultDto<CarrierDto>>
+        : IRequestHandler<GetAdminCarriersQuery, Result<PagedResultDto<CarrierDto>>>
     {
         private readonly ICarrierService _carrierService;
 
@@ -31,7 +27,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Carriers
             _carrierService = carrierService;
         }
 
-        public async Task<PagedResultDto<CarrierDto>> Handle(
+        public async Task<Result<PagedResultDto<CarrierDto>>> Handle(
             GetAdminCarriersQuery request,
             CancellationToken cancellationToken)
         {

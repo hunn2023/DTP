@@ -26,7 +26,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Modules\DTP.Modules.Auth\DTP.Modules.Auth.csproj" />
     <ProjectReference Include="..\Modules\DTP.Modules.Catalog\DTP.Modules.Catalog.csproj" />
+    <ProjectReference Include="..\Modules\DTP.Modules.Ordering\DTP.Modules.Ordering.csproj" />
+    <ProjectReference Include="..\Modules\DTP.Modules.Payment\DTP.Modules.Payment.csproj" />
   </ItemGroup>
 
   <ItemGroup>

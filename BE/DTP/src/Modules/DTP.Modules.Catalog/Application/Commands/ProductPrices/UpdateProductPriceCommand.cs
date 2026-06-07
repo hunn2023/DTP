@@ -1,11 +1,12 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 
 
 namespace DTP.Modules.Catalog.Application.Commands.ProductPrices
 {
-    public class UpdateProductPriceCommand : IRequest<bool>
+    public class UpdateProductPriceCommand : IRequest<Result>
     {
         public Guid Id { get; set; }
         public string Currency { get; set; } = "VND";
@@ -18,58 +19,29 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductPrices
     }
 
 
-    public class UpdateProductPriceCommandHandler : IRequestHandler<UpdateProductPriceCommand, bool>
+    public class UpdateProductPriceCommandHandler : IRequestHandler<UpdateProductPriceCommand, Result>
     {
-        private readonly IProductPriceRepository _repository;
-        private readonly ICatalogUnitOfWork _unitOfWork;
-        private readonly IProductCacheInvalidator _productCacheInvalidator;
+        private readonly IProductPriceService _productPriceService;
+
         public UpdateProductPriceCommandHandler(
-            IProductPriceRepository repository,
-            ICatalogUnitOfWork unitOfWork,
-            IProductCacheInvalidator productCacheInvalidator)
+            IProductPriceService productPriceService
+            )
         {
-            _repository = repository;
-            _unitOfWork = unitOfWork;
-            _productCacheInvalidator = productCacheInvalidator;
+            _productPriceService = productPriceService;
         }
 
-        public async Task<bool> Handle(UpdateProductPriceCommand request, CancellationToken cancellationToken)
+        public async Task<Result> Handle(UpdateProductPriceCommand request, CancellationToken cancellationToken)
         {
-            var price = await _repository.GetByIdAsync(request.Id, cancellationToken);
-
-            if (price == null)
-                throw new Exception("Product price not found.");
-
-            if (request.EndDate.HasValue && request.StartDate.HasValue && request.EndDate < request.StartDate)
-                throw new Exception("EndDate must be greater than StartDate.");
-
-            if (request.IsActive)
-            {
-                var exists = await _repository.ExistsActivePriceAsync(
-                    price.ProductId,
-                    price.ProductVariantId,
-                    "VND"   ,
-                    price.Id,
-                    cancellationToken);
-
-                if (exists)
-                    throw new Exception("Another active price already exists for this product or variant.");
-            }
-
-            price.Update(
+           return await _productPriceService.UpdateAsync(
+                request.Id,
                 request.Currency,
                 request.OriginalPrice,
                 request.SalePrice,
                 request.CostPrice,
                 request.StartDate,
                 request.EndDate,
-                request.IsActive);
-
-            _repository.Update(price);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _productCacheInvalidator.ClearProductDetailAsync(price.ProductId, cancellationToken);
-
-            return true;
+                request.IsActive,
+                cancellationToken);
         }
     }
 }

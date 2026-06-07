@@ -1,12 +1,12 @@
-﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
+﻿
 using DTP.Modules.Catalog.Application.Abstractions.Services;
-using DTP.Modules.Catalog.Domain.Entities;
+using DTP.Shared.Application;
 using MediatR;
 
 
 namespace DTP.Modules.Catalog.Application.Commands.EsimPackages
 {
-    public class CreateEsimPackageCommand : IRequest<Guid>
+    public class CreateEsimPackageCommand : IRequest<Result<Guid>>
     {
         public Guid ProductVariantId { get; set; }
 
@@ -35,7 +35,7 @@ namespace DTP.Modules.Catalog.Application.Commands.EsimPackages
         public bool IsActive { get; set; } = true;
     }
     public class CreateEsimPackageCommandHandler
-       : IRequestHandler<CreateEsimPackageCommand, Guid>
+       : IRequestHandler<CreateEsimPackageCommand, Result<Guid>>
     {
         private readonly IEsimPackageService _esimPackageService;
 
@@ -45,7 +45,7 @@ namespace DTP.Modules.Catalog.Application.Commands.EsimPackages
             _esimPackageService = esimPackageService;
         }
 
-        public async Task<Guid> Handle(
+        public async Task<Result<Guid>> Handle(
             CreateEsimPackageCommand request,
             CancellationToken cancellationToken)
         {

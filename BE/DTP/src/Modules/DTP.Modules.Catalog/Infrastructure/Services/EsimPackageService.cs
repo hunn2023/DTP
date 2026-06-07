@@ -3,8 +3,10 @@ using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.CacheKeys;
 using DTP.Modules.Catalog.Application.Commands.EsimPackages;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using DTP.Shared.Caching;
+using StackExchange.Redis;
 
 
 namespace DTP.Modules.Catalog.Infrastructure.Services
@@ -22,7 +24,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             _cacheService = cacheService;
         }
 
-        public async Task<PagedResultDto<EsimPackageDto>> GetPublicPagedAsync(
+        public async Task<Result<PagedResultDto<EsimPackageDto>>> GetPublicPagedAsync(
             Guid? countryId,
             Guid? carrierId,
             bool? isUnlimited,
@@ -48,7 +50,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             if (cachedData is not null)
             {
-                return cachedData;
+                return Result<PagedResultDto<EsimPackageDto>>.Success(cachedData);
             }
 
             var result = await _esimPackageRepository.GetPublicPagedAsync(
@@ -66,10 +68,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 TimeSpan.FromHours(1),
                 cancellationToken);
 
-            return result;
+            return Result<PagedResultDto<EsimPackageDto>>.Success(result);
         }
 
-        public async Task<EsimPackageDto?> GetPublicBySlugAsync(
+        public async Task<Result<EsimPackageDto?>> GetPublicBySlugAsync(
             string slug,
             CancellationToken cancellationToken = default)
         {
@@ -83,7 +85,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             if (cachedData is not null)
             {
-                return cachedData;
+                return Result<EsimPackageDto?>.Success(cachedData);
             }
 
             var result = await _esimPackageRepository.GetPublicBySlugAsync(
@@ -99,10 +101,11 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     cancellationToken);
             }
 
-            return result;
+            return Result<EsimPackageDto?>.Success(result);
+
         }
 
-        public async Task<PagedResultDto<EsimPackageDto>> GetPagedAsync(
+        public async Task<Result<PagedResultDto<EsimPackageDto>>> GetPagedAsync(
             string? keyword,
             Guid? productVariantId,
             Guid? countryId,
@@ -115,7 +118,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             pageIndex = pageIndex <= 0 ? 1 : pageIndex;
             pageSize = pageSize <= 0 ? 20 : pageSize;
 
-            return await _esimPackageRepository.GetPagedAsync(
+            var ezsim = await _esimPackageRepository.GetPagedAsync(
                 keyword,
                 productVariantId,
                 countryId,
@@ -124,18 +127,22 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 pageIndex,
                 pageSize,
                 cancellationToken);
+
+            return Result<PagedResultDto<EsimPackageDto>>.Success(ezsim);
         }
 
-        public async Task<EsimPackageDto?> GetByIdAsync(
+        public async Task<Result<EsimPackageDto?>> GetByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
-            return await _esimPackageRepository.GetByIdDtoAsync(
+            var result = await _esimPackageRepository.GetByIdDtoAsync(
                 id,
                 cancellationToken);
+
+            return Result<EsimPackageDto?>.Success(result);
         }
 
-        public async Task<Guid> CreateAsync(
+        public async Task<Result<Guid>> CreateAsync(
             CreateEsimPackageCommand command,
             CancellationToken cancellationToken = default)
         {
@@ -147,10 +154,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 EsimPackageCacheKeys.PublicPrefix,
                 cancellationToken);
 
-            return id;
+            return Result<Guid>.Success(id);
         }
 
-        public async Task<bool> UpdateAsync(
+        public async Task<Result> UpdateAsync(
             UpdateEsimPackageCommand command,
             CancellationToken cancellationToken = default)
         {
@@ -162,10 +169,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 EsimPackageCacheKeys.PublicPrefix,
                 cancellationToken);
 
-            return result;
+            return Result.Success();
         }
 
-        public async Task<bool> DeleteAsync(
+        public async Task<Result> DeleteAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
@@ -177,7 +184,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 EsimPackageCacheKeys.PublicPrefix,
                 cancellationToken);
 
-            return result;
+            return Result.Success();
         }
     }
 }

@@ -3,6 +3,7 @@ using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.CacheKeys;
 using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Domain.Entities;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using DTP.Shared.Caching;
 
@@ -21,7 +22,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             _cacheService = cacheService;
         }
 
-        public async Task<Guid> CreateAsync(
+        public async Task<Result<Guid>> CreateAsync(
             string? code,
             string name,
             string slug,
@@ -31,7 +32,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             CancellationToken cancellationToken = default)
         {
             if (countryId == Guid.Empty)
-                throw new Exception("Vui lòng chọn quốc gia.");
+                return Result<Guid>.Failure("Vui lòng chọn quốc gia.");
 
             var existsName = await _carrierRepository.ExistsByNameAsync(
                 name,
@@ -40,7 +41,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (existsName)
-                throw new Exception("Nhà mạng đã tồn tại trong quốc gia này.");
+                return Result<Guid>.Failure("Nhà mạng đã tồn tại trong quốc gia này.");
+
 
             var existsSlug = await _carrierRepository.ExistsBySlugAsync(
                 slug,
@@ -48,7 +50,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (existsSlug)
-                throw new Exception("Slug đã tồn tại.");
+                return Result<Guid>.Failure("Slug đã tồn tại.");
 
             var carrier = new Carrier(
                 code,
@@ -70,10 +72,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await _cacheService.RemoveByPrefixAsync("catalog:products:", cancellationToken);
 
 
-            return carrier.Id;
+            return Result<Guid>.Success(carrier.Id);
         }
 
-        public async Task UpdateAsync(
+        public async Task<Result> UpdateAsync(
             Guid id,
             string? code,
             string name,
@@ -89,10 +91,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (carrier == null)
-                throw new Exception("Không tìm thấy nhà mạng.");
+                return Result.Failure("Không tìm thấy nhà mạng.");
+
 
             if (countryId == Guid.Empty)
-                throw new Exception("Vui lòng chọn quốc gia.");
+                Result.Failure("Vui lòng chọn quốc gia.");
+
 
             var existsName = await _carrierRepository.ExistsByNameAsync(
                 name,
@@ -101,7 +105,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (existsName)
-                throw new Exception("Nhà mạng đã tồn tại trong quốc gia này.");
+                Result.Failure("Nhà mạng đã tồn tại trong quốc gia này.");
 
             var existsSlug = await _carrierRepository.ExistsBySlugAsync(
                 slug,
@@ -109,7 +113,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (existsSlug)
-                throw new Exception("Slug đã tồn tại.");
+                Result.Failure("Slug đã tồn tại.");
 
             carrier.Update(
                 code,
@@ -129,9 +133,11 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await _cacheService.RemoveByPrefixAsync("catalog:carriers:", cancellationToken);
             await _cacheService.RemoveByPrefixAsync("catalog:esim:", cancellationToken);
             await _cacheService.RemoveByPrefixAsync("catalog:products:", cancellationToken);
+
+            return Result.Success();
         }
 
-        public async Task DeleteAsync(
+        public async Task<Result> DeleteAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
@@ -140,7 +146,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (carrier == null)
-                throw new Exception("Không tìm thấy nhà mạng.");
+                return Result.Failure("Không tìm thấy nhà mạng.");
 
             _carrierRepository.Remove(carrier);
 
@@ -153,10 +159,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await _cacheService.RemoveByPrefixAsync("catalog:carriers:", cancellationToken);
             await _cacheService.RemoveByPrefixAsync("catalog:esim:", cancellationToken);
             await _cacheService.RemoveByPrefixAsync("catalog:products:", cancellationToken);
+
+            return Result.Success();
         }
 
 
-        public async Task<List<CarrierDto>> GetActiveAsync(
+        public async Task<Result<List<CarrierDto>>> GetActiveAsync(
         CancellationToken cancellationToken = default)
         {
             var cacheKey = CarrierCacheKeys.ActiveList;
@@ -166,7 +174,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (cachedData != null)
-                return cachedData;
+                return Result<List<CarrierDto>>.Success(cachedData);
+
 
             var carriers = await _carrierRepository.GetListAsync(
                 keyword: null,
@@ -195,10 +204,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 TimeSpan.FromHours(12),
                 cancellationToken);
 
-            return result;
+            return Result<List<CarrierDto>>.Success(result);
         }
 
-        public async Task<CarrierDto?> GetByIdAsync(
+        public async Task<Result<CarrierDto?>> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken = default)
         {
@@ -209,12 +218,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (cachedData != null)
-                return cachedData;
+                return Result<CarrierDto?>.Success(cachedData);
 
             var carrier = await _carrierRepository.GetByIdAsync(id, cancellationToken);
 
             if (carrier == null)
-                return null;
+                return Result<CarrierDto?>.Success(null);
 
             var result = new CarrierDto
             {
@@ -233,7 +242,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 TimeSpan.FromHours(12),
                 cancellationToken);
 
-            return result;
+            return Result<CarrierDto?>.Success(result);
         }
 
 
@@ -246,7 +255,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         }
 
 
-        public async Task<PagedResultDto<CarrierDto>> GetPagedAsync(
+        public async Task<Result<PagedResultDto<CarrierDto>>> GetPagedAsync(
             string? keyword,
             int pageIndex,
             int pageSize,
@@ -255,14 +264,15 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             pageIndex = pageIndex <= 0 ? 1 : pageIndex;
             pageSize = pageSize <= 0 ? 20 : pageSize;
 
-            return await _carrierRepository.GetPagedAsync(
-                keyword,
-                pageIndex,
-                pageSize,
-                cancellationToken);
+            return Result<PagedResultDto<CarrierDto>>.Success(
+                await _carrierRepository.GetPagedAsync(
+                    keyword,
+                    pageIndex,
+                    pageSize,
+                    cancellationToken));
         }
 
-        public async Task<PagedResultDto<CarrierDto>> GetPublicAsync(
+        public async Task<Result<PagedResultDto<CarrierDto>>> GetPublicAsync(
             int pageIndex,
             int pageSize,
             CancellationToken cancellationToken = default)
@@ -280,7 +290,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             if (cachedData is not null)
             {
-                return cachedData;
+                return Result<PagedResultDto<CarrierDto>>.Success(cachedData);
             }
 
             var result = await _carrierRepository.GetPublicPagedAsync(
@@ -294,7 +304,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 TimeSpan.FromHours(6),
                 cancellationToken);
 
-            return result;
+            return Result<PagedResultDto<CarrierDto>>.Success(result);
         }
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DTP.Shared.Application;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
 {
     public interface IProductVariantService
     {
-        Task<Guid> CreateAsync(
+        Task<Result<Guid>> CreateAsync(
             Guid productId,
             string? sku,
             string name,
@@ -21,7 +22,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
             int sortOrder,
             CancellationToken cancellationToken = default);
 
-        Task UpdateAsync(
+        Task<Result> UpdateAsync(
             Guid id,
             string? sku,
             string name,
@@ -35,7 +36,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
             bool isActive,
             CancellationToken cancellationToken = default);
 
-        Task DeleteAsync(
+        Task<Result> DeleteAsync(
             Guid id,
             CancellationToken cancellationToken = default);
     }

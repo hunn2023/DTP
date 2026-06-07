@@ -1,9 +1,10 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 
 namespace DTP.Modules.Catalog.Application.Commands.Products
 {
-    public class UpdateProductCommand : IRequest<bool>
+    public class UpdateProductCommand : IRequest<Result>
     {
         public Guid Id { get; set; }
 
@@ -28,7 +29,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Products
 
 
     public class UpdateProductCommandHandler
-    : IRequestHandler<UpdateProductCommand, bool>
+    : IRequestHandler<UpdateProductCommand, Result>
     {
         private readonly IProductService _productService;
 
@@ -37,7 +38,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Products
             _productService = productService;
         }
 
-        public async Task<bool> Handle(
+        public async Task<Result> Handle(
             UpdateProductCommand request,
             CancellationToken cancellationToken)
         {

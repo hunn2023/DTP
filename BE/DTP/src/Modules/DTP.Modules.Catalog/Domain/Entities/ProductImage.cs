@@ -1,9 +1,4 @@
 ﻿using DTP.Shared.Domain;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Catalog.Domain.Entities
 {
@@ -12,6 +7,8 @@ namespace DTP.Modules.Catalog.Domain.Entities
         public Guid ProductId { get; private set; }
 
         public string ImageUrl { get; private set; } = default!;
+
+        public string ImageKey { get; private set; } = default!;
 
         public string? AltText { get; private set; }
 
@@ -24,6 +21,7 @@ namespace DTP.Modules.Catalog.Domain.Entities
         public ProductImage(
             Guid productId,
             string imageUrl,
+            string imageKey,
             string? altText,
             int sortOrder,
             bool isThumbnail)
@@ -31,18 +29,30 @@ namespace DTP.Modules.Catalog.Domain.Entities
             Id = Guid.NewGuid();
             ProductId = productId;
             ImageUrl = imageUrl.Trim();
+            ImageKey = imageKey;
             AltText = altText?.Trim();
             SortOrder = sortOrder;
             IsThumbnail = isThumbnail;
         }
 
+        public ProductImage(Guid productId, string imageUrl, string? altText, int sortOrder, bool isThumbnail)
+        {
+            ProductId = productId;
+            ImageUrl = imageUrl;
+            AltText = altText;
+            SortOrder = sortOrder;
+            IsThumbnail = isThumbnail;
+        }
+
         public void Update(
-    string imageUrl,
-    string? altText,
-    int sortOrder,
-    bool isThumbnail)
+                string imageUrl,
+                string imageKey,
+                string? altText,
+                int sortOrder,
+                bool isThumbnail)
         {
             ImageUrl = imageUrl.Trim();
+            ImageKey = imageKey;
             AltText = altText?.Trim();
             SortOrder = sortOrder;
             IsThumbnail = isThumbnail;

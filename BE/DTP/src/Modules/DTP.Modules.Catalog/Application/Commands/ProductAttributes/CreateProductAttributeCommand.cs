@@ -1,10 +1,11 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 
 
 namespace DTP.Modules.Catalog.Application.Commands.ProductAttributes
 {
-    public class CreateProductAttributeCommand : IRequest<Guid>
+    public class CreateProductAttributeCommand : IRequest<Result<Guid>>
     {
         public Guid ProductId { get; set; }
 
@@ -16,7 +17,7 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductAttributes
     }
 
     public class CreateProductAttributeCommandHandler
-    : IRequestHandler<CreateProductAttributeCommand, Guid>
+    : IRequestHandler<CreateProductAttributeCommand, Result<Guid>>
     {
         private readonly IProductAttributeService _service;
 
@@ -25,7 +26,7 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductAttributes
             _service = service;
         }
 
-        public async Task<Guid> Handle(
+        public async Task<Result<Guid>> Handle(
             CreateProductAttributeCommand request,
             CancellationToken cancellationToken)
         {

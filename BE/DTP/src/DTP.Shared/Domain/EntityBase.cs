@@ -23,20 +23,20 @@ namespace DTP.Shared.Domain
         protected EntityBase()
         {
             Id = Guid.NewGuid();
-            CreatedAt = DateTime.UtcNow;
+            CreatedAt = DateTime.Now;
             IsDeleted = false;
         }
 
         public virtual void SetUpdated(Guid? userId = null)
         {
-            UpdatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.Now;
             UpdatedBy = userId;
         }
 
         public virtual void Delete(Guid? userId = null)
         {
             IsDeleted = true;
-            UpdatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.Now;
             UpdatedBy = userId;
         }
     }

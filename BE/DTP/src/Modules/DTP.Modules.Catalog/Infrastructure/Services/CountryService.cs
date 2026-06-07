@@ -3,6 +3,7 @@ using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.CacheKeys;
 using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Domain.Entities;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using DTP.Shared.Caching;
 
@@ -21,7 +22,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             _cacheService = cacheService;
         }
 
-        public async Task<Guid> CreateAsync(
+        public async Task<Result<Guid>> CreateAsync(
             string code,
             string name,
             string slug,
@@ -38,7 +39,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (existsCode)
-                throw new Exception("Mã quốc gia đã tồn tại.");
+                return Result<Guid>.Failure("Mã quốc gia đã tồn tại.");
+
 
             var existsSlug = await _countryRepository.ExistsBySlugAsync(
                 slug,
@@ -46,7 +48,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (existsSlug)
-                throw new Exception("Slug đã tồn tại.");
+                return Result<Guid>.Failure("Slug đã tồn tại.");
 
             var country = new Country(
 
@@ -72,10 +74,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await _cacheService.RemoveByPrefixAsync("catalog:phonecards:", cancellationToken);
             await _cacheService.RemoveByPrefixAsync("catalog:products:", cancellationToken);
 
-            return country.Id;
+            return Result<Guid>.Success(country.Id);
         }
 
-        public async Task UpdateAsync(
+        public async Task<Result> UpdateAsync(
             Guid id,
             string code,
             string name,
@@ -90,7 +92,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (country == null)
-                throw new Exception("Không tìm thấy quốc gia.");
+                return Result.Failure("Không tìm thấy quốc gia.");
+
 
             code = code.Trim().ToUpper();
             slug = slug.Trim();
@@ -101,7 +104,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (existsCode)
-                throw new Exception("Mã quốc gia đã tồn tại.");
+                return Result.Failure("Mã quốc gia đã tồn tại.");
+
 
             var existsSlug = await _countryRepository.ExistsBySlugAsync(
                 slug,
@@ -109,7 +113,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (existsSlug)
-                throw new Exception("Slug đã tồn tại.");
+                return Result.Failure("Slug đã tồn tại.");
+
 
             country.Update(
                 code,
@@ -131,9 +136,11 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await _cacheService.RemoveByPrefixAsync("catalog:esim:", cancellationToken);
             await _cacheService.RemoveByPrefixAsync("catalog:phonecards:", cancellationToken);
             await _cacheService.RemoveByPrefixAsync("catalog:products:", cancellationToken);
+
+            return Result.Success();
         }
 
-        public async Task DeleteAsync(
+        public async Task<Result> DeleteAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
@@ -142,7 +149,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (country == null)
-                throw new Exception("Không tìm thấy quốc gia.");
+                return Result.Failure("Không tìm thấy quốc gia.");
+
 
             _countryRepository.Remove(country);
 
@@ -158,10 +166,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await _cacheService.RemoveByPrefixAsync("catalog:esim:", cancellationToken);
             await _cacheService.RemoveByPrefixAsync("catalog:phonecards:", cancellationToken);
             await _cacheService.RemoveByPrefixAsync("catalog:products:", cancellationToken);
+
+            return Result.Success();
         }
 
 
-        public async Task<PagedResultDto<CountryDto>> GetPublicAsync(
+        public async Task<Result<PagedResultDto<CountryDto>>> GetPublicAsync(
             int pageIndex,
             int pageSize,
             CancellationToken cancellationToken = default)
@@ -179,7 +189,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             if (cachedData is not null)
             {
-                return cachedData;
+                return Result<PagedResultDto<CountryDto>>.Success(cachedData);
             }
 
             var result = await _countryRepository.GetPublicPagedAsync(
@@ -193,21 +203,24 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 TimeSpan.FromHours(6),
                 cancellationToken);
 
-            return result;
+            return Result<PagedResultDto<CountryDto>>.Success(result);
         }
 
 
-        public async Task<PagedResultDto<CountryDto>> GetPagedAsync(
+        public async Task<Result<PagedResultDto<CountryDto>>> GetPagedAsync(
             string? keyword,
             int pageIndex,
             int pageSize,
             CancellationToken cancellationToken = default)
         {
-            return await _countryRepository.GetPagedAsync(
+
+            var countries = await _countryRepository.GetPagedAsync(
                 keyword,
                 pageIndex,
                 pageSize,
                 cancellationToken);
+
+            return Result<PagedResultDto<CountryDto>>.Success(countries);
         }
     }
 }

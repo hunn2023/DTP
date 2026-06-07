@@ -1,10 +1,11 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 
 
 namespace DTP.Modules.Catalog.Application.Commands.ProductVariant
 {
-    public class DeleteProductVariantCommand : IRequest<bool>
+    public class DeleteProductVariantCommand : IRequest<Result>
     {
         public Guid Id { get; }
 
@@ -15,7 +16,7 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductVariant
     }
 
     public class DeleteProductVariantCommandHandler
-    : IRequestHandler<DeleteProductVariantCommand, bool>
+    : IRequestHandler<DeleteProductVariantCommand, Result>
     {
         private readonly IProductVariantService _service;
 
@@ -24,12 +25,13 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductVariant
             _service = service;
         }
 
-        public async Task<bool> Handle(
+        public async Task<Result> Handle(
             DeleteProductVariantCommand request,
             CancellationToken cancellationToken)
         {
-            await _service.DeleteAsync(request.Id, cancellationToken);
-            return true;
+
+            return await _service.DeleteAsync(request.Id, cancellationToken);
+
         }
     }
 }

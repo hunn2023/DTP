@@ -3,14 +3,9 @@ using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.CacheKeys;
 using DTP.Modules.Catalog.Application.Commands.Products;
 using DTP.Modules.Catalog.Application.DTOs;
-using DTP.Modules.Catalog.Domain.Entities;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using DTP.Shared.Caching;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Catalog.Infrastructure.Services
 {
@@ -27,7 +22,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             _cacheService = cacheService;
         }
 
-        public async Task<PagedResultDto<ProductDto>> GetPublicPagedAsync(
+        public async Task<Result<PagedResultDto<ProductDto>>> GetPublicPagedAsync(
             string? keyword,
             Guid? categoryId,
             Guid? countryId,
@@ -53,7 +48,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             if (cachedData is not null)
             {
-                return cachedData;
+                return Result<PagedResultDto<ProductDto>>.Success(cachedData);
             }
 
             var result = await _productRepository.GetPublicPagedAsync(
@@ -69,10 +64,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 TimeSpan.FromHours(1),
                 cancellationToken);
 
-            return result;
+            return Result<PagedResultDto<ProductDto>>.Success(result);
         }
 
-        public async Task<ProductDto?> GetPublicBySlugAsync(
+        public async Task<Result<ProductDto?>> GetPublicBySlugAsync(
             string slug,
             CancellationToken cancellationToken = default)
         {
@@ -105,7 +100,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             return result;
         }
 
-        public async Task<PagedResultDto<ProductDto>> GetPagedAsync(
+        public async Task<Result<PagedResultDto<ProductDto>>> GetPagedAsync(
             string? keyword,
             Guid? categoryId,
             Guid? countryId,
@@ -118,25 +113,29 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             pageIndex = pageIndex <= 0 ? 1 : pageIndex;
             pageSize = pageSize <= 0 ? 20 : pageSize;
 
-            return await _productRepository.GetPagedAsync(
+            var result = await _productRepository.GetPagedAsync(
                 keyword,
                 categoryId,
                 isActive,
                 pageIndex,
                 pageSize,
                 cancellationToken);
+
+            return Result<PagedResultDto<ProductDto>>.Success(result);
         }
 
-        public async Task<ProductDto?> GetByIdAsync(
+        public async Task<Result<ProductDto?>> GetByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
-            return await _productRepository.GetByIdDtoAsync(
+            var result = await _productRepository.GetByIdDtoAsync(
                 id,
                 cancellationToken);
+
+            return Result<ProductDto?>.Success(result); 
         }
 
-        public async Task<Guid> CreateAsync(
+        public async Task<Result<Guid>> CreateAsync(
             CreateProductCommand command,
             CancellationToken cancellationToken = default)
         {
@@ -148,10 +147,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 "catalog:products:public",
                 cancellationToken);
 
-            return productId;
+            return Result<Guid>.Success(productId);
         }
 
-        public async Task<bool> UpdateAsync(
+        public async Task<Result> UpdateAsync(
             UpdateProductCommand command,
             CancellationToken cancellationToken = default)
         {
@@ -163,10 +162,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 "catalog:products:public",
                 cancellationToken);
 
-            return result;
+            return Result.Success();
         }
 
-        public async Task<bool> DeleteAsync(
+        public async Task<Result> DeleteAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
@@ -178,7 +177,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 "catalog:products:public",
                 cancellationToken);
 
-            return result;
+            return Result.Success();
         }
     }
 }

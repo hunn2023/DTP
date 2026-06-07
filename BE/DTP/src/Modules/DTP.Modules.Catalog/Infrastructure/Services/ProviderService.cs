@@ -2,6 +2,7 @@
 using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.CacheKeys;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using DTP.Shared.Caching;
 
@@ -23,7 +24,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             _cacheService = cacheService;
         }
 
-        public async Task<List<ProviderDto>> GetActiveAsync(
+        public async Task<Result<List<ProviderDto>>> GetActiveAsync(
             CancellationToken cancellationToken = default)
         {
             var cacheKey = ProviderCacheKeys.ActiveList;
@@ -33,7 +34,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (cachedData != null)
-                return cachedData;
+                return Result<List<ProviderDto>>.Success(cachedData);
+
 
             var providers = await _providerRepository.GetListAsync(
                 keyword: null,
@@ -62,10 +64,11 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 TimeSpan.FromHours(12),
                 cancellationToken);
 
-            return result;
+            return Result<List<ProviderDto>>.Success(result);
+
         }
 
-        public async Task<ProviderDto?> GetByIdAsync(
+        public async Task<Result<ProviderDto?>> GetByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
@@ -76,12 +79,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             if (cachedData != null)
-                return cachedData;
+                return Result<ProviderDto?>.Success(cachedData);
 
             var provider = await _providerRepository.GetByIdAsync(id, cancellationToken);
 
             if (provider == null)
-                return null;
+                return Result<ProviderDto?>.Success(null);
 
             var result = new ProviderDto
             {
@@ -101,7 +104,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 TimeSpan.FromHours(12),
                 cancellationToken);
 
-            return result;
+            return Result<ProviderDto?>.Success(result);
         }
 
         public async Task ClearProviderCacheAsync(
@@ -112,7 +115,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
         }
 
-        public async Task<PagedResultDto<ProviderDto>> GetPagedAsync(
+        public async Task<Result<PagedResultDto<ProviderDto>>> GetPagedAsync(
             string? keyword,
             int pageIndex,
             int pageSize,
@@ -121,13 +124,13 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             pageIndex = pageIndex <= 0 ? 1 : pageIndex;
             pageSize = pageSize <= 0 ? 20 : pageSize;
 
-            return await _providerRepository.GetPagedAsync(
+            var result = await _providerRepository.GetPagedAsync(
                 keyword,
                 pageIndex,
                 pageSize,
                 cancellationToken);
+
+            return Result<PagedResultDto<ProviderDto>>.Success(result);
         }
-
-
     }
 }

@@ -1,11 +1,12 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 
 
 namespace DTP.Modules.Catalog.Application.Commands.ProductVariant
 {
 
-    public class UpdateProductVariantCommand : IRequest<bool>
+    public class UpdateProductVariantCommand : IRequest<Result>
     {
         public Guid Id { get; set; }
         public string? Sku { get; set; }
@@ -22,7 +23,7 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductVariant
 
 
     public class UpdateProductVariantCommandHandler
-    : IRequestHandler<UpdateProductVariantCommand, bool>
+    : IRequestHandler<UpdateProductVariantCommand, Result>
     {
         private readonly IProductVariantService _service;
 
@@ -31,25 +32,24 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductVariant
             _service = service;
         }
 
-        public async Task<bool> Handle(
+        public async Task<Result> Handle(
             UpdateProductVariantCommand request,
             CancellationToken cancellationToken)
         {
-            await _service.UpdateAsync(
-                request.Id,
-                request.Sku,
-                request.Name,
-                request.Price,
-                request.OriginalPrice,
-                request.DurationDays,
-                request.DataAmount,
-                request.DataUnit,
-                request.IsUnlimited,
-                request.SortOrder,
-                request.IsActive,
-                cancellationToken);
+            return await _service.UpdateAsync(
+                 request.Id,
+                 request.Sku,
+                 request.Name,
+                 request.Price,
+                 request.OriginalPrice,
+                 request.DurationDays,
+                 request.DataAmount,
+                 request.DataUnit,
+                 request.IsUnlimited,
+                 request.SortOrder,
+                 request.IsActive,
+                 cancellationToken);
 
-            return true;
         }
     }
 }

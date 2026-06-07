@@ -1,4 +1,5 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Catalog.Application.Commands.Countries
 {
-    public class UpdateCountryCommand : IRequest<bool>
+    public class UpdateCountryCommand : IRequest<Result>
     {
         public Guid Id { get; set; }
         public string Code { get; set; } = default!;
@@ -20,7 +21,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Countries
     }
 
     public class UpdateCountryCommandHandler
-       : IRequestHandler<UpdateCountryCommand, bool>
+       : IRequestHandler<UpdateCountryCommand, Result>
     {
         private readonly ICountryService _countryService;
 
@@ -30,21 +31,19 @@ namespace DTP.Modules.Catalog.Application.Commands.Countries
             _countryService = countryService;
         }
 
-        public async Task<bool> Handle(
+        public async Task<Result> Handle(
             UpdateCountryCommand request,
             CancellationToken cancellationToken)
         {
-            await _countryService.UpdateAsync(
-                request.Id,
-                request.Code,
-                request.Name,
-                request.Slug,
-                request.FlagUrl,
-                request.SortOrder,
-                request.IsActive,
-                cancellationToken);
-
-            return true;
+            return await _countryService.UpdateAsync(
+                  request.Id,
+                  request.Code,
+                  request.Name,
+                  request.Slug,
+                  request.FlagUrl,
+                  request.SortOrder,
+                  request.IsActive,
+                  cancellationToken);
         }
     }
 }

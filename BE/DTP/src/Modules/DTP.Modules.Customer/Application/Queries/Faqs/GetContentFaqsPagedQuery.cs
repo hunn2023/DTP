@@ -1,0 +1,43 @@
+﻿using DTP.Modules.Content.Application.Abstractions.Services;
+using DTP.Modules.Content.Application.DTOs;
+using DTP.Shared.Application.Pagination;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DTP.Modules.Content.Application.Queries.Faqs
+{
+    public record GetContentFaqsPagedQuery(
+        string? Keyword,
+        string? CategoryCode,
+        bool? IsActive,
+        int PageIndex,
+        int PageSize) : IRequest<PagedResultDto<ContentFaqDto>>;
+
+
+    public class GetContentFaqsPagedQueryHandler
+    : IRequestHandler<GetContentFaqsPagedQuery, PagedResultDto<ContentFaqDto>>
+    {
+        private readonly IContentFaqService _service;
+
+        public GetContentFaqsPagedQueryHandler(IContentFaqService service)
+        {
+            _service = service;
+        }
+
+        public Task<PagedResultDto<ContentFaqDto>> Handle(
+            GetContentFaqsPagedQuery request,
+            CancellationToken cancellationToken)
+        {
+            return _service.GetPagedAsync(
+                request.Keyword,
+                request.CategoryCode,
+                request.IsActive,
+                request.PageIndex,
+                request.PageSize,
+                cancellationToken);
+        }
+    }
+}

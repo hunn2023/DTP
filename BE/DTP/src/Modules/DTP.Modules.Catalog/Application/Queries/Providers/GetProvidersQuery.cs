@@ -1,15 +1,17 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
 
 
 namespace DTP.Modules.Catalog.Application.Queries.Providers
 {
-    public class GetProvidersQuery : IRequest<List<ProviderDto>>
+    public class GetProvidersQuery : IRequest<Result<List<ProviderDto>>>
     {
         public string? Keyword { get; set; }
     }
-    public class GetProvidersQueryHandler : IRequestHandler<GetProvidersQuery, List<ProviderDto>>
+    public class GetProvidersQueryHandler : IRequestHandler<GetProvidersQuery,
+        Result<List<ProviderDto>>>
     {
         private readonly IProviderRepository _providerRepository;
 
@@ -18,11 +20,11 @@ namespace DTP.Modules.Catalog.Application.Queries.Providers
             _providerRepository = providerRepository;
         }
 
-        public async Task<List<ProviderDto>> Handle(GetProvidersQuery request, CancellationToken cancellationToken)
+        public async Task<Result<List<ProviderDto>>> Handle(GetProvidersQuery request, CancellationToken cancellationToken)
         {
             var providers = await _providerRepository.GetListAsync(request.Keyword, cancellationToken);
 
-            return providers.Select(x => new ProviderDto
+            var result = providers.Select(x => new ProviderDto
             {
                 Id = x.Id,
                 Code = x.Code,
@@ -34,6 +36,8 @@ namespace DTP.Modules.Catalog.Application.Queries.Providers
                 SupportEmail = x.SupportEmail,
                 IsActive = x.IsActive
             }).ToList();
+
+            return Result<List<ProviderDto>>.Success(result);
         }
     }
 

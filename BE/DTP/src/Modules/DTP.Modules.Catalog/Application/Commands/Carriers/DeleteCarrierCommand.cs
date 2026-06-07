@@ -1,14 +1,10 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Catalog.Application.Commands.Carriers
 {
-    public class DeleteCarrierCommand : IRequest<bool>
+    public class DeleteCarrierCommand : IRequest<Result>
     {
         public Guid Id { get; }
 
@@ -19,7 +15,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Carriers
     }
 
     public class DeleteCarrierCommandHandler
-    : IRequestHandler<DeleteCarrierCommand, bool>
+    : IRequestHandler<DeleteCarrierCommand, Result>
     {
         private readonly ICarrierService _carrierService;
 
@@ -28,15 +24,14 @@ namespace DTP.Modules.Catalog.Application.Commands.Carriers
             _carrierService = carrierService;
         }
 
-        public async Task<bool> Handle(
+        public async Task<Result> Handle(
             DeleteCarrierCommand request,
             CancellationToken cancellationToken)
         {
-            await _carrierService.DeleteAsync(
-                request.Id,
-                cancellationToken);
+            return await _carrierService.DeleteAsync(
+                 request.Id,
+                 cancellationToken);
 
-            return true;
         }
     }
 }

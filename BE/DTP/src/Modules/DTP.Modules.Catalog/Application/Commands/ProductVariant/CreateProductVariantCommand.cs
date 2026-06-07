@@ -1,10 +1,11 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 
 
 namespace DTP.Modules.Catalog.Application.Commands.ProductVariant
 {
-    public class CreateProductVariantCommand : IRequest<Guid>
+    public class CreateProductVariantCommand : IRequest<Result<Guid>>
     {
         public Guid ProductId { get; set; }
         public string? Sku { get; set; }
@@ -19,7 +20,7 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductVariant
     }
 
     public class CreateProductVariantCommandHandler
-    : IRequestHandler<CreateProductVariantCommand, Guid>
+    : IRequestHandler<CreateProductVariantCommand, Result<Guid>>
     {
         private readonly IProductVariantService _service;
 
@@ -28,7 +29,7 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductVariant
             _service = service;
         }
 
-        public async Task<Guid> Handle(
+        public async Task<Result<Guid>> Handle(
             CreateProductVariantCommand request,
             CancellationToken cancellationToken)
         {

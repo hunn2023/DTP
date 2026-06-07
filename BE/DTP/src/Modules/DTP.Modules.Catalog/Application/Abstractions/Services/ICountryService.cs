@@ -1,16 +1,12 @@
 ﻿using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Catalog.Application.Abstractions.Services
 {
     public interface ICountryService
     {
-        Task<Guid> CreateAsync(
+        Task<Result<Guid>> CreateAsync(
             string code,
             string name,
             string slug,
@@ -18,7 +14,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
             int sortOrder,
             CancellationToken cancellationToken = default);
 
-        Task UpdateAsync(
+        Task<Result> UpdateAsync(
             Guid id,
             string code,
             string name,
@@ -28,17 +24,17 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
             bool isActive,
             CancellationToken cancellationToken = default);
 
-        Task DeleteAsync(
+        Task<Result> DeleteAsync(
             Guid id,
             CancellationToken cancellationToken = default);
 
-        Task<PagedResultDto<CountryDto>> GetPublicAsync(
+        Task<Result<PagedResultDto<CountryDto>>> GetPublicAsync(
             int pageIndex,
             int pageSize,
             CancellationToken cancellationToken = default);
 
 
-        Task<PagedResultDto<CountryDto>> GetPagedAsync(
+        Task<Result<PagedResultDto<CountryDto>>> GetPagedAsync(
             string? keyword,
             int pageIndex,
             int pageSize,

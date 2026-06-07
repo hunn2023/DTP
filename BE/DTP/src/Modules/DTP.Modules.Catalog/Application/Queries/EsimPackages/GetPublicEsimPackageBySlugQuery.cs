@@ -1,12 +1,13 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
 
 
 namespace DTP.Modules.Catalog.Application.Queries.EsimPackages
 {
     public class GetPublicEsimPackageBySlugQuery
-        : IRequest<EsimPackageDto?>
+        : IRequest<Result<EsimPackageDto?>>
     {
         public string Slug { get; set; }
 
@@ -17,7 +18,7 @@ namespace DTP.Modules.Catalog.Application.Queries.EsimPackages
     }
 
     public class GetPublicEsimPackageBySlugQueryHandler
-      : IRequestHandler<GetPublicEsimPackageBySlugQuery, EsimPackageDto?>
+      : IRequestHandler<GetPublicEsimPackageBySlugQuery, Result<EsimPackageDto?>>
     {
         private readonly IEsimPackageService _esimPackageService;
 
@@ -27,7 +28,7 @@ namespace DTP.Modules.Catalog.Application.Queries.EsimPackages
             _esimPackageService = esimPackageService;
         }
 
-        public async Task<EsimPackageDto?> Handle(
+        public async Task<Result<EsimPackageDto?>> Handle(
             GetPublicEsimPackageBySlugQuery request,
             CancellationToken cancellationToken)
         {

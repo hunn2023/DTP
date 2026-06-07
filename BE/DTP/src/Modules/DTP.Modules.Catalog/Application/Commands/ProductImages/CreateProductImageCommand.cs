@@ -1,9 +1,10 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 
 namespace DTP.Modules.Catalog.Application.Commands.ProductImages
 {
-    public class CreateProductImageCommand : IRequest<Guid>
+    public class CreateProductImageCommand : IRequest<Result<Guid>>
     {
         public Guid ProductId { get; set; }
 
@@ -17,7 +18,7 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductImages
     }
 
     public class CreateProductImageCommandHandler
-    : IRequestHandler<CreateProductImageCommand, Guid>
+    : IRequestHandler<CreateProductImageCommand, Result<Guid>>
     {
         private readonly IProductImageService _service;
 
@@ -26,7 +27,7 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductImages
             _service = service;
         }
 
-        public async Task<Guid> Handle(
+        public async Task<Result<Guid>> Handle(
             CreateProductImageCommand request,
             CancellationToken cancellationToken)
         {
