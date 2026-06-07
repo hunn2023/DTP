@@ -5,6 +5,7 @@ using DTP.Modules.Audit.Application.Services;
 using DTP.Modules.Audit.Infrastructure.Persistence;
 using DTP.Modules.Audit.Infrastructure.Repositories;
 using DTP.Modules.Audit.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

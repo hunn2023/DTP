@@ -4,6 +4,7 @@ using DTP.Modules.Delivery.Application.DTOs;
 using DTP.Modules.Delivery.Domain.Entities;
 using DTP.Modules.Delivery.Domain.Enums;
 using DTP.Shared.Application.Pagination;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -272,7 +273,7 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
             return new PagedResultDto<EsimProfileDto>
             {
                 Items = items,
-                TotalItems = totalItems,
+                TotalCount = totalItems,
                 PageIndex = pageIndex,
                 PageSize = pageSize
             };

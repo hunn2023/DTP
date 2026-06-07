@@ -6,12 +6,12 @@ using MediatR;
 
 namespace DTP.Modules.Auth.Application.Commands.User
 {
-    public class CreateUserCommand : IRequest<Result<Guid>>
+    public class CreateUserCommand : IRequest<Result>
     {
         public CreateUserDto Request { get; set; } = default!;
     }
 
-    public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Result<Guid>>
+    public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Result>
     {
         private readonly IUserService _userService;
 
@@ -20,7 +20,7 @@ namespace DTP.Modules.Auth.Application.Commands.User
             _userService = userService;
         }
 
-        public Task<Result<Guid>> Handle(CreateUserCommand request, CancellationToken cancellationToken)
+        public Task<Result> Handle(CreateUserCommand request, CancellationToken cancellationToken)
         {
             return _userService.CreateAsync(request.Request, cancellationToken);
         }

@@ -1,11 +1,9 @@
-﻿using DTP.Modules.Content.Application.Commands.Customers;
-using DTP.Modules.Content.Application.DTOs;
+﻿
+using DTP.Modules.Customer.Domain.Enums;
+using DTP.Modules.Customer.Application.Commands.Customers;
+using DTP.Modules.Customer.Application.DTOs;
 using DTP.Shared.Application.Pagination;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace DTP.Modules.Customer.Application.Abstractions.Services
 {
@@ -41,7 +39,7 @@ namespace DTP.Modules.Customer.Application.Abstractions.Services
 
         Task<PagedResultDto<CustomerListItemDto>> GetPagedAsync(
             string? keyword,
-            Domain.Enums.CustomerStatus? status,
+            CustomerStatus? status,
             int pageIndex,
             int pageSize,
             CancellationToken cancellationToken = default);

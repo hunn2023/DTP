@@ -1,9 +1,7 @@
-﻿using DTP.Modules.Content.Application.Abstractions.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
+using DTP.Modules.Customer.Application.Abstractions.Services;
+using MediatR;
+
 
 namespace DTP.Modules.Customer.Application.Commands.CustomerAddresses
 {

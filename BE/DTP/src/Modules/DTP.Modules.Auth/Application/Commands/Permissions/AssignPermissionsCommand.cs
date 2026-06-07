@@ -1,15 +1,16 @@
 ﻿using DTP.Modules.Auth.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 
 namespace DTP.Modules.Auth.Application.Commands.Permissions
 {
-    public class AssignPermissionsCommand : IRequest<bool>
+    public class AssignPermissionsCommand : IRequest<Result>
     {
         public Guid RoleId { get; set; }
         public List<Guid> PermissionIds { get; set; } = new();
     }
 
-    public class AssignPermissionsCommandHandler : IRequestHandler<AssignPermissionsCommand, bool>
+    public class AssignPermissionsCommandHandler : IRequestHandler<AssignPermissionsCommand, Result>
     {
         private readonly IRoleService _roleService;
 
@@ -18,7 +19,7 @@ namespace DTP.Modules.Auth.Application.Commands.Permissions
             _roleService = roleService;
         }
 
-        public Task<bool> Handle(AssignPermissionsCommand request, CancellationToken cancellationToken)
+        public Task<Result> Handle(AssignPermissionsCommand request, CancellationToken cancellationToken)
         {
             return _roleService.AssignPermissionsAsync(
                 request.RoleId,

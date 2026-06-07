@@ -1,6 +1,9 @@
-﻿using DTP.Modules.Content.Application.Commands.CustomerAddresses;
-using DTP.Modules.Content.Application.Queries.CustomerAddresses;
-using DTP.Modules.Content.Application.Queries.Customers;
+﻿using DTP.Modules.Customer.Application.Commands.CustomerAddresses;
+using DTP.Modules.Customer.Application.Queries.CustomerAddresses;
+using DTP.Modules.Customer.Application.Queries.Customers;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -123,9 +126,9 @@ namespace DTP.Modules.Customer.Presentation.Controllers
 
         private Guid GetCurrentUserId()
         {
-            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub")
-                ?? User.FindFirstValue("userId");
+            var userIdValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value
+                ?? User.FindFirst("userId")?.Value;
 
             if (string.IsNullOrWhiteSpace(userIdValue))
                 throw new UnauthorizedAccessException("UserId not found in token.");

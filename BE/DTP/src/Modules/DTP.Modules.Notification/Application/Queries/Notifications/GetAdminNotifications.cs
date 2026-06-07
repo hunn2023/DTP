@@ -1,6 +1,7 @@
 ﻿using DTP.Modules.Notification.Application.Abstractions.Services;
 using DTP.Modules.Notification.Application.DTOs;
 using DTP.Modules.Notification.Domain.Enums;
+using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;

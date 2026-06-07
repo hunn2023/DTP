@@ -1,4 +1,5 @@
 ﻿using DTP.Modules.Notification.Application.Abstractions.Services;
+using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;

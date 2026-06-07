@@ -2,6 +2,7 @@
 using DTP.Modules.Provider.Application.DTOs;
 using DTP.Modules.Provider.Domain.Enums;
 using DTP.Shared.Application.Pagination;
+using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;

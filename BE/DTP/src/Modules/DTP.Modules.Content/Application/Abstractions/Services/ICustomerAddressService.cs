@@ -1,10 +1,7 @@
-﻿using DTP.Modules.Content.Application.Commands.CustomerAddresses;
-using DTP.Modules.Content.Application.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
+using DTP.Modules.Customer.Application.Commands.CustomerAddresses;
+using DTP.Modules.Customer.Application.DTOs;
+
 
 namespace DTP.Modules.Customer.Application.Abstractions.Services
 {

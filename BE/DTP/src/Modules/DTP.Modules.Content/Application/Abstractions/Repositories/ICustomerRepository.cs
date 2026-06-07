@@ -1,26 +1,19 @@
-﻿using DTP.Modules.Content.Application.DTOs;
-using DTP.Modules.Content.Domain.Entities;
-using DTP.Modules.Content.Domain.Enums;
+﻿
+using DTP.Modules.Customer.Application.DTOs;
+using DTP.Modules.Customer.Domain.Enums;
 using DTP.Shared.Application.Pagination;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using DTP.Shared.Infrastructure.Persistence;
 
 namespace DTP.Modules.Customer.Application.Abstractions.Repositories
 {
-    public interface ICustomerRepository
+    public interface ICustomerRepository : IRepositoryBase<Domain.Entities.Customer>
     {
-        Task<Customer?> GetByIdAsync(
-            Guid id,
-            CancellationToken cancellationToken = default);
 
-        Task<Customer?> GetByUserIdAsync(
+        Task<Domain.Entities.Customer?> GetByUserIdAsync(
             Guid userId,
             CancellationToken cancellationToken = default);
 
-        Task<Customer?> GetDetailByIdAsync(
+        Task<Domain.Entities.Customer?> GetDetailByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default);
 
@@ -40,13 +33,5 @@ namespace DTP.Modules.Customer.Application.Abstractions.Repositories
             int pageIndex,
             int pageSize,
             CancellationToken cancellationToken = default);
-
-        Task AddAsync(
-            Customer customer,
-            CancellationToken cancellationToken = default);
-
-        void Update(Customer customer);
-
-        void Remove(Customer customer);
     }
 }

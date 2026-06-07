@@ -46,16 +46,18 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
             if (request.Quantity <= 0)
                 return Result<CheckoutResultDto>.Failure("Quantity must be greater than zero.");
 
-            var product = await _catalogService.GetProductForCheckoutAsync(
+            var productResult = await _catalogService.GetProductForCheckoutAsync(
                 request.ProductId,
                 request.ProductVariantId,
                 cancellationToken);
+
+            var product = productResult.Data;
 
             if (product == null)
                 return Result<CheckoutResultDto>.Failure("Product not found.");
 
             if (!product.IsActive)
-                return Result<CheckoutResultDto>.Failure("Product is not active.");`
+                return Result<CheckoutResultDto>.Failure("Product is not active.");
 
             var orderCode = _orderCodeGenerator.Generate();
 

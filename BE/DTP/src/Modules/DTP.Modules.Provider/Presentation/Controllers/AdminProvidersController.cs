@@ -1,5 +1,7 @@
 ﻿using DTP.Modules.Provider.Application.Commands.Providers;
 using DTP.Modules.Provider.Application.Queries;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;

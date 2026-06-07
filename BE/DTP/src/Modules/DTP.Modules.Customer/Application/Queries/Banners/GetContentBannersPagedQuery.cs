@@ -2,11 +2,7 @@
 using DTP.Modules.Content.Application.DTOs;
 using DTP.Modules.Content.Domain.Enums;
 using DTP.Shared.Application.Pagination;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MediatR;
 
 namespace DTP.Modules.Content.Application.Queries.Banners
 {

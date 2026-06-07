@@ -1,6 +1,8 @@
 ﻿using DTP.Modules.Notification.Application.Commands.Template;
 using DTP.Modules.Notification.Application.DTOs;
 using DTP.Modules.Notification.Application.Queries.Notifications;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;

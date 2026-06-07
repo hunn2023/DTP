@@ -74,9 +74,9 @@ namespace DTP.Api
                 });
 
             builder.Services.AddAuthorization();
-
-            builder.Services.AddCatalogModule(builder.Configuration);
             builder.Services.AddAuthModule(builder.Configuration);
+            builder.Services.AddCatalogModule(builder.Configuration);
+        
 
             builder.Services.AddOrderingModule(builder.Configuration);
             builder.Services.AddPaymentModule(builder.Configuration);

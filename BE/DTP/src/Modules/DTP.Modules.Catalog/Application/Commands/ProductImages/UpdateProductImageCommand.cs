@@ -32,15 +32,14 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductImages
             UpdateProductImageCommand request,
             CancellationToken cancellationToken)
         {
-            await _service.UpdateAsync(
-                request.Id,
-                request.ImageUrl,
-                request.AltText,
-                request.SortOrder,
-                request.IsThumbnail,
-                cancellationToken);
+            return await _service.UpdateAsync(
+                 request.Id,
+                 request.ImageUrl,
+                 request.AltText,
+                 request.SortOrder,
+                 request.IsThumbnail,
+                 cancellationToken);
 
-            return true;
         }
     }
 }

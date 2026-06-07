@@ -7,7 +7,10 @@ using DTP.Modules.Provider.Infrastructure;
 using DTP.Modules.Provider.Infrastructure.Gateways;
 using DTP.Modules.Provider.Infrastructure.Persistence;
 using DTP.Modules.Provider.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore.SqlServer; // Add this using directive
 
 namespace DTP.Modules.Provider
 {

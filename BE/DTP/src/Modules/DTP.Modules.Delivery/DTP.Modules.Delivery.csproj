@@ -7,7 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MediatR" Version="14.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.3.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.27" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\DTP.Shared\DTP.Shared.csproj" />
+    <ProjectReference Include="..\DTP.Modules.Ordering\DTP.Modules.Ordering.csproj" />
   </ItemGroup>
 
 </Project>

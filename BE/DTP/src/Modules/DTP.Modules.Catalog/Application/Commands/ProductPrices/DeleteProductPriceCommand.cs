@@ -19,7 +19,6 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductPrices
 
     public class DeleteProductPriceCommandHandler : IRequestHandler<DeleteProductPriceCommand, Result>
     {
-           {
         private readonly IProductPriceService _productPriceService;
         public DeleteProductPriceCommandHandler(
             IProductPriceService productPriceService)
@@ -29,7 +28,7 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductPrices
 
         public async Task<Result> Handle(DeleteProductPriceCommand request, CancellationToken cancellationToken)
         {
-          return await _productPriceService.DeleteProductPriceAsync(request.Id);
+            return await _productPriceService.DeleteProductPriceAsync(request.Id);
         }
     }
 }

@@ -1,9 +1,12 @@
-﻿using DTP.Modules.Content.Application.Abstractions.Repositories;
-using DTP.Modules.Content.Application.Abstractions.Services;
-using DTP.Modules.Content.Application.Services;
-using DTP.Modules.Content.Infrastructure.Persistence;
-using DTP.Modules.Content.Infrastructure.Repositories;
+﻿using DTP.Modules.Customer.Application.Abstractions.Repositories;
+using DTP.Modules.Customer.Application.Abstractions.Services;
+using DTP.Modules.Customer.Application.Services;
+using DTP.Modules.Customer.Infrastructure.Persistence;
+using DTP.Modules.Customer.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore.SqlServer;
 
 namespace DTP.Modules.Customer
 {

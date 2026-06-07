@@ -3,6 +3,7 @@ using DTP.Modules.Report.Application.Abstractions.Repositories;
 using DTP.Modules.Report.Application.Common;
 using DTP.Modules.Report.Application.DTOs;
 using DTP.Modules.Report.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,15 +1,11 @@
-﻿using DTP.Modules.Content.Application.Abstractions.Repositories;
-using DTP.Modules.Content.Application.Abstractions.Services;
-using DTP.Modules.Content.Application.Commands.Customers;
-using DTP.Modules.Content.Application.DTOs;
-using DTP.Modules.Content.Domain.Entities;
-using DTP.Modules.Content.Domain.Enums;
+﻿
+using DTP.Modules.Customer.Application.Abstractions.Repositories;
+using DTP.Modules.Customer.Application.Abstractions.Services;
+using DTP.Modules.Customer.Application.Commands.Customers;
+using DTP.Modules.Customer.Application.DTOs;
 using DTP.Shared.Application.Pagination;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using DTP.Modules.Customer.Domain.Entities;
+using DTP.Modules.Customer.Domain.Enums;
 
 namespace DTP.Modules.Customer.Application.Services
 {
@@ -54,7 +50,7 @@ namespace DTP.Modules.Customer.Application.Services
             if (existsEmail)
                 throw new Exception("Customer email already exists.");
 
-            var customer = new Customer(
+            var customer = new Domain.Entities.Customer(
                 command.UserId,
                 email,
                 command.FullName,
@@ -228,7 +224,7 @@ namespace DTP.Modules.Customer.Application.Services
                 cancellationToken);
         }
 
-        private static CustomerDto MapToDto(Customer customer)
+        private static CustomerDto MapToDto(Domain.Entities.Customer customer)
         {
             return new CustomerDto
             {

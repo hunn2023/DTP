@@ -1,12 +1,9 @@
 ﻿using DTP.Modules.Provider.Application.Commands.Mappings;
 using DTP.Modules.Provider.Application.Queries;
 using DTP.Modules.Provider.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+
 
 namespace DTP.Modules.Provider.Presentation.Controllers
 {

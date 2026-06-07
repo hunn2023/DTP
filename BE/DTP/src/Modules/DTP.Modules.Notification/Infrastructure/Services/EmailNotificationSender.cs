@@ -1,11 +1,14 @@
 ﻿using DTP.Modules.Notification.Application.Abstractions.Services;
+using MailKit.Security;
 using Microsoft.Extensions.Options;
+using MimeKit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
+
 
 namespace DTP.Modules.Notification.Infrastructure.Services
 {
@@ -45,20 +48,20 @@ namespace DTP.Modules.Notification.Infrastructure.Services
                 ? SecureSocketOptions.StartTls
                 : SecureSocketOptions.Auto;
 
-            await client.ConnectAsync(
-                _settings.Host,
-                _settings.Port,
-                secureSocketOptions,
-                cancellationToken);
+            //await client.ConnectAsync(
+            //    _settings.Host,
+            //    _settings.Port,
+            //    secureSocketOptions,
+            //    cancellationToken);
 
-            await client.AuthenticateAsync(
-                _settings.Username,
-                _settings.Password,
-                cancellationToken);
+            //await client.AuthenticateAsync(
+            //    _settings.Username,
+            //    _settings.Password,
+            //    cancellationToken);
 
-            await client.SendAsync(message, cancellationToken);
+            //await client.SendAsync(message, cancellationToken);
 
-            await client.DisconnectAsync(true, cancellationToken);
+            //await client.DisconnectAsync(true, cancellationToken);
         }
     }
 }

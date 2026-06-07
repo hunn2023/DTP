@@ -3,6 +3,7 @@ using DTP.Modules.Audit.Application.DTOs;
 using DTP.Modules.Audit.Domain.Entities;
 using DTP.Modules.Audit.Infrastructure.Persistence;
 using DTP.Shared.Application.Pagination;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;

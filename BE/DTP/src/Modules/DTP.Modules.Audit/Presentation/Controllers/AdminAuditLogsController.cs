@@ -1,12 +1,10 @@
 ﻿using DTP.Modules.Audit.Application.Commands;
 using DTP.Modules.Audit.Application.Queries;
 using DTP.Modules.Audit.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
 
 namespace DTP.Modules.Audit.Presentation.Controllers
 {

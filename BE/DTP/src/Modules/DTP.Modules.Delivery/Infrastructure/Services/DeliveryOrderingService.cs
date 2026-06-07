@@ -1,4 +1,8 @@
 ﻿using DTP.Modules.Delivery.Application.Abstractions.Services;
+using DTP.Modules.Ordering.Application.Commands.UpdateOrderStatus;
+using DTP.Modules.Ordering.Application.Queries;
+using DTP.Modules.Ordering.Domain.Enums;
+using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,12 +24,13 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
             Guid orderId,
             CancellationToken cancellationToken = default)
         {
-            var order = await _mediator.Send(new GetOrderByIdQuery
+            var orderResult = await _mediator.Send(new GetOrderByIdQuery
             {
                 OrderId = orderId,
                 IsAdmin = true
             }, cancellationToken);
 
+            var order = orderResult.IsSuccess ? orderResult.Data : null;
             if (order == null)
                 return null;
 
@@ -41,7 +46,7 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
                     OrderItemId = x.Id,
                     ProductId = x.ProductId,
                     ProductVariantId = x.ProductVariantId,
-                    EsimPackageId = x.EsimPackageId,
+                    //EsimPackageId = x.EsimPackageId,
                     ProductName = x.ProductName,
                     Quantity = x.Quantity
                 }).ToList()

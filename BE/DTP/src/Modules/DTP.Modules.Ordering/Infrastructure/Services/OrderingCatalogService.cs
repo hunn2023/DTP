@@ -57,14 +57,14 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
 
             if (price == null) return Result<OrderingProductSnapshotDto?>.Failure("Product price not found.");
 
-            var esimPackage = await _catalogDbContext.EsimPackages
-                .AsNoTracking()
-                .FirstOrDefaultAsync(
-                    x => x.ProductId == productId
-                         && (productVariantId == null || x.ProductVariantId == productVariantId)
-                         && !x.IsDeleted
-                         && x.IsActive,
-                    cancellationToken);
+            //var esimPackage = await _catalogDbContext.EsimPackages
+            //    .AsNoTracking()
+            //    .FirstOrDefaultAsync(
+            //        x => x.ProductId == productId
+            //             && (productVariantId == null || x.ProductVariantId == productVariantId)
+            //             && !x.IsDeleted
+            //             && x.IsActive,
+            //        cancellationToken);
 
             //var phoneCard = await _catalogDbContext.PhoneCards
             //    .AsNoTracking()
@@ -75,12 +75,13 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
             //             && x.IsActive,
             //        cancellationToken);
 
-            return new OrderingProductSnapshotDto
+
+            return Result<OrderingProductSnapshotDto?>.Success(new OrderingProductSnapshotDto
             {
                 ProductId = product.Id,
                 ProductVariantId = variant?.Id,
 
-                EsimPackageId = esimPackage?.Id,
+                //EsimPackageId = esimPackage?.Id,
                 //PhoneCardId = phoneCard?.Id,
 
                 ProductCode = product.Code ?? string.Empty,
@@ -94,7 +95,7 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
                 CurrencyCode = price.Currency,
 
                 IsActive = product.IsActive && (variant == null || variant.IsActive)
-            };
+            });
         }
     }
 }

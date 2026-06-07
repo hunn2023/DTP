@@ -21,8 +21,9 @@ namespace DTP.Modules.Notification
                     configuration.GetConnectionString("DefaultConnection"));
             });
 
-            services.Configure<EmailNotificationSettings>(
-                configuration.GetSection("Notification:Email"));
+
+            //services.Configure<EmailNotificationSettings>(
+            //    configuration.GetSection("Notification:Email"));
 
             services.AddScoped<INotificationUnitOfWork, NotificationUnitOfWork>();
 

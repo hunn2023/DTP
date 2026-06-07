@@ -1,13 +1,9 @@
 ﻿using DTP.Modules.Content.Application.Commands.Articles;
 using DTP.Modules.Content.Application.Queries.Articles;
 using DTP.Modules.Content.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 namespace DTP.Modules.Content.Presentation.Controllers.Admin
 {
     [ApiController]

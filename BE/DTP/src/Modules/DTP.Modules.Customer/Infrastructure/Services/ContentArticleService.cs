@@ -151,7 +151,7 @@ namespace DTP.Modules.Content.Infrastructure.Services
             if (article == null)
                 throw new Exception("Article not found.");
 
-            article.MarkAsFeatured();
+            //article.MarkAsFeatured();
 
             _repository.Update(article);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -168,7 +168,7 @@ namespace DTP.Modules.Content.Infrastructure.Services
             if (article == null)
                 throw new Exception("Article not found.");
 
-            article.UnmarkAsFeatured();
+            //article.UnmarkAsFeatured();
 
             _repository.Update(article);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -345,8 +345,6 @@ namespace DTP.Modules.Content.Infrastructure.Services
                 IsFeatured = article.IsFeatured,
                 SortOrder = article.SortOrder,
                 ViewCount = article.ViewCount,
-                CreatedAt = article.CreatedAt,
-                UpdatedAt = article.UpdatedAt,
                 PublishedAt = article.PublishedAt
             };
         }

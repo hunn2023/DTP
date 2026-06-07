@@ -24,9 +24,9 @@ namespace DTP.Modules.Audit.Infrastructure.Services
             get
             {
                 var userIdValue =
-                    HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-                    ?? HttpContext?.User?.FindFirstValue("sub")
-                    ?? HttpContext?.User?.FindFirstValue("userId");
+                    HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                    ?? HttpContext?.User?.FindFirst("sub")?.Value
+                    ?? HttpContext?.User?.FindFirst("userId")?.Value;
 
                 if (Guid.TryParse(userIdValue, out var userId))
                     return userId;
@@ -39,9 +39,9 @@ namespace DTP.Modules.Audit.Infrastructure.Services
         {
             get
             {
-                return HttpContext?.User?.FindFirstValue(ClaimTypes.Name)
-                    ?? HttpContext?.User?.FindFirstValue("name")
-                    ?? HttpContext?.User?.FindFirstValue("email");
+                return HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value
+                    ?? HttpContext?.User?.FindFirst("name")?.Value
+                    ?? HttpContext?.User?.FindFirst("email")?.Value;
             }
         }
 
@@ -60,7 +60,7 @@ namespace DTP.Modules.Audit.Infrastructure.Services
         }
 
         public string? UserAgent =>
-            HttpContext?.Request.Headers.UserAgent.ToString();
+            HttpContext?.Request.Headers["User-Agent"].ToString();
 
         public string? RequestPath =>
             HttpContext?.Request.Path.Value;

@@ -130,6 +130,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             var existsSlug = await _categoryRepository.ExistsBySlugAsync(
                 slug,
+                null,
                 cancellationToken);
 
             if (existsSlug)
@@ -139,6 +140,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             {
                 var existsCode = await _categoryRepository.ExistsByCodeAsync(
                     code,
+                    null,
                     cancellationToken);
 
                 if (existsCode)

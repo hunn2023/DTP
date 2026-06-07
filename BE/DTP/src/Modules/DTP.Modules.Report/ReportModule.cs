@@ -8,6 +8,7 @@ using DTP.Modules.Report.Infrastructure.Caching;
 using DTP.Modules.Report.Infrastructure.Exports;
 using DTP.Modules.Report.Infrastructure.Persistence;
 using DTP.Modules.Report.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

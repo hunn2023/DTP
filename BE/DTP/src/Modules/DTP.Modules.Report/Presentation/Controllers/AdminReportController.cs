@@ -1,6 +1,8 @@
 ﻿using DTP.Modules.Report.Application.Queries;
 using DTP.Modules.Report.Domain.Enums;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;

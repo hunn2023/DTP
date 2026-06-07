@@ -1,4 +1,5 @@
 ﻿using DTP.Modules.Ordering.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Ordering.Application.Commands.CancelOrder
 {
-    public class CancelOrderCommand : IRequest<bool>
+    public class CancelOrderCommand : IRequest<Result>
     {
         public Guid OrderId { get; set; }
 
@@ -20,7 +21,7 @@ namespace DTP.Modules.Ordering.Application.Commands.CancelOrder
     }
 
 
-    public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, bool>
+    public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Result>
     {
         private readonly IOrderService _orderService;
 
@@ -29,7 +30,7 @@ namespace DTP.Modules.Ordering.Application.Commands.CancelOrder
             _orderService = orderService;
         }
 
-        public async Task<bool> Handle(
+        public async Task<Result> Handle(
             CancelOrderCommand request,
             CancellationToken cancellationToken)
         {

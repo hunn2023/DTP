@@ -1,4 +1,5 @@
-﻿using DTP.Modules.Content.Domain.Entities;
+﻿
+using DTP.Modules.Customer.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;

@@ -1,4 +1,4 @@
-﻿using DTP.Modules.Content.Domain.Enums;
+﻿using DTP.Modules.Customer.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;

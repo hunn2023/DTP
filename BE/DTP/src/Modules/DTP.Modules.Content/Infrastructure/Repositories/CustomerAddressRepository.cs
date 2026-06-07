@@ -1,19 +1,18 @@
-﻿using DTP.Modules.Content.Application.Abstractions.Repositories;
-using DTP.Modules.Content.Domain.Entities;
-using DTP.Modules.Content.Infrastructure.Persistence;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
+using DTP.Modules.Customer.Application.Abstractions.Repositories;
+using DTP.Modules.Customer.Domain.Entities;
+using DTP.Modules.Customer.Infrastructure.Persistence;
+using DTP.Shared.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace DTP.Modules.Customer.Infrastructure.Repositories
 {
-    public class CustomerAddressRepository : ICustomerAddressRepository
+    public class CustomerAddressRepository : RepositoryBase<CustomerAddress>,
+     ICustomerAddressRepository
     {
         private readonly CustomerDbContext _context;
 
-        public CustomerAddressRepository(CustomerDbContext context)
+        public CustomerAddressRepository(CustomerDbContext context) : base(context)
         {
             _context = context;
         }
@@ -49,22 +48,5 @@ namespace DTP.Modules.Customer.Infrastructure.Repositories
                     cancellationToken);
         }
 
-        public async Task AddAsync(
-            CustomerAddress address,
-            CancellationToken cancellationToken = default)
-        {
-            await _context.CustomerAddresses.AddAsync(address, cancellationToken);
-        }
-
-        public void Update(CustomerAddress address)
-        {
-            _context.CustomerAddresses.Update(address);
-        }
-
-        public void Remove(CustomerAddress address)
-        {
-            address.Delete();
-            _context.CustomerAddresses.Update(address);
-        }
     }
 }

@@ -1,11 +1,6 @@
 ﻿using DTP.Modules.Delivery.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Delivery.Infrastructure.Configurations
 {
@@ -59,5 +54,4 @@ namespace DTP.Modules.Delivery.Infrastructure.Configurations
             builder.HasIndex(x => x.Status);
         }
     }
-}
 }

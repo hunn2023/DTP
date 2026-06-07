@@ -1,5 +1,7 @@
-﻿using DTP.Modules.Content.Application.Abstractions.Services;
-using DTP.Modules.Content.Application.DTOs;
+﻿
+using DTP.Modules.Customer.Application.Abstractions.Services;
+using DTP.Modules.Customer.Application.DTOs;
+using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;

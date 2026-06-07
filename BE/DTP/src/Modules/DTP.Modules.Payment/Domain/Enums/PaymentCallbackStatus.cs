@@ -15,4 +15,3 @@ namespace DTP.Modules.Payment.Domain.Enums
         Ignored = 5
     }
 }
-}

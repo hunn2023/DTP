@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DTP.Modules.Content.Domain.Enums
+namespace DTP.Modules.Customer.Domain.Enums
 {
     public enum CustomerStatus
     {

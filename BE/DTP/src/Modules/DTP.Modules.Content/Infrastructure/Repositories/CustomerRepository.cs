@@ -1,32 +1,25 @@
-﻿using DTP.Modules.Content.Application.Abstractions.Repositories;
-using DTP.Modules.Content.Application.DTOs;
-using DTP.Modules.Content.Domain.Enums;
-using DTP.Modules.Content.Infrastructure.Persistence;
+﻿
+using DTP.Modules.Customer.Domain.Enums;
+using DTP.Modules.Customer.Application.Abstractions.Repositories;
+using DTP.Modules.Customer.Application.DTOs;
+using DTP.Modules.Customer.Infrastructure.Persistence;
 using DTP.Shared.Application.Pagination;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using DTP.Shared.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace DTP.Modules.Customer.Infrastructure.Repositories
 {
-    public class CustomerRepository : ICustomerRepository
+    public class CustomerRepository : RepositoryBase<Domain.Entities.Customer>, ICustomerRepository
     {
         private readonly CustomerDbContext _context;
 
-        public CustomerRepository(CustomerDbContext context)
+        public CustomerRepository(CustomerDbContext context) : base(context)
         {
             _context = context;
         }
 
-        public async Task<Domain.Entities.Customer?> GetByIdAsync(
-            Guid id,
-            CancellationToken cancellationToken = default)
-        {
-            return await _context.Customers
-                .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
-        }
+    
 
         public async Task<Domain.Entities.Customer?> GetByUserIdAsync(
             Guid userId,
@@ -124,24 +117,6 @@ namespace DTP.Modules.Customer.Infrastructure.Repositories
                 totalItems,
                 pageIndex,
                 pageSize);
-        }
-
-        public async Task AddAsync(
-            Domain.Entities.Customer customer,
-            CancellationToken cancellationToken = default)
-        {
-            await _context.Customers.AddAsync(customer, cancellationToken);
-        }
-
-        public void Update(Domain.Entities.Customer customer)
-        {
-            _context.Customers.Update(customer);
-        }
-
-        public void Remove(Domain.Entities.Customer customer)
-        {
-            customer.Delete();
-            _context.Customers.Update(customer);
         }
     }
 }

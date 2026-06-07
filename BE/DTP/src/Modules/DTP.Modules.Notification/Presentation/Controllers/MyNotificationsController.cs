@@ -1,12 +1,12 @@
 ﻿using DTP.Modules.Notification.Application.Abstractions.Services;
 using DTP.Modules.Notification.Application.Queries.Notifications;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Security.Claims;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace DTP.Modules.Notification.Presentation.Controllers
 {
@@ -63,9 +63,9 @@ namespace DTP.Modules.Notification.Presentation.Controllers
 
         private Guid GetCurrentUserId()
         {
-            var value = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                        ?? User.FindFirstValue("sub")
-                        ?? User.FindFirstValue("userId");
+            var value = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                        ?? User.FindFirst("sub")?.Value
+                        ?? User.FindFirst("userId")?.Value;
 
             if (string.IsNullOrWhiteSpace(value))
                 throw new UnauthorizedAccessException("UserId not found.");

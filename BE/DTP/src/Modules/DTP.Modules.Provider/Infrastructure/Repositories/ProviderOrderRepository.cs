@@ -134,7 +134,7 @@ namespace DTP.Modules.Provider.Infrastructure.Repositories
                 Items = items,
                 PageIndex = pageIndex,
                 PageSize = pageSize,
-                TotalItems = totalItems
+                TotalCount = totalItems
             };
         }
     }

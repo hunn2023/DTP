@@ -1,12 +1,10 @@
-﻿using DTP.Modules.Content.Application.Commands.Customers;
-using DTP.Modules.Content.Application.Queries.Customers;
-using DTP.Modules.Content.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+﻿
+using DTP.Modules.Customer.Application.Commands.Customers;
+using DTP.Modules.Customer.Application.Queries.Customers;
+using DTP.Modules.Customer.Domain.Enums;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DTP.Modules.Customer.Presentation.Controllers
 {

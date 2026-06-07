@@ -10,7 +10,9 @@ namespace DTP.Modules.Auth.Application.Abstractions.Services
 
         Task<Result<UserDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
-        Task<Result<Guid>> CreateAsync(CreateUserDto request, CancellationToken cancellationToken = default);
+        Task<Result> CreateAsync(
+            CreateUserDto request,
+            CancellationToken cancellationToken = default);
 
         Task<Result> UpdateAsync(Guid id, UpdateUserDto request, CancellationToken cancellationToken = default);
 

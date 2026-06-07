@@ -1,6 +1,7 @@
 ﻿using DTP.Modules.Provider.Application.Abstractions.Repositories;
 using DTP.Modules.Provider.Domain.Entities;
 using DTP.Modules.Provider.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;

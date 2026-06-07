@@ -2,31 +2,23 @@
 using DTP.Modules.Content.Domain.Entities;
 using DTP.Modules.Content.Domain.Enums;
 using DTP.Modules.Content.Infrastructure.Persistence;
+using DTP.Shared.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace DTP.Modules.Content.Infrastructure.Repositories
 {
-    public class ContentBannerRepository : IContentBannerRepository
+    public class ContentBannerRepository :  RepositoryBase<ContentBanner>, IContentBannerRepository
+
     {
         private readonly ContentDbContext _dbContext;
 
-        public ContentBannerRepository(ContentDbContext dbContext)
+        public ContentBannerRepository(ContentDbContext dbContext) : base(dbContext)
         {
             _dbContext = dbContext;
         }
 
-        public Task<ContentBanner?> GetByIdAsync(
-            Guid id,
-            CancellationToken cancellationToken = default)
-        {
-            return _dbContext.ContentBanners
-                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-        }
 
         public async Task<(IReadOnlyList<ContentBanner> Items, int TotalCount)> GetPagedAsync(
             string? keyword,
@@ -92,20 +84,6 @@ namespace DTP.Modules.Content.Infrastructure.Repositories
                 .OrderBy(x => x.SortOrder)
                 .ThenByDescending(x => x.CreatedAt)
                 .ToListAsync(cancellationToken);
-        }
-
-        public Task AddAsync(
-            ContentBanner banner,
-            CancellationToken cancellationToken = default)
-        {
-            return _dbContext.ContentBanners
-                .AddAsync(banner, cancellationToken)
-                .AsTask();
-        }
-
-        public void Update(ContentBanner banner)
-        {
-            _dbContext.ContentBanners.Update(banner);
         }
     }
 }

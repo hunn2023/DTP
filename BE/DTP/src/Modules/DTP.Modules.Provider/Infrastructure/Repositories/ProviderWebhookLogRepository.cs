@@ -4,6 +4,7 @@ using DTP.Modules.Provider.Domain.Entities;
 using DTP.Modules.Provider.Domain.Enums;
 using DTP.Modules.Provider.Infrastructure.Persistence;
 using DTP.Shared.Application.Pagination;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -100,7 +101,7 @@ namespace DTP.Modules.Provider.Infrastructure.Repositories
                 Items = items,
                 PageIndex = pageIndex,
                 PageSize = pageSize,
-                TotalItems = totalItems
+                TotalCount = totalItems
             };
         }
 

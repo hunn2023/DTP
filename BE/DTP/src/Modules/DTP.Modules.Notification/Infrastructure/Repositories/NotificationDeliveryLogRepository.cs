@@ -1,6 +1,7 @@
 ﻿using DTP.Modules.Notification.Application.Abstractions.Repositories;
 using DTP.Modules.Notification.Domain.Entities;
 using DTP.Modules.Notification.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;

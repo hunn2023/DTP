@@ -30,4 +30,3 @@ namespace DTP.Modules.Audit.Domain.Enums
         System = 100
     }
 }
-}

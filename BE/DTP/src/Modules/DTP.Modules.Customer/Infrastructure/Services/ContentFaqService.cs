@@ -86,7 +86,7 @@ namespace DTP.Modules.Content.Infrastructure.Services
             if (faq == null)
                 throw new Exception("FAQ not found.");
 
-            faq.Enable();
+            //faq.Enable();
 
             _repository.Update(faq);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -194,9 +194,7 @@ namespace DTP.Modules.Content.Infrastructure.Services
                 Answer = faq.Answer,
                 CategoryCode = faq.CategoryCode,
                 SortOrder = faq.SortOrder,
-                IsActive = faq.IsActive,
-                CreatedAt = faq.CreatedAt,
-                UpdatedAt = faq.UpdatedAt
+                IsActive = faq.IsActive
             };
         }
     }

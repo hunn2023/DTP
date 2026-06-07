@@ -81,7 +81,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             if (cachedData is not null)
             {
-                return cachedData;
+                return Result<ProductDto?>.Success(cachedData);
             }
 
             var result = await _productRepository.GetPublicBySlugAsync(
@@ -97,7 +97,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     cancellationToken);
             }
 
-            return result;
+            return Result<ProductDto?>.Success(result);
         }
 
         public async Task<Result<PagedResultDto<ProductDto>>> GetPagedAsync(

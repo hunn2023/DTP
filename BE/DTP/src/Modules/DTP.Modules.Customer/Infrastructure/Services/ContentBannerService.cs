@@ -5,11 +5,6 @@ using DTP.Modules.Content.Application.DTOs;
 using DTP.Modules.Content.Domain.Entities;
 using DTP.Modules.Content.Domain.Enums;
 using DTP.Shared.Application.Pagination;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Content.Infrastructure.Services
 {
@@ -132,7 +127,7 @@ namespace DTP.Modules.Content.Infrastructure.Services
             if (banner == null)
                 throw new Exception("Content banner not found.");
 
-            banner.Enable();
+            //banner.Enable();
 
             _repository.Update(banner);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -222,9 +217,8 @@ namespace DTP.Modules.Content.Infrastructure.Services
                 StartDate = banner.StartDate,
                 EndDate = banner.EndDate,
                 SortOrder = banner.SortOrder,
-                IsActive = banner.IsActive,
-                CreatedAt = banner.CreatedAt,
-                UpdatedAt = banner.UpdatedAt
+                IsActive = banner.IsActive
             };
         }
     }
+}

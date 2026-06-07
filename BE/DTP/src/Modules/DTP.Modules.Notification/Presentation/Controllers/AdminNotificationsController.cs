@@ -2,12 +2,9 @@
 using DTP.Modules.Notification.Application.DTOs;
 using DTP.Modules.Notification.Application.Queries.Notifications;
 using DTP.Modules.Notification.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+
 
 namespace DTP.Modules.Notification.Presentation.Controllers
 {

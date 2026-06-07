@@ -1,5 +1,6 @@
-﻿using DTP.Modules.Content.Application.Abstractions.Repositories;
-using DTP.Modules.Content.Infrastructure.Persistence;
+﻿
+using DTP.Modules.Customer.Application.Abstractions.Repositories;
+using DTP.Modules.Customer.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;

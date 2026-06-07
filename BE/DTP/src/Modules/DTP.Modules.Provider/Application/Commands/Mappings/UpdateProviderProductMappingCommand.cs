@@ -1,5 +1,6 @@
 ﻿using DTP.Modules.Provider.Application.Abstractions;
 using DTP.Modules.Provider.Application.Abstractions.Repositories;
+using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;

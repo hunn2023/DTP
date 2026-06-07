@@ -1,4 +1,4 @@
-﻿using DTP.Modules.Content.Domain.Enums;
+﻿using DTP.Modules.Customer.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
