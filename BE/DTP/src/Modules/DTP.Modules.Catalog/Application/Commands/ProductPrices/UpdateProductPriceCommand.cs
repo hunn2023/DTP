@@ -16,6 +16,8 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductPrices
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public bool IsActive { get; set; }
+
+        public string Note { get; set; } = default!;
     }
 
 
@@ -41,6 +43,7 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductPrices
                 request.StartDate,
                 request.EndDate,
                 request.IsActive,
+                request.Note,
                 cancellationToken);
         }
     }

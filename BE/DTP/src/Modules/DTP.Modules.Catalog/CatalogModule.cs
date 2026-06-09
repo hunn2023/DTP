@@ -89,13 +89,14 @@ namespace DTP.Modules.Catalog
             services.AddScoped<IProductVariantService, ProductVariantService>();
             services.AddScoped<IProductImageService, ProductImageService>();
             services.AddScoped<IProductAttributeService, ProductAttributeService>();
-            //services.AddScoped<IProductPriceService, ProductPriceService>();
+            services.AddScoped<IProductPriceService, ProductPriceService>();
             services.AddScoped<IEsimPackageService, EsimPackageService>();
             services.AddScoped<IPhoneCardService, PhoneCardService>();
             services.AddScoped<IProductCacheInvalidator, ProductCacheInvalidator>();
             services.AddScoped<ICatalogProductTypeCacheInvalidator, CatalogProductTypeCacheInvalidator>();
             services.AddScoped<IProductAttributeService, ProductAttributeService>();
-            
+            services.AddScoped<IProductVariantFeatureRepository, ProductVariantFeatureRepository>();
+            services.AddScoped<IProductVariantFeatureService, ProductVariantFeatureService>();
             services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(CatalogModule).Assembly);

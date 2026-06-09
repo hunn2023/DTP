@@ -9,6 +9,10 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
 {
     public interface IProductService
     {
+        Task<Result<ProductDetailDto?>> GetDetailAsync(
+          Guid id,
+          CancellationToken cancellationToken = default);
+
         Task<Result<PagedResultDto<ProductDto>>> GetPublicPagedAsync(
           string? keyword,
           Guid? categoryId,

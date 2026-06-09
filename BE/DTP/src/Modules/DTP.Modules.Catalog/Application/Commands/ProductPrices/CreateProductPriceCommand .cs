@@ -17,6 +17,8 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductPrices
         public decimal CostPrice { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
+
+        public string Note { get; set; } = default!;
     }
 
     public class CreateProductPriceCommandHandler : IRequestHandler<CreateProductPriceCommand, Result<Guid>>
@@ -39,6 +41,7 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductPrices
                 request.CostPrice,
                 request.StartDate,
                 request.EndDate,
+                request.Note,
                 cancellationToken);
         }
     }

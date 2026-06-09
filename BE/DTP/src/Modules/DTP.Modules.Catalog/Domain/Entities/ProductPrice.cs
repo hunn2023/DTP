@@ -1,4 +1,5 @@
 ﻿using DTP.Shared.Domain;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +22,11 @@ namespace DTP.Modules.Catalog.Domain.Entities
         public DateTime? EndDate { get; private set; }
 
         public bool IsActive { get; private set; }
+        public string PriceType { get; private set; } = "Retail";
+
+        public int Priority { get; private set; }
+
+        public string? Note { get; private set; }
 
         private ProductPrice() { }
 
@@ -32,9 +38,9 @@ namespace DTP.Modules.Catalog.Domain.Entities
             decimal salePrice,
             decimal costPrice,
             DateTime? startDate,
-            DateTime? endDate)
+            DateTime? endDate,
+            string note)
         {
-            Id = Guid.NewGuid();
             ProductId = productId;
             ProductVariantId = productVariantId;
             Currency = currency.Trim().ToUpper();
@@ -44,7 +50,7 @@ namespace DTP.Modules.Catalog.Domain.Entities
             StartDate = startDate;
             EndDate = endDate;
             IsActive = true;
-            CreatedAt = DateTime.UtcNow;
+            Note = note;
         }
 
         public void Update(
@@ -54,7 +60,8 @@ namespace DTP.Modules.Catalog.Domain.Entities
             decimal costPrice,
             DateTime? startDate,
             DateTime? endDate,
-            bool isActive)
+            bool isActive,
+            string note)
         {
             Currency = currency.Trim().ToUpper();
             OriginalPrice = originalPrice;
@@ -63,7 +70,7 @@ namespace DTP.Modules.Catalog.Domain.Entities
             StartDate = startDate;
             EndDate = endDate;
             IsActive = isActive;
-
+            Note = note;
             SetUpdated();
         }
 

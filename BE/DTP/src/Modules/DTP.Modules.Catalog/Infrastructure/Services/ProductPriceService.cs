@@ -29,17 +29,17 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             _productCacheInvalidator = productCacheInvalidator;
         }
 
-
         public async Task<Result<Guid>> CreateAsync(
-             Guid productId,
-             Guid? productVariantId,
-             string currency,
-             decimal originalPrice,
-             decimal salePrice,
-             decimal costPrice,
-             DateTime? startDate,
-             DateTime? endDate,
-             CancellationToken cancellationToken = default)
+            Guid productId,
+            Guid? productVariantId,
+            string currency,
+            decimal originalPrice,
+            decimal salePrice,
+            decimal costPrice,
+            DateTime? startDate,
+            DateTime? endDate,
+            string note,
+            CancellationToken cancellationToken = default)
         {
             if (productId == Guid.Empty)
                 return Result<Guid>.Failure("ProductId is required.");
@@ -51,6 +51,9 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             if (originalPrice < 0 || salePrice < 0 || costPrice < 0)
                 return Result<Guid>.Failure("Price must be greater than or equal to 0.");
+
+            if (salePrice > originalPrice)
+                return Result<Guid>.Failure("SalePrice must be less than or equal to OriginalPrice.");
 
             if (endDate.HasValue && startDate.HasValue && endDate < startDate)
                 return Result<Guid>.Failure("EndDate must be greater than StartDate.");
@@ -82,7 +85,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             var existsActivePrice = await _productPriceRepository.ExistsActivePriceAsync(
                 productId,
                 productVariantId,
-                null,
+                currency,
                 null,
                 cancellationToken);
 
@@ -97,7 +100,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 salePrice,
                 costPrice,
                 startDate,
-                endDate);
+                endDate,
+                note);
 
             await _productPriceRepository.AddAsync(
                 price,
@@ -110,6 +114,76 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
 
             return Result<Guid>.Success(price.Id);
+        }
+
+        public async Task<Result> UpdateAsync(
+            Guid id,
+            string currency,
+            decimal originalPrice,
+            decimal salePrice,
+            decimal costPrice,
+            DateTime? startDate,
+            DateTime? endDate,
+            bool isActive,
+            string note,
+            CancellationToken cancellationToken = default)
+        {
+            if (id == Guid.Empty)
+                return Result.Failure("ProductPriceId is required.");
+
+            var price = await _productPriceRepository.GetByIdAsync(
+                id,
+                cancellationToken);
+
+            if (price == null)
+                return Result.Failure("Product price not found.");
+
+            currency = currency?.Trim().ToUpper() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(currency))
+                return Result.Failure("Currency is required.");
+
+            if (originalPrice < 0 || salePrice < 0 || costPrice < 0)
+                return Result.Failure("Price must be greater than or equal to 0.");
+
+            if (salePrice > originalPrice)
+                return Result.Failure("SalePrice must be less than or equal to OriginalPrice.");
+
+            if (endDate.HasValue && startDate.HasValue && endDate < startDate)
+                return Result.Failure("EndDate must be greater than StartDate.");
+
+            if (isActive)
+            {
+                var exists = await _productPriceRepository.ExistsActivePriceAsync(
+                    price.ProductId,
+                    price.ProductVariantId,
+                    currency,
+                    price.Id,
+                    cancellationToken);
+
+                if (exists)
+                    return Result.Failure("Another active price already exists for this product or variant.");
+            }
+
+            price.Update(
+                currency,
+                originalPrice,
+                salePrice,
+                costPrice,
+                startDate,
+                endDate,
+                isActive,
+                note);
+
+            _productPriceRepository.Update(price);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await _productCacheInvalidator.ClearProductDetailAsync(
+                price.ProductId,
+                cancellationToken);
+
+            return Result.Success();
         }
 
 
@@ -137,66 +211,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             return Result.Success();
         }
 
-        public async Task<Result> UpdateAsync(
-            Guid id,
-            string currency,
-            decimal originalPrice,
-            decimal salePrice,
-            decimal costPrice,
-            DateTime? startDate,
-            DateTime? endDate,
-            bool isActive,
-            CancellationToken cancellationToken = default)
-        {
-            var price = await _productPriceRepository.GetByIdAsync(
-                id,
-                cancellationToken);
-
-            if (price == null)
-                return Result.Failure("Product price not found.");
-
-            currency = currency?.Trim().ToUpper() ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(currency))
-                return Result.Failure("Currency is required.");
-
-            if (originalPrice < 0 || salePrice < 0 || costPrice < 0)
-                return Result.Failure("Price must be greater than or equal to 0.");
-
-            if (endDate.HasValue && startDate.HasValue && endDate < startDate)
-                return Result.Failure("EndDate must be greater than StartDate.");
-
-            if (isActive)
-            {
-                var exists = await _productPriceRepository.ExistsActivePriceAsync(
-                    price.ProductId,
-                    price.ProductVariantId,
-                    currency,
-                    price.Id,
-                    cancellationToken);
-
-                if (exists)
-                    return Result.Failure("Another active price already exists for this product or variant.");
-            }
-
-            price.Update(
-                currency,
-                originalPrice,
-                salePrice,
-                costPrice,
-                startDate,
-                endDate,
-                isActive);
-
-            _productPriceRepository.Update(price);
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            await _productCacheInvalidator.ClearProductDetailAsync(
-                price.ProductId,
-                cancellationToken);
-
-            return Result.Success();
-        }
+       
     }
 }

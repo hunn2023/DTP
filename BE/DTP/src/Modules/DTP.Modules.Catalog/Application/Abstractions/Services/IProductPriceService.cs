@@ -1,9 +1,5 @@
 ﻿using DTP.Shared.Application;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace DTP.Modules.Catalog.Application.Abstractions.Services
 {
@@ -18,6 +14,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
              decimal costPrice,
              DateTime? startDate,
              DateTime? endDate,
+             string note,
              CancellationToken cancellationToken = default);
 
         Task<Result> DeleteProductPriceAsync(
@@ -33,6 +30,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
             DateTime? startDate,
             DateTime? endDate,
             bool isActive,
+            string note,
             CancellationToken cancellationToken = default);
     }
 }

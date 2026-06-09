@@ -1,5 +1,6 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Domain.Entities;
 using DTP.Shared.Application;
 namespace DTP.Modules.Catalog.Infrastructure.Services
@@ -8,33 +9,66 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
     {
         private readonly IProductVariantRepository _variantRepository;
         private readonly IProductCacheInvalidator _cacheInvalidator;
-        public ProductVariantService(IProductVariantRepository variantRepository, IProductCacheInvalidator cacheInvalidator)
+
+        public ProductVariantService(
+            IProductVariantRepository variantRepository,
+            IProductCacheInvalidator cacheInvalidator)
         {
             _variantRepository = variantRepository;
             _cacheInvalidator = cacheInvalidator;
         }
 
+
+        public async Task<Result<List<ProductVariantDto>>> GetByProductIdAsync(
+            Guid productId,
+            CancellationToken cancellationToken = default)
+        {
+            if (productId == Guid.Empty)
+                return new Result<List<ProductVariantDto>>();
+
+            var variants = await _variantRepository.GetByProductIdAsync(
+                productId,
+                cancellationToken);
+
+            return Result<List<ProductVariantDto>>.Success(variants
+                .OrderBy(x => x.SortOrder)
+                .Select(x => new ProductVariantDto
+                {
+                    Id = x.Id,
+                    ProductId = x.ProductId,
+                    Sku = x.Sku,
+                    Name = x.Name,
+                    ShortName = x.ShortName,
+                    Description = x.Description,
+                    SortOrder = x.SortOrder,
+                    IsActive = x.IsActive
+                })
+                .ToList());
+
+
+        }
+
+
         public async Task<Result<Guid>> CreateAsync(
             Guid productId,
             string? sku,
             string name,
-            decimal price,
-            decimal? originalPrice,
-            int? durationDays,
-            decimal? dataAmount,
-            string? dataUnit,
-            bool isUnlimited,
+            string? shortName,
+            string? description,
             int sortOrder,
+            bool isActive,
             CancellationToken cancellationToken = default)
         {
             if (productId == Guid.Empty)
                 return Result<Guid>.Failure("ProductId không hợp lệ.");
 
-            if (price < 0)
-                return Result<Guid>.Failure("Giá bán không hợp lệ.");
+            if (string.IsNullOrWhiteSpace(name))
+                return Result<Guid>.Failure("Tên biến thể không được để trống.");
 
-            if (originalPrice.HasValue && originalPrice.Value < 0)
-                return Result<Guid>.Failure("Giá gốc không hợp lệ.");
+            sku = sku?.Trim();
+            name = name.Trim();
+            shortName = shortName?.Trim();
+            description = description?.Trim();
 
             if (!string.IsNullOrWhiteSpace(sku))
             {
@@ -51,17 +85,17 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 productId,
                 sku,
                 name,
-                price,
-                originalPrice,
-                durationDays,
-                dataAmount,
-                dataUnit,
-                isUnlimited,
-                sortOrder);
+                shortName,
+                description,
+                sortOrder,
+                isActive);
 
             await _variantRepository.AddAsync(variant, cancellationToken);
             await _variantRepository.SaveChangesAsync(cancellationToken);
-            await _cacheInvalidator.ClearProductDetailAsync(productId, cancellationToken);
+
+            await _cacheInvalidator.ClearProductDetailAsync(
+                productId,
+                cancellationToken);
 
             return Result<Guid>.Success(variant.Id);
         }
@@ -70,26 +104,29 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             Guid id,
             string? sku,
             string name,
-            decimal price,
-            decimal? originalPrice,
-            int? durationDays,
-            decimal? dataAmount,
-            string? dataUnit,
-            bool isUnlimited,
+            string? shortName,
+            string? description,
             int sortOrder,
             bool isActive,
             CancellationToken cancellationToken = default)
         {
-            var variant = await _variantRepository.GetByIdAsync(id, cancellationToken);
+            if (id == Guid.Empty)
+                return Result.Failure("Id biến thể không hợp lệ.");
+
+            if (string.IsNullOrWhiteSpace(name))
+                return Result.Failure("Tên biến thể không được để trống.");
+
+            var variant = await _variantRepository.GetByIdAsync(
+                id,
+                cancellationToken);
 
             if (variant == null)
                 return Result.Failure("Không tìm thấy biến thể sản phẩm.");
 
-            if (price < 0)
-                return Result.Failure("Giá bán không hợp lệ.");
-
-            if (originalPrice.HasValue && originalPrice.Value < 0)
-                return Result.Failure("Giá gốc không hợp lệ.");
+            sku = sku?.Trim();
+            name = name.Trim();
+            shortName = shortName?.Trim();
+            description = description?.Trim();
 
             if (!string.IsNullOrWhiteSpace(sku))
             {
@@ -105,17 +142,16 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             variant.Update(
                 sku,
                 name,
-                price,
-                originalPrice,
-                durationDays,
-                dataAmount,
-                dataUnit,
-                isUnlimited,
+                shortName,
+                description,
                 sortOrder,
                 isActive);
 
             await _variantRepository.SaveChangesAsync(cancellationToken);
-            await _cacheInvalidator.ClearProductDetailAsync(variant.ProductId, cancellationToken);
+
+            await _cacheInvalidator.ClearProductDetailAsync(
+                variant.ProductId,
+                cancellationToken);
 
             return Result.Success();
         }
@@ -124,16 +160,28 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             Guid id,
             CancellationToken cancellationToken = default)
         {
-            var variant = await _variantRepository.GetByIdAsync(id, cancellationToken);
+            if (id == Guid.Empty)
+                return Result.Failure("Id biến thể không hợp lệ.");
+
+            var variant = await _variantRepository.GetByIdAsync(
+                id,
+                cancellationToken);
 
             if (variant == null)
                 return Result.Failure("Không tìm thấy biến thể sản phẩm.");
 
             _variantRepository.Remove(variant);
+
             await _variantRepository.SaveChangesAsync(cancellationToken);
-            await _cacheInvalidator.ClearProductDetailAsync(variant.ProductId, cancellationToken);
+
+            await _cacheInvalidator.ClearProductDetailAsync(
+                variant.ProductId,
+                cancellationToken);
 
             return Result.Success();
         }
+
+
+
     }
 }

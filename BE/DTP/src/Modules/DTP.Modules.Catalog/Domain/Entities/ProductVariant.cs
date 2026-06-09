@@ -1,88 +1,72 @@
 ﻿using DTP.Shared.Domain;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Catalog.Domain.Entities
 {
     public class ProductVariant : EntityBase
     {
-        public Guid ProductId { get; private set; }
-
-        public string? Sku { get; private set; }
-
-        public string Name { get; private set; } = default!;
-
-        public decimal Price { get; private set; }
-
-        public decimal? OriginalPrice { get; private set; }
-
-        public int? DurationDays { get; private set; }
-
-        public decimal? DataAmount { get; private set; }
-
-        public string? DataUnit { get; private set; }
-
-        public bool IsUnlimited { get; private set; }
-
-        public int SortOrder { get; private set; }
-
-        public bool IsActive { get; private set; }
-
-        private ProductVariant() { }
+        private ProductVariant()
+        {
+        }
 
         public ProductVariant(
             Guid productId,
             string? sku,
             string name,
-            decimal price,
-            decimal? originalPrice,
-            int? durationDays,
-            decimal? dataAmount,
-            string? dataUnit,
-            bool isUnlimited,
-            int sortOrder)
+            string? shortName,
+            string? description,
+            int sortOrder,
+            bool isActive)
         {
             Id = Guid.NewGuid();
             ProductId = productId;
-            Sku = sku?.Trim();
-            Name = name.Trim();
-            Price = price;
-            OriginalPrice = originalPrice;
-            DurationDays = durationDays;
-            DataAmount = dataAmount;
-            DataUnit = dataUnit?.Trim();
-            IsUnlimited = isUnlimited;
+            Sku = sku;
+            Name = name;
+            ShortName = shortName;
+            Description = description;
             SortOrder = sortOrder;
-            IsActive = true;
+            IsActive = isActive;
         }
+
+        public Guid ProductId { get; private set; }
+
+        public Product? Product { get; private set; }
+
+        public string? Sku { get; private set; }
+
+        public string Name { get; private set; } = default!;
+
+        public string? ShortName { get; private set; }
+
+        public string? Description { get; private set; }
+
+        public int SortOrder { get; private set; }
+
+        public bool IsActive { get; private set; }
 
         public void Update(
             string? sku,
             string name,
-            decimal price,
-            decimal? originalPrice,
-            int? durationDays,
-            decimal? dataAmount,
-            string? dataUnit,
-            bool isUnlimited,
+            string? shortName,
+            string? description,
             int sortOrder,
             bool isActive)
         {
-            Sku = sku?.Trim();
-            Name = name.Trim();
-            Price = price;
-            OriginalPrice = originalPrice;
-            DurationDays = durationDays;
-            DataAmount = dataAmount;
-            DataUnit = dataUnit?.Trim();
-            IsUnlimited = isUnlimited;
+            Sku = sku;
+            Name = name;
+            ShortName = shortName;
+            Description = description;
             SortOrder = sortOrder;
             IsActive = isActive;
+        }
 
-            SetUpdated();
+        public void Activate()
+        {
+            IsActive = true;
+        }
+
+        public void Deactivate()
+        {
+            IsActive = false;
         }
     }
 }

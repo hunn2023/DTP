@@ -4,6 +4,33 @@ namespace DTP.Modules.Catalog.Domain.Entities
 {
     public class ProductImage : EntityBase
     {
+        private ProductImage()
+        {
+        }
+
+        public ProductImage(
+            Guid productId,
+            string imageUrl,
+            string imageKey,
+            string? altText,
+            int sortOrder,
+            bool isThumbnail,
+            string? contentType,
+            long size,
+            bool isActive = true)
+        {
+            Id = Guid.NewGuid();
+            ProductId = productId;
+            ImageUrl = imageUrl;
+            ImageKey = imageKey;
+            AltText = altText;
+            SortOrder = sortOrder;
+            IsThumbnail = isThumbnail;
+            ContentType = contentType;
+            Size = size;
+            IsActive = isActive;
+        }
+
         public Guid ProductId { get; private set; }
 
         public string ImageUrl { get; private set; } = default!;
@@ -16,48 +43,69 @@ namespace DTP.Modules.Catalog.Domain.Entities
 
         public bool IsThumbnail { get; private set; }
 
-        private ProductImage() { }
+        public string? ContentType { get; private set; }
 
-        public ProductImage(
-            Guid productId,
+        public long Size { get; private set; }
+
+        public bool IsActive { get; private set; }
+
+        public void Update(
             string imageUrl,
             string imageKey,
             string? altText,
             int sortOrder,
-            bool isThumbnail)
+            bool isThumbnail,
+            string? contentType,
+            long size,
+            bool isActive)
         {
-            Id = Guid.NewGuid();
-            ProductId = productId;
-            ImageUrl = imageUrl.Trim();
-            ImageKey = imageKey;
-            AltText = altText?.Trim();
-            SortOrder = sortOrder;
-            IsThumbnail = isThumbnail;
-        }
-
-        public ProductImage(Guid productId, string imageUrl, string? altText, int sortOrder, bool isThumbnail)
-        {
-            ProductId = productId;
             ImageUrl = imageUrl;
+            ImageKey = imageKey;
             AltText = altText;
             SortOrder = sortOrder;
             IsThumbnail = isThumbnail;
+            ContentType = contentType;
+            Size = size;
+            IsActive = isActive;
         }
 
-        public void Update(
-                string imageUrl,
-                string imageKey,
-                string? altText,
-                int sortOrder,
-                bool isThumbnail)
+        public void SetThumbnail()
         {
-            ImageUrl = imageUrl.Trim();
-            ImageKey = imageKey;
-            AltText = altText?.Trim();
-            SortOrder = sortOrder;
-            IsThumbnail = isThumbnail;
+            IsThumbnail = true;
+        }
 
-            SetUpdated();
+        public void UnsetThumbnail()
+        {
+            IsThumbnail = false;
+        }
+
+        public void UpdateSortOrder(int sortOrder)
+        {
+            SortOrder = sortOrder;
+        }
+
+        public void Deactivate()
+        {
+            IsActive = false;
+            IsThumbnail = false;
+        }
+
+        public void UpdateInfo(string? altText, int sortOrder)
+        {
+            AltText = altText;
+            SortOrder = sortOrder;
+        }
+
+        public void ReplaceImage(
+            string imageUrl,
+            string imageKey,
+            string? contentType,
+            long size)
+        {
+            ImageUrl = imageUrl;
+            ImageKey = imageKey;
+            ContentType = contentType;
+            Size = size;
         }
     }
 }

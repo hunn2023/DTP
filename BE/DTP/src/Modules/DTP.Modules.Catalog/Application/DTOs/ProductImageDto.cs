@@ -15,5 +15,11 @@ namespace DTP.Modules.Catalog.Application.DTOs
         public string? AltText { get; set; }
         public int SortOrder { get; set; }
         public bool IsThumbnail { get; set; }
+
+        public bool IsActive { get; set; }
+
+        public string? ContentType { get;  set; }
+
+        public long Size { get;  set; }
     }
 }

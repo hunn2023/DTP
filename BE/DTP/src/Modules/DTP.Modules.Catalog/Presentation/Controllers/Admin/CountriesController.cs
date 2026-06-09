@@ -1,7 +1,6 @@
 ﻿using DTP.Modules.Catalog.Application.Commands.Countries;
 using DTP.Modules.Catalog.Application.Queries.Countries;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DTP.Modules.Catalog.Presentation.Controllers.Admin
@@ -36,14 +35,14 @@ namespace DTP.Modules.Catalog.Presentation.Controllers.Admin
             return Ok(id);
         }
 
-        //[HttpGet("{id:guid}")]
-        //public async Task<IActionResult> GetById(Guid id)
-        //{
-        //    var result = await _mediator.Send(
-        //        new GetCountryByIdQuery(id));
-
-        //    return Ok(result);
-        //}
+        [HttpGet("{id:guid}")]
+        public async Task<IActionResult> GetById(
+            [FromQuery] GetCountryByIdQuery query,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(query, cancellationToken);
+            return Ok(result);
+        }
 
 
         [HttpPut("{id:guid}")]
@@ -66,6 +65,24 @@ namespace DTP.Modules.Catalog.Presentation.Controllers.Admin
             var result = await _mediator.Send(
                 new DeleteCountryCommand(id),
                 cancellationToken);
+
+            return Ok(result);
+        }
+
+        [HttpPost("upload")]
+        [RequestSizeLimit(10 * 1024 * 1024)]
+        public async Task<IActionResult> Upload(
+          Guid countryId,
+          [FromForm] UploadCountryFlagCommand request,
+          CancellationToken cancellationToken)
+        {
+            var command = new UploadCountryFlagCommand
+            {
+                CountryId = countryId,
+                File = request.File,
+            };
+
+            var result = await _mediator.Send(command, cancellationToken);
 
             return Ok(result);
         }

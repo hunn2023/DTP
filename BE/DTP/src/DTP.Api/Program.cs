@@ -78,8 +78,8 @@ namespace DTP.Api
             builder.Services.AddCatalogModule(builder.Configuration);
         
 
-            builder.Services.AddOrderingModule(builder.Configuration);
-            builder.Services.AddPaymentModule(builder.Configuration);
+            //builder.Services.AddOrderingModule(builder.Configuration);
+            //builder.Services.AddPaymentModule(builder.Configuration);
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())

@@ -16,11 +16,19 @@ namespace DTP.Modules.Catalog.Application.Commands.Products
 
         public Guid CategoryId { get; set; }
 
+        public Guid? CountryId { get; set; }
+
         public string? ShortDescription { get; set; }
 
         public string? Description { get; set; }
 
+        public string? LocationText { get; set; }
+
         public string? ThumbnailUrl { get; set; }
+
+        public bool IsFeatured { get; set; }
+
+        public bool IsHot { get; set; }
 
         public int SortOrder { get; set; }
 

@@ -1,43 +1,87 @@
-﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
+﻿using Azure.Core;
+using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Domain.Entities;
 using DTP.Shared.Application;
-
 
 namespace DTP.Modules.Catalog.Infrastructure.Services
 {
     public class ProductAttributeService : IProductAttributeService
     {
         private readonly IProductAttributeRepository _repository;
+        private readonly IProductRepository _productRepository;
         private readonly IProductCacheInvalidator _cacheInvalidator;
-        public ProductAttributeService(IProductAttributeRepository repository, IProductCacheInvalidator cacheInvalidator)
+
+        public ProductAttributeService(
+            IProductAttributeRepository repository,
+            IProductRepository productRepository,
+            IProductCacheInvalidator cacheInvalidator)
         {
             _repository = repository;
+            _productRepository = productRepository;
             _cacheInvalidator = cacheInvalidator;
+        }
+
+
+        public async Task<Result<List<ProductAttributeDto>>> GetListAsync(
+            Guid productId,
+            CancellationToken cancellationToken = default)
+        {
+            var attributes = await _repository.GetListAsync(
+                productId,
+                cancellationToken);
+
+            var result = attributes.Select(x => new ProductAttributeDto
+            {
+                Id = x.Id,
+                Key = x.Key,
+                Value = x.Value,
+                SortOrder = x.SortOrder
+            }).ToList();
+
+            return Result<List<ProductAttributeDto>>.Success(result);
         }
 
         public async Task<Result<Guid>> CreateAsync(
             Guid productId,
-            string name,
+            string key,
+            string? displayName,
             string value,
             int sortOrder,
+            bool isVisible,
             CancellationToken cancellationToken = default)
         {
             if (productId == Guid.Empty)
                 return Result<Guid>.Failure("ProductId không hợp lệ.");
 
-            if (string.IsNullOrWhiteSpace(name))
-                return Result<Guid>.Failure("Vui lòng nhập tên thuộc tính.");
+            var productExists = await _productRepository.ExistsAsync(
+                productId,
+                cancellationToken);
+
+            if (!productExists)
+                return Result<Guid>.Failure("Không tìm thấy sản phẩm.");
+
+            if (string.IsNullOrWhiteSpace(key))
+                return Result<Guid>.Failure("Vui lòng nhập mã thuộc tính.");
 
             if (string.IsNullOrWhiteSpace(value))
                 return Result<Guid>.Failure("Vui lòng nhập giá trị thuộc tính.");
 
+            key = key.Trim();
+            displayName = string.IsNullOrWhiteSpace(displayName)
+                ? null
+                : displayName.Trim();
+
+            value = value.Trim();
 
             var attribute = new ProductAttribute(
                 productId,
-                name,
+                key,
+                displayName,
                 value,
-                sortOrder);
+                sortOrder,
+                isVisible);
 
             await _repository.AddAsync(
                 attribute,
@@ -49,16 +93,28 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await _cacheInvalidator.ClearProductDetailAsync(
                 productId,
                 cancellationToken);
+
             return Result<Guid>.Success(attribute.Id);
         }
 
         public async Task<Result> UpdateAsync(
             Guid id,
-            string name,
+            string key,
+            string? displayName,
             string value,
             int sortOrder,
+            bool isVisible,
             CancellationToken cancellationToken = default)
         {
+            if (id == Guid.Empty)
+                return Result.Failure("Id không hợp lệ.");
+
+            if (string.IsNullOrWhiteSpace(key))
+                return Result.Failure("Vui lòng nhập mã thuộc tính.");
+
+            if (string.IsNullOrWhiteSpace(value))
+                return Result.Failure("Vui lòng nhập giá trị thuộc tính.");
+
             var attribute = await _repository.GetByIdAsync(
                 id,
                 cancellationToken);
@@ -66,15 +122,26 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             if (attribute == null)
                 return Result.Failure("Không tìm thấy thuộc tính sản phẩm.");
 
+            key = key.Trim();
+            displayName = string.IsNullOrWhiteSpace(displayName)
+                ? null
+                : displayName.Trim();
+
+            value = value.Trim();
+
             attribute.Update(
-                name,
+                key,
+                displayName,
                 value,
-                sortOrder);
+                sortOrder,
+                isVisible);
 
             await _repository.SaveChangesAsync(
                 cancellationToken);
 
-            await _cacheInvalidator.ClearProductDetailAsync(attribute.ProductId, cancellationToken);
+            await _cacheInvalidator.ClearProductDetailAsync(
+                attribute.ProductId,
+                cancellationToken);
 
             return Result.Success();
         }
@@ -83,6 +150,9 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             Guid id,
             CancellationToken cancellationToken = default)
         {
+            if (id == Guid.Empty)
+                return Result.Failure("Id không hợp lệ.");
+
             var attribute = await _repository.GetByIdAsync(
                 id,
                 cancellationToken);
@@ -95,9 +165,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await _repository.SaveChangesAsync(
                 cancellationToken);
 
-            await _cacheInvalidator.ClearProductDetailAsync(attribute.ProductId, cancellationToken);
+            await _cacheInvalidator.ClearProductDetailAsync(
+                attribute.ProductId,
+                cancellationToken);
 
             return Result.Success();
         }
+
     }
 }

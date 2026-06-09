@@ -2,7 +2,6 @@
 using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Domain.Entities;
-using DTP.Modules.Catalog.Infrastructure.Repositories;
 using DTP.Shared.Application;
 using DTP.Shared.Storage;
 using Microsoft.AspNetCore.Http;
@@ -14,9 +13,11 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         private readonly IProductRepository _productRepository;
         private readonly IProductImageRepository _repository;
         private readonly IFileStorageService _fileStorageService;
-        //private readonly IUnitOfWork _unitOfWork;
 
-        public ProductImageService(IProductImageRepository repository, IFileStorageService fileStorageService, IProductRepository productRepository)
+        public ProductImageService(
+            IProductImageRepository repository,
+            IFileStorageService fileStorageService,
+            IProductRepository productRepository)
         {
             _repository = repository;
             _fileStorageService = fileStorageService;
@@ -37,12 +38,26 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             if (string.IsNullOrWhiteSpace(imageUrl))
                 return Result<Guid>.Failure("Vui lòng nhập đường dẫn ảnh.");
 
+            var productExists = await _productRepository.ExistsAsync(productId, cancellationToken);
+
+            if (!productExists)
+                return Result<Guid>.Failure("Không tìm thấy sản phẩm.");
+
+            if (isThumbnail)
+            {
+                await _repository.ClearThumbnailAsync(productId, cancellationToken);
+            }
+
             var image = new ProductImage(
-                productId,
-                imageUrl,
-                altText,
-                sortOrder,
-                isThumbnail);
+                productId: productId,
+                imageUrl: imageUrl,
+                imageKey: string.Empty,
+                altText: altText,
+                sortOrder: sortOrder,
+                isThumbnail: isThumbnail,
+                contentType: null,
+                size: 0,
+                isActive: true);
 
             await _repository.AddAsync(image, cancellationToken);
             await _repository.SaveChangesAsync(cancellationToken);
@@ -58,40 +73,51 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             bool isThumbnail,
             CancellationToken cancellationToken = default)
         {
+            if (id == Guid.Empty)
+                return Result.Failure("Id không hợp lệ.");
+
+            if (string.IsNullOrWhiteSpace(imageUrl))
+                return Result.Failure("Vui lòng nhập đường dẫn ảnh.");
+
             var image = await _repository.GetByIdAsync(id, cancellationToken);
 
             if (image == null)
                 return Result.Failure("Không tìm thấy ảnh sản phẩm.");
 
-            //image.Update(imageUrl, altText, sortOrder, isThumbnail);
+            if (isThumbnail && !image.IsThumbnail)
+            {
+                await _repository.ClearThumbnailAsync(image.ProductId, cancellationToken);
+            }
 
-            await _repository.SaveChangesAsync(cancellationToken);
+            image.Update(
+                imageUrl: imageUrl,
+                imageKey: image.ImageKey,
+                altText: altText,
+                sortOrder: sortOrder,
+                isThumbnail: isThumbnail,
+                contentType: image.ContentType,
+                size: image.Size,
+                isActive: image.IsActive);
 
-            return Result.Success();
-        }
-
-        public async Task<Result> DeleteAsync(
-            Guid id,
-            CancellationToken cancellationToken = default)
-        {
-            var image = await _repository.GetByIdAsync(id, cancellationToken);
-
-            if (image == null)
-                return Result.Failure("Không tìm thấy ảnh sản phẩm.");
-
-            _repository.Remove(image);
+            _repository.Update(image);
             await _repository.SaveChangesAsync(cancellationToken);
 
             return Result.Success();
         }
 
         public async Task<Result<ProductImageDto>> UploadAsync(
-           Guid productId,
-           IFormFile file,
-           string? altText,
-           bool isThumbnail,
-           CancellationToken cancellationToken = default)
+            Guid productId,
+            IFormFile file,
+            string? altText,
+            bool isThumbnail,
+            CancellationToken cancellationToken = default)
         {
+            if (productId == Guid.Empty)
+                return Result<ProductImageDto>.Failure("ProductId không hợp lệ.");
+
+            if (file == null || file.Length <= 0)
+                return Result<ProductImageDto>.Failure("Vui lòng chọn ảnh cần upload.");
+
             var productExists = await _productRepository.ExistsAsync(productId, cancellationToken);
 
             if (!productExists)
@@ -101,22 +127,21 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 productId,
                 cancellationToken);
 
-            var uploadResult = await _fileStorageService.UploadImageAsync(
-                file,
-                "products",
+            var existingImages = await _repository.GetByProductIdAsync(
+                productId,
                 cancellationToken);
 
-            var hasImages = (await _repository.GetByProductIdAsync(
-                productId,
-                cancellationToken)).Any();
-
+            var hasImages = existingImages.Any();
             var shouldBeThumbnail = isThumbnail || !hasImages;
+
+            var uploadResult = await _fileStorageService.UploadImageAsync(
+                file,
+                UploadFolders.ProductImages,
+                cancellationToken);
 
             if (shouldBeThumbnail)
             {
-                await _repository.ClearThumbnailAsync(
-                    productId,
-                    cancellationToken);
+                await _repository.ClearThumbnailAsync(productId, cancellationToken);
             }
 
             var image = new ProductImage(
@@ -125,37 +150,43 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 imageKey: uploadResult.Key,
                 altText: altText,
                 sortOrder: sortOrder,
-                isThumbnail: shouldBeThumbnail);
+                isThumbnail: shouldBeThumbnail,
+                contentType: file.ContentType,
+                size: file.Length,
+                isActive: true);
 
             await _repository.AddAsync(image, cancellationToken);
-
             await _repository.SaveChangesAsync(cancellationToken);
 
-            return Result<ProductImageDto>.Success(MapToDto(image));           
+            return Result<ProductImageDto>.Success(MapToDto(image));
         }
 
-
         public async Task<Result> SetThumbnailAsync(
-        Guid productId,
-        Guid imageId,
-        CancellationToken cancellationToken = default)
+            Guid productId,
+            Guid imageId,
+            CancellationToken cancellationToken = default)
         {
-            var image = await _repository.GetByIdAsync(
-                imageId,
-                cancellationToken);
+            if (productId == Guid.Empty)
+                return Result.Failure("ProductId không hợp lệ.");
+
+            if (imageId == Guid.Empty)
+                return Result.Failure("ImageId không hợp lệ.");
+
+            var image = await _repository.GetByIdAsync(imageId, cancellationToken);
 
             if (image == null || image.ProductId != productId)
                 return Result.Failure("Không tìm thấy ảnh sản phẩm.");
 
-            await _repository.ClearThumbnailAsync(
-                productId,
-                cancellationToken);
+            if (!image.IsActive)
+                return Result.Failure("Ảnh sản phẩm đã bị tắt.");
 
-            //image.SetThumbnail(true);
+            await _repository.ClearThumbnailAsync(productId, cancellationToken);
+
+            image.SetThumbnail();
 
             _repository.Update(image);
-
             await _repository.SaveChangesAsync(cancellationToken);
+
             return Result.Success();
         }
 
@@ -166,17 +197,22 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             int sortOrder,
             CancellationToken cancellationToken = default)
         {
-            var image = await _repository.GetByIdAsync(
-                imageId,
-                cancellationToken);
+            if (productId == Guid.Empty)
+                return Result.Failure("ProductId không hợp lệ.");
+
+            if (imageId == Guid.Empty)
+                return Result.Failure("ImageId không hợp lệ.");
+
+            var image = await _repository.GetByIdAsync(imageId, cancellationToken);
 
             if (image == null || image.ProductId != productId)
                 return Result.Failure("Không tìm thấy ảnh sản phẩm.");
 
-            //image.UpdateInfo(altText, sortOrder);
+            image.UpdateInfo(
+                altText: altText,
+                sortOrder: sortOrder);
 
             _repository.Update(image);
-
             await _repository.SaveChangesAsync(cancellationToken);
 
             return Result.Success();
@@ -188,9 +224,16 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             IFormFile file,
             CancellationToken cancellationToken = default)
         {
-            var image = await _repository.GetByIdAsync(
-                imageId,
-                cancellationToken);
+            if (productId == Guid.Empty)
+                return Result.Failure("ProductId không hợp lệ.");
+
+            if (imageId == Guid.Empty)
+                return Result.Failure("ImageId không hợp lệ.");
+
+            if (file == null || file.Length <= 0)
+                return Result.Failure("Vui lòng chọn ảnh cần thay thế.");
+
+            var image = await _repository.GetByIdAsync(imageId, cancellationToken);
 
             if (image == null || image.ProductId != productId)
                 return Result.Failure("Không tìm thấy ảnh sản phẩm.");
@@ -199,15 +242,16 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             var uploadResult = await _fileStorageService.UploadImageAsync(
                 file,
-                "products",
+                UploadFolders.ProductImages,
                 cancellationToken);
 
-            //image.ReplaceImage(
-            //    uploadResult.Url,
-            //    uploadResult.Key);
+            image.ReplaceImage(
+                  imageUrl: uploadResult.Url,
+                  imageKey: uploadResult.Key,
+                  contentType: file.ContentType,
+                  size: file.Length);
 
             _repository.Update(image);
-
             await _repository.SaveChangesAsync(cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(oldImageKey))
@@ -221,23 +265,49 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         }
 
         public async Task<Result> DeleteAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            if (id == Guid.Empty)
+                return Result.Failure("Id không hợp lệ.");
+
+            var image = await _repository.GetByIdAsync(id, cancellationToken);
+
+            if (image == null)
+                return Result.Failure("Không tìm thấy ảnh sản phẩm.");
+
+            return await DeleteInternalAsync(image, cancellationToken);
+        }
+
+        public async Task<Result> DeleteAsync(
             Guid productId,
             Guid imageId,
             CancellationToken cancellationToken = default)
         {
-            var image = await _repository.GetByIdAsync(
-                imageId,
-                cancellationToken);
+            if (productId == Guid.Empty)
+                return Result.Failure("ProductId không hợp lệ.");
+
+            if (imageId == Guid.Empty)
+                return Result.Failure("ImageId không hợp lệ.");
+
+            var image = await _repository.GetByIdAsync(imageId, cancellationToken);
 
             if (image == null || image.ProductId != productId)
                 return Result.Failure("Không tìm thấy ảnh sản phẩm.");
 
+            return await DeleteInternalAsync(image, cancellationToken);
+        }
+
+        private async Task<Result> DeleteInternalAsync(
+            ProductImage image,
+            CancellationToken cancellationToken)
+        {
+            var productId = image.ProductId;
             var imageKey = image.ImageKey;
             var wasThumbnail = image.IsThumbnail;
 
             _repository.Remove(image);
-
-            //await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _repository.SaveChangesAsync(cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(imageKey))
             {
@@ -253,12 +323,16 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     cancellationToken);
 
                 var nextThumbnail = remainingImages
+                    .Where(x => x.IsActive)
                     .OrderBy(x => x.SortOrder)
                     .FirstOrDefault();
 
                 if (nextThumbnail != null)
                 {
-                    //nextThumbnail.SetThumbnail(true);
+                    await _repository.ClearThumbnailAsync(productId, cancellationToken);
+
+                    nextThumbnail.SetThumbnail();
+
                     _repository.Update(nextThumbnail);
                     await _repository.SaveChangesAsync(cancellationToken);
                 }
@@ -279,8 +353,5 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 IsThumbnail = image.IsThumbnail
             };
         }
-
-
-      
     }
 }

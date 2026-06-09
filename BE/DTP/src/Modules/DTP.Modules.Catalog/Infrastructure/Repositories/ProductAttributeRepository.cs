@@ -31,7 +31,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 .AsNoTracking()
                 .Where(x => x.ProductId == productId)
                 .OrderBy(x => x.SortOrder)
-                .ThenBy(x => x.Name)
+                .ThenBy(x => x.Key)
                 .ToListAsync(cancellationToken);
         }
     }

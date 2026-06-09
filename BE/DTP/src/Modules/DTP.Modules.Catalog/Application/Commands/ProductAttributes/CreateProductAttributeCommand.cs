@@ -9,11 +9,15 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductAttributes
     {
         public Guid ProductId { get; set; }
 
-        public string Name { get; set; } = default!;
+        public string Key { get; set; } = default!;
+
+        public string? DisplayName { get; set; }
 
         public string Value { get; set; } = default!;
 
         public int SortOrder { get; set; }
+
+        public bool IsVisible { get; set; } = true;
     }
 
     public class CreateProductAttributeCommandHandler
@@ -31,11 +35,13 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductAttributes
             CancellationToken cancellationToken)
         {
             return await _service.CreateAsync(
-                request.ProductId,
-                request.Name,
-                request.Value,
-                request.SortOrder,
-                cancellationToken);
+              request.ProductId,
+              request.Key,
+              request.DisplayName,
+              request.Value,
+              request.SortOrder,
+              request.IsVisible,
+              cancellationToken);
         }
     }
 
