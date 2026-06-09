@@ -256,30 +256,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 query = query.Where(x => x.CountryId == countryId.Value);
             }
 
-            if (countryId.HasValue)
-            {
-                var productIdsQuery =
-                    from esim in _context.EsimPackages
-                    join variant in _context.ProductVariants
-                        on esim.ProductVariantId equals variant.Id
-                    where esim.CountryId == countryId.Value
-                    select variant.ProductId;
-
-                query = query.Where(product => productIdsQuery.Contains(product.Id));
-            }
-
-            if (carrierId.HasValue)
-            {
-                var productIdsQuery =
-                    from esim in _context.EsimPackages
-                    join variant in _context.ProductVariants
-                        on esim.ProductVariantId equals variant.Id
-                    where esim.CarrierId == carrierId.Value
-                    select variant.ProductId;
-
-                query = query.Where(product => productIdsQuery.Contains(product.Id));
-            }
-
             if (isActive.HasValue)
             {
                 query = query.Where(x => x.IsActive == isActive.Value);
