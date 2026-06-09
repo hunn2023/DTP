@@ -40,6 +40,10 @@ export function buildCountryColumns(handlers: CountryTableHandlers) {
       ),
     }),
     helper.accessor('isoCode', { header: 'Mã', cell: ({ getValue }) => <code>{getValue()}</code> }),
+    helper.accessor('region', {
+      header: 'Khu vực',
+      cell: ({ getValue }) => <span className="text-muted">{getValue() || '—'}</span>,
+    }),
     createSortOrderColumn<Country>(),
     createIsActiveColumn<Country>(),
     createActionsColumn(handlers),

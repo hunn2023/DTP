@@ -22,6 +22,8 @@ type UseCountriesCrudParams = {
   pageSize?: number
 }
 
+type CountryFormTab = 'info' | 'flag'
+
 function applySlugFromName(values: Country, formConfig: EntityFormConfig<Country>): Country {
   if (!formConfig.slugFromName) return values
   if (!values.slug.trim() && values.name.trim()) {
@@ -30,18 +32,16 @@ function applySlugFromName(values: Country, formConfig: EntityFormConfig<Country
   return values
 }
 
-function toCreatePayload(values: Country): countriesApi.CountryPayload {
+function toPayload(values: Country): countriesApi.CountryCreatePayload {
   return {
     name: values.name.trim(),
     slug: values.slug.trim(),
     code: values.isoCode.trim(),
-    flagUrl: values.flagUrl.trim() || undefined,
+    region: values.region.trim() || undefined,
+    description: values.description.trim() || undefined,
     sortOrder: values.sortOrder,
+    isActive: values.isActive,
   }
-}
-
-function toUpdatePayload(values: Country): countriesApi.CountryUpdatePayload {
-  return { ...toCreatePayload(values), isActive: values.isActive }
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -62,6 +62,8 @@ export function useCountriesCrud({ buildColumns, formConfig, pageSize = 10 }: Us
   const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set())
   const [formMode, setFormMode] = useState<FormModalMode | null>(null)
   const [formValues, setFormValues] = useState<Country | null>(null)
+  const [formTab, setFormTab] = useState<CountryFormTab>('info')
+  const [createdCountryId, setCreatedCountryId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
   const notifySuccess = useCallback(
@@ -108,11 +110,22 @@ export function useCountriesCrud({ buildColumns, formConfig, pageSize = 10 }: Us
     void loadData(pagination.pageIndex, pagination.pageSize, globalFilter, seq)
   }, [loadData, pagination.pageIndex, pagination.pageSize, globalFilter])
 
+  const resetFormState = useCallback(() => {
+    setFormMode(null)
+    setFormValues(null)
+    setFormTab('info')
+    setCreatedCountryId(null)
+  }, [])
+
+  const closeFormModal = useCallback(() => {
+    resetFormState()
+  }, [resetFormState])
+
   const toggleActive = useCallback(
     async (row: Country) => {
       try {
         await countriesApi.updateCountry(row.id, {
-          ...toUpdatePayload(row),
+          ...toPayload(row),
           isActive: !row.isActive,
         })
         setData((prev) =>
@@ -135,55 +148,94 @@ export function useCountriesCrud({ buildColumns, formConfig, pageSize = 10 }: Us
   const openCreate = useCallback(() => {
     setFormValues(formConfig.getDefaultValues())
     setFormMode('create')
+    setFormTab('info')
+    setCreatedCountryId(null)
   }, [formConfig])
 
   const openEdit = useCallback((row: Country) => {
     setFormValues({ ...row })
     setFormMode('edit')
+    setFormTab('info')
+    setCreatedCountryId(null)
   }, [])
 
   const openView = useCallback((row: Country) => {
     setFormValues({ ...row })
     setFormMode('view')
+    setFormTab('info')
+    setCreatedCountryId(null)
   }, [])
 
-  const closeFormModal = useCallback(() => {
-    setFormMode(null)
-    setFormValues(null)
-  }, [])
-
-  const saveForm = useCallback(
+  const continueCreate = useCallback(
     async (rawValues: Country) => {
-      if (!formMode || formMode === 'view') return
-
       let values = applySlugFromName(rawValues, formConfig)
       if (formConfig.onBeforeSave) {
-        values = formConfig.onBeforeSave(values, formMode)
+        values = formConfig.onBeforeSave(values, 'create')
       }
 
       setIsSaving(true)
       try {
-        if (formMode === 'create') {
-          await countriesApi.createCountry(toCreatePayload(values))
-          notifySuccess('Đã thêm quốc gia thành công')
-          if (pagination.pageIndex === 0) {
-            reload()
-          } else {
-            setPagination((p) => ({ ...p, pageIndex: 0 }))
-          }
-        } else {
-          await countriesApi.updateCountry(values.id, toUpdatePayload(values))
-          notifySuccess('Đã cập nhật quốc gia thành công')
-          reload()
-        }
-        closeFormModal()
+        const id = await countriesApi.createCountry(toPayload(values))
+        setCreatedCountryId(id)
+        setFormValues({ ...values, id })
+        setFormTab('flag')
+        notifySuccess('Đã tạo quốc gia. Vui lòng tải lên cờ.')
       } catch (e) {
-        notifyError(getErrorMessage(e, 'Không lưu được quốc gia'))
+        notifyError(getErrorMessage(e, 'Không tạo được quốc gia'))
       } finally {
         setIsSaving(false)
       }
     },
-    [formMode, formConfig, closeFormModal, reload, pagination.pageIndex, notifySuccess, notifyError],
+    [formConfig, notifySuccess, notifyError],
+  )
+
+  const saveCountryInfo = useCallback(
+    async (rawValues: Country) => {
+      let values = applySlugFromName(rawValues, formConfig)
+      if (formConfig.onBeforeSave) {
+        values = formConfig.onBeforeSave(values, 'edit')
+      }
+
+      setIsSaving(true)
+      try {
+        await countriesApi.updateCountry(values.id, toPayload(values))
+        setFormValues(values)
+        notifySuccess('Đã cập nhật quốc gia thành công')
+        reload()
+      } catch (e) {
+        notifyError(getErrorMessage(e, 'Không cập nhật được quốc gia'))
+      } finally {
+        setIsSaving(false)
+      }
+    },
+    [formConfig, reload, notifySuccess, notifyError],
+  )
+
+  const saveCountryFlag = useCallback(
+    async (file: File) => {
+      const countryId = formMode === 'create' ? createdCountryId : formValues?.id
+      if (!countryId) {
+        notifyError('Không xác định được quốc gia để tải cờ')
+        return
+      }
+
+      setIsSaving(true)
+      try {
+        await countriesApi.uploadCountryFlag(countryId, file)
+        notifySuccess('Đã tải lên cờ quốc gia thành công')
+        if (pagination.pageIndex === 0) {
+          reload()
+        } else {
+          setPagination((p) => ({ ...p, pageIndex: 0 }))
+        }
+        closeFormModal()
+      } catch (e) {
+        notifyError(getErrorMessage(e, 'Không tải lên được cờ quốc gia'))
+      } finally {
+        setIsSaving(false)
+      }
+    },
+    [formMode, createdCountryId, formValues?.id, pagination.pageIndex, reload, closeFormModal, notifySuccess, notifyError],
   )
 
   const handlers = useMemo(
@@ -266,6 +318,8 @@ export function useCountriesCrud({ buildColumns, formConfig, pageSize = 10 }: Us
     setPagination({ pageIndex: 0, pageSize: size })
   }, [])
 
+  const countryIdForFlag = formMode === 'create' ? createdCountryId : formValues?.id ?? null
+
   return {
     table,
     globalFilter,
@@ -282,11 +336,15 @@ export function useCountriesCrud({ buildColumns, formConfig, pageSize = 10 }: Us
     pendingDeleteCount: pendingDeleteIds.size,
     formMode,
     formValues,
+    formTab,
+    countryIdForFlag,
     openCreate,
     openView,
     closeFormModal,
-    saveForm,
-    formConfig,
+    setFormTab,
+    continueCreate,
+    saveCountryInfo,
+    saveCountryFlag,
     isLoading,
     isSaving,
     reload,

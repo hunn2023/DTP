@@ -37,6 +37,8 @@ export type Country = {
   slug: string
   isoCode: string
   flagUrl: string
+  region: string
+  description: string
   sortOrder: number
 }
 

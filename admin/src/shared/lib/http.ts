@@ -122,3 +122,16 @@ export async function httpPatch<T>(path: string, body: unknown, config?: HttpCon
 export async function httpDelete(path: string, config?: HttpConfig): Promise<void> {
   await request<unknown>(buildUrl(path, config?.params), { ...config, method: 'DELETE' })
 }
+
+export async function httpPostForm<T>(
+  path: string,
+  formData: FormData,
+  config?: HttpConfig,
+): Promise<T> {
+  return request<T>(buildUrl(path, config?.params), {
+    ...config,
+    method: 'POST',
+    headers: { Accept: 'application/json', ...config?.headers },
+    body: formData,
+  })
+}

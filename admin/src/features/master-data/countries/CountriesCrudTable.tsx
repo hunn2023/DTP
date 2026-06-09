@@ -8,8 +8,8 @@ import { COUNTRY_PAGE_SIZE_OPTIONS } from '@/features/master-data/countries/coun
 import { buildCountryColumns } from '@/features/master-data/countries/columns'
 import { countriesLabels } from '@/features/master-data/countries/data'
 import { countryFormConfig } from '@/features/master-data/countries/formConfig'
+import CountryFormModal from '@/features/master-data/countries/CountryFormModal'
 import { useCountriesCrud } from '@/features/master-data/countries/useCountriesCrud'
-import EntityFormModal from '@/modules/crud/form/EntityFormModal'
 
 const CountriesCrudTable = () => {
   const crud = useCountriesCrud({
@@ -114,15 +114,18 @@ const CountriesCrudTable = () => {
       </DeleteConfirmationModal>
 
       {crud.formMode && crud.formValues && (
-        <EntityFormModal
+        <CountryFormModal
           show
           mode={crud.formMode}
-          entityName={countryFormConfig.entityName}
-          fields={countryFormConfig.fields}
-          viewFields={countryFormConfig.viewFields}
           initialValues={crud.formValues}
+          activeTab={crud.formTab}
+          countryIdForFlag={crud.countryIdForFlag}
+          isSaving={crud.isSaving}
           onHide={crud.closeFormModal}
-          onSubmit={(values) => void crud.saveForm(values)}
+          onTabChange={crud.setFormTab}
+          onContinueCreate={(values) => void crud.continueCreate(values)}
+          onSaveInfo={(values) => void crud.saveCountryInfo(values)}
+          onSaveFlag={(file) => void crud.saveCountryFlag(file)}
         />
       )}
     </Card>
