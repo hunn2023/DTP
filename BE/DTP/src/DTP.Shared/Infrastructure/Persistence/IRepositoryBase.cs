@@ -7,8 +7,7 @@ using System.Threading.Tasks;
 
 namespace DTP.Shared.Infrastructure.Persistence
 {
-    public interface IRepositoryBase<TEntity>
-    where TEntity : EntityBase
+    public interface IRepositoryBase<TEntity> where TEntity : EntityBase
     {
         Task<TEntity?> GetByIdAsync(
             Guid id,

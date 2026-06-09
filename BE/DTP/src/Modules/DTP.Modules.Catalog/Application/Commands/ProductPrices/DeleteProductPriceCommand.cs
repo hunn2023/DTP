@@ -1,12 +1,13 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Domain.Entities;
+using DTP.Shared.Application;
 using MediatR;
 
 
 namespace DTP.Modules.Catalog.Application.Commands.ProductPrices
 {
-    public class DeleteProductPriceCommand : IRequest<bool>
+    public class DeleteProductPriceCommand : IRequest<Result>
     {
         public Guid Id { get; set; }
 
@@ -16,34 +17,18 @@ namespace DTP.Modules.Catalog.Application.Commands.ProductPrices
         }
     }
 
-    public class DeleteProductPriceCommandHandler : IRequestHandler<DeleteProductPriceCommand, bool>
+    public class DeleteProductPriceCommandHandler : IRequestHandler<DeleteProductPriceCommand, Result>
     {
-        private readonly IProductPriceRepository _repository;
-        private readonly ICatalogUnitOfWork _unitOfWork;
-        private readonly IProductCacheInvalidator _productCacheInvalidator;
+        private readonly IProductPriceService _productPriceService;
         public DeleteProductPriceCommandHandler(
-            IProductPriceRepository repository,
-            ICatalogUnitOfWork unitOfWork,
-            IProductCacheInvalidator productCacheInvalidator)
+            IProductPriceService productPriceService)
         {
-            _repository = repository;
-            _unitOfWork = unitOfWork;
-            _productCacheInvalidator = productCacheInvalidator;
+            _productPriceService = productPriceService;
         }
 
-        public async Task<bool> Handle(DeleteProductPriceCommand request, CancellationToken cancellationToken)
+        public async Task<Result> Handle(DeleteProductPriceCommand request, CancellationToken cancellationToken)
         {
-            var price = await _repository.GetByIdAsync(request.Id, cancellationToken);
-
-            if (price == null)
-                throw new Exception("Product price not found.");
-
-            price.Deactivate();
-
-            _repository.Update(price);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _productCacheInvalidator.ClearProductDetailAsync(price.ProductId, cancellationToken);
-            return true;
+            return await _productPriceService.DeleteProductPriceAsync(request.Id);
         }
     }
 }

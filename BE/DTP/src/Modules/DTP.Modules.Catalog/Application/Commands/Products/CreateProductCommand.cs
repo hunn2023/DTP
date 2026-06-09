@@ -1,10 +1,11 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 
 
 namespace DTP.Modules.Catalog.Application.Commands.Products
 {
-    public class CreateProductCommand : IRequest<Guid>
+    public class CreateProductCommand : IRequest<Result<Guid>>
     {
         public string? Code { get; set; }
 
@@ -14,11 +15,19 @@ namespace DTP.Modules.Catalog.Application.Commands.Products
 
         public Guid CategoryId { get; set; }
 
+        public Guid? CountryId { get; set; }
+
         public string? ShortDescription { get; set; }
 
         public string? Description { get; set; }
 
+        public string? LocationText { get; set; }
+
         public string? ThumbnailUrl { get; set; }
+
+        public bool IsFeatured { get; set; }
+
+        public bool IsHot { get; set; }
 
         public int SortOrder { get; set; }
 
@@ -27,7 +36,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Products
 
 
     public class CreateProductCommandHandler
-    : IRequestHandler<CreateProductCommand, Guid>
+    : IRequestHandler<CreateProductCommand, Result<Guid>>
     {
         private readonly IProductService _productService;
         private readonly IProductCacheInvalidator _productCacheInvalidator; 
@@ -38,7 +47,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Products
             _productCacheInvalidator = productCacheInvalidator;
         }
 
-        public async Task<Guid> Handle(
+        public async Task<Result<Guid>> Handle(
             CreateProductCommand request,
             CancellationToken cancellationToken)
         {

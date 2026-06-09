@@ -1,24 +1,35 @@
 ﻿
 
+using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
+
 namespace DTP.Modules.Catalog.Application.Abstractions.Services
 {
     public interface IProductAttributeService
     {
-        Task<Guid> CreateAsync(
+        Task<Result<List<ProductAttributeDto>>> GetListAsync(
             Guid productId,
-            string name,
-            string value,
-            int sortOrder,
             CancellationToken cancellationToken = default);
 
-        Task UpdateAsync(
+        Task<Result<Guid>> CreateAsync(
+            Guid productId,
+            string key,
+            string? displayName,
+            string value,
+            int sortOrder,
+            bool isVisible,
+            CancellationToken cancellationToken = default);
+
+        Task<Result> UpdateAsync(
             Guid id,
-            string name,
+            string key,
+            string? displayName,
             string value,
             int sortOrder,
+            bool isVisible,
             CancellationToken cancellationToken = default);
 
-        Task DeleteAsync(
+        Task<Result> DeleteAsync(
             Guid id,
             CancellationToken cancellationToken = default);
     }

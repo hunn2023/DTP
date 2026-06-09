@@ -1,5 +1,4 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
-using DTP.Modules.Catalog.Application.Commands.EsimPackages;
 using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Domain.Entities;
 using DTP.Modules.Catalog.Infrastructure.Persistence;
@@ -7,12 +6,11 @@ using DTP.Shared.Application.Pagination;
 using DTP.Shared.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace DTP.Modules.Catalog.Infrastructure.Repositories
 {
     public class EsimPackageRepository
-         : RepositoryBase<EsimPackage>,
-           IEsimPackageRepository
+        : RepositoryBase<EsimPackage>,
+          IEsimPackageRepository
     {
         private readonly CatalogDbContext _context;
 
@@ -67,22 +65,50 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 .Select(x => new EsimPackageDto
                 {
                     Id = x.Id,
+
+                    ProductId = x.ProductId,
+                    ProductName = x.Product.Name,
+
                     ProductVariantId = x.ProductVariantId,
                     ProductVariantName = x.ProductVariant.Name,
+
+                    ProviderId = x.ProviderId,
+                    ProviderName = x.Provider.Name,
+
                     CountryId = x.CountryId,
                     CountryName = x.Country.Name,
-                    CarrierId = x.CarrierId,
-                    CarrierName = x.Carrier.Name,
+
                     Name = x.Name,
                     Slug = x.Slug,
+                    ProviderPackageCode = x.ProviderPackageCode,
+
                     DataAmount = x.DataAmount,
                     DataUnit = x.DataUnit,
                     ValidityDays = x.ValidityDays,
-                    Price = x.Price,
-                    Currency = x.Currency,
                     IsUnlimited = x.IsUnlimited,
+
+                    CoverageType = x.CoverageType,
+                    CoverageDescription = x.CoverageDescription,
+                    ActivationPolicy = x.ActivationPolicy,
+                    SpeedPolicy = x.SpeedPolicy,
+
+                    HotspotSupported = x.HotspotSupported,
+                    PhoneNumberSupported = x.PhoneNumberSupported,
+                    SmsSupported = x.SmsSupported,
+                    KycRequired = x.KycRequired,
+                    QrDeliveryType = x.QrDeliveryType,
+
+                    SortOrder = x.SortOrder,
                     IsActive = x.IsActive,
-                    SortOrder = x.SortOrder
+
+                    Carriers = x.Carriers
+                        .OrderBy(c => c.Carrier.Name)
+                        .Select(c => new EsimPackageCarrierDto
+                        {
+                            CarrierId = c.CarrierId,
+                            CarrierName = c.Carrier.Name
+                        })
+                        .ToList()
                 })
                 .FirstOrDefaultAsync(cancellationToken);
         }
@@ -128,120 +154,93 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 .Select(x => new EsimPackageDto
                 {
                     Id = x.Id,
+
+                    ProductId = x.ProductId,
+                    ProductName = x.Product.Name,
+
                     ProductVariantId = x.ProductVariantId,
                     ProductVariantName = x.ProductVariant.Name,
+
+                    ProviderId = x.ProviderId,
+                    ProviderName = x.Provider.Name,
+
                     CountryId = x.CountryId,
                     CountryName = x.Country.Name,
-                    CarrierId = x.CarrierId,
-                    CarrierName = x.Carrier.Name,
+
                     Name = x.Name,
                     Slug = x.Slug,
+                    ProviderPackageCode = x.ProviderPackageCode,
+
                     DataAmount = x.DataAmount,
                     DataUnit = x.DataUnit,
                     ValidityDays = x.ValidityDays,
-                    Price = x.Price,
-                    Currency = x.Currency,
                     IsUnlimited = x.IsUnlimited,
+
+                    CoverageType = x.CoverageType,
+                    CoverageDescription = x.CoverageDescription,
+                    ActivationPolicy = x.ActivationPolicy,
+                    SpeedPolicy = x.SpeedPolicy,
+
+                    HotspotSupported = x.HotspotSupported,
+                    PhoneNumberSupported = x.PhoneNumberSupported,
+                    SmsSupported = x.SmsSupported,
+                    KycRequired = x.KycRequired,
+                    QrDeliveryType = x.QrDeliveryType,
+
+                    SortOrder = x.SortOrder,
                     IsActive = x.IsActive,
-                    SortOrder = x.SortOrder
+
+                    Carriers = x.Carriers
+                        .OrderBy(c => c.Carrier.Name)
+                        .Select(c => new EsimPackageCarrierDto
+                        {
+                            CarrierId = c.CarrierId,
+                            CarrierName = c.Carrier.Name
+                        })
+                        .ToList()
                 })
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<Guid> CreateAsync(
-            CreateEsimPackageCommand command,
+        public async Task<bool> ExistsSlugAsync(
+            string slug,
+            Guid? excludeId = null,
             CancellationToken cancellationToken = default)
         {
-            var esimPackage = new EsimPackage(
-                command.ProductVariantId,
-                command.CountryId,
-                command.CarrierId,
-                command.Name,
-                command.Slug,
-                command.DataAmount,
-                command.DataUnit,
-                command.ValidityDays,
-                command.Price,
-                command.Currency,
-                command.IsUnlimited,
-                command.SortOrder);
+            slug = slug.Trim().ToLower();
 
-            if (!command.IsActive)
+            var query = _context.EsimPackages
+                .AsNoTracking()
+                .Where(x => x.Slug == slug);
+
+            if (excludeId.HasValue)
             {
-                esimPackage.Update(
-                    command.CountryId,
-                    command.CarrierId,
-                    command.Name,
-                    command.Slug,
-                    command.DataAmount,
-                    command.DataUnit,
-                    command.ValidityDays,
-                    command.Price,
-                    command.Currency,
-                    command.IsUnlimited,
-                    command.SortOrder,
-                    false);
+                query = query.Where(x => x.Id != excludeId.Value);
             }
 
-            _context.EsimPackages.Add(esimPackage);
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return esimPackage.Id;
+            return await query.AnyAsync(cancellationToken);
         }
 
-        public async Task<bool> UpdateAsync(
-            UpdateEsimPackageCommand command,
+        public async Task<bool> ExistsProviderPackageCodeAsync(
+            Guid providerId,
+            string providerPackageCode,
+            Guid? excludeId = null,
             CancellationToken cancellationToken = default)
         {
-            var esimPackage = await _context.EsimPackages
-                .FirstOrDefaultAsync(
-                    x => x.Id == command.Id,
-                    cancellationToken);
+            providerPackageCode = providerPackageCode.Trim();
 
-            if (esimPackage is null)
+            var query = _context.EsimPackages
+                .AsNoTracking()
+                .Where(x =>
+                    x.ProviderId == providerId &&
+                    x.ProviderPackageCode == providerPackageCode);
+
+            if (excludeId.HasValue)
             {
-                return false;
+                query = query.Where(x => x.Id != excludeId.Value);
             }
 
-            esimPackage.Update(
-                command.CountryId,
-                command.CarrierId,
-                command.Name,
-                command.Slug,
-                command.DataAmount,
-                command.DataUnit,
-                command.ValidityDays,
-                command.Price,
-                command.Currency,
-                command.IsUnlimited,
-                command.SortOrder,
-                command.IsActive);
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return true;
-        }
-
-        public async Task<bool> DeleteAsync(
-            Guid id,
-            CancellationToken cancellationToken = default)
-        {
-            var esimPackage = await _context.EsimPackages
-                .FirstOrDefaultAsync(
-                    x => x.Id == id,
-                    cancellationToken);
-
-            if (esimPackage is null)
-            {
-                return false;
-            }
-
-            _context.EsimPackages.Remove(esimPackage);
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return true;
+            return await query.AnyAsync(cancellationToken);
         }
 
         private static IQueryable<EsimPackage> ApplyFilters(
@@ -261,8 +260,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 query = query.Where(x =>
                     x.Name.Contains(keyword) ||
                     x.Slug.Contains(keyword) ||
+                    x.ProviderPackageCode.Contains(keyword) ||
+                    x.Product.Name.Contains(keyword) ||
+                    x.ProductVariant.Name.Contains(keyword) ||
+                    x.Provider.Name.Contains(keyword) ||
                     x.Country.Name.Contains(keyword) ||
-                    x.Carrier.Name.Contains(keyword));
+                    x.Carriers.Any(c => c.Carrier.Name.Contains(keyword)));
             }
 
             if (productVariantId.HasValue)
@@ -280,7 +283,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             if (carrierId.HasValue)
             {
                 query = query.Where(x =>
-                    x.CarrierId == carrierId.Value);
+                    x.Carriers.Any(c => c.CarrierId == carrierId.Value));
             }
 
             if (isUnlimited.HasValue)
@@ -317,27 +320,56 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
 
             var items = await query
                 .OrderBy(x => x.SortOrder)
-                .ThenBy(x => x.Price)
+                .ThenBy(x => x.Country.Name)
                 .ThenBy(x => x.ValidityDays)
+                .ThenBy(x => x.DataAmount)
                 .Select(x => new EsimPackageDto
                 {
                     Id = x.Id,
+
+                    ProductId = x.ProductId,
+                    ProductName = x.Product.Name,
+
                     ProductVariantId = x.ProductVariantId,
                     ProductVariantName = x.ProductVariant.Name,
+
+                    ProviderId = x.ProviderId,
+                    ProviderName = x.Provider.Name,
+
                     CountryId = x.CountryId,
                     CountryName = x.Country.Name,
-                    CarrierId = x.CarrierId,
-                    CarrierName = x.Carrier.Name,
+
                     Name = x.Name,
                     Slug = x.Slug,
+                    ProviderPackageCode = x.ProviderPackageCode,
+
                     DataAmount = x.DataAmount,
                     DataUnit = x.DataUnit,
                     ValidityDays = x.ValidityDays,
-                    Price = x.Price,
-                    Currency = x.Currency,
                     IsUnlimited = x.IsUnlimited,
+
+                    CoverageType = x.CoverageType,
+                    CoverageDescription = x.CoverageDescription,
+                    ActivationPolicy = x.ActivationPolicy,
+                    SpeedPolicy = x.SpeedPolicy,
+
+                    HotspotSupported = x.HotspotSupported,
+                    PhoneNumberSupported = x.PhoneNumberSupported,
+                    SmsSupported = x.SmsSupported,
+                    KycRequired = x.KycRequired,
+                    QrDeliveryType = x.QrDeliveryType,
+
+                    SortOrder = x.SortOrder,
                     IsActive = x.IsActive,
-                    SortOrder = x.SortOrder
+
+                    Carriers = x.Carriers
+                        .OrderBy(c => c.Carrier.Name)
+                        .Select(c => new EsimPackageCarrierDto
+                        {
+                            CarrierId = c.CarrierId,
+                            CarrierName = c.Carrier.Name
+                        })
+                        .ToList()
                 })
                 .Skip((pageIndex - 1) * pageSize)
                 .Take(pageSize)
@@ -350,6 +382,22 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 PageIndex = pageIndex,
                 PageSize = pageSize
             };
+        }
+
+        public async Task<List<EsimPackage>> GetByProductIdAsync(
+            Guid productId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.EsimPackages
+                .AsNoTracking()
+                .Include(x => x.Provider)
+                .Include(x => x.Country)
+                .Include(x => x.ProductVariant)
+                .Include(x => x.Carriers)
+                    .ThenInclude(x => x.Carrier)
+                .Where(x => x.ProductId == productId)
+                .OrderBy(x => x.SortOrder)
+                .ToListAsync(cancellationToken);
         }
     }
 }

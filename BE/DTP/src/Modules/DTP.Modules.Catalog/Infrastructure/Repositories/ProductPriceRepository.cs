@@ -48,21 +48,46 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         }
 
         public async Task<bool> ExistsActivePriceAsync(
+             Guid productId,
+             Guid? productVariantId,
+             string? currency,
+             Guid? excludeId,
+             CancellationToken cancellationToken = default)
+        {
+            var query = _context.ProductPrices
+                .AsNoTracking()
+                .Where(x =>
+                    x.ProductId == productId &&
+                    x.ProductVariantId == productVariantId &&
+                    x.IsActive);
+
+            if (!string.IsNullOrWhiteSpace(currency))
+            {
+                var normalizedCurrency = currency.Trim().ToUpper();
+
+                query = query.Where(x => x.Currency == normalizedCurrency);
+            }
+
+            if (excludeId.HasValue && excludeId.Value != Guid.Empty)
+            {
+                query = query.Where(x => x.Id != excludeId.Value);
+            }
+
+            return await query.AnyAsync(cancellationToken);
+        }
+
+
+        public async Task<List<ProductPrice>> GetByProductIdAsync(
             Guid productId,
-            Guid? productVariantId,
-            string currency,
-            Guid? excludeId = null,
             CancellationToken cancellationToken = default)
         {
-            currency = currency.Trim().ToUpper();
-
-            return await _context.ProductPrices.AnyAsync(x =>
-                x.ProductId == productId &&
-                x.ProductVariantId == productVariantId &&
-                x.Currency == currency &&
-                x.IsActive &&
-                (!excludeId.HasValue || x.Id != excludeId.Value),
-                cancellationToken);
+            return await _context.ProductPrices
+                .AsNoTracking()
+                .Where(x => x.ProductId == productId)
+                .OrderByDescending(x => x.IsActive)
+                .ThenBy(x => x.ProductVariantId)
+                .ThenBy(x => x.SalePrice)
+                .ToListAsync(cancellationToken);
         }
     }
 }

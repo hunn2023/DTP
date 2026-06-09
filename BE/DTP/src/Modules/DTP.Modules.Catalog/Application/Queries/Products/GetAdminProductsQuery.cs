@@ -1,17 +1,13 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Catalog.Application.Queries.Products
 {
     public class GetAdminProductsQuery
-         : IRequest<PagedResultDto<ProductDto>>
+         : IRequest<Result<PagedResultDto<ProductDto>>>
     {
         public string? Keyword { get; set; }
 
@@ -29,7 +25,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Products
     }
 
     public class GetAdminProductsQueryHandler
-      : IRequestHandler<GetAdminProductsQuery, PagedResultDto<ProductDto>>
+      : IRequestHandler<GetAdminProductsQuery, Result<PagedResultDto<ProductDto>>>
     {
         private readonly IProductService _productService;
 
@@ -38,7 +34,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Products
             _productService = productService;
         }
 
-        public async Task<PagedResultDto<ProductDto>> Handle(
+        public async Task<Result<PagedResultDto<ProductDto>>> Handle(
             GetAdminProductsQuery request,
             CancellationToken cancellationToken)
         {

@@ -1,12 +1,13 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using MediatR;
 
 namespace DTP.Modules.Catalog.Application.Queries.Providers
 {
     public class GetAdminProvidersQuery
-         : IRequest<PagedResultDto<ProviderDto>>
+         : IRequest<Result<PagedResultDto<ProviderDto>>>
     {
         public string? Keyword { get; set; }
 
@@ -16,7 +17,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Providers
     }
 
     public class GetAdminProvidersQueryHandler
-       : IRequestHandler<GetAdminProvidersQuery, PagedResultDto<ProviderDto>>
+       : IRequestHandler<GetAdminProvidersQuery, Result<PagedResultDto<ProviderDto>>>
     {
         private readonly IProviderService _providerService;
 
@@ -25,7 +26,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Providers
             _providerService = providerService;
         }
 
-        public async Task<PagedResultDto<ProviderDto>> Handle(
+        public async Task<Result<PagedResultDto<ProviderDto>>> Handle(
             GetAdminProvidersQuery request,
             CancellationToken cancellationToken)
         {

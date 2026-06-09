@@ -17,5 +17,9 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
             string currency,
             Guid? excludeId = null,
             CancellationToken cancellationToken = default);
+
+        Task<List<ProductPrice>> GetByProductIdAsync(
+            Guid productId,
+            CancellationToken cancellationToken = default);
     }
 }

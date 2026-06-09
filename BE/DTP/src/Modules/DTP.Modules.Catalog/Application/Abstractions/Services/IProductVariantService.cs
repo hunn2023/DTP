@@ -1,41 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
+
 
 namespace DTP.Modules.Catalog.Application.Abstractions.Services
 {
     public interface IProductVariantService
     {
-        Task<Guid> CreateAsync(
-            Guid productId,
-            string? sku,
-            string name,
-            decimal price,
-            decimal? originalPrice,
-            int? durationDays,
-            decimal? dataAmount,
-            string? dataUnit,
-            bool isUnlimited,
-            int sortOrder,
-            CancellationToken cancellationToken = default);
+        Task<Result<List<ProductVariantDto>>> GetByProductIdAsync(
+         Guid productId,
+         CancellationToken cancellationToken = default);
 
-        Task UpdateAsync(
+
+        Task<Result<Guid>> CreateAsync(
+           Guid productId,
+           string? sku,
+           string name,
+           string? shortName,
+           string? description,
+           int sortOrder,
+           bool isActive,
+           CancellationToken cancellationToken = default);
+
+        Task<Result> UpdateAsync(
             Guid id,
             string? sku,
             string name,
-            decimal price,
-            decimal? originalPrice,
-            int? durationDays,
-            decimal? dataAmount,
-            string? dataUnit,
-            bool isUnlimited,
+            string? shortName,
+            string? description,
             int sortOrder,
             bool isActive,
             CancellationToken cancellationToken = default);
 
-        Task DeleteAsync(
+        Task<Result> DeleteAsync(
             Guid id,
             CancellationToken cancellationToken = default);
     }

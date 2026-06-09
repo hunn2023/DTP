@@ -1,14 +1,7 @@
 ﻿using DTP.Modules.Catalog.Application.Commands.Category;
 using DTP.Modules.Catalog.Application.Queries.Category;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace DTP.Modules.Catalog.Presentation.Controllers.Admin
 {
     [ApiController]

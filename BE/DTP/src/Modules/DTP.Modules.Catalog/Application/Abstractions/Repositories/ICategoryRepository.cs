@@ -11,14 +11,24 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
             string? keyword,
             CancellationToken cancellationToken = default);
 
+        Task<PagedResultDto<CategoryDto>> GetPublicPagedAsync(
+            int pageIndex,
+            int pageSize,
+            CancellationToken cancellationToken = default);
+
         Task<bool> ExistsByNameAsync(
             string name,
             Guid? excludeId = null,
             CancellationToken cancellationToken = default);
 
-        Task<PagedResultDto<CategoryDto>> GetPublicPagedAsync(
-            int pageIndex,
-            int pageSize,
-            CancellationToken cancellationToken = default);
+        Task<bool> ExistsByCodeAsync(
+                   string code,
+                   Guid? excludeId = null,
+                   CancellationToken cancellationToken = default);
+
+        Task<bool> ExistsBySlugAsync(
+           string slug,
+           Guid? excludeId = null,
+           CancellationToken cancellationToken = default);
     }
 }

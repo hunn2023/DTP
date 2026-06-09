@@ -1,14 +1,10 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Catalog.Application.Commands.Countries
 {
-    public class DeleteCountryCommand : IRequest<bool>
+    public class DeleteCountryCommand : IRequest<Result>
     {
         public Guid Id { get; set; }
 
@@ -19,7 +15,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Countries
     }
 
     public class DeleteCountryCommandHandler
-    : IRequestHandler<DeleteCountryCommand, bool>
+    : IRequestHandler<DeleteCountryCommand, Result>
     {
         private readonly ICountryService _countryService;
 
@@ -29,15 +25,14 @@ namespace DTP.Modules.Catalog.Application.Commands.Countries
             _countryService = countryService;
         }
 
-        public async Task<bool> Handle(
+        public async Task<Result> Handle(
             DeleteCountryCommand request,
             CancellationToken cancellationToken)
         {
-            await _countryService.DeleteAsync(
-                request.Id,
-                cancellationToken);
+            return await _countryService.DeleteAsync(
+                  request.Id,
+                  cancellationToken);
 
-            return true;
         }
     }
 }

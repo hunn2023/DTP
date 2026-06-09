@@ -1,0 +1,64 @@
+﻿using DTP.Modules.Payment.Application.Abstractions.Repositories;
+using DTP.Modules.Payment.Application.Abstractions.Services;
+using DTP.Modules.Payment.Infrastructure.Clients;
+using DTP.Modules.Payment.Infrastructure.Persistence;
+using DTP.Modules.Payment.Infrastructure.Repositories;
+using DTP.Modules.Payment.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http;
+
+
+namespace DTP.Modules.Payment
+{
+    public static class PaymentModule
+    {
+        public static IServiceCollection AddPaymentModule(
+            this IServiceCollection services,
+            IConfiguration configuration)
+        {
+            services.AddDbContext<PaymentDbContext>(options =>
+            {
+                options.UseSqlServer(
+                    configuration.GetConnectionString("DefaultConnection"));
+            });
+
+            services.Configure<VnptEpayOptions>(
+         configuration.GetSection("Payment:VnptEpay"));
+
+
+            services.AddHttpClient<IVnptEpayClient, VnptEpayClient>((sp, client) =>
+            {
+                var options = configuration
+                    .GetSection("Payment:VnptEpay")
+                    .Get<VnptEpayOptions>()!;
+
+                client.BaseAddress = new Uri(options.BaseUrl);
+                client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+            });
+
+
+
+            // Repositories
+            services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
+            services.AddScoped<IPaymentCallbackLogRepository, PaymentCallbackLogRepository>();
+            services.AddScoped<IPaymentUnitOfWork, PaymentUnitOfWork>();
+
+            // Services
+            services.AddScoped<IPaymentService, PaymentService>(); 
+            services.AddScoped<IVnptEpayClient, VnptEpayClient>();
+            services.AddScoped<IPaymentAuditService, PaymentAuditService>();
+            // DÒNG ĐANG THIẾU
+            services.AddScoped<IOrderPaymentService, OrderPaymentService>();
+
+
+            services.AddMediatR(cfg =>
+            {
+                cfg.RegisterServicesFromAssembly(typeof(PaymentModule).Assembly);
+            });
+
+            return services;
+        }
+    }
+}

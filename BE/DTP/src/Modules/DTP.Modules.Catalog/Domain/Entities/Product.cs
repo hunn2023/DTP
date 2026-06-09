@@ -5,6 +5,45 @@ namespace DTP.Modules.Catalog.Domain.Entities
 {
     public class Product : EntityBase
     {
+        private readonly List<ProductVariant> _variants = new();
+        private readonly List<ProductImage> _images = new();
+        private readonly List<ProductAttribute> _attributes = new();
+
+        private Product()
+        {
+        }
+
+        public Product(
+            string? code,
+            string name,
+            string slug,
+            Guid categoryId,
+            Guid? countryId,
+            string? shortDescription,
+            string? description,
+            string? locationText,
+            string? thumbnailUrl,
+            bool isFeatured,
+            bool isHot,
+            int sortOrder,
+            bool isActive)
+        {
+            Code = code;
+            Name = name;
+            Slug = slug;
+            CategoryId = categoryId;
+            CountryId = countryId;
+            ShortDescription = shortDescription;
+            Description = description;
+            LocationText = locationText;
+            ThumbnailUrl = thumbnailUrl;
+            IsFeatured = isFeatured;
+            IsHot = isHot;
+            SoldCount = 0;
+            SortOrder = sortOrder;
+            IsActive = isActive;
+        }
+
         public string? Code { get; private set; }
 
         public string Name { get; private set; } = default!;
@@ -13,71 +52,96 @@ namespace DTP.Modules.Catalog.Domain.Entities
 
         public Guid CategoryId { get; private set; }
 
+        public Guid? CountryId { get; private set; }
+
+
+
+        public Category? Category { get; private set; }
+
+
+        public Country? Country { get; private set; }
+
         public string? ShortDescription { get; private set; }
 
         public string? Description { get; private set; }
 
+        public string? LocationText { get; private set; }
+
         public string? ThumbnailUrl { get; private set; }
+
+        public bool IsFeatured { get; private set; }
+
+        public bool IsHot { get; private set; }
+
+        public int SoldCount { get; private set; }
 
         public int SortOrder { get; private set; }
 
         public bool IsActive { get; private set; }
 
-        private readonly List<ProductVariant> _variants = new();
         public IReadOnlyCollection<ProductVariant> Variants => _variants;
 
-        private readonly List<ProductImage> _images = new();
         public IReadOnlyCollection<ProductImage> Images => _images;
 
-        private readonly List<ProductAttribute> _attributes = new();
         public IReadOnlyCollection<ProductAttribute> Attributes => _attributes;
-
-        private Product() { }
-
-        public Product(
-            string? code,
-            string name,
-            string slug,
-            Guid categoryId,
-            string? shortDescription,
-            string? description,
-            string? thumbnailUrl,
-            int sortOrder)
-        {
-            Id = Guid.NewGuid();
-            Code = code?.Trim();
-            Name = name.Trim();
-            Slug = slug.Trim();
-            CategoryId = categoryId;
-            ShortDescription = shortDescription?.Trim();
-            Description = description?.Trim();
-            ThumbnailUrl = thumbnailUrl?.Trim();
-            SortOrder = sortOrder;
-            IsActive = true;
-        }
 
         public void Update(
             string? code,
             string name,
             string slug,
             Guid categoryId,
+            Guid? countryId,
             string? shortDescription,
             string? description,
-            string? thumbnailUrl,
+            string? locationText,
+            bool isFeatured,
+            bool isHot,
             int sortOrder,
             bool isActive)
         {
-            Code = code?.Trim();
-            Name = name.Trim();
-            Slug = slug.Trim();
+            Code = code;
+            Name = name;
+            Slug = slug;
             CategoryId = categoryId;
-            ShortDescription = shortDescription?.Trim();
-            Description = description?.Trim();
-            ThumbnailUrl = thumbnailUrl?.Trim();
+            CountryId = countryId;
+            ShortDescription = shortDescription;
+            Description = description;
+            LocationText = locationText;
+            IsFeatured = isFeatured;
+            IsHot = isHot;
             SortOrder = sortOrder;
             IsActive = isActive;
+        }
 
-            SetUpdated();
+        public void UpdateThumbnail(string? thumbnailUrl)
+        {
+            ThumbnailUrl = thumbnailUrl;
+        }
+
+        public void IncreaseSoldCount(int quantity)
+        {
+            if (quantity <= 0)
+                return;
+
+            SoldCount += quantity;
+        }
+
+        public void DecreaseSoldCount(int quantity)
+        {
+            if (quantity <= 0)
+                return;
+
+            SoldCount = Math.Max(0, SoldCount - quantity);
+        }
+
+        public void Activate()
+        {
+            IsActive = true;
+        }
+
+        public void Deactivate()
+        {
+            IsActive = false;
         }
     }
 }

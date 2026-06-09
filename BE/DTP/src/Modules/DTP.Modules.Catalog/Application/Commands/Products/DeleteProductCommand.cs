@@ -1,14 +1,10 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Catalog.Application.Commands.Products
 {
-    public class DeleteProductCommand : IRequest<bool>
+    public class DeleteProductCommand : IRequest<Result>
     {
         public Guid Id { get; }
 
@@ -19,7 +15,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Products
     }
 
     public class DeleteProductCommandHandler
-    : IRequestHandler<DeleteProductCommand, bool>
+    : IRequestHandler<DeleteProductCommand, Result>
     {
         private readonly IProductService _productService;
 
@@ -28,15 +24,14 @@ namespace DTP.Modules.Catalog.Application.Commands.Products
             _productService = productService;
         }
 
-        public async Task<bool> Handle(
+        public async Task<Result> Handle(
             DeleteProductCommand request,
             CancellationToken cancellationToken)
         {
-            await _productService.DeleteAsync(
-                request.Id,
-                cancellationToken);
+            return await _productService.DeleteAsync(
+                 request.Id,
+                 cancellationToken);
 
-            return true;
         }
     }
 }

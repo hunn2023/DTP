@@ -1,12 +1,13 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
 
 
 namespace DTP.Modules.Catalog.Application.Queries.Products
 {
     public class GetPublicProductBySlugQuery
-       : IRequest<ProductDto?>
+       : IRequest<Result<ProductDto?>>
     {
         public string Slug { get; set; }
 
@@ -17,7 +18,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Products
     }
 
     public class GetPublicProductBySlugQueryHandler
-       : IRequestHandler<GetPublicProductBySlugQuery, ProductDto?>
+       : IRequestHandler<GetPublicProductBySlugQuery, Result<ProductDto?>>
     {
         private readonly IProductService _productService;
 
@@ -26,7 +27,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Products
             _productService = productService;
         }
 
-        public async Task<ProductDto?> Handle(
+        public async Task<Result<ProductDto?>> Handle(
             GetPublicProductBySlugQuery request,
             CancellationToken cancellationToken)
         {

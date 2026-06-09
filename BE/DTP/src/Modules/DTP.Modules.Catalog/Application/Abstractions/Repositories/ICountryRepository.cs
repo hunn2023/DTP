@@ -11,10 +11,6 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
         Task<List<Country>> GetActiveListAsync(
             CancellationToken cancellationToken = default);
 
-        Task<Country?> GetByIdAsync(
-            Guid id,
-            CancellationToken cancellationToken = default);
-
         Task<bool> ExistsByCodeAsync(
             string code,
             Guid? excludeId = null,

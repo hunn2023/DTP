@@ -20,11 +20,23 @@ namespace DTP.Modules.Catalog.Application.DTOs
 
         public string? CategoryName { get; set; }
 
+        public Guid? CountryId { get; set; }
+
+        public string? CountryName { get; set; }
+
         public string? ShortDescription { get; set; }
 
         public string? Description { get; set; }
 
+        public string? LocationText { get; set; }
+
         public string? ThumbnailUrl { get; set; }
+
+        public bool IsFeatured { get; set; }
+
+        public bool IsHot { get; set; }
+
+        public int SoldCount { get; set; }
 
         public int SortOrder { get; set; }
 
@@ -32,8 +44,12 @@ namespace DTP.Modules.Catalog.Application.DTOs
 
         public List<ProductImageDto> Images { get; set; } = new();
 
+        public List<ProductVariantDto> Variants { get; set; } = new();
+
         public List<ProductAttributeDto> Attributes { get; set; } = new();
 
-        public List<ProductVariantDto> Variants { get; set; } = new();
+        public List<ProductPriceDto> Prices { get; set; } = new();
+
+        public List<EsimPackageDto> EsimPackages { get; set; } = new();
     }
 }

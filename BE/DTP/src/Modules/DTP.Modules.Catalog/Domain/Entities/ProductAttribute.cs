@@ -1,47 +1,55 @@
 ﻿using DTP.Shared.Domain;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace DTP.Modules.Catalog.Domain.Entities
 {
     public class ProductAttribute : EntityBase
     {
+        private ProductAttribute()
+        {
+        }
+
+        public ProductAttribute(
+            Guid productId,
+            string key,
+            string? displayName,
+            string value,
+            int sortOrder,
+            bool isVisible)
+        {
+            Id = Guid.NewGuid();
+            ProductId = productId;
+            Key = key;
+            DisplayName = displayName;
+            Value = value;
+            SortOrder = sortOrder;
+            IsVisible = isVisible;
+        }
+
         public Guid ProductId { get; private set; }
 
-        public string Name { get; private set; } = default!;
+        public string Key { get; private set; } = default!;
+
+        public string? DisplayName { get; private set; }
 
         public string Value { get; private set; } = default!;
 
         public int SortOrder { get; private set; }
 
-        private ProductAttribute() { }
-
-        public ProductAttribute(
-            Guid productId,
-            string name,
-            string value,
-            int sortOrder)
-        {
-            Id = Guid.NewGuid();
-            ProductId = productId;
-            Name = name.Trim();
-            Value = value.Trim();
-            SortOrder = sortOrder;
-        }
+        public bool IsVisible { get; private set; }
 
         public void Update(
-            string name,
+            string key,
+            string? displayName,
             string value,
-            int sortOrder)
+            int sortOrder,
+            bool isVisible)
         {
-            Name = name.Trim();
-            Value = value.Trim();
+            Key = key;
+            DisplayName = displayName;
+            Value = value;
             SortOrder = sortOrder;
-
-            SetUpdated();
+            IsVisible = isVisible;
         }
     }
 }

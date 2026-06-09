@@ -6,11 +6,7 @@ using DTP.Modules.Catalog.Infrastructure.Persistence;
 using DTP.Shared.Application.Pagination;
 using DTP.Shared.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace DTP.Modules.Catalog.Infrastructure.Repositories
 {
@@ -26,12 +22,27 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             _context = context;
         }
 
+        public async Task<Product?> GetDetailAsync(
+           Guid id,
+           CancellationToken cancellationToken = default)
+        {
+            return await _context.Products
+                .AsNoTracking()
+                .Include(x => x.Category)
+                .Include(x => x.Country)
+                .Include(x => x.Images)
+                .Include(x => x.Variants)
+                .Include(x => x.Attributes)
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        }
+
         public async Task<PagedResultDto<ProductDto>> GetPublicPagedAsync(
-            string? keyword,
-            Guid? categoryId,
-            int pageIndex,
-            int pageSize,
-            CancellationToken cancellationToken = default)
+             string? keyword,
+             Guid? categoryId,
+             Guid? countryId,
+             int pageIndex,
+             int pageSize,
+             CancellationToken cancellationToken = default)
         {
             var query = _context.Products
                 .AsNoTracking()
@@ -42,6 +53,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 query,
                 keyword,
                 categoryId,
+                countryId,
                 null);
 
             return await ToPagedDtoAsync(
@@ -50,6 +62,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 pageSize,
                 cancellationToken);
         }
+
 
         public async Task<ProductDto?> GetPublicBySlugAsync(
             string slug,
@@ -79,9 +92,11 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
+
         public async Task<PagedResultDto<ProductDto>> GetPagedAsync(
             string? keyword,
             Guid? categoryId,
+            Guid? countryId,
             bool? isActive,
             int pageIndex,
             int pageSize,
@@ -95,6 +110,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 query,
                 keyword,
                 categoryId,
+                countryId,
                 isActive);
 
             return await ToPagedDtoAsync(
@@ -103,6 +119,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 pageSize,
                 cancellationToken);
         }
+
+
 
         public async Task<ProductDto?> GetByIdDtoAsync(
             Guid id,
@@ -133,28 +151,19 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             CancellationToken cancellationToken = default)
         {
             var product = new Product(
-                command.Code,
-                command.Name,
-                command.Slug,
+                command.Code?.Trim(),
+                command.Name.Trim(),
+                command.Slug.Trim().ToLower(),
                 command.CategoryId,
-                command.ShortDescription,
-                command.Description,
-                command.ThumbnailUrl,
-                command.SortOrder);
-
-            if (!command.IsActive)
-            {
-                product.Update(
-                    command.Code,
-                    command.Name,
-                    command.Slug,
-                    command.CategoryId,
-                    command.ShortDescription,
-                    command.Description,
-                    command.ThumbnailUrl,
-                    command.SortOrder,
-                    false);
-            }
+                command.CountryId,
+                command.ShortDescription?.Trim(),
+                command.Description?.Trim(),
+                command.LocationText?.Trim(),
+                command.ThumbnailUrl?.Trim(),
+                command.IsFeatured,
+                command.IsHot,
+                command.SortOrder,
+                command.IsActive);
 
             _context.Products.Add(product);
 
@@ -173,20 +182,23 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     cancellationToken);
 
             if (product is null)
-            {
                 return false;
-            }
 
             product.Update(
-                command.Code,
-                command.Name,
-                command.Slug,
+                command.Code?.Trim(),
+                command.Name.Trim(),
+                command.Slug.Trim().ToLower(),
                 command.CategoryId,
-                command.ShortDescription,
-                command.Description,
-                command.ThumbnailUrl,
+                command.CountryId,
+                command.ShortDescription?.Trim(),
+                command.Description?.Trim(),
+                command.LocationText?.Trim(),
+                command.IsFeatured,
+                command.IsHot,
                 command.SortOrder,
                 command.IsActive);
+
+            product.UpdateThumbnail(command.ThumbnailUrl?.Trim());
 
             await _context.SaveChangesAsync(cancellationToken);
 
@@ -215,10 +227,13 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         }
 
         private static IQueryable<Product> ApplyFilters(
-            IQueryable<Product> query,
-            string? keyword,
-            Guid? categoryId,
-            bool? isActive)
+                 IQueryable<Product> query,
+                 string? keyword,
+                 Guid? categoryId,
+                 Guid? countryId,
+                 bool? isActive,
+                 bool? isFeatured = null,
+                 bool? isHot = null)
         {
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -227,19 +242,33 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 query = query.Where(x =>
                     x.Name.Contains(keyword) ||
                     x.Slug.Contains(keyword) ||
-                    (x.Code != null && x.Code.Contains(keyword)));
+                    (x.Code != null && x.Code.Contains(keyword)) ||
+                    (x.LocationText != null && x.LocationText.Contains(keyword)));
             }
 
             if (categoryId.HasValue)
             {
-                query = query.Where(x =>
-                    x.CategoryId == categoryId.Value);
+                query = query.Where(x => x.CategoryId == categoryId.Value);
+            }
+
+            if (countryId.HasValue)
+            {
+                query = query.Where(x => x.CountryId == countryId.Value);
             }
 
             if (isActive.HasValue)
             {
-                query = query.Where(x =>
-                    x.IsActive == isActive.Value);
+                query = query.Where(x => x.IsActive == isActive.Value);
+            }
+
+            if (isFeatured.HasValue)
+            {
+                query = query.Where(x => x.IsFeatured == isFeatured.Value);
+            }
+
+            if (isHot.HasValue)
+            {
+                query = query.Where(x => x.IsHot == isHot.Value);
             }
 
             return query;
@@ -261,20 +290,31 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 .ThenBy(x => x.Name)
                 .Skip((pageIndex - 1) * pageSize)
                 .Take(pageSize)
-                .Select(x => new ProductDto
-                {
-                    Id = x.Id,
-                    Code = x.Code,
-                    Name = x.Name,
-                    Slug = x.Slug,
-                    CategoryId = x.CategoryId,
-                    //CategoryName = x.Category.Name,
-                    ShortDescription = x.ShortDescription,
-                    Description = x.Description,
-                    ThumbnailUrl = x.ThumbnailUrl,
-                    SortOrder = x.SortOrder,
-                    IsActive = x.IsActive
-                })
+               .Select(x => new ProductDto
+               {
+                   Id = x.Id,
+                   Code = x.Code,
+                   Name = x.Name,
+                   Slug = x.Slug,
+
+                   CategoryId = x.CategoryId,
+                   CategoryName = x.Category != null ? x.Category.Name : null,
+
+                   CountryId = x.CountryId,
+                   CountryName = x.Country != null ? x.Country.Name : null,
+
+                   ShortDescription = x.ShortDescription,
+                   Description = x.Description,
+                   LocationText = x.LocationText,
+                   ThumbnailUrl = x.ThumbnailUrl,
+
+                   IsFeatured = x.IsFeatured,
+                   IsHot = x.IsHot,
+                   SoldCount = x.SoldCount,
+
+                   SortOrder = x.SortOrder,
+                   IsActive = x.IsActive
+               })
                 .ToListAsync(cancellationToken);
 
             return new PagedResultDto<ProductDto>
