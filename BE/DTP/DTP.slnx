@@ -1,0 +1,23 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DTP.Api/DTP.Api.csproj" />
+    <Project Path="src/DTP.BuildingBlocks/DTP.BuildingBlocks.csproj" />
+    <Project Path="src/DTP.Infrastructure/DTP.Infrastructure.csproj" />
+    <Project Path="src/DTP.Shared/DTP.Shared.csproj" />
+    <Project Path="src/DTP.Worker/DTP.Worker.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/">
+    <Project Path="src/Modules/DTP.Modules.Audit/DTP.Modules.Audit.csproj" Id="87eaa5f1-d2d2-4b2c-ab29-28a2f865c56d" />
+    <Project Path="src/Modules/DTP.Modules.Auth/DTP.Modules.Auth.csproj" Id="589dc3ee-816a-47ef-b420-38c0180b90b5" />
+    <Project Path="src/Modules/DTP.Modules.Catalog/DTP.Modules.Catalog.csproj" />
+    <Project Path="src/Modules/DTP.Modules.Content/DTP.Modules.Customer.csproj" Id="0fc9f83b-980b-4ca0-9b57-a8d64df05321" />
+    <Project Path="src/Modules/DTP.Modules.Customer/DTP.Modules.Content.csproj" Id="3a28233d-c174-4d81-9473-0ce712476ce4" />
+    <Project Path="src/Modules/DTP.Modules.Delivery/DTP.Modules.Delivery.csproj" Id="95f79e57-46e4-49d2-9157-402f6054402c" />
+    <Project Path="src/Modules/DTP.Modules.Notification/DTP.Modules.Notification.csproj" Id="7b87eb32-65f2-4bb2-a97f-321cdd319f23" />
+    <Project Path="src/Modules/DTP.Modules.Ordering/DTP.Modules.Ordering.csproj" Id="48db666c-d787-4961-8c4b-81b8133a61cc" />
+    <Project Path="src/Modules/DTP.Modules.Payment/DTP.Modules.Payment.csproj" Id="7a6a4cdb-4136-4098-91e6-9465cd87a773" />
+    <Project Path="src/Modules/DTP.Modules.Promotion/DTP.Modules.Promotion.csproj" Id="ba538110-769d-48e7-8114-b0f9a18ad931" />
+    <Project Path="src/Modules/DTP.Modules.Provider/DTP.Modules.Provider.csproj" Id="b52eefae-462d-4ba2-bcdc-84717a66a453" />
+    <Project Path="src/Modules/DTP.Modules.Report/DTP.Modules.Report.csproj" Id="5b3a819d-5d64-4eaa-b26c-331f1a2f9f07" />
+  </Folder>
+</Solution>
