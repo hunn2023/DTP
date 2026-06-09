@@ -14,6 +14,7 @@ export type ProductPricePayload = {
   costPrice: number
   startDate?: string | null
   endDate?: string | null
+  note: string
 }
 
 export type ProductPriceUpdatePayload = {
@@ -24,6 +25,7 @@ export type ProductPriceUpdatePayload = {
   startDate?: string | null
   endDate?: string | null
   isActive: boolean
+  note: string
 }
 
 function normalizePrice(raw: Raw): ProductPriceRow {
@@ -39,6 +41,7 @@ function normalizePrice(raw: Raw): ProductPriceRow {
     costPrice: readNumber(raw, 'costPrice', 'CostPrice'),
     startDate: readDateString(raw, 'startDate', 'StartDate'),
     endDate: readDateString(raw, 'endDate', 'EndDate'),
+    note: readString(raw, 'note', 'Note'),
     isActive: readBool(raw, 'isActive', 'IsActive'),
   }
 }
@@ -63,6 +66,7 @@ export async function createProductPrice(payload: ProductPricePayload): Promise<
     productVariantId: payload.productVariantId || null,
     startDate: payload.startDate || null,
     endDate: payload.endDate || null,
+    note: payload.note.trim(),
   }
   const raw = await httpPost<{ id?: string; Id?: string } | string>(API_PATHS.adminProductPrices, body)
   if (typeof raw === 'string') return raw
@@ -77,8 +81,9 @@ export async function updateProductPrice(
     ...payload,
     startDate: payload.startDate || null,
     endDate: payload.endDate || null,
+    note: payload.note.trim(),
   }
-  await httpPut<boolean>(`${API_PATHS.adminProductPrices}/${id}`, body)
+  await httpPut<unknown>(`${API_PATHS.adminProductPrices}/${id}`, body)
 }
 
 export async function deleteProductPrice(id: string): Promise<void> {

@@ -25,20 +25,11 @@ export function buildVariantColumns(handlers: VariantTableHandlers) {
         return sku ? <code>{sku}</code> : <span className="text-muted">—</span>
       },
     }),
-    helper.accessor('price', { header: 'Giá' }),
-    helper.accessor('dataAmount', {
-      header: 'Data',
-      cell: ({ row }) => {
-        if (row.original.isUnlimited) return 'Unlimited'
-        const amount = row.original.dataAmount
-        if (amount == null) return <span className="text-muted">—</span>
-        return `${amount} ${row.original.dataUnit || ''}`.trim()
-      },
+    helper.accessor('shortName', {
+      header: 'Tên ngắn',
+      cell: ({ getValue }) => getValue() || <span className="text-muted">—</span>,
     }),
-    helper.accessor('durationDays', {
-      header: 'Ngày',
-      cell: ({ getValue }) => getValue() ?? <span className="text-muted">—</span>,
-    }),
+    helper.accessor('sortOrder', { header: 'TT' }),
     createIsActiveColumn<ProductVariant>(),
     createActionsColumn(handlers),
   ] as ColumnDef<ProductVariant>[]

@@ -36,6 +36,7 @@ function toCreatePayload(values: ProductPriceRow): pricesApi.ProductPricePayload
     costPrice: values.costPrice,
     startDate: values.startDate.trim() || null,
     endDate: values.endDate.trim() || null,
+    note: values.note.trim(),
   }
 }
 
@@ -48,6 +49,7 @@ function toUpdatePayload(values: ProductPriceRow): pricesApi.ProductPriceUpdateP
     startDate: values.startDate.trim() || null,
     endDate: values.endDate.trim() || null,
     isActive: values.isActive,
+    note: values.note.trim(),
   }
 }
 

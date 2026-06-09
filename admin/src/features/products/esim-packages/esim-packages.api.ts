@@ -1,99 +1,89 @@
 import type { EsimPackage } from '@/features/products/esim-packages/types'
+import type { EsimPackageCarrierLink } from '@/features/products/esim-wizard/types'
 import { API_PATHS } from '@/shared/config/api'
 import { httpDelete, httpGet, httpPost, httpPut } from '@/shared/lib/http'
+import { readBool, readNumber, readOptionalNumber, readString } from '@/shared/lib/dtoNormalize'
 
-type EsimPackageDtoRaw = Record<string, unknown>
+type Raw = Record<string, unknown>
 
-export type EsimPackageDto = {
-  id: string
+export type EsimPackagePayload = {
+  productId: string
   productVariantId: string
-  productVariantName: string
-  productName: string
+  providerId: string
   countryId: string
-  countryName: string
-  carrierId: string
-  carrierName: string
   name: string
   slug: string
-  dataAmount: number
+  providerPackageCode: string
+  dataAmount?: number | null
   dataUnit: string
   validityDays: number
-  price: number
-  currency: string
   isUnlimited: boolean
-  isActive: boolean
-  sortOrder: number
-}
-
-export type EsimPackageCreatePayload = {
-  productVariantId: string
-  countryId: string
-  carrierId: string
-  name: string
-  slug: string
-  dataAmount: number
-  dataUnit: string
-  validityDays: number
-  price: number
-  currency: string
-  isUnlimited: boolean
+  coverageType: string
+  coverageDescription?: string
+  activationPolicy: string
+  speedPolicy?: string
+  hotspotSupported: boolean
+  phoneNumberSupported: boolean
+  smsSupported: boolean
+  kycRequired: boolean
+  qrDeliveryType: string
   sortOrder: number
   isActive: boolean
+  carrierIds: string[]
 }
 
-export type EsimPackageUpdatePayload = Omit<EsimPackageCreatePayload, 'productVariantId'>
+export type EsimPackageUpdatePayload = EsimPackagePayload
 
 export type PagedEsimPackagesDto = {
-  items: EsimPackageDto[]
+  items: EsimPackage[]
   totalCount: number
   pageIndex: number
   pageSize: number
 }
 
-function readString(raw: EsimPackageDtoRaw, camel: string, pascal: string): string {
-  const value = raw[camel] ?? raw[pascal]
-  return value == null ? '' : String(value)
-}
-
-function readBool(raw: EsimPackageDtoRaw, camel: string, pascal: string): boolean {
-  const value = raw[camel] ?? raw[pascal]
-  return Boolean(value)
-}
-
-function readNumber(raw: EsimPackageDtoRaw, camel: string, pascal: string): number {
-  const value = raw[camel] ?? raw[pascal]
-  return typeof value === 'number' ? value : Number(value ?? 0)
-}
-
-function normalizeDto(raw: EsimPackageDtoRaw): EsimPackageDto {
+function normalizeCarrier(raw: Raw): EsimPackageCarrierLink {
   return {
-    id: readString(raw, 'id', 'Id'),
-    productVariantId: readString(raw, 'productVariantId', 'ProductVariantId'),
-    productVariantName: readString(raw, 'productVariantName', 'ProductVariantName'),
-    productName: readString(raw, 'productName', 'ProductName'),
-    countryId: readString(raw, 'countryId', 'CountryId'),
-    countryName: readString(raw, 'countryName', 'CountryName'),
     carrierId: readString(raw, 'carrierId', 'CarrierId'),
     carrierName: readString(raw, 'carrierName', 'CarrierName'),
-    name: readString(raw, 'name', 'Name'),
-    slug: readString(raw, 'slug', 'Slug'),
-    dataAmount: readNumber(raw, 'dataAmount', 'DataAmount'),
-    dataUnit: readString(raw, 'dataUnit', 'DataUnit'),
-    validityDays: readNumber(raw, 'validityDays', 'ValidityDays'),
-    price: readNumber(raw, 'price', 'Price'),
-    currency: readString(raw, 'currency', 'Currency'),
-    isUnlimited: readBool(raw, 'isUnlimited', 'IsUnlimited'),
-    isActive: readBool(raw, 'isActive', 'IsActive'),
-    sortOrder: readNumber(raw, 'sortOrder', 'SortOrder'),
   }
 }
 
-function mapDto(dto: EsimPackageDto): EsimPackage {
-  return { ...dto }
+function normalizeDto(raw: Raw): EsimPackage {
+  const carriersRaw = (raw.carriers ?? raw.Carriers ?? []) as Raw[]
+  return {
+    id: readString(raw, 'id', 'Id'),
+    productId: readString(raw, 'productId', 'ProductId'),
+    productName: readString(raw, 'productName', 'ProductName'),
+    productVariantId: readString(raw, 'productVariantId', 'ProductVariantId'),
+    productVariantName: readString(raw, 'productVariantName', 'ProductVariantName'),
+    providerId: readString(raw, 'providerId', 'ProviderId'),
+    providerName: readString(raw, 'providerName', 'ProviderName'),
+    countryId: readString(raw, 'countryId', 'CountryId'),
+    countryName: readString(raw, 'countryName', 'CountryName'),
+    name: readString(raw, 'name', 'Name'),
+    slug: readString(raw, 'slug', 'Slug'),
+    providerPackageCode: readString(raw, 'providerPackageCode', 'ProviderPackageCode'),
+    dataAmount: readOptionalNumber(raw, 'dataAmount', 'DataAmount'),
+    dataUnit: readString(raw, 'dataUnit', 'DataUnit'),
+    validityDays: readNumber(raw, 'validityDays', 'ValidityDays'),
+    isUnlimited: readBool(raw, 'isUnlimited', 'IsUnlimited'),
+    coverageType: readString(raw, 'coverageType', 'CoverageType'),
+    coverageDescription: readString(raw, 'coverageDescription', 'CoverageDescription'),
+    activationPolicy: readString(raw, 'activationPolicy', 'ActivationPolicy'),
+    speedPolicy: readString(raw, 'speedPolicy', 'SpeedPolicy'),
+    hotspotSupported: readBool(raw, 'hotspotSupported', 'HotspotSupported'),
+    phoneNumberSupported: readBool(raw, 'phoneNumberSupported', 'PhoneNumberSupported'),
+    smsSupported: readBool(raw, 'smsSupported', 'SmsSupported'),
+    kycRequired: readBool(raw, 'kycRequired', 'KycRequired'),
+    qrDeliveryType: readString(raw, 'qrDeliveryType', 'QrDeliveryType'),
+    sortOrder: readNumber(raw, 'sortOrder', 'SortOrder'),
+    isActive: readBool(raw, 'isActive', 'IsActive'),
+    carriers: Array.isArray(carriersRaw) ? carriersRaw.map(normalizeCarrier) : [],
+  }
 }
 
 function normalizePaged(raw: Record<string, unknown>): PagedEsimPackagesDto {
-  const itemsRaw = (raw.items ?? raw.Items ?? []) as EsimPackageDtoRaw[]
+  const itemsRaw = (raw.items ?? raw.Items ?? []) as Raw[]
   return {
     items: Array.isArray(itemsRaw) ? itemsRaw.map(normalizeDto) : [],
     totalCount: readNumber(raw, 'totalCount', 'TotalCount'),
@@ -131,7 +121,7 @@ export async function fetchEsimPackagesPage(
   if (cached) return cached
 
   const request = fetchAdminEsimPackages(pageIndex, pageSize, filters).then((paged) => ({
-    items: paged.items.map(mapDto),
+    items: paged.items,
     totalCount: paged.totalCount,
     pageIndex: paged.pageIndex,
     pageSize: paged.pageSize,
@@ -164,16 +154,23 @@ export async function fetchAdminEsimPackages(
   return normalizePaged(raw)
 }
 
-export async function createEsimPackage(payload: EsimPackageCreatePayload): Promise<string> {
-  const raw = await httpPost<{ id?: string; Id?: string }>(API_PATHS.adminEsimPackages, payload)
+export async function fetchEsimPackageDetail(id: string): Promise<EsimPackage | null> {
+  try {
+    const raw = await httpGet<Raw>(`${API_PATHS.adminEsimPackages}/${id}`)
+    return normalizeDto(raw)
+  } catch {
+    return null
+  }
+}
+
+export async function createEsimPackage(payload: EsimPackagePayload): Promise<string> {
+  const raw = await httpPost<{ id?: string; Id?: string } | string>(API_PATHS.adminEsimPackages, payload)
+  if (typeof raw === 'string') return raw
   return raw.id ?? raw.Id ?? ''
 }
 
-export async function updateEsimPackage(
-  id: string,
-  payload: EsimPackageUpdatePayload,
-): Promise<void> {
-  await httpPut<boolean>(`${API_PATHS.adminEsimPackages}/${id}`, payload)
+export async function updateEsimPackage(id: string, payload: EsimPackageUpdatePayload): Promise<void> {
+  await httpPut<unknown>(`${API_PATHS.adminEsimPackages}/${id}`, payload)
 }
 
 export async function deleteEsimPackage(id: string): Promise<void> {

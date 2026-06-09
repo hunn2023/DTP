@@ -4,6 +4,7 @@ import CarriersPage from '@/features/master-data/carriers/CarriersPage'
 import CategoriesPage from '@/features/master-data/categories/CategoriesPage'
 import CountriesPage from '@/features/master-data/countries/CountriesPage'
 import EsimPackagesPage from '@/features/products/esim-packages/EsimPackagesPage'
+import EsimWizardPage from '@/features/products/esim-wizard/EsimWizardPage'
 import PhoneCardsPage from '@/features/products/phone-cards/PhoneCardsPage'
 import ProductFormPage from '@/features/master-data/products/ProductFormPage'
 import ProductsPage from '@/features/master-data/products/ProductsPage'
@@ -91,6 +92,11 @@ const esimPackagesRoute: RouteObject = {
   element: <EsimPackagesPage />,
 }
 
+const esimWizardRoute: RouteObject = {
+  path: '/products/esim/wizard/:wizardId',
+  element: <EsimWizardPage />,
+}
+
 const carriersRoute: RouteObject = {
   path: '/settings/carriers',
   element: <CarriersPage />,
@@ -130,6 +136,7 @@ export const dtpAdminRoutes: RouteObject[] = [
   productFormRoute,
   productPricesRoute,
   esimPackagesRoute,
+  esimWizardRoute,
   phoneCardsRoute,
   providersListRoute,
   { path: '/products/esim/prices', element: <Navigate to="/settings/product-prices" replace /> },

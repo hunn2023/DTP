@@ -14,6 +14,7 @@ export function getDefaultPriceValues(): ProductPriceRow {
     costPrice: 0,
     startDate: '',
     endDate: '',
+    note: '',
     isActive: true,
   }
 }
@@ -43,6 +44,7 @@ export function buildPriceFormConfig(
     { name: 'costPrice', label: 'Giá vốn', type: 'number' as const, required: true, col: 6 as const },
     { name: 'startDate', label: 'Từ ngày', type: 'date' as const, col: 6 as const },
     { name: 'endDate', label: 'Đến ngày', type: 'date' as const, col: 6 as const },
+    { name: 'note', label: 'Ghi chú', type: 'textarea' as const, col: 12 as const },
   ]
 
   const editFields = [
@@ -52,6 +54,7 @@ export function buildPriceFormConfig(
     { name: 'costPrice', label: 'Giá vốn', type: 'number' as const, required: true, col: 6 as const },
     { name: 'startDate', label: 'Từ ngày', type: 'date' as const, col: 6 as const },
     { name: 'endDate', label: 'Đến ngày', type: 'date' as const, col: 6 as const },
+    { name: 'note', label: 'Ghi chú', type: 'textarea' as const, col: 12 as const },
     { name: 'isActive', label: 'Kích hoạt', type: 'checkbox' as const, col: 12 as const },
   ]
 

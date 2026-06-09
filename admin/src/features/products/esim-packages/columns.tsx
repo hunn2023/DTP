@@ -16,11 +16,13 @@ const helper = createColumnHelper<EsimPackage>()
 
 function formatData(row: EsimPackage): string {
   if (row.isUnlimited) return 'Unlimited'
+  if (row.dataAmount == null) return '—'
   return `${row.dataAmount} ${row.dataUnit}`
 }
 
-function formatPrice(row: EsimPackage): string {
-  return `${row.price.toLocaleString('vi-VN')} ${row.currency}`
+function formatCarriers(row: EsimPackage): string {
+  if (row.carriers.length === 0) return '—'
+  return row.carriers.map((c) => c.carrierName).join(', ')
 }
 
 export function buildEsimPackageColumns(handlers: EsimPackageTableHandlers) {
@@ -33,7 +35,7 @@ export function buildEsimPackageColumns(handlers: EsimPackageTableHandlers) {
         <div>
           <div className="fw-semibold">{row.original.name}</div>
           <div className="text-muted fs-xxs">
-            {row.original.countryName} · {row.original.carrierName}
+            {row.original.countryName} · {formatCarriers(row.original)}
           </div>
         </div>
       ),
@@ -47,6 +49,7 @@ export function buildEsimPackageColumns(handlers: EsimPackageTableHandlers) {
         </div>
       ),
     }),
+    helper.accessor('providerName', { header: 'NCC' }),
     helper.accessor('slug', {
       header: 'Slug',
       cell: ({ getValue }) => <code className="fs-xxs">{getValue()}</code>,
@@ -60,16 +63,7 @@ export function buildEsimPackageColumns(handlers: EsimPackageTableHandlers) {
       header: 'Thời hạn',
       cell: ({ getValue }) => <span>{getValue()} ngày</span>,
     }),
-    helper.display({
-      id: 'price',
-      header: 'Giá',
-      cell: ({ row }) => <span className="fw-medium">{formatPrice(row.original)}</span>,
-    }),
-    helper.accessor('currency', { header: 'Tiền tệ' }),
-    helper.accessor('isUnlimited', {
-      header: 'Unlimited',
-      cell: ({ getValue }) => (getValue() ? '✓' : '—'),
-    }),
+    helper.accessor('speedPolicy', { header: 'Tốc độ' }),
     createSortOrderColumn<EsimPackage>(),
     createIsActiveColumn<EsimPackage>(),
     createActionsColumn(handlers),

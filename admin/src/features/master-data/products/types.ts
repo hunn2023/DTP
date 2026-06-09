@@ -23,12 +23,8 @@ export type ProductVariant = {
   productId: string
   sku: string
   name: string
-  price: number
-  originalPrice: number | null
-  durationDays: number | null
-  dataAmount: number | null
-  dataUnit: string
-  isUnlimited: boolean
+  shortName: string
+  description: string
   sortOrder: number
   isActive: boolean
 }
@@ -69,6 +65,7 @@ export type ProductPriceRow = {
   costPrice: number
   startDate: string
   endDate: string
+  note: string
   isActive: boolean
 }
 

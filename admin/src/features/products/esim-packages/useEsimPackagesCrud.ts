@@ -7,11 +7,11 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router'
 
 import { useNotificationContext } from '@/context/useNotificationContext'
 import type { EsimPackageTableHandlers } from '@/features/products/esim-packages/columns'
 import * as esimPackagesApi from '@/features/products/esim-packages/esim-packages.api'
-import { buildEsimPackageFormConfig, getDefaultEsimPackageValues } from '@/features/products/esim-packages/formConfig'
 import {
   fetchEsimFilterOptions,
   fetchEsimPackageLookups,
@@ -19,51 +19,18 @@ import {
 } from '@/features/products/esim-packages/lookups.api'
 import type { EsimPackage } from '@/features/products/esim-packages/types'
 import {
+  mapPackageToForm,
+  toPackagePayload,
+} from '@/features/products/esim-wizard/mapPackageForm'
+import {
   activeFilterToBool,
   type ActiveFilterValue,
 } from '@/modules/crud/components/ActiveFilterSelect'
-import { slugify } from '@/modules/crud/form/slugify'
-import type { FormFieldOption, FormModalMode } from '@/modules/crud/form/types'
+import type { FormFieldOption } from '@/modules/crud/form/types'
 
 type UseEsimPackagesCrudParams = {
   buildColumns: (handlers: EsimPackageTableHandlers) => ColumnDef<EsimPackage>[]
   pageSize?: number
-}
-
-const emptyLookups: EsimPackageLookups = {
-  countryOptions: [],
-  carrierOptions: [],
-  productVariantOptions: [],
-}
-
-function applySlugFromName(values: EsimPackage): EsimPackage {
-  if (!values.slug.trim() && values.name.trim()) {
-    return { ...values, slug: slugify(values.name) }
-  }
-  return values
-}
-
-function toCreatePayload(values: EsimPackage): esimPackagesApi.EsimPackageCreatePayload {
-  return {
-    productVariantId: values.productVariantId.trim(),
-    countryId: values.countryId.trim(),
-    carrierId: values.carrierId.trim(),
-    name: values.name.trim(),
-    slug: values.slug.trim(),
-    dataAmount: values.dataAmount,
-    dataUnit: values.dataUnit.trim(),
-    validityDays: values.validityDays,
-    price: values.price,
-    currency: values.currency.trim(),
-    isUnlimited: values.isUnlimited,
-    sortOrder: values.sortOrder,
-    isActive: values.isActive,
-  }
-}
-
-function toUpdatePayload(values: EsimPackage): esimPackagesApi.EsimPackageUpdatePayload {
-  const { productVariantId: _ignored, ...payload } = toCreatePayload(values)
-  return payload
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -71,18 +38,17 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPackagesCrudParams) {
+  const navigate = useNavigate()
   const { showNotification } = useNotificationContext()
   const [data, setData] = useState<EsimPackage[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
-  const [lookups, setLookups] = useState<EsimPackageLookups>(emptyLookups)
   const [filterOptions, setFilterOptions] = useState<Pick<EsimPackageLookups, 'countryOptions' | 'carrierOptions'>>({
     countryOptions: [],
     carrierOptions: [],
   })
   const [variantFilterOptions, setVariantFilterOptions] = useState<FormFieldOption[]>([])
   const [filtersReady, setFiltersReady] = useState(false)
-  const [lookupsReady, setLookupsReady] = useState(false)
   const [countryFilter, setCountryFilter] = useState('')
   const [carrierFilter, setCarrierFilter] = useState('')
   const [variantFilter, setVariantFilter] = useState('')
@@ -94,9 +60,6 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set())
-  const [formMode, setFormMode] = useState<FormModalMode | null>(null)
-  const [formValues, setFormValues] = useState<EsimPackage | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
 
   const notifySuccess = useCallback(
     (message: string) => {
@@ -125,14 +88,6 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
       })
       .finally(() => setFiltersReady(true))
   }, [])
-
-  const ensureFormLookups = useCallback(async () => {
-    if (lookupsReady) return
-    const loaded = await fetchEsimPackageLookups()
-    setLookups(loaded)
-    setVariantFilterOptions(loaded.productVariantOptions)
-    setLookupsReady(true)
-  }, [lookupsReady])
 
   const listFilters = useMemo(
     () => ({
@@ -173,16 +128,11 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
     void loadData(pagination.pageIndex, pagination.pageSize, listFilters, seq)
   }, [loadData, pagination.pageIndex, pagination.pageSize, listFilters])
 
-  const formConfig = useMemo(
-    () => buildEsimPackageFormConfig(lookups, formMode),
-    [lookups, formMode],
-  )
-
   const toggleActive = useCallback(
     async (row: EsimPackage) => {
       try {
         await esimPackagesApi.updateEsimPackage(row.id, {
-          ...toUpdatePayload(row),
+          ...toPackagePayload(mapPackageToForm(row)),
           isActive: !row.isActive,
         })
         setData((prev) =>
@@ -203,59 +153,21 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
   }, [])
 
   const openCreate = useCallback(() => {
-    void ensureFormLookups()
-    setFormValues(getDefaultEsimPackageValues())
-    setFormMode('create')
-  }, [ensureFormLookups])
+    navigate('/products/esim/wizard/new')
+  }, [navigate])
 
   const openEdit = useCallback(
     (row: EsimPackage) => {
-      void ensureFormLookups()
-      setFormValues({ ...row })
-      setFormMode('edit')
+      navigate(`/products/esim/wizard/${row.productVariantId}`)
     },
-    [ensureFormLookups],
+    [navigate],
   )
 
-  const openView = useCallback((row: EsimPackage) => {
-    setFormValues({ ...row })
-    setFormMode('view')
-  }, [])
-
-  const closeFormModal = useCallback(() => {
-    setFormMode(null)
-    setFormValues(null)
-  }, [])
-
-  const saveForm = useCallback(
-    async (rawValues: EsimPackage) => {
-      if (!formMode || formMode === 'view') return
-
-      const values = applySlugFromName(rawValues)
-
-      setIsSaving(true)
-      try {
-        if (formMode === 'create') {
-          await esimPackagesApi.createEsimPackage(toCreatePayload(values))
-          notifySuccess('Đã thêm gói eSIM thành công')
-          if (pagination.pageIndex === 0) {
-            reload()
-          } else {
-            setPagination((p) => ({ ...p, pageIndex: 0 }))
-          }
-        } else {
-          await esimPackagesApi.updateEsimPackage(values.id, toUpdatePayload(values))
-          notifySuccess('Đã cập nhật gói eSIM thành công')
-          reload()
-        }
-        closeFormModal()
-      } catch (e) {
-        notifyError(getErrorMessage(e, 'Không lưu được gói eSIM'))
-      } finally {
-        setIsSaving(false)
-      }
+  const openView = useCallback(
+    (row: EsimPackage) => {
+      navigate(`/products/esim/wizard/${row.productVariantId}?tab=review`)
     },
-    [formMode, closeFormModal, reload, pagination.pageIndex, notifySuccess, notifyError],
+    [navigate],
   )
 
   const handlers = useMemo(
@@ -383,17 +295,10 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
     requestBulkDelete,
     selectedCount: Object.keys(rowSelection).length,
     pendingDeleteCount: pendingDeleteIds.size,
-    formMode,
-    formValues,
     openCreate,
     openView,
-    closeFormModal,
-    saveForm,
-    formConfig,
     isLoading,
-    isSaving,
     filtersReady,
-    lookupsReady,
     filterOptions,
     variantFilterOptions,
     countryFilter,

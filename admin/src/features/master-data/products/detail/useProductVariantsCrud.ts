@@ -29,13 +29,10 @@ function toPayload(values: ProductVariant): variantsApi.ProductVariantPayload {
     productId: values.productId,
     sku: values.sku.trim() || undefined,
     name: values.name.trim(),
-    price: values.price,
-    originalPrice: values.originalPrice,
-    durationDays: values.durationDays,
-    dataAmount: values.dataAmount,
-    dataUnit: values.dataUnit.trim() || undefined,
-    isUnlimited: values.isUnlimited,
+    shortName: values.shortName.trim() || undefined,
+    description: values.description.trim() || undefined,
     sortOrder: values.sortOrder,
+    isActive: values.isActive,
   }
 }
 

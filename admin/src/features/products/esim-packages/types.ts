@@ -1,20 +1,32 @@
+import type { EsimPackageCarrierLink } from '@/features/products/esim-wizard/types'
+
 export type EsimPackage = {
   id: string
-  isActive: boolean
+  productId: string
+  productName: string
   productVariantId: string
   productVariantName: string
-  productName: string
+  providerId: string
+  providerName: string
   countryId: string
   countryName: string
-  carrierId: string
-  carrierName: string
   name: string
   slug: string
-  dataAmount: number
+  providerPackageCode: string
+  dataAmount: number | null
   dataUnit: string
   validityDays: number
-  price: number
-  currency: string
   isUnlimited: boolean
+  coverageType: string
+  coverageDescription: string
+  activationPolicy: string
+  speedPolicy: string
+  hotspotSupported: boolean
+  phoneNumberSupported: boolean
+  smsSupported: boolean
+  kycRequired: boolean
+  qrDeliveryType: string
   sortOrder: number
+  isActive: boolean
+  carriers: EsimPackageCarrierLink[]
 }

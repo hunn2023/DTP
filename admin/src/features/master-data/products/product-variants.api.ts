@@ -1,12 +1,7 @@
 import type { ProductVariant } from '@/features/master-data/products/types'
 import { API_PATHS } from '@/shared/config/api'
 import { httpDelete, httpGet, httpPost, httpPut } from '@/shared/lib/http'
-import {
-  readBool,
-  readNumber,
-  readOptionalNumber,
-  readString,
-} from '@/shared/lib/dtoNormalize'
+import { readBool, readNumber, readString } from '@/shared/lib/dtoNormalize'
 import type { FormFieldOption } from '@/modules/crud/form/types'
 
 type Raw = Record<string, unknown>
@@ -15,18 +10,13 @@ export type ProductVariantPayload = {
   productId: string
   sku?: string
   name: string
-  price: number
-  originalPrice?: number | null
-  durationDays?: number | null
-  dataAmount?: number | null
-  dataUnit?: string
-  isUnlimited: boolean
+  shortName?: string
+  description?: string
   sortOrder: number
+  isActive?: boolean
 }
 
-export type ProductVariantUpdatePayload = Omit<ProductVariantPayload, 'productId'> & {
-  isActive: boolean
-}
+export type ProductVariantUpdatePayload = Omit<ProductVariantPayload, 'productId'>
 
 function normalizeVariant(raw: Raw): ProductVariant {
   return {
@@ -34,12 +24,8 @@ function normalizeVariant(raw: Raw): ProductVariant {
     productId: readString(raw, 'productId', 'ProductId'),
     sku: readString(raw, 'sku', 'Sku'),
     name: readString(raw, 'name', 'Name'),
-    price: readNumber(raw, 'price', 'Price'),
-    originalPrice: readOptionalNumber(raw, 'originalPrice', 'OriginalPrice'),
-    durationDays: readOptionalNumber(raw, 'durationDays', 'DurationDays'),
-    dataAmount: readOptionalNumber(raw, 'dataAmount', 'DataAmount'),
-    dataUnit: readString(raw, 'dataUnit', 'DataUnit'),
-    isUnlimited: readBool(raw, 'isUnlimited', 'IsUnlimited'),
+    shortName: readString(raw, 'shortName', 'ShortName'),
+    description: readString(raw, 'description', 'Description'),
     sortOrder: readNumber(raw, 'sortOrder', 'SortOrder'),
     isActive: readBool(raw, 'isActive', 'IsActive'),
   }
@@ -69,7 +55,7 @@ export async function updateProductVariant(
   id: string,
   payload: ProductVariantUpdatePayload,
 ): Promise<void> {
-  await httpPut<boolean>(`${API_PATHS.adminProductVariants}/${id}`, payload)
+  await httpPut<unknown>(`${API_PATHS.adminProductVariants}/${id}`, payload)
 }
 
 export async function deleteProductVariant(id: string): Promise<void> {

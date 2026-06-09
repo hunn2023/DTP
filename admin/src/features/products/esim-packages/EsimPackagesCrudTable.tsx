@@ -10,8 +10,6 @@ import { ESIM_PACKAGE_PAGE_SIZE_OPTIONS } from '@/features/products/esim-package
 import { useEsimPackagesCrud } from '@/features/products/esim-packages/useEsimPackagesCrud'
 import ActiveFilterSelect from '@/modules/crud/components/ActiveFilterSelect'
 import ListFilterSelect from '@/modules/crud/components/ListFilterSelect'
-import EntityFormModal from '@/modules/crud/form/EntityFormModal'
-
 const EsimPackagesCrudTable = () => {
   const crud = useEsimPackagesCrud({
     buildColumns: buildEsimPackageColumns,
@@ -129,18 +127,6 @@ const EsimPackagesCrudTable = () => {
         {deleteMessage}
       </DeleteConfirmationModal>
 
-      {crud.formMode && crud.formValues && (
-        <EntityFormModal
-          show
-          mode={crud.formMode}
-          entityName={crud.formConfig.entityName}
-          fields={crud.formConfig.fields}
-          viewFields={crud.formConfig.viewFields}
-          initialValues={crud.formValues}
-          onHide={crud.closeFormModal}
-          onSubmit={(values) => void crud.saveForm(values)}
-        />
-      )}
     </Card>
   )
 }
