@@ -12,7 +12,6 @@ type EsimWizardFooterProps = {
 
 const EsimWizardFooter = ({ activeTab, isSaving, formId, onContinue }: EsimWizardFooterProps) => {
   const isLastStep = activeTab === 'review'
-  const isReview = activeTab === 'review'
   const continueLabel = isLastStep ? 'Quay về danh sách' : 'Tiếp tục →'
 
   return (
@@ -32,7 +31,7 @@ const EsimWizardFooter = ({ activeTab, isSaving, formId, onContinue }: EsimWizar
           )}
         </Button>
       ) : (
-        <Button type="button" variant={isReview ? 'success' : 'primary'} onClick={onContinue}>
+        <Button type="button" variant="primary" onClick={onContinue}>
           {continueLabel}
         </Button>
       )}

@@ -21,13 +21,13 @@
         }
 
         &.wizard-item-done {
-            background-color: rgba(var(--#{$prefix}success-rgb), 0.1);
-            border-color: rgba(var(--#{$prefix}success-rgb), 0.9) !important;
-            color: var(--#{$prefix}success);
+            background-color: rgba(var(--#{$prefix}primary-rgb), 0.1);
+            border-color: rgba(var(--#{$prefix}primary-rgb), 0.9) !important;
+            color: var(--#{$prefix}primary);
 
             i,
             .text-body {
-                color: var(--#{$prefix}success) !important;
+                color: var(--#{$prefix}primary) !important;
             }
         }
     }
@@ -38,7 +38,7 @@
             border-left: 3px solid transparent !important;
 
             &.wizard-item-done {
-                border-color: var(--#{$prefix}success) !important;
+                border-color: var(--#{$prefix}primary) !important;
             }
         }
     }

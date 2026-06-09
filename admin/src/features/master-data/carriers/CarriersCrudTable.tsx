@@ -54,8 +54,8 @@ const CarriersCrudTable = () => {
                 statusColumn.setFilterValue(value === 'all' ? undefined : value === 'true')
               }}>
               <option value="all">Tất cả</option>
-              <option value="true">Đang hiển thị</option>
-              <option value="false">Đang ẩn</option>
+              <option value="true">Hoạt động</option>
+              <option value="false">Ngưng hoạt động</option>
             </select>
           )}
           <Button

@@ -23,7 +23,7 @@ export function buildSupportedDeviceColumns(
     helper.accessor('supportEsim', {
       header: 'eSIM',
       cell: ({ getValue }) => (
-        <span className={`badge ${getValue() ? 'badge-soft-success' : 'badge-soft-danger'} fs-xxs`}>
+        <span className={`badge ${getValue() ? 'badge-soft-primary' : 'badge-soft-danger'} fs-xxs`}>
           {getValue() ? 'Có' : 'Không'}
         </span>
       ),

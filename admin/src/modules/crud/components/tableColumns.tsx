@@ -2,6 +2,7 @@ import { createColumnHelper, type Row, type Table } from '@tanstack/react-table'
 import { Button } from 'react-bootstrap'
 import { TbEdit, TbEye, TbEyeOff, TbTrash } from 'react-icons/tb'
 
+import { formatActiveStatus } from '@/modules/crud/entities/fieldHelpers'
 import type { CrudCapabilities, TableRowBase } from '@/modules/crud/types'
 import { defaultCrudCapabilities } from '@/modules/crud/types'
 
@@ -60,13 +61,13 @@ export function createIsActiveColumn<T extends TableRowBase>() {
   const helper = createColumnHelper<T>()
   return helper.accessor((row) => row.isActive, {
     id: 'isActive',
-    header: 'Hiển thị',
+    header: 'Trạng thái',
     filterFn: 'equals',
     cell: ({ getValue }) => {
       const active = getValue()
       return (
-        <span className={`badge ${active ? 'badge-soft-success' : 'badge-soft-secondary'} fs-xxs`}>
-          {active ? 'Đang hiển thị' : 'Đang ẩn'}
+        <span className={`badge ${active ? 'badge-soft-primary' : 'badge-soft-secondary'} fs-xxs`}>
+          {formatActiveStatus(active)}
         </span>
       )
     },

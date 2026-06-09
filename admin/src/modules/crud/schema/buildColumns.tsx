@@ -51,7 +51,7 @@ function renderCellValue(value: unknown, field: FieldCellMeta): ReactNode {
   }
   if (typeof value === 'boolean') {
     return (
-      <span className={`badge ${value ? 'badge-soft-success' : 'badge-soft-secondary'} fs-xxs`}>
+      <span className={`badge ${value ? 'badge-soft-primary' : 'badge-soft-secondary'} fs-xxs`}>
         {value ? 'Có' : 'Không'}
       </span>
     )

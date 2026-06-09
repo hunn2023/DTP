@@ -5,7 +5,7 @@ const FIELD_LABELS: Record<string, string> = {
   code: 'Mã',
   slug: 'Slug',
   status: 'Trạng thái',
-  isActive: 'Hiển thị',
+  isActive: 'Trạng thái',
   sortOrder: 'Thứ tự',
   description: 'Mô tả',
   icon: 'Icon',

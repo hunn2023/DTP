@@ -29,7 +29,7 @@ export function buildAttributeColumns(handlers: AttributeTableHandlers) {
     helper.accessor('isVisible', {
       header: 'Hiển thị',
       cell: ({ getValue }) => (
-        <span className={`badge ${getValue() ? 'badge-soft-success' : 'badge-soft-secondary'} fs-xxs`}>
+        <span className={`badge ${getValue() ? 'badge-soft-primary' : 'badge-soft-secondary'} fs-xxs`}>
           {getValue() ? 'Có' : 'Ẩn'}
         </span>
       ),

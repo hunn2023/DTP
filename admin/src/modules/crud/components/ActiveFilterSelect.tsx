@@ -1,3 +1,5 @@
+import { activeStatusLabels } from '@/modules/crud/entities/fieldHelpers'
+
 type ActiveFilterValue = 'all' | 'true' | 'false'
 
 type ActiveFilterSelectProps = {
@@ -13,8 +15,8 @@ const ActiveFilterSelect = ({ value, onChange }: ActiveFilterSelectProps) => (
     value={value}
     onChange={(e) => onChange(e.target.value as ActiveFilterValue)}>
     <option value="all">Tất cả</option>
-    <option value="true">Đang hiển thị</option>
-    <option value="false">Đang ẩn</option>
+    <option value="true">{activeStatusLabels.true}</option>
+    <option value="false">{activeStatusLabels.false}</option>
   </select>
 )
 

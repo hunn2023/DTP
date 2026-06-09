@@ -16,7 +16,7 @@ const WizardReviewTab = ({ summary, isNew }: WizardReviewTabProps) => {
   return (
     <div>
       {isNew && (
-        <Alert variant="success" className="mb-4">
+        <Alert variant="primary" className="mb-4">
           Đã tạo eSIM Package thành công! Bạn có thể xem hoặc tạo thêm variant khác.
         </Alert>
       )}
@@ -61,7 +61,7 @@ const WizardReviewTab = ({ summary, isNew }: WizardReviewTabProps) => {
         </ListGroup.Item>
         <ListGroup.Item className="d-flex justify-content-between">
           <span className="text-muted">Trạng thái</span>
-          <Badge bg={summary.isActive ? 'success' : 'secondary'}>
+          <Badge bg={summary.isActive ? 'primary' : 'secondary'}>
             {summary.isActive ? 'Hoạt động' : 'Ngưng'}
           </Badge>
         </ListGroup.Item>
