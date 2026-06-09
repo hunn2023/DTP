@@ -1,4 +1,4 @@
-﻿using DTP.Modules.Ordering.Application.Commands.Checkout;
+﻿
 using DTP.Modules.Ordering.Application.DTOs;
 using DTP.Modules.Ordering.Domain.Enums;
 using DTP.Shared.Application;
@@ -9,48 +9,50 @@ namespace DTP.Modules.Ordering.Application.Abstractions.Services
 {
     public interface IOrderService
     {
-        Task<Result<CheckoutResultDto>> CheckoutAsync(
-            CheckoutCommand request,
-            CancellationToken cancellationToken = default);
-
-        Task<Result<OrderDetailDto?>> GetOrderByIdAsync(
-            Guid orderId,
-            Guid userId,
-            bool isAdmin,
-            CancellationToken cancellationToken = default);
-
-        Task<Result<PagedResultDto<OrderListItemDto>>> GetMyOrdersAsync(
-               Guid userId,
-               OrderStatus? status,
-               OrderPaymentStatus? paymentStatus,
-               int pageIndex,
-               int pageSize,
+        Task<Result<Guid>> CreateAsync(
+               Guid? customerId,
+               string? customerEmail,
+               string? customerPhone,
+               string? customerName,
+               string currency,
+               string? note,
+               List<CreateOrderItemRequest> items,
                CancellationToken cancellationToken = default);
 
-        Task<Result<PagedResultDto<OrderListItemDto>>> GetAdminOrdersAsync(
-            string? keyword,
-            OrderStatus? status,
-            OrderPaymentStatus? paymentStatus,
-            int pageIndex,
-            int pageSize,
+        Task<Result> ConfirmAsync(
+            Guid orderId,
+            string? paymentMethod,
+            Guid? changedBy,
             CancellationToken cancellationToken = default);
 
         Task<Result> MarkPaidAsync(
             Guid orderId,
-            string? note,
+            string paymentTransactionId,
+            Guid? changedBy,
+            CancellationToken cancellationToken = default);
+
+        Task<Result> CompleteAsync(
+            Guid orderId,
+            Guid? changedBy,
             CancellationToken cancellationToken = default);
 
         Task<Result> CancelAsync(
             Guid orderId,
-            Guid userId,
-            bool isAdmin,
-            string? reason,
+            string reason,
+            Guid? changedBy,
             CancellationToken cancellationToken = default);
 
-        Task<Result> UpdateStatusAsync(
-            Guid orderId,
-            OrderStatus status,
-            string? note,
+        Task<Result<OrderDetailDto>> GetByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken = default);
+
+        Task<Result<PagedResultDto<OrderDto>>> GetPagedAsync(
+            string? keyword,
+            Guid? customerId,
+            OrderStatus? status,
+            OrderPaymentStatus? paymentStatus,
+            int pageIndex,
+            int pageSize,
             CancellationToken cancellationToken = default);
     }
 }

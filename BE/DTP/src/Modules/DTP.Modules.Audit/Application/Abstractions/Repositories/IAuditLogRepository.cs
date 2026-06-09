@@ -1,11 +1,7 @@
 ﻿using DTP.Modules.Audit.Application.DTOs;
 using DTP.Modules.Audit.Domain.Entities;
 using DTP.Shared.Application.Pagination;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace DTP.Modules.Audit.Application.Abstractions.Repositories
 {

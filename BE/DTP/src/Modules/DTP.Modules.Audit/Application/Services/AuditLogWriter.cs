@@ -1,12 +1,7 @@
 ﻿using DTP.Modules.Audit.Application.Abstractions.Services;
 using DTP.Modules.Audit.Application.DTOs;
 using DTP.Modules.Audit.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Audit.Application.Services
 {

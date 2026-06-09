@@ -21,20 +21,19 @@ namespace DTP.Modules.Ordering.Infrastructure.Configurations
                 .IsUnique();
 
             builder.Property(x => x.CustomerEmail)
-                .HasMaxLength(255)
-                .IsRequired();
-
-            builder.Property(x => x.CustomerName)
                 .HasMaxLength(255);
 
             builder.Property(x => x.CustomerPhone)
                 .HasMaxLength(50);
 
-            builder.Property(x => x.CurrencyCode)
+            builder.Property(x => x.CustomerName)
+                .HasMaxLength(255);
+
+            builder.Property(x => x.Currency)
                 .HasMaxLength(10)
                 .IsRequired();
 
-            builder.Property(x => x.SubtotalAmount)
+            builder.Property(x => x.SubTotal)
                 .HasColumnType("decimal(18,2)");
 
             builder.Property(x => x.DiscountAmount)
@@ -51,10 +50,16 @@ namespace DTP.Modules.Ordering.Infrastructure.Configurations
                 .HasConversion<int>()
                 .IsRequired();
 
-            builder.Property(x => x.PaymentTransactionCode)
+            builder.Property(x => x.PaymentMethod)
                 .HasMaxLength(100);
 
+            builder.Property(x => x.PaymentTransactionId)
+                .HasMaxLength(255);
+
             builder.Property(x => x.Note)
+                .HasMaxLength(1000);
+
+            builder.Property(x => x.CancelReason)
                 .HasMaxLength(1000);
 
             builder.HasMany(x => x.Items)
@@ -67,23 +72,18 @@ namespace DTP.Modules.Ordering.Infrastructure.Configurations
                 .HasForeignKey(x => x.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Navigation(x => x.Items)
-                .UsePropertyAccessMode(PropertyAccessMode.Field);
+            builder.Metadata
+                .FindNavigation(nameof(Order.Items))!
+                .SetPropertyAccessMode(PropertyAccessMode.Field);
 
-            builder.Navigation(x => x.Histories)
-                .UsePropertyAccessMode(PropertyAccessMode.Field);
+            builder.Metadata
+                .FindNavigation(nameof(Order.Histories))!
+                .SetPropertyAccessMode(PropertyAccessMode.Field);
 
-            builder.Property(x => x.IpAddress)
-                .HasMaxLength(100);
-
-            builder.Property(x => x.UserAgent)
-                .HasMaxLength(1000);
-
-            builder.Property(x => x.ReferrerUrl)
-                .HasMaxLength(1000);
-
-            builder.Property(x => x.CheckoutSource)
-                .HasMaxLength(100);
+            builder.HasIndex(x => x.CustomerId);
+            builder.HasIndex(x => x.Status);
+            builder.HasIndex(x => x.PaymentStatus);
+            builder.HasIndex(x => x.CreatedAt);
         }
     }
 }

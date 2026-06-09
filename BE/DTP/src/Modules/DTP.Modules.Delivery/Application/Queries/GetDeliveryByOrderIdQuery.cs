@@ -1,5 +1,6 @@
 ﻿using DTP.Modules.Delivery.Application.Abstractions.Services;
 using DTP.Modules.Delivery.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -9,13 +10,10 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Delivery.Application.Queries
 {
-    public class GetDeliveryByOrderIdQuery : IRequest<List<DigitalDeliveryDto>>
-    {
-        public Guid OrderId { get; set; }
-    }
+    public record GetDeliveryByOrderIdQuery(Guid OrderId) : IRequest<Result<DeliveryDto>>;
 
     public class GetDeliveryByOrderIdQueryHandler
-        : IRequestHandler<GetDeliveryByOrderIdQuery, List<DigitalDeliveryDto>>
+        : IRequestHandler<GetDeliveryByOrderIdQuery, Result<DeliveryDto>>
     {
         private readonly IDeliveryService _deliveryService;
 
@@ -24,11 +22,11 @@ namespace DTP.Modules.Delivery.Application.Queries
             _deliveryService = deliveryService;
         }
 
-        public async Task<List<DigitalDeliveryDto>> Handle(
+        public Task<Result<DeliveryDto>> Handle(
             GetDeliveryByOrderIdQuery request,
             CancellationToken cancellationToken)
         {
-            return await _deliveryService.GetDeliveriesByOrderIdAsync(
+            return _deliveryService.GetByOrderIdAsync(
                 request.OrderId,
                 cancellationToken);
         }

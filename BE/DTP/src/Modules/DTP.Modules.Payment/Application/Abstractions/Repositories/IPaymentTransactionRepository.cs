@@ -1,4 +1,7 @@
-﻿using DTP.Modules.Payment.Domain.Entities;
+﻿using DTP.Modules.Ordering.Domain.Entities;
+using DTP.Modules.Payment.Domain.Entities;
+using DTP.Modules.Payment.Domain.Enums;
+using DTP.Shared.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,34 +10,20 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Payment.Application.Abstractions.Repositories
 {
-    public interface IPaymentTransactionRepository
+    public interface IPaymentTransactionRepository : IRepositoryBase<PaymentTransaction>
+
     {
-        Task<PaymentTransaction?> GetByIdAsync(
-            Guid id,
+        Task<PaymentTransaction?> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default);
+
+        Task<PaymentTransaction?> GetPendingByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default);
+
+        Task<PaymentTransaction?> GetByRequestIdAsync(string requestId, CancellationToken cancellationToken = default);
+
+        Task<PaymentTransaction?> GetByProviderTransactionIdAsync(
+            PaymentProvider provider,
+            string providerTransactionId,
             CancellationToken cancellationToken = default);
 
-        Task<PaymentTransaction?> GetByOrderIdAsync(
-            Guid orderId,
-            CancellationToken cancellationToken = default);
-
-        Task<PaymentTransaction?> GetByTransactionCodeAsync(
-            string transactionCode,
-            CancellationToken cancellationToken = default);
-
-        Task<PaymentTransaction?> GetByOrderCodeAsync(
-            string orderCode,
-            CancellationToken cancellationToken = default);
-
-        Task AddAsync(
-            PaymentTransaction transaction,
-            CancellationToken cancellationToken = default);
-
-        Task AddCallbackAsync(
-            PaymentCallback callback,
-            CancellationToken cancellationToken = default);
-
-        void Update(PaymentTransaction transaction);
-
-        IQueryable<PaymentTransaction> Query();
+        Task<bool> HasPaidPaymentByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default);
     }
 }

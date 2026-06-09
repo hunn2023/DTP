@@ -1,5 +1,6 @@
 ﻿using DTP.Modules.Payment.Application.Abstractions.Services;
 using DTP.Modules.Payment.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -9,27 +10,17 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Payment.Application.Commands.VnptEpay
 {
-    public class HandleVnptEpayCallbackCommand : IRequest<bool>
+    public class HandleVnptEpayCallbackCommand : IRequest<Result>
     {
-        public string? OrderCode { get; set; }
-
-        public string? TransactionCode { get; set; }
-
-        public string? ProviderTransactionCode { get; set; }
-
-        public decimal Amount { get; set; }
-
-        public string? Status { get; set; }
-
-        public string? Message { get; set; }
-
-        public string? Signature { get; set; }
+        public VnptEpayCallbackDto Callback { get; set; } = default!;
 
         public string RawBody { get; set; } = default!;
+
+        public string? IpAddress { get; set; }
     }
 
     public class HandleVnptEpayCallbackCommandHandler
-       : IRequestHandler<HandleVnptEpayCallbackCommand, bool>
+    : IRequestHandler<HandleVnptEpayCallbackCommand, Result>
     {
         private readonly IPaymentService _paymentService;
 
@@ -38,22 +29,14 @@ namespace DTP.Modules.Payment.Application.Commands.VnptEpay
             _paymentService = paymentService;
         }
 
-        public async Task<bool> Handle(
+        public Task<Result> Handle(
             HandleVnptEpayCallbackCommand request,
             CancellationToken cancellationToken)
         {
-            return await _paymentService.HandleVnptEpayCallbackAsync(
-                new VnptEpayCallbackDto
-                {
-                    OrderCode = request.OrderCode,
-                    TransactionCode = request.TransactionCode,
-                    ProviderTransactionCode = request.ProviderTransactionCode,
-                    Amount = request.Amount,
-                    Status = request.Status,
-                    Message = request.Message,
-                    Signature = request.Signature,
-                    RawBody = request.RawBody
-                },
+            return _paymentService.HandleVnptEpayCallbackAsync(
+                request.Callback,
+                request.RawBody,
+                request.IpAddress,
                 cancellationToken);
         }
     }

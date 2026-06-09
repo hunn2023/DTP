@@ -1,7 +1,8 @@
-﻿using DTP.Modules.Ordering.Application.Commands.CancelOrder;
+﻿
+using DTP.Modules.Ordering.Application.Commands.Orders;
+using DTP.Modules.Ordering.Application.DTOs;
 using DTP.Modules.Ordering.Application.Queries;
 using DTP.Modules.Ordering.Domain.Enums;
-using DTP.Modules.Ordering.Presentation.Controllers.Public;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,51 +21,20 @@ namespace DTP.Modules.Ordering.Presentation.Controllers.Admin
             _mediator = mediator;
         }
 
-        [HttpGet("{id:guid}")]
-        public async Task<IActionResult> GetById(
-            Guid id,
-            CancellationToken cancellationToken)
-        {
-            var result = await _mediator.Send(new GetOrderByIdQuery
-            {
-                OrderId = id,
-                IsAdmin = true
-            }, cancellationToken);
-
-            return result == null ? NotFound() : Ok(result);
-        }
-
-
-        [HttpPost("{id:guid}/cancel")]
-        public async Task<IActionResult> Cancel(
-            Guid id,
-            [FromBody] CancelOrderRequest request,
-            CancellationToken cancellationToken)
-        {
-            var result = await _mediator.Send(new CancelOrderCommand
-            {
-                OrderId = id,
-                UserId = Guid.Empty,
-                IsAdmin = true,
-                Reason = request.Reason
-            }, cancellationToken);
-
-            return Ok(result);
-        }
-
-
         [HttpGet]
         public async Task<IActionResult> GetPaged(
-           [FromQuery] string? keyword,
-           [FromQuery] OrderStatus? status,
-           [FromQuery] OrderPaymentStatus? paymentStatus,
-           [FromQuery] int pageIndex = 1,
-           [FromQuery] int pageSize = 20,
-           CancellationToken cancellationToken = default)
+      [FromQuery] string? keyword,
+      [FromQuery] Guid? customerId,
+      [FromQuery] OrderStatus? status,
+      [FromQuery] OrderPaymentStatus? paymentStatus,
+      [FromQuery] int pageIndex = 1,
+      [FromQuery] int pageSize = 20,
+      CancellationToken cancellationToken = default)
         {
-            var result = await _mediator.Send(new GetAdminOrdersQuery
+            var result = await _mediator.Send(new GetOrdersPagedQuery
             {
                 Keyword = keyword,
+                CustomerId = customerId,
                 Status = status,
                 PaymentStatus = paymentStatus,
                 PageIndex = pageIndex,
@@ -73,5 +43,66 @@ namespace DTP.Modules.Ordering.Presentation.Controllers.Admin
 
             return Ok(result);
         }
+
+        [HttpGet("{id:guid}")]
+        public async Task<IActionResult> GetById(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            var result = await _mediator.Send(new GetOrderByIdQuery
+            {
+                Id = id
+            }, cancellationToken);
+
+            return result.IsSuccess ? Ok(result) : NotFound(result);
+        }
+
+        [HttpPost("{id:guid}/mark-paid")]
+        public async Task<IActionResult> MarkPaid(
+            Guid id,
+            [FromBody] MarkOrderPaidRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            var result = await _mediator.Send(new MarkOrderPaidCommand
+            {
+                OrderId = id,
+                PaymentTransactionId = request.PaymentTransactionId,
+                ChangedBy = request.ChangedBy
+            }, cancellationToken);
+
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("{id:guid}/complete")]
+        public async Task<IActionResult> Complete(
+            Guid id,
+            [FromBody] CompleteOrderRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            var result = await _mediator.Send(new CompleteOrderCommand
+            {
+                OrderId = id,
+                ChangedBy = request.ChangedBy
+            }, cancellationToken);
+
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("{id:guid}/cancel")]
+        public async Task<IActionResult> Cancel(
+            Guid id,
+            [FromBody] CancelOrderRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            var result = await _mediator.Send(new CancelOrderCommand
+            {
+                OrderId = id,
+                Reason = request.Reason,
+                ChangedBy = request.ChangedBy
+            }, cancellationToken);
+
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
     }
 }

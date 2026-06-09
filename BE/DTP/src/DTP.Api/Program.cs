@@ -1,11 +1,15 @@
-﻿using DTP.Modules.Auth;
+﻿using DTP.Modules.Audit;
+using DTP.Modules.Auth;
 using DTP.Modules.Catalog;
+using DTP.Modules.Delivery;
 using DTP.Modules.Ordering;
 using DTP.Modules.Payment;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using DTP.Infrastructure.Email;
 
 namespace DTP.Api
 {
@@ -21,6 +25,18 @@ namespace DTP.Api
                 .AddApplicationPart(typeof(AuthModule).Assembly);
 
             builder.Services.AddEndpointsApiExplorer();
+
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor |
+                    ForwardedHeaders.XForwardedProto;
+
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
+            });
+
+
 
             builder.Services.AddSwaggerGen(options =>
             {
@@ -76,10 +92,14 @@ namespace DTP.Api
             builder.Services.AddAuthorization();
             builder.Services.AddAuthModule(builder.Configuration);
             builder.Services.AddCatalogModule(builder.Configuration);
-        
+            builder.Services.AddAuditModule(builder.Configuration);
 
-            //builder.Services.AddOrderingModule(builder.Configuration);
-            //builder.Services.AddPaymentModule(builder.Configuration);
+            builder.Services.AddOrderingModule(builder.Configuration);
+            builder.Services.AddPaymentModule(builder.Configuration);
+            builder.Services.AddDeliveryModule(builder.Configuration);
+
+            builder.Services.AddEmailInfrastructure();
+
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())
@@ -87,7 +107,7 @@ namespace DTP.Api
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseForwardedHeaders();
             app.UseHttpsRedirection();
 
             app.UseAuthentication();

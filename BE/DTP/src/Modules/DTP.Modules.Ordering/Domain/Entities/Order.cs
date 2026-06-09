@@ -14,167 +14,175 @@ namespace DTP.Modules.Ordering.Domain.Entities
 
         public Order(
             string orderCode,
-            Guid userId,
-            string customerEmail,
-            string? customerName,
+            Guid? customerId,
+            string? customerEmail,
             string? customerPhone,
-            string currencyCode,
-            string? ipAddress,
-            string? userAgent,
-            string? referrerUrl,
-            string? checkoutSource)
+            string? customerName,
+            string currency,
+            string? note)
         {
             Id = Guid.NewGuid();
             OrderCode = orderCode;
-            UserId = userId;
+            CustomerId = customerId;
             CustomerEmail = customerEmail;
-            CustomerName = customerName;
             CustomerPhone = customerPhone;
-            CurrencyCode = currencyCode;
+            CustomerName = customerName;
+            Currency = currency;
+            Note = note;
 
-            IpAddress = ipAddress;
-            UserAgent = userAgent;
-            ReferrerUrl = referrerUrl;
-            CheckoutSource = checkoutSource;
-
-            Status = OrderStatus.WaitingPayment;
+            Status = OrderStatus.Draft;
             PaymentStatus = OrderPaymentStatus.Unpaid;
+
+            SubTotal = 0;
+            DiscountAmount = 0;
+            TotalAmount = 0;
+
             CreatedAt = DateTime.UtcNow;
-            UpdatedAt = DateTime.UtcNow;
         }
 
         public string OrderCode { get; private set; } = default!;
 
-        public Guid UserId { get; private set; }
+        public Guid? CustomerId { get; private set; }
 
-        public string CustomerEmail { get; private set; } = default!;
-        public string? CustomerName { get; private set; }
+        public string? CustomerEmail { get; private set; }
+
         public string? CustomerPhone { get; private set; }
 
-        public string CurrencyCode { get; private set; } = "VND";
+        public string? CustomerName { get; private set; }
 
-        public decimal SubtotalAmount { get; private set; }
+        public string Currency { get; private set; } = "VND";
+
+        public decimal SubTotal { get; private set; }
+
         public decimal DiscountAmount { get; private set; }
+
         public decimal TotalAmount { get; private set; }
 
         public OrderStatus Status { get; private set; }
+
         public OrderPaymentStatus PaymentStatus { get; private set; }
 
-        public DateTime? PaidAt { get; private set; }
-        public DateTime? CancelledAt { get; private set; }
-        public DateTime? CompletedAt { get; private set; }
+        public string? PaymentMethod { get; private set; }
 
-        public string? PaymentTransactionCode { get; private set; }
+        public string? PaymentTransactionId { get; private set; }
+
+        public DateTime? PaidAt { get; private set; }
+
         public string? Note { get; private set; }
 
-        public string? IpAddress { get; private set; }
-        public string? UserAgent { get; private set; }
-        public string? ReferrerUrl { get; private set; }
-        public string? CheckoutSource { get; private set; }
 
+        public DateTime? CancelledAt { get; private set; }
+
+        public string? CancelReason { get; private set; }
 
         public IReadOnlyCollection<OrderItem> Items => _items;
+
         public IReadOnlyCollection<OrderHistory> Histories => _histories;
 
         public void AddItem(OrderItem item)
         {
+            if (Status != OrderStatus.Draft)
+                throw new InvalidOperationException("Chỉ được thêm sản phẩm khi đơn hàng đang ở trạng thái nháp.");
+
             _items.Add(item);
-            RecalculateAmount();
-        }
-
-        public void RecalculateAmount()
-        {
-            SubtotalAmount = _items.Sum(x => x.TotalPrice);
-            TotalAmount = SubtotalAmount - DiscountAmount;
-
-            if (TotalAmount < 0)
-                TotalAmount = 0;
-
+            RecalculateTotal();
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void AttachPaymentTransaction(string paymentTransactionCode)
+        public void RemoveItem(Guid orderItemId)
         {
-            PaymentTransactionCode = paymentTransactionCode;
+            if (Status != OrderStatus.Draft)
+                throw new InvalidOperationException("Chỉ được xoá sản phẩm khi đơn hàng đang ở trạng thái nháp.");
+
+            var item = _items.FirstOrDefault(x => x.Id == orderItemId);
+
+            if (item is null)
+                return;
+
+            _items.Remove(item);
+            RecalculateTotal();
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void MarkPaid(string? note = null)
+        public void Confirm(string? paymentMethod)
+        {
+            if (!_items.Any())
+                throw new InvalidOperationException("Đơn hàng chưa có sản phẩm.");
+
+            if (Status != OrderStatus.Draft)
+                throw new InvalidOperationException("Chỉ được xác nhận đơn hàng nháp.");
+
+            PaymentMethod = paymentMethod;
+            Status = OrderStatus.PendingPayment;
+            PaymentStatus = OrderPaymentStatus.Pending;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void MarkPaid(string paymentTransactionId)
         {
             if (PaymentStatus == OrderPaymentStatus.Paid)
                 return;
 
-            var oldStatus = Status;
-
+            PaymentTransactionId = paymentTransactionId;
             PaymentStatus = OrderPaymentStatus.Paid;
             Status = OrderStatus.Paid;
             PaidAt = DateTime.UtcNow;
             UpdatedAt = DateTime.UtcNow;
-
-            AddHistory(oldStatus, Status, note ?? "Payment successful");
         }
 
-        public void MarkProcessing(string? note = null)
+        public void MarkProcessing()
         {
-            ChangeStatus(OrderStatus.Processing, note);
+            if (Status != OrderStatus.Paid)
+                throw new InvalidOperationException("Chỉ xử lý đơn hàng đã thanh toán.");
+
+            Status = OrderStatus.Processing;
+            UpdatedAt = DateTime.UtcNow;
         }
 
-        public void MarkDelivered(string? note = null)
+        public void Complete()
         {
-            ChangeStatus(OrderStatus.Delivered, note);
+            if (Status != OrderStatus.Paid && Status != OrderStatus.Processing)
+                throw new InvalidOperationException("Chỉ hoàn tất đơn hàng đã thanh toán hoặc đang xử lý.");
+
+            Status = OrderStatus.Completed;
+            UpdatedAt = DateTime.UtcNow;
         }
 
-        public void MarkCompleted(string? note = null)
+        public void Cancel(string reason)
         {
-            ChangeStatus(OrderStatus.Completed, note);
-            CompletedAt = DateTime.UtcNow;
-        }
-
-        public void Cancel(string? note = null)
-        {
-            if (Status == OrderStatus.Completed || Status == OrderStatus.Delivered)
-                throw new InvalidOperationException("Cannot cancel completed or delivered order.");
-
-            var oldStatus = Status;
+            if (Status == OrderStatus.Completed)
+                throw new InvalidOperationException("Không thể huỷ đơn hàng đã hoàn tất.");
 
             Status = OrderStatus.Cancelled;
+            CancelReason = reason;
             CancelledAt = DateTime.UtcNow;
             UpdatedAt = DateTime.UtcNow;
-
-            AddHistory(oldStatus, Status, note ?? "Order cancelled");
         }
 
-        public void MarkPaymentFailed(string? note = null)
+        public void MarkFailed(string reason)
         {
-            var oldStatus = Status;
-
-            PaymentStatus = OrderPaymentStatus.Failed;
-            Status = OrderStatus.PaymentFailed;
+            Status = OrderStatus.Failed;
+            CancelReason = reason;
             UpdatedAt = DateTime.UtcNow;
-
-            AddHistory(oldStatus, Status, note ?? "Payment failed");
         }
 
-        private void ChangeStatus(OrderStatus newStatus, string? note = null)
+        public void ApplyDiscount(decimal discountAmount)
         {
-            if (Status == newStatus)
-                return;
+            if (discountAmount < 0)
+                throw new InvalidOperationException("Giảm giá không hợp lệ.");
 
-            var oldStatus = Status;
-
-            Status = newStatus;
+            DiscountAmount = discountAmount;
+            RecalculateTotal();
             UpdatedAt = DateTime.UtcNow;
-
-            AddHistory(oldStatus, newStatus, note);
         }
 
-        private void AddHistory(OrderStatus fromStatus, OrderStatus toStatus, string? note)
+        private void RecalculateTotal()
         {
-            _histories.Add(new OrderHistory(
-                Id,
-                fromStatus,
-                toStatus,
-                note));
+            SubTotal = _items.Sum(x => x.TotalPrice);
+            TotalAmount = SubTotal - DiscountAmount;
+
+            if (TotalAmount < 0)
+                TotalAmount = 0;
         }
     }
 }
