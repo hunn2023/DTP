@@ -1,10 +1,11 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 
 
 namespace DTP.Modules.Catalog.Application.Commands.EsimPackages
 {
-    public class DeleteEsimPackageCommand : IRequest<bool>
+    public class DeleteEsimPackageCommand : IRequest<Result>
     {
         public Guid Id { get; set; }
 
@@ -15,7 +16,7 @@ namespace DTP.Modules.Catalog.Application.Commands.EsimPackages
     }
 
     public class DeleteEsimPackageCommandHandler
-       : IRequestHandler<DeleteEsimPackageCommand, bool>
+       : IRequestHandler<DeleteEsimPackageCommand, Result>
     {
         private readonly IEsimPackageService _esimPackageService;
 
@@ -25,7 +26,7 @@ namespace DTP.Modules.Catalog.Application.Commands.EsimPackages
             _esimPackageService = esimPackageService;
         }
 
-        public async Task<bool> Handle(
+        public async Task<Result> Handle(
             DeleteEsimPackageCommand request,
             CancellationToken cancellationToken)
         {

@@ -1,9 +1,10 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 
 namespace DTP.Modules.Catalog.Application.Commands.Products
 {
-    public class UpdateProductCommand : IRequest<bool>
+    public class UpdateProductCommand : IRequest<Result>
     {
         public Guid Id { get; set; }
 
@@ -15,11 +16,19 @@ namespace DTP.Modules.Catalog.Application.Commands.Products
 
         public Guid CategoryId { get; set; }
 
+        public Guid? CountryId { get; set; }
+
         public string? ShortDescription { get; set; }
 
         public string? Description { get; set; }
 
+        public string? LocationText { get; set; }
+
         public string? ThumbnailUrl { get; set; }
+
+        public bool IsFeatured { get; set; }
+
+        public bool IsHot { get; set; }
 
         public int SortOrder { get; set; }
 
@@ -28,7 +37,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Products
 
 
     public class UpdateProductCommandHandler
-    : IRequestHandler<UpdateProductCommand, bool>
+    : IRequestHandler<UpdateProductCommand, Result>
     {
         private readonly IProductService _productService;
 
@@ -37,7 +46,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Products
             _productService = productService;
         }
 
-        public async Task<bool> Handle(
+        public async Task<Result> Handle(
             UpdateProductCommand request,
             CancellationToken cancellationToken)
         {

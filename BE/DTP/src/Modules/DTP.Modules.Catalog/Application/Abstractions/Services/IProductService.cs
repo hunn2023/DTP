@@ -1,13 +1,19 @@
 ﻿
 using DTP.Modules.Catalog.Application.Commands.Products;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
+
 
 namespace DTP.Modules.Catalog.Application.Abstractions.Services
 {
     public interface IProductService
     {
-        Task<PagedResultDto<ProductDto>> GetPublicPagedAsync(
+        Task<Result<ProductDetailDto?>> GetDetailAsync(
+          Guid id,
+          CancellationToken cancellationToken = default);
+
+        Task<Result<PagedResultDto<ProductDto>>> GetPublicPagedAsync(
           string? keyword,
           Guid? categoryId,
           Guid? countryId,
@@ -16,11 +22,11 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
           int pageSize,
           CancellationToken cancellationToken = default);
 
-        Task<ProductDto?> GetPublicBySlugAsync(
+        Task<Result<ProductDto?>> GetPublicBySlugAsync(
             string slug,
             CancellationToken cancellationToken = default);
 
-        Task<PagedResultDto<ProductDto>> GetPagedAsync(
+        Task<Result<PagedResultDto<ProductDto>>> GetPagedAsync(
             string? keyword,
             Guid? categoryId,
             Guid? countryId,
@@ -30,19 +36,19 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
             int pageSize,
             CancellationToken cancellationToken = default);
 
-        Task<ProductDto?> GetByIdAsync(
+        Task<Result<ProductDto?>> GetByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default);
 
-        Task<Guid> CreateAsync(
+        Task<Result<Guid>> CreateAsync(
             CreateProductCommand command,
             CancellationToken cancellationToken = default);
 
-        Task<bool> UpdateAsync(
+        Task<Result> UpdateAsync(
             UpdateProductCommand command,
             CancellationToken cancellationToken = default);
 
-        Task<bool> DeleteAsync(
+        Task<Result> DeleteAsync(
             Guid id,
             CancellationToken cancellationToken = default);
     }

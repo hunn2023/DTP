@@ -23,6 +23,16 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             _context = context;
         }
 
+        public async Task<List<ProductVariant>> GetByProductIdAsync(
+            Guid productId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.ProductVariants
+                .Where(x => x.ProductId == productId)
+                .OrderBy(x => x.SortOrder)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<List<ProductVariant>> GetListAsync(
             Guid productId,
             CancellationToken cancellationToken = default)

@@ -10,13 +10,13 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
     public interface IEsimPackageRepository : IRepositoryBase<EsimPackage>
     {
         Task<PagedResultDto<EsimPackageDto>> GetPublicPagedAsync(
-             Guid? countryId,
-             Guid? carrierId,
-             bool? isUnlimited,
-             int? validityDays,
-             int pageIndex,
-             int pageSize,
-             CancellationToken cancellationToken = default);
+            Guid? countryId,
+            Guid? carrierId,
+            bool? isUnlimited,
+            int? validityDays,
+            int pageIndex,
+            int pageSize,
+            CancellationToken cancellationToken = default);
 
         Task<EsimPackageDto?> GetPublicBySlugAsync(
             string slug,
@@ -36,16 +36,19 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
             Guid id,
             CancellationToken cancellationToken = default);
 
-        Task<Guid> CreateAsync(
-            CreateEsimPackageCommand command,
+        Task<bool> ExistsSlugAsync(
+            string slug,
+            Guid? excludeId = null,
             CancellationToken cancellationToken = default);
 
-        Task<bool> UpdateAsync(
-            UpdateEsimPackageCommand command,
+        Task<bool> ExistsProviderPackageCodeAsync(
+            Guid providerId,
+            string providerPackageCode,
+            Guid? excludeId = null,
             CancellationToken cancellationToken = default);
 
-        Task<bool> DeleteAsync(
-            Guid id,
+        Task<List<EsimPackage>> GetByProductIdAsync(
+            Guid productId,
             CancellationToken cancellationToken = default);
     }
 }

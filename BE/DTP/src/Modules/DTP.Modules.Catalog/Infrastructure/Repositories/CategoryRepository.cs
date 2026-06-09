@@ -60,6 +60,40 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             return await query.AnyAsync(cancellationToken);
         }
 
+       
+
+        public async Task<bool> ExistsByCodeAsync(
+            string code,
+            Guid? excludeId = null,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _context.Categories
+               .AsNoTracking()
+               .Where(x => x.Code == code && !x.IsDeleted);
+            if (excludeId.HasValue)
+            {
+                query = query.Where(x => x.Id != excludeId.Value);
+            }
+            return await query.AnyAsync(cancellationToken);
+        }
+
+
+        public async Task<bool> ExistsBySlugAsync(
+           string slug,
+           Guid? excludeId = null,
+           CancellationToken cancellationToken = default)
+        {
+            var query = _context.Categories
+               .AsNoTracking()
+               .Where(x => x.Slug == slug && !x.IsDeleted);
+            if (excludeId.HasValue)
+            {
+                query = query.Where(x => x.Id != excludeId.Value);
+            }
+            return await query.AnyAsync(cancellationToken);
+        }
+
+
 
         public async Task<PagedResultDto<CategoryDto>> GetPublicPagedAsync(
             int pageIndex,

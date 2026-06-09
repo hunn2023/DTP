@@ -18,6 +18,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Persistence
 
         public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
 
+        public DbSet<ProductVariantFeature> ProductVariantFeatures => Set<ProductVariantFeature>();
+
         public DbSet<ProductImage> ProductImages => Set<ProductImage>();
 
         public DbSet<ProductAttribute> ProductAttributes => Set<ProductAttribute>();

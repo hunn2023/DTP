@@ -9,14 +9,17 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
 {
     public interface IProductRepository : IRepositoryBase<Product>
     {
+        Task<Product?> GetDetailAsync(
+           Guid id,
+           CancellationToken cancellationToken = default);
+
         Task<PagedResultDto<ProductDto>> GetPublicPagedAsync(
-            string? keyword,
-            Guid? categoryId,
-            Guid? countryId,
-            Guid? carrierId,
-            int pageIndex,
-            int pageSize,
-            CancellationToken cancellationToken = default);
+             string? keyword,
+             Guid? categoryId,
+             Guid? countryId,
+             int pageIndex,
+             int pageSize,
+             CancellationToken cancellationToken = default);
 
         Task<ProductDto?> GetPublicBySlugAsync(
             string slug,
@@ -26,7 +29,6 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
             string? keyword,
             Guid? categoryId,
             Guid? countryId,
-            Guid? carrierId,
             bool? isActive,
             int pageIndex,
             int pageSize,

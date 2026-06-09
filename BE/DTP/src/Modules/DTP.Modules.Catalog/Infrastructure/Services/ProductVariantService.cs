@@ -1,45 +1,74 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+using DTP.Shared.Application;
 namespace DTP.Modules.Catalog.Infrastructure.Services
 {
     public class ProductVariantService : IProductVariantService
     {
         private readonly IProductVariantRepository _variantRepository;
         private readonly IProductCacheInvalidator _cacheInvalidator;
-        public ProductVariantService(IProductVariantRepository variantRepository, IProductCacheInvalidator cacheInvalidator)
+
+        public ProductVariantService(
+            IProductVariantRepository variantRepository,
+            IProductCacheInvalidator cacheInvalidator)
         {
             _variantRepository = variantRepository;
             _cacheInvalidator = cacheInvalidator;
         }
 
-        public async Task<Guid> CreateAsync(
+
+        public async Task<Result<List<ProductVariantDto>>> GetByProductIdAsync(
             Guid productId,
-            string? sku,
-            string name,
-            decimal price,
-            decimal? originalPrice,
-            int? durationDays,
-            decimal? dataAmount,
-            string? dataUnit,
-            bool isUnlimited,
-            int sortOrder,
             CancellationToken cancellationToken = default)
         {
             if (productId == Guid.Empty)
-                throw new Exception("ProductId không hợp lệ.");
+                return new Result<List<ProductVariantDto>>();
 
-            if (price < 0)
-                throw new Exception("Giá bán không hợp lệ.");
+            var variants = await _variantRepository.GetByProductIdAsync(
+                productId,
+                cancellationToken);
 
-            if (originalPrice.HasValue && originalPrice.Value < 0)
-                throw new Exception("Giá gốc không hợp lệ.");
+            return Result<List<ProductVariantDto>>.Success(variants
+                .OrderBy(x => x.SortOrder)
+                .Select(x => new ProductVariantDto
+                {
+                    Id = x.Id,
+                    ProductId = x.ProductId,
+                    Sku = x.Sku,
+                    Name = x.Name,
+                    ShortName = x.ShortName,
+                    Description = x.Description,
+                    SortOrder = x.SortOrder,
+                    IsActive = x.IsActive
+                })
+                .ToList());
+
+
+        }
+
+
+        public async Task<Result<Guid>> CreateAsync(
+            Guid productId,
+            string? sku,
+            string name,
+            string? shortName,
+            string? description,
+            int sortOrder,
+            bool isActive,
+            CancellationToken cancellationToken = default)
+        {
+            if (productId == Guid.Empty)
+                return Result<Guid>.Failure("ProductId không hợp lệ.");
+
+            if (string.IsNullOrWhiteSpace(name))
+                return Result<Guid>.Failure("Tên biến thể không được để trống.");
+
+            sku = sku?.Trim();
+            name = name.Trim();
+            shortName = shortName?.Trim();
+            description = description?.Trim();
 
             if (!string.IsNullOrWhiteSpace(sku))
             {
@@ -49,51 +78,55 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     cancellationToken);
 
                 if (existsSku)
-                    throw new Exception("SKU đã tồn tại.");
+                    return Result<Guid>.Failure("SKU đã tồn tại.");
             }
 
             var variant = new ProductVariant(
                 productId,
                 sku,
                 name,
-                price,
-                originalPrice,
-                durationDays,
-                dataAmount,
-                dataUnit,
-                isUnlimited,
-                sortOrder);
+                shortName,
+                description,
+                sortOrder,
+                isActive);
 
             await _variantRepository.AddAsync(variant, cancellationToken);
             await _variantRepository.SaveChangesAsync(cancellationToken);
-            await _cacheInvalidator.ClearProductDetailAsync(productId,cancellationToken);
-            return variant.Id;
+
+            await _cacheInvalidator.ClearProductDetailAsync(
+                productId,
+                cancellationToken);
+
+            return Result<Guid>.Success(variant.Id);
         }
 
-        public async Task UpdateAsync(
+        public async Task<Result> UpdateAsync(
             Guid id,
             string? sku,
             string name,
-            decimal price,
-            decimal? originalPrice,
-            int? durationDays,
-            decimal? dataAmount,
-            string? dataUnit,
-            bool isUnlimited,
+            string? shortName,
+            string? description,
             int sortOrder,
             bool isActive,
             CancellationToken cancellationToken = default)
         {
-            var variant = await _variantRepository.GetByIdAsync(id, cancellationToken);
+            if (id == Guid.Empty)
+                return Result.Failure("Id biến thể không hợp lệ.");
+
+            if (string.IsNullOrWhiteSpace(name))
+                return Result.Failure("Tên biến thể không được để trống.");
+
+            var variant = await _variantRepository.GetByIdAsync(
+                id,
+                cancellationToken);
 
             if (variant == null)
-                throw new Exception("Không tìm thấy biến thể sản phẩm.");
+                return Result.Failure("Không tìm thấy biến thể sản phẩm.");
 
-            if (price < 0)
-                throw new Exception("Giá bán không hợp lệ.");
-
-            if (originalPrice.HasValue && originalPrice.Value < 0)
-                throw new Exception("Giá gốc không hợp lệ.");
+            sku = sku?.Trim();
+            name = name.Trim();
+            shortName = shortName?.Trim();
+            description = description?.Trim();
 
             if (!string.IsNullOrWhiteSpace(sku))
             {
@@ -103,39 +136,52 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     cancellationToken);
 
                 if (existsSku)
-                    throw new Exception("SKU đã tồn tại.");
+                    return Result.Failure("SKU đã tồn tại.");
             }
 
             variant.Update(
                 sku,
                 name,
-                price,
-                originalPrice,
-                durationDays,
-                dataAmount,
-                dataUnit,
-                isUnlimited,
+                shortName,
+                description,
                 sortOrder,
                 isActive);
 
             await _variantRepository.SaveChangesAsync(cancellationToken);
-            await _cacheInvalidator.ClearProductDetailAsync(variant.ProductId, cancellationToken);
 
+            await _cacheInvalidator.ClearProductDetailAsync(
+                variant.ProductId,
+                cancellationToken);
+
+            return Result.Success();
         }
 
-        public async Task DeleteAsync(
+        public async Task<Result> DeleteAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
-            var variant = await _variantRepository.GetByIdAsync(id, cancellationToken);
+            if (id == Guid.Empty)
+                return Result.Failure("Id biến thể không hợp lệ.");
+
+            var variant = await _variantRepository.GetByIdAsync(
+                id,
+                cancellationToken);
 
             if (variant == null)
-                throw new Exception("Không tìm thấy biến thể sản phẩm.");
+                return Result.Failure("Không tìm thấy biến thể sản phẩm.");
 
             _variantRepository.Remove(variant);
-            await _variantRepository.SaveChangesAsync(cancellationToken);
-            await _cacheInvalidator.ClearProductDetailAsync(variant.ProductId, cancellationToken);
 
+            await _variantRepository.SaveChangesAsync(cancellationToken);
+
+            await _cacheInvalidator.ClearProductDetailAsync(
+                variant.ProductId,
+                cancellationToken);
+
+            return Result.Success();
         }
+
+
+
     }
 }

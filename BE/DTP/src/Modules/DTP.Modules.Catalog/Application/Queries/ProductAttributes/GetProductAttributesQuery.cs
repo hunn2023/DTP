@@ -1,11 +1,13 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
+using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
 
 namespace DTP.Modules.Catalog.Application.Queries.ProductAttributes
 {
 
-    public class GetProductAttributesQuery : IRequest<List<ProductAttributeDto>>
+    public class GetProductAttributesQuery : IRequest<Result<List<ProductAttributeDto>>>
     {
         public Guid ProductId { get; }
 
@@ -15,32 +17,23 @@ namespace DTP.Modules.Catalog.Application.Queries.ProductAttributes
         }
     }
     public class GetProductAttributesQueryHandler
-    : IRequestHandler<GetProductAttributesQuery, List<ProductAttributeDto>>
+    : IRequestHandler<GetProductAttributesQuery, Result<List<ProductAttributeDto>>>
     {
-        private readonly IProductAttributeRepository _repository;
+        private readonly IProductAttributeService _productAttributeService;
 
-        public GetProductAttributesQueryHandler(
-            IProductAttributeRepository repository)
+
+        public GetProductAttributesQueryHandler(IProductAttributeService productAttributeService)
         {
-            _repository = repository;
+            _productAttributeService = productAttributeService;
         }
 
-        public async Task<List<ProductAttributeDto>> Handle(
+        public async Task<Result<List<ProductAttributeDto>>> Handle(
             GetProductAttributesQuery request,
             CancellationToken cancellationToken)
         {
-            var attributes = await _repository.GetListAsync(
-                request.ProductId,
-                cancellationToken);
-
-            return attributes.Select(x => new ProductAttributeDto
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Value = x.Value,
-                SortOrder = x.SortOrder
-            }).ToList();
+             return await _productAttributeService.GetListAsync(
+                 request.ProductId,
+                 cancellationToken);
         }
     }
-
 }

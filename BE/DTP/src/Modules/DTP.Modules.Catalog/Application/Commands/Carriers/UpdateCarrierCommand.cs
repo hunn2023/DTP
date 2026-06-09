@@ -1,9 +1,10 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 
 namespace DTP.Modules.Catalog.Application.Commands.Carriers
 {
-    public class UpdateCarrierCommand : IRequest<bool>
+    public class UpdateCarrierCommand : IRequest<Result>
     {
         public Guid Id { get; set; }
 
@@ -23,7 +24,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Carriers
     }
 
     public class UpdateCarrierCommandHandler
-    : IRequestHandler<UpdateCarrierCommand, bool>
+    : IRequestHandler<UpdateCarrierCommand, Result>
     {
         private readonly ICarrierService _carrierService;
 
@@ -32,11 +33,11 @@ namespace DTP.Modules.Catalog.Application.Commands.Carriers
             _carrierService = carrierService;
         }
 
-        public async Task<bool> Handle(
+        public async Task<Result> Handle(
             UpdateCarrierCommand request,
             CancellationToken cancellationToken)
         {
-            await _carrierService.UpdateAsync(
+           return  await _carrierService.UpdateAsync(
                 request.Id,
                 request.Code,
                 request.Name,
@@ -47,7 +48,6 @@ namespace DTP.Modules.Catalog.Application.Commands.Carriers
                 request.IsActive,
                 cancellationToken);
 
-            return true;
         }
     }
 }

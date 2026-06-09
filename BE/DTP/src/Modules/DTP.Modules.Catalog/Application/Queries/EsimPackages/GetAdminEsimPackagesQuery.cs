@@ -1,12 +1,13 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using MediatR;
 
 namespace DTP.Modules.Catalog.Application.Queries.EsimPackages
 {
     public class GetAdminEsimPackagesQuery
-     : IRequest<PagedResultDto<EsimPackageDto>>
+     : IRequest<Result<PagedResultDto<EsimPackageDto>>>
     {
         public Guid? CountryId { get; set; }
 
@@ -24,7 +25,7 @@ namespace DTP.Modules.Catalog.Application.Queries.EsimPackages
     }
 
     public class GetAdminEsimPackagesQueryHandler
-       : IRequestHandler<GetAdminEsimPackagesQuery, PagedResultDto<EsimPackageDto>>
+       : IRequestHandler<GetAdminEsimPackagesQuery, Result<PagedResultDto<EsimPackageDto>>>
     {
         private readonly IEsimPackageService _esimPackageService;
 
@@ -34,7 +35,7 @@ namespace DTP.Modules.Catalog.Application.Queries.EsimPackages
             _esimPackageService = esimPackageService;
         }
 
-        public async Task<PagedResultDto<EsimPackageDto>> Handle(
+        public async Task<Result<PagedResultDto<EsimPackageDto>>> Handle(
             GetAdminEsimPackagesQuery request,
             CancellationToken cancellationToken)
         {

@@ -1,0 +1,29 @@
+﻿using DTP.Modules.Auth.Application.Abstractions.Services;
+using DTP.Modules.Auth.Application.DTOs;
+using DTP.Shared.Application;
+using MediatR;
+
+namespace DTP.Modules.Auth.Application.Queries.Permissions
+{
+    public class GetPermissionsByModuleQuery : IRequest<Result<Dictionary<string, List<PermissionDto>>>>
+    {
+    }
+
+    public class GetPermissionsByModuleQueryHandler
+    : IRequestHandler<GetPermissionsByModuleQuery, Result<Dictionary<string, List<PermissionDto>>>>
+    {
+        private readonly IPermissionService _permissionService;
+
+        public GetPermissionsByModuleQueryHandler(IPermissionService permissionService)
+        {
+            _permissionService = permissionService;
+        }
+
+        public Task<Result<Dictionary<string, List<PermissionDto>>>> Handle(
+            GetPermissionsByModuleQuery request,
+            CancellationToken cancellationToken)
+        {
+            return _permissionService.GetByModuleAsync(cancellationToken);
+        }
+    }
+}

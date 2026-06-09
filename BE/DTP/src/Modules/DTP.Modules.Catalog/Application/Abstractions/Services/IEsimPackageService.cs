@@ -1,5 +1,6 @@
 ﻿using DTP.Modules.Catalog.Application.Commands.EsimPackages;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 
 
@@ -7,7 +8,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
 {
     public interface IEsimPackageService
     {
-        Task<PagedResultDto<EsimPackageDto>> GetPublicPagedAsync(
+        Task<Result<PagedResultDto<EsimPackageDto>>> GetPublicPagedAsync(
            Guid? countryId,
            Guid? carrierId,
            bool? isUnlimited,
@@ -16,11 +17,11 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
            int pageSize,
            CancellationToken cancellationToken = default);
 
-        Task<EsimPackageDto?> GetPublicBySlugAsync(
+        Task<Result<EsimPackageDto?>> GetPublicBySlugAsync(
             string slug,
             CancellationToken cancellationToken = default);
 
-        Task<PagedResultDto<EsimPackageDto>> GetPagedAsync(
+        Task<Result<PagedResultDto<EsimPackageDto>>> GetPagedAsync(
             string? keyword,
             Guid? productVariantId,
             Guid? countryId,
@@ -30,19 +31,19 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
             int pageSize,
             CancellationToken cancellationToken = default);
 
-        Task<EsimPackageDto?> GetByIdAsync(
+        Task<Result<EsimPackageDto?>> GetByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default);
 
-        Task<Guid> CreateAsync(
+        Task<Result<Guid>> CreateAsync(
             CreateEsimPackageCommand command,
             CancellationToken cancellationToken = default);
 
-        Task<bool> UpdateAsync(
+        Task<Result> UpdateAsync(
             UpdateEsimPackageCommand command,
             CancellationToken cancellationToken = default);
 
-        Task<bool> DeleteAsync(
+        Task<Result> DeleteAsync(
             Guid id,
             CancellationToken cancellationToken = default);
     }

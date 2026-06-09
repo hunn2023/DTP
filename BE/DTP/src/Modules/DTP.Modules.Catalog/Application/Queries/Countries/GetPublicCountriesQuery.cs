@@ -1,17 +1,12 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace DTP.Modules.Catalog.Application.Queries.Countries
 {
     public class GetPublicCountriesQuery
-      : IRequest<PagedResultDto<CountryDto>>
+      : IRequest<Result<PagedResultDto<CountryDto>>>
     {
         public int PageIndex { get; set; } = 1;
 
@@ -19,7 +14,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Countries
     }
 
     public class GetPublicCountriesQueryHandler
-        : IRequestHandler<GetPublicCountriesQuery, PagedResultDto<CountryDto>>
+        : IRequestHandler<GetPublicCountriesQuery, Result<PagedResultDto<CountryDto>>>
     {
         private readonly ICountryService _countryService;
 
@@ -28,7 +23,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Countries
             _countryService = countryService;
         }
 
-        public async Task<PagedResultDto<CountryDto>> Handle(
+        public async Task<Result<PagedResultDto<CountryDto>>> Handle(
             GetPublicCountriesQuery request,
             CancellationToken cancellationToken)
         {

@@ -17,6 +17,12 @@ namespace DTP.Modules.Catalog.Domain.Entities
 
         public string? FlagUrl { get; private set; }
 
+        public string? FlagKey { get; private set; }
+
+        public string? Region { get; private set; }
+
+        public string? Description { get; private set; }
+
         public int SortOrder { get; private set; }
 
         public bool IsActive { get; private set; }
@@ -30,16 +36,44 @@ namespace DTP.Modules.Catalog.Domain.Entities
             string name,
             string slug,
             string? flagUrl,
-            int sortOrder)
+            string? region,
+            string? description,
+            int sortOrder,
+            bool isActive)
         {
-            Code = code.Trim().ToUpper();
-            Name = name.Trim();
-            Slug = slug.Trim().ToLower();
-            FlagUrl = flagUrl?.Trim();
+            Id = Guid.NewGuid();
+            Code = code;
+            Name = name;
+            Slug = slug;
+            FlagUrl = flagUrl;
+            Region = region;
+            Description = description;
             SortOrder = sortOrder;
-            IsActive = true;
+            IsActive = isActive;
         }
 
+       
+
+        public void Update(
+            string code,
+            string name,
+            string slug,
+            string? flagUrl,
+            string? region,
+            string? description,
+            int sortOrder,
+            bool isActive)
+        {
+            Code = code;
+            Name = name;
+            Slug = slug;
+            FlagUrl = flagUrl;
+            Region = region;
+            Description = description;
+            SortOrder = sortOrder;
+            IsActive = isActive;
+        }
+     
         public void Update(
             string code,
             string name,
@@ -56,6 +90,13 @@ namespace DTP.Modules.Catalog.Domain.Entities
             IsActive = isActive;
 
             SetUpdated();
+        }
+
+        public void UpdateFlag(string flagUrl, string flagKey)
+        {
+            FlagUrl = flagUrl;
+            FlagKey = flagKey;
+            UpdatedAt = DateTime.Now;
         }
 
         public void Activate()

@@ -1,15 +1,12 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace DTP.Modules.Catalog.Application.Queries.Providers
 {
-    public class GetProviderByIdQuery : IRequest<ProviderDto?>
+    public class GetProviderByIdQuery : IRequest<Result<ProviderDto?>>
     {
         public Guid Id { get; set; }
 
@@ -18,7 +15,8 @@ namespace DTP.Modules.Catalog.Application.Queries.Providers
             Id = id;
         }
     }
-    public class GetProviderByIdQueryHandler : IRequestHandler<GetProviderByIdQuery, ProviderDto?>
+    public class GetProviderByIdQueryHandler : IRequestHandler<GetProviderByIdQuery,
+        Result<ProviderDto?>>
     {
         private readonly IProviderRepository _providerRepository;
 
@@ -27,14 +25,11 @@ namespace DTP.Modules.Catalog.Application.Queries.Providers
             _providerRepository = providerRepository;
         }
 
-        public async Task<ProviderDto?> Handle(GetProviderByIdQuery request, CancellationToken cancellationToken)
+        public async Task<Result<ProviderDto?>> Handle(GetProviderByIdQuery request, CancellationToken cancellationToken)
         {
             var provider = await _providerRepository.GetByIdAsync(request.Id, cancellationToken);
 
-            if (provider == null)
-                return null;
-
-            return new ProviderDto
+            var result = new ProviderDto
             {
                 Id = provider.Id,
                 Code = provider.Code,
@@ -46,6 +41,8 @@ namespace DTP.Modules.Catalog.Application.Queries.Providers
                 SupportEmail = provider.SupportEmail,
                 IsActive = provider.IsActive
             };
+
+            return Result<ProviderDto?>.Success(result); 
         }
     }
 

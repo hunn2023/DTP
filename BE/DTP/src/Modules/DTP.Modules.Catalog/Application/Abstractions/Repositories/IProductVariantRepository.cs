@@ -6,6 +6,10 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
 {
     public interface IProductVariantRepository : IRepositoryBase<ProductVariant>
     {
+        Task<List<ProductVariant>> GetByProductIdAsync(
+            Guid productId,
+            CancellationToken cancellationToken = default);
+
         Task<List<ProductVariant>> GetListAsync(
             Guid productId,
             CancellationToken cancellationToken = default);

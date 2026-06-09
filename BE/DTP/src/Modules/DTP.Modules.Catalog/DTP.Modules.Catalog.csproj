@@ -15,12 +15,17 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.8" />
     <PackageReference Include="StackExchange.Redis" Version="2.13.17" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\DTP.Infrastructure\DTP.Infrastructure.csproj" />
     <ProjectReference Include="..\..\DTP.Shared\DTP.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Migrations\" />
   </ItemGroup>
 
 </Project>

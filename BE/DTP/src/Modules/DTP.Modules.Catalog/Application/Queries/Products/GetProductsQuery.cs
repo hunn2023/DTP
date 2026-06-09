@@ -1,14 +1,14 @@
-﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
+﻿
 using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
-using DTP.Modules.Catalog.Domain.Entities;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using MediatR;
 
 
 namespace DTP.Modules.Catalog.Application.Queries.Products
 {
-    public class GetProductsQuery : IRequest<PagedResultDto<ProductDto>>
+    public class GetProductsQuery : IRequest<Result<PagedResultDto<ProductDto>>>
     {
         public string? Keyword { get; set; }
 
@@ -27,7 +27,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Products
         public int PageSize { get; set; } = 20;
     }
     public class GetProductsQueryHandler
-    : IRequestHandler<GetProductsQuery, PagedResultDto<ProductDto>>
+    : IRequestHandler<GetProductsQuery, Result<PagedResultDto<ProductDto>>>
     {
         private readonly IProductService _productService;
 
@@ -36,7 +36,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Products
             _productService = productService;
         }
 
-        public async Task<PagedResultDto<ProductDto>> Handle(
+        public async Task<Result<PagedResultDto<ProductDto>>> Handle(
             GetProductsQuery request,
             CancellationToken cancellationToken)
         {

@@ -11,7 +11,7 @@ namespace DTP.Modules.Catalog.Application.DTOs
         public Guid Id { get; set; }
 
         public Guid? ProductId { get; set; }
-        public string Name { get; set; } = default!;
+        public string Key { get; set; } = default!;
         public string Value { get; set; } = default!;
         public int SortOrder { get; set; }
     }

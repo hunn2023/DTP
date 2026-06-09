@@ -1,10 +1,11 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
 
 namespace DTP.Modules.Catalog.Application.Queries.ProductImages
 {
-    public class GetProductImagesQuery : IRequest<List<ProductImageDto>>
+    public class GetProductImagesQuery : IRequest<Result<List<ProductImageDto>>>
     {
         public Guid ProductId { get; }
 
@@ -14,32 +15,37 @@ namespace DTP.Modules.Catalog.Application.Queries.ProductImages
         }
     }
 
-    public class GetProductImagesQueryHandler
-    : IRequestHandler<GetProductImagesQuery, List<ProductImageDto>>
-    {
-        private readonly IProductImageRepository _repository;
 
-        public GetProductImagesQueryHandler(IProductImageRepository repository)
+    public class GetProductImagesQueryHandler
+        : IRequestHandler<GetProductImagesQuery, Result<List<ProductImageDto>>>
+    {
+        private readonly IProductImageRepository _productImageRepository;
+
+        public GetProductImagesQueryHandler(
+            IProductImageRepository productImageRepository)
         {
-            _repository = repository;
+            _productImageRepository = productImageRepository;
         }
 
-        public async Task<List<ProductImageDto>> Handle(
+        public async Task<Result<List<ProductImageDto>>> Handle(
             GetProductImagesQuery request,
             CancellationToken cancellationToken)
         {
-            var images = await _repository.GetListAsync(
+            var images = await _productImageRepository.GetByProductIdAsync(
                 request.ProductId,
                 cancellationToken);
 
-            return images.Select(x => new ProductImageDto
+            var result = images.Select(x => new ProductImageDto
             {
                 Id = x.Id,
+                ProductId = x.ProductId,
                 ImageUrl = x.ImageUrl,
                 AltText = x.AltText,
                 SortOrder = x.SortOrder,
                 IsThumbnail = x.IsThumbnail
             }).ToList();
+
+            return Result<List<ProductImageDto>>.Success(result);
         }
     }
 }

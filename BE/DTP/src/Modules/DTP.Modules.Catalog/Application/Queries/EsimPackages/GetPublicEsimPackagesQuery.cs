@@ -1,17 +1,12 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace DTP.Modules.Catalog.Application.Queries.EsimPackages
 {
     public class GetPublicEsimPackagesQuery
-     : IRequest<PagedResultDto<EsimPackageDto>>
+     : IRequest<Result<PagedResultDto<EsimPackageDto>>>
     {
         public Guid? CountryId { get; set; }
 
@@ -27,7 +22,7 @@ namespace DTP.Modules.Catalog.Application.Queries.EsimPackages
     }
 
     public class GetPublicEsimPackagesQueryHandler
-      : IRequestHandler<GetPublicEsimPackagesQuery, PagedResultDto<EsimPackageDto>>
+      : IRequestHandler<GetPublicEsimPackagesQuery, Result<PagedResultDto<EsimPackageDto>>>
     {
         private readonly IEsimPackageService _esimPackageService;
 
@@ -37,7 +32,7 @@ namespace DTP.Modules.Catalog.Application.Queries.EsimPackages
             _esimPackageService = esimPackageService;
         }
 
-        public async Task<PagedResultDto<EsimPackageDto>> Handle(
+        public async Task<Result<PagedResultDto<EsimPackageDto>>> Handle(
             GetPublicEsimPackagesQuery request,
             CancellationToken cancellationToken)
         {

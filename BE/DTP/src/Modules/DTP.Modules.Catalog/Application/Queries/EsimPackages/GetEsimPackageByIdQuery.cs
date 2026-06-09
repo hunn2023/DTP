@@ -1,12 +1,13 @@
-﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
+﻿
 using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
 
 
 namespace DTP.Modules.Catalog.Application.Queries.EsimPackages
 {
-    public class GetEsimPackageByIdQuery : IRequest<EsimPackageDto?>
+    public class GetEsimPackageByIdQuery : IRequest<Result<EsimPackageDto?>>
     {
         public Guid Id { get; set; }
 
@@ -17,7 +18,7 @@ namespace DTP.Modules.Catalog.Application.Queries.EsimPackages
     }
 
     public class GetEsimPackageByIdQueryHandler
-        : IRequestHandler<GetEsimPackageByIdQuery, EsimPackageDto?>
+        : IRequestHandler<GetEsimPackageByIdQuery, Result<EsimPackageDto?>>
     {
         private readonly IEsimPackageService _esimPackageService;
 
@@ -27,7 +28,7 @@ namespace DTP.Modules.Catalog.Application.Queries.EsimPackages
             _esimPackageService = esimPackageService;
         }
 
-        public async Task<EsimPackageDto?> Handle(
+        public async Task<Result<EsimPackageDto?>> Handle(
             GetEsimPackageByIdQuery request,
             CancellationToken cancellationToken)
         {
