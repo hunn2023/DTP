@@ -30,7 +30,7 @@ function applySlugFromName(values: Category, formConfig: EntityFormConfig<Catego
   return values
 }
 
-function toCreatePayload(values: Category): categoriesApi.CategoryPayload {
+function toPayload(values: Category): categoriesApi.CategoryPayload {
   return {
     name: values.name.trim(),
     code: values.code.trim() || undefined,
@@ -43,16 +43,6 @@ function toCreatePayload(values: Category): categoriesApi.CategoryPayload {
 
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback
-}
-
-function toUpdatePayload(values: Category): Omit<categoriesApi.CategoryPayload, 'slug'> {
-  return {
-    name: values.name.trim(),
-    code: values.code.trim() || undefined,
-    description: values.description.trim() || undefined,
-    isActive: values.isActive,
-    sortOrder: values.sortOrder,
-  }
 }
 
 export function useCategoriesCrud({ buildColumns, formConfig, pageSize = 10 }: UseCategoriesCrudParams) {
@@ -90,10 +80,10 @@ export function useCategoriesCrud({ buildColumns, formConfig, pageSize = 10 }: U
 
   const loadSeqRef = useRef(0)
 
-  const loadData = useCallback(async (pageIndex: number, size: number, seq: number) => {
+  const loadData = useCallback(async (pageIndex: number, size: number, keyword: string, seq: number) => {
     setIsLoading(true)
     try {
-      const result = await categoriesApi.fetchCategoriesPage(pageIndex + 1, size)
+      const result = await categoriesApi.fetchCategoriesPage(pageIndex + 1, size, keyword || undefined)
       if (seq !== loadSeqRef.current) return
       setData(result.items)
       setTotalCount(result.totalCount)
@@ -107,19 +97,19 @@ export function useCategoriesCrud({ buildColumns, formConfig, pageSize = 10 }: U
 
   useEffect(() => {
     const seq = ++loadSeqRef.current
-    void loadData(pagination.pageIndex, pagination.pageSize, seq)
-  }, [pagination.pageIndex, pagination.pageSize, loadData])
+    void loadData(pagination.pageIndex, pagination.pageSize, globalFilter, seq)
+  }, [pagination.pageIndex, pagination.pageSize, globalFilter, loadData])
 
   const reload = useCallback(() => {
     const seq = ++loadSeqRef.current
-    void loadData(pagination.pageIndex, pagination.pageSize, seq)
-  }, [loadData, pagination.pageIndex, pagination.pageSize])
+    void loadData(pagination.pageIndex, pagination.pageSize, globalFilter, seq)
+  }, [loadData, pagination.pageIndex, pagination.pageSize, globalFilter])
 
   const toggleActive = useCallback(
     async (row: Category) => {
       try {
         const updated = await categoriesApi.updateCategory(row.id, {
-          ...toUpdatePayload(row),
+          ...toPayload(row),
           isActive: !row.isActive,
         })
         setData((prev) => prev.map((item) => (item.id === row.id ? updated : item)))
@@ -168,8 +158,9 @@ export function useCategoriesCrud({ buildColumns, formConfig, pageSize = 10 }: U
 
       setIsSaving(true)
       try {
+        const payload = toPayload(values)
         if (formMode === 'create') {
-          await categoriesApi.createCategory(toCreatePayload(values))
+          await categoriesApi.createCategory(payload)
           notifySuccess('Đã thêm danh mục thành công')
           if (pagination.pageIndex === 0) {
             reload()
@@ -177,7 +168,7 @@ export function useCategoriesCrud({ buildColumns, formConfig, pageSize = 10 }: U
             setPagination((p) => ({ ...p, pageIndex: 0 }))
           }
         } else {
-          await categoriesApi.updateCategory(values.id, toUpdatePayload(values))
+          await categoriesApi.updateCategory(values.id, payload)
           notifySuccess('Đã cập nhật danh mục thành công')
           reload()
         }
@@ -222,6 +213,11 @@ export function useCategoriesCrud({ buildColumns, formConfig, pageSize = 10 }: U
     enableRowSelection: true,
     manualPagination: true,
   })
+
+  const setGlobalFilterAndReset = useCallback((value: string) => {
+    setGlobalFilter(value)
+    setPagination((p) => ({ ...p, pageIndex: 0 }))
+  }, [])
 
   const paginationInfo = useMemo(() => {
     const { pageIndex, pageSize: size } = pagination
@@ -269,7 +265,7 @@ export function useCategoriesCrud({ buildColumns, formConfig, pageSize = 10 }: U
   return {
     table,
     globalFilter,
-    setGlobalFilter,
+    setGlobalFilter: setGlobalFilterAndReset,
     paginationInfo,
     pageCount,
     pageSize: pagination.pageSize,

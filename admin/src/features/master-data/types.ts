@@ -6,7 +6,6 @@ export type Category = {
   name: string
   slug: string
   code: string
-  icon: string
   description: string
   sortOrder: number
 }

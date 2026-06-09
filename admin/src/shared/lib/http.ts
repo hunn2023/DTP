@@ -1,7 +1,8 @@
 import { API_REQUEST_BASE } from '@/shared/config/api'
+import { unwrapResultEnvelope } from '@/shared/lib/result'
 
 /**
- * HTTP client — thay bằng axios/fetch + auth khi nối API thật.
+ * HTTP client — tự kiểm tra Result .NET: { isSuccess, data, error }.
  */
 const API_BASE = API_REQUEST_BASE
 
@@ -29,9 +30,16 @@ async function parseResponseError(res: Response): Promise<string> {
   if (!text) return `Yêu cầu thất bại (${res.status})`
 
   try {
-    const json = JSON.parse(text) as Record<string, unknown>
-    const msg = json.detail ?? json.title ?? json.message ?? json.error
-    if (typeof msg === 'string' && msg.trim()) return sanitizeErrorMessage(msg)
+    const json = JSON.parse(text) as unknown
+    if (typeof json === 'object' && json !== null) {
+      const raw = json as Record<string, unknown>
+      if (raw.isSuccess === false || raw.IsSuccess === false) {
+        const msg = raw.error ?? raw.Error
+        if (typeof msg === 'string' && msg.trim()) return sanitizeErrorMessage(msg)
+      }
+      const msg = raw.detail ?? raw.title ?? raw.message ?? raw.error ?? raw.Error
+      if (typeof msg === 'string' && msg.trim()) return sanitizeErrorMessage(msg)
+    }
   } catch {
     // not JSON — parse plain text / HTML below
   }
@@ -51,6 +59,20 @@ async function assertOk(res: Response): Promise<void> {
   if (!res.ok) throw new Error(await parseResponseError(res))
 }
 
+async function parseJsonBody<T>(res: Response): Promise<T> {
+  const text = await res.text()
+  if (!text) return undefined as T
+
+  let json: unknown
+  try {
+    json = JSON.parse(text)
+  } catch {
+    throw new Error(`Yêu cầu thất bại (${res.status})`)
+  }
+
+  return unwrapResultEnvelope<T>(json)
+}
+
 async function request<T>(url: string, init: RequestInit): Promise<T> {
   let res: Response
   try {
@@ -59,7 +81,7 @@ async function request<T>(url: string, init: RequestInit): Promise<T> {
     throw new Error('Không kết nối được API. Kiểm tra backend đang chạy và CORS.')
   }
   await assertOk(res)
-  return res.json() as Promise<T>
+  return parseJsonBody<T>(res)
 }
 
 export async function httpGet<T>(path: string, config?: HttpConfig): Promise<T> {

@@ -32,7 +32,7 @@ export function buildCategoryColumns(handlers: CategoryTableHandlers) {
     }),
     helper.accessor('description', {
       header: 'Mô tả',
-      cell: ({ getValue }) => <span className="text-muted">{getValue()}</span>,
+      cell: ({ getValue }) => <span className="text-muted">{getValue() || '—'}</span>,
     }),
     createSortOrderColumn<Category>(),
     createIsActiveColumn<Category>(),
