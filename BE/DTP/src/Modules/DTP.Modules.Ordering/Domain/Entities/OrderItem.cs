@@ -1,4 +1,5 @@
-﻿using DTP.Shared.Domain;
+﻿using DTP.Modules.Ordering.Domain.Enums;
+using DTP.Shared.Domain;
 
 namespace DTP.Modules.Ordering.Domain.Entities
 {
@@ -10,61 +11,77 @@ namespace DTP.Modules.Ordering.Domain.Entities
 
         public OrderItem(
             Guid orderId,
+            OrderItemType itemType,
             Guid productId,
             Guid? productVariantId,
             Guid? esimPackageId,
             Guid? phoneCardId,
-            string productCode,
             string productName,
-            string? productSlug,
             string? variantName,
             string? sku,
-            string? thumbnailUrl,
             int quantity,
             decimal unitPrice,
-            string currencyCode)
+            string currency)
         {
+            if (quantity <= 0)
+                throw new ArgumentException("Số lượng phải lớn hơn 0.", nameof(quantity));
+
+            if (unitPrice < 0)
+                throw new ArgumentException("Đơn giá không hợp lệ.", nameof(unitPrice));
+
             Id = Guid.NewGuid();
             OrderId = orderId;
+            ItemType = itemType;
             ProductId = productId;
             ProductVariantId = productVariantId;
             EsimPackageId = esimPackageId;
             PhoneCardId = phoneCardId;
-
-            ProductCode = productCode;
             ProductName = productName;
-            ProductSlug = productSlug;
             VariantName = variantName;
             Sku = sku;
-            ThumbnailUrl = thumbnailUrl;
-
             Quantity = quantity;
             UnitPrice = unitPrice;
-            CurrencyCode = currencyCode;
+            Currency = currency;
             TotalPrice = unitPrice * quantity;
+            CreatedAt = DateTime.UtcNow;
         }
 
         public Guid OrderId { get; private set; }
 
+        public Order Order { get; private set; } = default!;
+
+        public OrderItemType ItemType { get; private set; }
+
         public Guid ProductId { get; private set; }
+
         public Guid? ProductVariantId { get; private set; }
 
         public Guid? EsimPackageId { get; private set; }
+
         public Guid? PhoneCardId { get; private set; }
 
-        public string ProductCode { get; private set; } = default!;
         public string ProductName { get; private set; } = default!;
-        public string? ProductSlug { get; private set; }
+
         public string? VariantName { get; private set; }
+
         public string? Sku { get; private set; }
-        public string? ThumbnailUrl { get; private set; }
 
         public int Quantity { get; private set; }
 
         public decimal UnitPrice { get; private set; }
-        public decimal TotalPrice { get; private set; }
-        public string CurrencyCode { get; private set; } = "VND";
 
-        public Order Order { get; private set; } = default!;
+        public decimal TotalPrice { get; private set; }
+
+        public string Currency { get; private set; } = "VND";
+
+
+        public void UpdateQuantity(int quantity)
+        {
+            if (quantity <= 0)
+                throw new InvalidOperationException("Số lượng phải lớn hơn 0.");
+
+            Quantity = quantity;
+            TotalPrice = UnitPrice * quantity;
+        }
     }
 }

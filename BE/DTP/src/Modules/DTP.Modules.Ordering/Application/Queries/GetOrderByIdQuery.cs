@@ -6,14 +6,12 @@ using MediatR;
 
 namespace DTP.Modules.Ordering.Application.Queries
 {
-    public class GetOrderByIdQuery : IRequest<Result<OrderDetailDto?>>
+    public class GetOrderByIdQuery : IRequest<Result<OrderDetailDto>>
     {
-        public Guid OrderId { get; set; }
-        public Guid UserId { get; set; }
-        public bool IsAdmin { get; set; }
+        public Guid Id { get; set; }
     }
 
-    public class GetOrderByIdQueryHandler : IRequestHandler<GetOrderByIdQuery, Result<OrderDetailDto?>>
+    public class GetOrderByIdQueryHandler : IRequestHandler<GetOrderByIdQuery, Result<OrderDetailDto>>
     {
         private readonly IOrderService _orderService;
 
@@ -22,15 +20,11 @@ namespace DTP.Modules.Ordering.Application.Queries
             _orderService = orderService;
         }
 
-        public async Task<Result<OrderDetailDto?>> Handle(
-             GetOrderByIdQuery request,
-             CancellationToken cancellationToken)
-            {
-            return await _orderService.GetOrderByIdAsync(
-                request.OrderId,
-                request.UserId,
-                request.IsAdmin,
-                cancellationToken);
+        public Task<Result<OrderDetailDto>> Handle(
+            GetOrderByIdQuery request,
+            CancellationToken cancellationToken)
+        {
+            return _orderService.GetByIdAsync(request.Id, cancellationToken);
         }
     }
 }

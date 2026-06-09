@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DTP.Modules.Ordering.Domain.Enums;
+
 
 namespace DTP.Modules.Ordering.Application.DTOs
 {
@@ -10,19 +7,28 @@ namespace DTP.Modules.Ordering.Application.DTOs
     {
         public Guid Id { get; set; }
 
+        public OrderItemType ItemType { get; set; }
+
         public Guid ProductId { get; set; }
+
         public Guid? ProductVariantId { get; set; }
 
+        public Guid? EsimPackageId { get; set; }
+
+        public Guid? PhoneCardId { get; set; }
+
         public string ProductName { get; set; } = default!;
+
         public string? VariantName { get; set; }
+
         public string? Sku { get; set; }
-        public string? ThumbnailUrl { get; set; }
 
         public int Quantity { get; set; }
 
         public decimal UnitPrice { get; set; }
+
         public decimal TotalPrice { get; set; }
 
-        public string CurrencyCode { get; set; } = "VND";
+        public string Currency { get; set; } = "VND";
     }
 }

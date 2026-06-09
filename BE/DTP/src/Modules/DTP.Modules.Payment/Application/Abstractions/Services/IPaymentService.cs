@@ -1,24 +1,27 @@
 ﻿using DTP.Modules.Payment.Application.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using DTP.Shared.Application;
 
 namespace DTP.Modules.Payment.Application.Abstractions.Services
 {
     public interface IPaymentService
     {
-        Task<CreatePaymentResultDto> CreatePaymentAsync(
-            CreatePaymentDto request,
-            CancellationToken cancellationToken = default);
-
-        Task<bool> HandleVnptEpayCallbackAsync(
-            VnptEpayCallbackDto request,
-            CancellationToken cancellationToken = default);
-
-        Task<PaymentTransactionDto?> GetByOrderIdAsync(
+        Task<Result<PaymentQrResponseDto>> CreateQrAsync(
             Guid orderId,
+            string ipAddress,
+            CancellationToken cancellationToken = default);
+
+        Task<Result> HandleVnptEpayCallbackAsync(
+            VnptEpayCallbackDto callback,
+            string rawBody,
+            string? ipAddress,
+            CancellationToken cancellationToken = default);
+
+        Task<Result<PaymentTransactionDto>> GetByOrderIdAsync(
+            Guid orderId,
+            CancellationToken cancellationToken = default);
+
+        Task<Result<PaymentTransactionDto>> GetByIdAsync(
+            Guid id,
             CancellationToken cancellationToken = default);
     }
 }

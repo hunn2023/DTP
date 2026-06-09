@@ -9,8 +9,9 @@ namespace DTP.Modules.Ordering.Domain.Enums
     public enum OrderPaymentStatus
     {
         Unpaid = 1,
-        Paid = 2,
-        Failed = 3,
-        Refunded = 4
+        Pending = 2,
+        Paid = 3,
+        Failed = 4,
+        Refunded = 5
     }
 }

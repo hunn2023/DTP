@@ -1,6 +1,5 @@
 ﻿using DTP.Modules.Delivery.Application.DTOs;
-using DTP.Modules.Delivery.Domain.Enums;
-using DTP.Shared.Application.Pagination;
+using DTP.Shared.Application;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,24 +10,36 @@ namespace DTP.Modules.Delivery.Application.Abstractions.Services
 {
     public interface IDeliveryService
     {
-        Task<DeliverOrderResultDto> DeliverOrderAsync(
-            DeliverOrderDto request,
+        Task<Result<Guid>> CreatePendingAsync(
+            Guid orderId,
+            string? ipAddress,
             CancellationToken cancellationToken = default);
 
-        Task<int> ImportEsimProfilesAsync(
-            List<ImportEsimProfileDto> items,
+        Task<Result> ProcessAsync(
+            Guid deliveryId,
+            CancellationToken cancellationToken = default); 
+
+        Task<Result> MarkDeliveredAsync(
+            Guid deliveryId,
+            string? note,
             CancellationToken cancellationToken = default);
 
-        Task<PagedResultDto<EsimProfileDto>> GetEsimProfilesAsync(
-            Guid? productId,
-            Guid? productVariantId,
-            EsimProfileStatus? status,
-            int pageIndex,
-            int pageSize,
+        Task<Result> MarkFailedAsync(
+            Guid deliveryId,
+            string error,
             CancellationToken cancellationToken = default);
 
-        Task<List<DigitalDeliveryDto>> GetDeliveriesByOrderIdAsync(
+        Task<Result<DeliveryDto>> GetByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken = default);
+
+        Task<Result<DeliveryDto>> GetByOrderIdAsync(
             Guid orderId,
             CancellationToken cancellationToken = default);
+
+
+        Task<Result> ResendEsimEmailAsync(
+    Guid deliveryId,
+    CancellationToken cancellationToken = default);
     }
 }

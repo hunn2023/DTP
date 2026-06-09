@@ -1,12 +1,13 @@
 ﻿using DTP.Modules.Audit.Application.Abstractions.Services;
 using DTP.Modules.Audit.Application.DTOs;
 using DTP.Modules.Audit.Domain.Enums;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using MediatR;
 
 namespace DTP.Modules.Audit.Application.Queries
 {
-    public class GetAuditLogsQuery : IRequest<PagedResultDto<AuditLogListItemDto>>
+    public class GetAuditLogsQuery : IRequest<Result<PagedResultDto<AuditLogListItemDto>>>
     {
         public string? Keyword { get; set; }
 
@@ -34,7 +35,7 @@ namespace DTP.Modules.Audit.Application.Queries
     }
 
     public class GetAuditLogsQueryHandler
-     : IRequestHandler<GetAuditLogsQuery, PagedResultDto<AuditLogListItemDto>>
+     : IRequestHandler<GetAuditLogsQuery, Result<PagedResultDto<AuditLogListItemDto>>>
     {
         private readonly IAuditLogService _auditLogService;
 
@@ -44,7 +45,7 @@ namespace DTP.Modules.Audit.Application.Queries
             _auditLogService = auditLogService;
         }
 
-        public async Task<PagedResultDto<AuditLogListItemDto>> Handle(
+        public async Task<Result<PagedResultDto<AuditLogListItemDto>>> Handle(
             GetAuditLogsQuery request,
             CancellationToken cancellationToken)
         {

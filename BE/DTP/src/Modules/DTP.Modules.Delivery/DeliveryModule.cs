@@ -26,16 +26,12 @@ namespace DTP.Modules.Delivery
                     configuration.GetConnectionString("DefaultConnection"));
             });
 
-            services.AddScoped<IEsimProfileRepository, EsimProfileRepository>();
-            services.AddScoped<IDigitalDeliveryRepository, DigitalDeliveryRepository>();
+            services.AddScoped<IDeliveryRepository, DeliveryRepository>();
             services.AddScoped<IDeliveryUnitOfWork, DeliveryUnitOfWork>();
 
             services.AddScoped<IDeliveryService, DeliveryService>();
-            services.AddScoped<IDeliveryOrderingService, DeliveryOrderingService>();
-
-            // Tạm fake, sau này thay bằng Notification Module
-            services.AddScoped<IDeliveryNotificationService, FakeDeliveryNotificationService>();
-
+            services.AddScoped<IEsimDeliveryEmailService, EsimDeliveryEmailService>();
+            services.AddScoped<IDigitalFulfillmentService, MockDigitalFulfillmentService>();
             services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(DeliveryModule).Assembly);

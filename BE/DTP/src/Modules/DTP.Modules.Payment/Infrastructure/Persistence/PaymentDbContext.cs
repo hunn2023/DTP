@@ -19,6 +19,8 @@ namespace DTP.Modules.Payment.Infrastructure.Persistence
 
         public DbSet<PaymentCallback> PaymentCallbacks => Set<PaymentCallback>();
 
+        public DbSet<PaymentCallbackLog> PaymentCallbackLogs => Set<PaymentCallbackLog>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(PaymentDbContext).Assembly);

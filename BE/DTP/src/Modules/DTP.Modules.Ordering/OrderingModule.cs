@@ -3,6 +3,7 @@ using DTP.Modules.Ordering.Application.Abstractions.Services;
 using DTP.Modules.Ordering.Infrastructure.Persistence;
 using DTP.Modules.Ordering.Infrastructure.Repositories;
 using DTP.Modules.Ordering.Infrastructure.Services;
+using DTP.Shared.Application.Delivery;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,6 +37,11 @@ namespace DTP.Modules.Ordering
             // Tạm thời dùng fake, sau này thay bằng Payment Module thật
             services.AddScoped<IOrderingPaymentService, FakeOrderingPaymentService>();
 
+            services.AddScoped<IOrderItemRepository, OrderItemRepository>();
+            services.AddScoped<IOrderHistoryRepository, OrderHistoryRepository>();
+
+            services.AddScoped<IOrderDeliveryReader, OrderDeliveryReader>();
+            services.AddScoped<IOrderService, OrderService>();
             services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(OrderingModule).Assembly);

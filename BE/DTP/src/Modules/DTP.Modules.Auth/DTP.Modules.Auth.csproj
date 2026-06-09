@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\DTP.Infrastructure\DTP.Infrastructure.csproj" />
     <ProjectReference Include="..\..\DTP.Shared\DTP.Shared.csproj" />
+    <ProjectReference Include="..\DTP.Modules.Audit\DTP.Modules.Audit.csproj" />
   </ItemGroup>
 
 </Project>

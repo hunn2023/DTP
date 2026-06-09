@@ -1,4 +1,5 @@
 ﻿using DTP.Modules.Audit.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ namespace DTP.Modules.Audit.Application.Abstractions.Services
             Guid id,
             CancellationToken cancellationToken = default);
 
-        Task<PagedResultDto<AuditLogListItemDto>> GetPagedAsync(
+        Task<Result<PagedResultDto<AuditLogListItemDto>>> GetPagedAsync(
             AuditLogFilterDto filter,
             CancellationToken cancellationToken = default);
     }

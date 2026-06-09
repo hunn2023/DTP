@@ -29,6 +29,7 @@ namespace DTP.Modules.Ordering.Infrastructure.Configurations
                 .HasMaxLength(1000);
 
             builder.HasIndex(x => x.OrderId);
+            builder.HasIndex(x => x.CreatedAt);
         }
     }
 }

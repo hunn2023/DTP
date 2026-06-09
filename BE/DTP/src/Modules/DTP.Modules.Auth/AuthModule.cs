@@ -54,10 +54,6 @@ public static class AuthModule
         services.AddScoped<IOtpService, OtpService>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IRateLimitService, RateLimitService>();
-        services.AddScoped<IEmailSender, EmailSender>();
-
-        services.Configure<EmailSettings>(
-            configuration.GetSection("Email"));
 
         services.AddMediatR(cfg =>
         {

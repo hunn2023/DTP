@@ -30,6 +30,7 @@ namespace DTP.Modules.Audit
             services.AddScoped<IAuditLogWriter, AuditLogWriter>();
             services.AddScoped<ICurrentAuditUserService, CurrentAuditUserService>();
 
+            services.AddHttpContextAccessor();
             services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(AuditModule).Assembly);
