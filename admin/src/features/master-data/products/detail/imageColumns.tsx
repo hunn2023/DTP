@@ -12,8 +12,8 @@ export type ImageTableHandlers = ActionHandlers<ProductImageRow>
 
 const helper = createColumnHelper<ProductImageRow>()
 
-export function buildImageColumns(handlers: ImageTableHandlers) {
-  return [
+export function buildImageColumns(handlers?: ImageTableHandlers) {
+  const cols = [
     createSelectColumn<ProductImageRow>(),
     createIdColumn<ProductImageRow>(),
     helper.accessor('imageUrl', {
@@ -38,6 +38,11 @@ export function buildImageColumns(handlers: ImageTableHandlers) {
       header: 'Thumbnail',
       cell: ({ getValue }) => (getValue() ? '✓' : '—'),
     }),
-    createActionsColumn(handlers, { toggleActive: false }),
   ] as ColumnDef<ProductImageRow>[]
+
+  if (handlers) {
+    cols.push(createActionsColumn(handlers, { toggleActive: false }))
+  }
+
+  return cols
 }

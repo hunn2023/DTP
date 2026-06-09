@@ -10,7 +10,6 @@ import { PRODUCT_PAGE_SIZE_OPTIONS } from '@/features/master-data/products/produ
 import { useProductsCrud } from '@/features/master-data/products/useProductsCrud'
 import ActiveFilterSelect from '@/modules/crud/components/ActiveFilterSelect'
 import ListFilterSelect from '@/modules/crud/components/ListFilterSelect'
-import EntityFormModal from '@/modules/crud/form/EntityFormModal'
 
 const ProductsCrudTable = () => {
   const crud = useProductsCrud({ buildColumns: buildProductColumns })
@@ -119,19 +118,6 @@ const ProductsCrudTable = () => {
         cancelButtonText="Hủy">
         {deleteMessage}
       </DeleteConfirmationModal>
-
-      {crud.formMode && crud.formValues && (
-        <EntityFormModal
-          show
-          mode={crud.formMode}
-          entityName={crud.formConfig.entityName}
-          fields={crud.formConfig.fields}
-          viewFields={crud.formConfig.viewFields}
-          initialValues={crud.formValues}
-          onHide={crud.closeFormModal}
-          onSubmit={(values) => void crud.saveForm(values)}
-        />
-      )}
     </Card>
   )
 }

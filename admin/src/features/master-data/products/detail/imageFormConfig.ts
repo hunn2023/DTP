@@ -10,6 +10,8 @@ export function getDefaultImageValues(productId: string): ProductImageRow {
     sortOrder: 1,
     isThumbnail: false,
     isActive: true,
+    contentType: '',
+    size: 0,
   }
 }
 

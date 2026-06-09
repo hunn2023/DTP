@@ -7,70 +7,32 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router'
 
 import { useNotificationContext } from '@/context/useNotificationContext'
 import { fetchCategoryOptions } from '@/features/master-data/categories/categories.api'
 import { fetchCarrierOptions } from '@/features/master-data/carriers/carriers.api'
 import { fetchCountries } from '@/features/master-data/countries/countries.api'
 import type { ProductTableHandlers } from '@/features/master-data/products/columns'
-import { buildProductFormConfig, getDefaultProductValues } from '@/features/master-data/products/formConfig'
+import { toProductPayload } from '@/features/master-data/products/formConfig'
 import * as productsApi from '@/features/master-data/products/products.api'
 import type { CatalogProduct } from '@/features/master-data/products/types'
 import {
   activeFilterToBool,
   type ActiveFilterValue,
 } from '@/modules/crud/components/ActiveFilterSelect'
-import { slugify } from '@/modules/crud/form/slugify'
-import type { EntityFormConfig, FormFieldOption, FormModalMode } from '@/modules/crud/form/types'
 
 type UseProductsCrudParams = {
   buildColumns: (handlers: ProductTableHandlers) => ColumnDef<CatalogProduct>[]
   pageSize?: number
 }
 
-function applySlugFromName(values: CatalogProduct): CatalogProduct {
-  if (!values.slug.trim() && values.name.trim()) {
-    return { ...values, slug: slugify(values.name) }
-  }
-  return values
-}
-
-function toCreatePayload(values: CatalogProduct): productsApi.ProductPayload {
-  return {
-    code: values.code.trim() || undefined,
-    name: values.name.trim(),
-    slug: values.slug.trim(),
-    categoryId: values.categoryId.trim(),
-    shortDescription: values.shortDescription.trim() || undefined,
-    description: values.description.trim() || undefined,
-    thumbnailUrl: values.thumbnailUrl.trim() || undefined,
-    sortOrder: values.sortOrder,
-  }
-}
-
-function toUpdatePayload(values: CatalogProduct): productsApi.ProductUpdatePayload {
-  return { ...toCreatePayload(values), isActive: values.isActive }
-}
-
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback
 }
 
-function getFormConfig(
-  mode: FormModalMode | null,
-  categoryOptions: FormFieldOption[],
-): EntityFormConfig<CatalogProduct> {
-  const config = buildProductFormConfig(categoryOptions)
-  if (mode === 'create') {
-    return {
-      ...config,
-      fields: config.fields.filter((field) => field.name !== 'isActive'),
-    }
-  }
-  return config
-}
-
 export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrudParams) {
+  const navigate = useNavigate()
   const { showNotification } = useNotificationContext()
   const [data, setData] = useState<CatalogProduct[]>([])
   const [totalCount, setTotalCount] = useState(0)
@@ -82,18 +44,13 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set())
-  const [formMode, setFormMode] = useState<FormModalMode | null>(null)
-  const [formValues, setFormValues] = useState<CatalogProduct | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  const [categoryOptions, setCategoryOptions] = useState<FormFieldOption[]>([])
-  const [countryFilterOptions, setCountryFilterOptions] = useState<FormFieldOption[]>([])
-  const [carrierFilterOptions, setCarrierFilterOptions] = useState<FormFieldOption[]>([])
-  const [filtersReady, setFiltersReady] = useState(false)
+  const [categoryOptions, setCategoryOptions] = useState<{ value: string; label: string }[]>([])
+  const [countryFilterOptions, setCountryFilterOptions] = useState<{ value: string; label: string }[]>([])
+  const [carrierFilterOptions, setCarrierFilterOptions] = useState<{ value: string; label: string }[]>([])
   const [categoryFilter, setCategoryFilter] = useState('')
   const [countryFilter, setCountryFilter] = useState('')
   const [carrierFilter, setCarrierFilter] = useState('')
   const [activeFilter, setActiveFilter] = useState<ActiveFilterValue>('all')
-  const [lookupsReady, setLookupsReady] = useState(false)
 
   const notifySuccess = useCallback(
     (message: string) => {
@@ -124,7 +81,6 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
           })),
         )
         setCarrierFilterOptions(carriers)
-        setFiltersReady(true)
       })
       .catch((e) => {
         notifyErrorRef.current(getErrorMessage(e, 'Không tải được bộ lọc'))
@@ -180,31 +136,11 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
     void loadData(pagination.pageIndex, pagination.pageSize, listFilters, seq)
   }, [loadData, pagination.pageIndex, pagination.pageSize, listFilters])
 
-  const ensureLookups = useCallback(async () => {
-    if (lookupsReady) return
-    if (categoryOptions.length > 0) {
-      setLookupsReady(true)
-      return
-    }
-    try {
-      const options = await fetchCategoryOptions()
-      setCategoryOptions(options)
-      setLookupsReady(true)
-    } catch (e) {
-      notifyError(getErrorMessage(e, 'Không tải được danh mục'))
-    }
-  }, [lookupsReady, categoryOptions.length, notifyError])
-
-  const formConfig = useMemo(
-    () => getFormConfig(formMode, categoryOptions),
-    [formMode, categoryOptions],
-  )
-
   const toggleActive = useCallback(
     async (row: CatalogProduct) => {
       try {
         await productsApi.updateProduct(row.id, {
-          ...toUpdatePayload(row),
+          ...toProductPayload(row, false),
           isActive: !row.isActive,
         })
         setData((prev) =>
@@ -225,55 +161,21 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
   }, [])
 
   const openCreate = useCallback(() => {
-    void ensureLookups()
-    setFormValues(getDefaultProductValues())
-    setFormMode('create')
-  }, [ensureLookups])
+    navigate('/settings/products/new')
+  }, [navigate])
 
   const openEdit = useCallback(
     (row: CatalogProduct) => {
-      void ensureLookups()
-      setFormValues({ ...row })
-      setFormMode('edit')
+      navigate(`/settings/products/${row.id}`)
     },
-    [ensureLookups],
+    [navigate],
   )
 
-  const openView = useCallback((row: CatalogProduct) => {
-    setFormValues({ ...row })
-    setFormMode('view')
-  }, [])
-
-  const closeFormModal = useCallback(() => {
-    setFormMode(null)
-    setFormValues(null)
-  }, [])
-
-  const saveForm = useCallback(
-    async (rawValues: CatalogProduct) => {
-      if (!formMode || formMode === 'view') return
-
-      setIsSaving(true)
-      try {
-        const values = applySlugFromName(rawValues)
-        if (formMode === 'create') {
-          await productsApi.createProduct(toCreatePayload(values))
-          notifySuccess('Đã thêm sản phẩm thành công')
-          if (pagination.pageIndex === 0) reload()
-          else setPagination((p) => ({ ...p, pageIndex: 0 }))
-        } else {
-          await productsApi.updateProduct(values.id, toUpdatePayload(values))
-          notifySuccess('Đã cập nhật sản phẩm thành công')
-          reload()
-        }
-        closeFormModal()
-      } catch (e) {
-        notifyError(getErrorMessage(e, 'Không lưu được sản phẩm'))
-      } finally {
-        setIsSaving(false)
-      }
+  const openView = useCallback(
+    (row: CatalogProduct) => {
+      navigate(`/settings/products/${row.id}`)
     },
-    [formMode, closeFormModal, reload, pagination.pageIndex, notifySuccess, notifyError],
+    [navigate],
   )
 
   const handlers = useMemo(
@@ -389,16 +291,9 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
     requestBulkDelete,
     selectedCount: Object.keys(rowSelection).length,
     pendingDeleteCount: pendingDeleteIds.size,
-    formMode,
-    formValues,
     openCreate,
     openView,
-    closeFormModal,
-    saveForm,
-    formConfig,
     isLoading,
-    isSaving,
-    filtersReady,
     categoryFilterOptions: categoryOptions,
     countryFilterOptions,
     carrierFilterOptions,

@@ -101,13 +101,17 @@ export async function httpPost<T>(path: string, body: unknown, config?: HttpConf
   })
 }
 
-export async function httpPut<T>(path: string, body: unknown, config?: HttpConfig): Promise<T> {
-  return request<T>(buildUrl(path, config?.params), {
-    ...config,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...config?.headers },
-    body: JSON.stringify(body),
-  })
+export async function httpPut<T>(path: string, body?: unknown, config?: HttpConfig): Promise<T> {
+  const headers = new Headers({ Accept: 'application/json' })
+  if (config?.headers) {
+    new Headers(config.headers).forEach((value, key) => headers.set(key, value))
+  }
+  const init: RequestInit = { ...config, method: 'PUT', headers }
+  if (body !== undefined) {
+    headers.set('Content-Type', 'application/json')
+    init.body = JSON.stringify(body)
+  }
+  return request<T>(buildUrl(path, config?.params), init)
 }
 
 export async function httpPatch<T>(path: string, body: unknown, config?: HttpConfig): Promise<T> {
@@ -131,6 +135,19 @@ export async function httpPostForm<T>(
   return request<T>(buildUrl(path, config?.params), {
     ...config,
     method: 'POST',
+    headers: { Accept: 'application/json', ...config?.headers },
+    body: formData,
+  })
+}
+
+export async function httpPutForm<T>(
+  path: string,
+  formData: FormData,
+  config?: HttpConfig,
+): Promise<T> {
+  return request<T>(buildUrl(path, config?.params), {
+    ...config,
+    method: 'PUT',
     headers: { Accept: 'application/json', ...config?.headers },
     body: formData,
   })

@@ -5,9 +5,11 @@ export function getDefaultAttributeValues(productId: string): ProductAttributeRo
   return {
     id: '',
     productId,
-    name: '',
+    key: '',
+    displayName: '',
     value: '',
     sortOrder: 1,
+    isVisible: true,
     isActive: true,
   }
 }
@@ -17,9 +19,11 @@ export function buildAttributeFormConfig(productId: string): EntityFormConfig<Pr
     entityName: 'thuộc tính',
     getDefaultValues: () => getDefaultAttributeValues(productId),
     fields: [
-      { name: 'name', label: 'Tên thuộc tính', type: 'text', required: true, col: 6 },
+      { name: 'key', label: 'Key', type: 'text', required: true, col: 6 },
+      { name: 'displayName', label: 'Tên hiển thị', type: 'text', col: 6 },
       { name: 'value', label: 'Giá trị', type: 'text', required: true, col: 6 },
       { name: 'sortOrder', label: 'Thứ tự', type: 'number', required: true, col: 6 },
+      { name: 'isActive', label: 'Hiển thị', type: 'checkbox', col: 12 },
     ],
   }
 }

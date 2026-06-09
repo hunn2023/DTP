@@ -5,9 +5,15 @@ export type CatalogProduct = {
   slug: string
   categoryId: string
   categoryName: string
+  countryId: string
+  countryName: string
   shortDescription: string
   description: string
+  locationText: string
   thumbnailUrl: string
+  isFeatured: boolean
+  isHot: boolean
+  soldCount: number
   sortOrder: number
   isActive: boolean
 }
@@ -34,16 +40,21 @@ export type ProductImageRow = {
   altText: string
   sortOrder: number
   isThumbnail: boolean
-  isActive: true
+  isActive: boolean
+  contentType: string
+  size: number
 }
 
 export type ProductAttributeRow = {
   id: string
   productId: string
-  name: string
+  key: string
+  displayName: string
   value: string
   sortOrder: number
-  isActive: true
+  isVisible: boolean
+  /** Dùng cho EntityFormModal (checkbox) — đồng bộ với isVisible */
+  isActive: boolean
 }
 
 export type ProductPriceRow = {
@@ -60,3 +71,5 @@ export type ProductPriceRow = {
   endDate: string
   isActive: boolean
 }
+
+export type ProductFormTab = 'product' | 'images' | 'attributes'

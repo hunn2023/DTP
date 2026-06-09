@@ -44,6 +44,87 @@
     }
 }
 
+.product-form-stepper {
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
+    gap: 4px;
+    margin-bottom: 1rem !important;
+    overflow: visible;
+
+    .nav-item {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .nav-link {
+        padding: 0.4rem 0.65rem !important;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+
+        &:not(.active) {
+            background-color: transparent !important;
+            border-color: var(--#{$prefix}border-color) !important;
+            color: var(--#{$prefix}secondary-color) !important;
+
+            .step-label {
+                color: var(--#{$prefix}secondary-color) !important;
+            }
+        }
+
+        &:not(.active):hover,
+        &:not(.active):focus-visible {
+            background-color: transparent !important;
+            border-color: var(--#{$prefix}border-color) !important;
+            color: var(--#{$prefix}secondary-color) !important;
+        }
+
+        &.active {
+            background-color: rgba(var(--#{$prefix}primary-rgb), 0.08) !important;
+            border-color: rgba(var(--#{$prefix}primary-rgb), 0.45) !important;
+            color: var(--#{$prefix}primary) !important;
+
+            .step-label {
+                color: var(--#{$prefix}primary) !important;
+            }
+
+            .step-icon {
+                background-color: rgba(var(--#{$prefix}primary-rgb), 0.15) !important;
+                color: var(--#{$prefix}primary) !important;
+            }
+        }
+
+        &.active:hover {
+            background-color: rgba(var(--#{$prefix}primary-rgb), 0.12) !important;
+            border-color: rgba(var(--#{$prefix}primary-rgb), 0.55) !important;
+        }
+
+        &:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+    }
+
+    .step-icon {
+        width: 26px;
+        height: 26px;
+
+        svg {
+            width: 14px;
+            height: 14px;
+        }
+    }
+
+    .step-label {
+        font-size: 0.75rem;
+        line-height: 1.2;
+    }
+
+    .step-subtitle {
+        font-size: 0.65rem;
+        line-height: 1.1;
+    }
+}
+
 [data-wizard-animation] .tab-pane {
     opacity: 0;
     transform: translateX(20px);

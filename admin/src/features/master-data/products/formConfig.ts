@@ -1,5 +1,5 @@
 import type { CatalogProduct } from '@/features/master-data/products/types'
-import type { EntityFormConfig, FormFieldOption } from '@/modules/crud/form/types'
+import type { FormFieldOption } from '@/modules/crud/form/types'
 
 export function getDefaultProductValues(): CatalogProduct {
   return {
@@ -9,47 +9,38 @@ export function getDefaultProductValues(): CatalogProduct {
     slug: '',
     categoryId: '',
     categoryName: '',
+    countryId: '',
+    countryName: '',
     shortDescription: '',
     description: '',
+    locationText: '',
     thumbnailUrl: '',
+    isFeatured: false,
+    isHot: false,
+    soldCount: 0,
     sortOrder: 1,
     isActive: true,
   }
 }
 
-export function buildProductFormConfig(
-  categoryOptions: FormFieldOption[],
-): EntityFormConfig<CatalogProduct> {
+export type ProductFormLookups = {
+  categoryOptions: FormFieldOption[]
+  countryOptions: FormFieldOption[]
+}
+
+export function toProductPayload(values: CatalogProduct, isCreate: boolean) {
   return {
-    entityName: 'sản phẩm',
-    slugFromName: true,
-    getDefaultValues: getDefaultProductValues,
-    viewFields: [
-      { name: 'code', label: 'Mã (Code)', type: 'text', col: 6 },
-      { name: 'categoryName', label: 'Danh mục', type: 'text', col: 6 },
-      { name: 'shortDescription', label: 'Mô tả ngắn', type: 'textarea' },
-      { name: 'description', label: 'Mô tả chi tiết', type: 'textarea' },
-      { name: 'thumbnailUrl', label: 'URL thumbnail', type: 'url' },
-      { name: 'sortOrder', label: 'Thứ tự', type: 'number', col: 6 },
-      { name: 'isActive', label: 'Hiển thị', type: 'checkbox', col: 6 },
-    ],
-    fields: [
-      { name: 'name', label: 'Tên sản phẩm', type: 'text', required: true },
-      { name: 'slug', label: 'Slug', type: 'text', required: true },
-      { name: 'code', label: 'Mã (Code)', type: 'text', col: 6 },
-      {
-        name: 'categoryId',
-        label: 'Danh mục',
-        type: 'select',
-        required: true,
-        col: 6,
-        options: categoryOptions,
-      },
-      { name: 'shortDescription', label: 'Mô tả ngắn', type: 'textarea' },
-      { name: 'description', label: 'Mô tả chi tiết', type: 'textarea' },
-      { name: 'thumbnailUrl', label: 'URL thumbnail', type: 'url' },
-      { name: 'sortOrder', label: 'Thứ tự', type: 'number', required: true, col: 6 },
-      { name: 'isActive', label: 'Hiển thị', type: 'checkbox', col: 6 },
-    ],
+    code: values.code.trim() || undefined,
+    name: values.name.trim(),
+    slug: values.slug.trim(),
+    categoryId: values.categoryId.trim(),
+    countryId: values.countryId.trim() || undefined,
+    shortDescription: values.shortDescription.trim() || undefined,
+    description: values.description.trim() || undefined,
+    locationText: values.locationText.trim() || undefined,
+    isFeatured: values.isFeatured,
+    isHot: values.isHot,
+    sortOrder: values.sortOrder,
+    isActive: isCreate ? true : values.isActive,
   }
 }

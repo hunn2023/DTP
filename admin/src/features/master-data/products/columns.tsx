@@ -1,5 +1,4 @@
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table'
-import { Link } from 'react-router'
 
 import type { CatalogProduct } from '@/features/master-data/products/types'
 import {
@@ -10,9 +9,7 @@ import {
   type ActionHandlers,
 } from '@/modules/crud/components/tableColumns'
 
-export type ProductTableHandlers = ActionHandlers<CatalogProduct> & {
-  onManage?: (row: CatalogProduct) => void
-}
+export type ProductTableHandlers = ActionHandlers<CatalogProduct>
 
 const helper = createColumnHelper<CatalogProduct>()
 
@@ -68,18 +65,6 @@ export function buildProductColumns(handlers: ProductTableHandlers) {
     }),
     helper.accessor('sortOrder', { header: 'TT' }),
     createIsActiveColumn<CatalogProduct>(),
-    helper.display({
-      id: 'manage',
-      header: '',
-      cell: ({ row }) => (
-        <Link
-          to={`/settings/products/${row.original.id}`}
-          className="btn btn-sm btn-soft-primary"
-          onClick={(e) => e.stopPropagation()}>
-          Chi tiết
-        </Link>
-      ),
-    }),
     createActionsColumn(handlers),
   ] as ColumnDef<CatalogProduct>[]
 }

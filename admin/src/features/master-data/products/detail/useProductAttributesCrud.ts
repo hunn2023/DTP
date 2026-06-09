@@ -26,9 +26,11 @@ type Params = {
 function toPayload(values: ProductAttributeRow): attributesApi.ProductAttributePayload {
   return {
     productId: values.productId,
-    name: values.name.trim(),
+    key: values.key.trim(),
+    displayName: values.displayName.trim() || undefined,
     value: values.value.trim(),
     sortOrder: values.sortOrder,
+    isVisible: values.isActive,
   }
 }
 

@@ -5,7 +5,7 @@ import CategoriesPage from '@/features/master-data/categories/CategoriesPage'
 import CountriesPage from '@/features/master-data/countries/CountriesPage'
 import EsimPackagesPage from '@/features/products/esim-packages/EsimPackagesPage'
 import PhoneCardsPage from '@/features/products/phone-cards/PhoneCardsPage'
-import ProductDetailPage from '@/features/master-data/products/ProductDetailPage'
+import ProductFormPage from '@/features/master-data/products/ProductFormPage'
 import ProductsPage from '@/features/master-data/products/ProductsPage'
 import ProductPricesPage from '@/features/master-data/product-prices/ProductPricesPage'
 import ProvidersPage from '@/features/providers/ProvidersPage'
@@ -111,9 +111,9 @@ const productsRoute: RouteObject = {
   element: <ProductsPage />,
 }
 
-const productDetailRoute: RouteObject = {
+const productFormRoute: RouteObject = {
   path: '/settings/products/:productId',
-  element: <ProductDetailPage />,
+  element: <ProductFormPage />,
 }
 
 const productPricesRoute: RouteObject = {
@@ -127,7 +127,7 @@ export const dtpAdminRoutes: RouteObject[] = [
   countriesRoute,
   carriersRoute,
   productsRoute,
-  productDetailRoute,
+  productFormRoute,
   productPricesRoute,
   esimPackagesRoute,
   phoneCardsRoute,

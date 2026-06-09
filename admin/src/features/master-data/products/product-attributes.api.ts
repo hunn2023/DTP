@@ -1,47 +1,65 @@
 import type { ProductAttributeRow } from '@/features/master-data/products/types'
 import { API_PATHS } from '@/shared/config/api'
 import { httpDelete, httpGet, httpPost, httpPut } from '@/shared/lib/http'
-import { readNumber, readString } from '@/shared/lib/dtoNormalize'
+import { readBool, readNumber, readString } from '@/shared/lib/dtoNormalize'
 
 type Raw = Record<string, unknown>
 
 export type ProductAttributePayload = {
   productId: string
-  name: string
+  key: string
+  displayName?: string
   value: string
   sortOrder: number
+  isVisible: boolean
 }
 
 export type ProductAttributeUpdatePayload = Omit<ProductAttributePayload, 'productId'>
 
 function normalizeAttribute(raw: Raw): ProductAttributeRow {
+  const key = readString(raw, 'key', 'Key')
+  const displayName = readString(raw, 'displayName', 'DisplayName')
+  const isVisible = readBool(raw, 'isVisible', 'IsVisible')
   return {
     id: readString(raw, 'id', 'Id'),
     productId: readString(raw, 'productId', 'ProductId'),
-    name: readString(raw, 'name', 'Name'),
+    key,
+    displayName: displayName || key,
     value: readString(raw, 'value', 'Value'),
     sortOrder: readNumber(raw, 'sortOrder', 'SortOrder'),
-    isActive: true,
+    isVisible,
+    isActive: isVisible,
   }
 }
 
-export async function fetchProductAttributes(productId: string): Promise<ProductAttributeRow[]> {
-  const raw = await httpGet<unknown>(`${API_PATHS.adminProductAttributesByProduct}/${productId}`)
+function normalizeAttributeList(raw: unknown): ProductAttributeRow[] {
   if (!Array.isArray(raw)) return []
   return (raw as Raw[]).map(normalizeAttribute)
 }
 
-export async function createProductAttribute(payload: ProductAttributePayload): Promise<string> {
-  const raw = await httpPost<string | Raw>(API_PATHS.adminProductAttributes, payload)
+function parseCreatedId(raw: unknown): string {
   if (typeof raw === 'string') return raw
-  return readString(raw, 'id', 'Id')
+  if (typeof raw === 'object' && raw !== null) {
+    return readString(raw as Raw, 'id', 'Id')
+  }
+  return String(raw ?? '')
+}
+
+export async function fetchProductAttributes(productId: string): Promise<ProductAttributeRow[]> {
+  const raw = await httpGet<unknown>(`${API_PATHS.adminProductAttributesByProduct}/${productId}`)
+  return normalizeAttributeList(raw)
+}
+
+export async function createProductAttribute(payload: ProductAttributePayload): Promise<string> {
+  const id = await httpPost<unknown>(API_PATHS.adminProductAttributes, payload)
+  return parseCreatedId(id)
 }
 
 export async function updateProductAttribute(
   id: string,
   payload: ProductAttributeUpdatePayload,
 ): Promise<void> {
-  await httpPut<boolean>(`${API_PATHS.adminProductAttributes}/${id}`, payload)
+  await httpPut<unknown>(`${API_PATHS.adminProductAttributes}/${id}`, payload)
 }
 
 export async function deleteProductAttribute(id: string): Promise<void> {

@@ -11,54 +11,22 @@ import type { FormFieldOption } from '@/modules/crud/form/types'
 
 type Raw = Record<string, unknown>
 
-export type ProductDto = {
-  id: string
-  code: string
-  name: string
-  slug: string
-  categoryId: string
-  categoryName: string
-  shortDescription: string
-  description: string
-  thumbnailUrl: string
-  sortOrder: number
-  isActive: boolean
-}
-
-export type ProductPayload = {
+export type ProductCreatePayload = {
   code?: string
   name: string
   slug: string
   categoryId: string
+  countryId?: string
   shortDescription?: string
   description?: string
-  thumbnailUrl?: string
+  locationText?: string
+  isFeatured?: boolean
+  isHot?: boolean
   sortOrder: number
-}
-
-export type ProductUpdatePayload = ProductPayload & {
   isActive: boolean
 }
 
-function normalizeProductDto(raw: Raw): ProductDto {
-  return {
-    id: readString(raw, 'id', 'Id'),
-    code: readString(raw, 'code', 'Code'),
-    name: readString(raw, 'name', 'Name'),
-    slug: readString(raw, 'slug', 'Slug'),
-    categoryId: readString(raw, 'categoryId', 'CategoryId'),
-    categoryName: readString(raw, 'categoryName', 'CategoryName'),
-    shortDescription: readString(raw, 'shortDescription', 'ShortDescription'),
-    description: readString(raw, 'description', 'Description'),
-    thumbnailUrl: readString(raw, 'thumbnailUrl', 'ThumbnailUrl'),
-    sortOrder: readNumber(raw, 'sortOrder', 'SortOrder'),
-    isActive: readBool(raw, 'isActive', 'IsActive'),
-  }
-}
-
-function mapDto(dto: ProductDto): CatalogProduct {
-  return { ...dto }
-}
+export type ProductUpdatePayload = ProductCreatePayload
 
 export const PRODUCT_PAGE_SIZE_OPTIONS = [5, 10, 15, 20] as const
 
@@ -73,6 +41,36 @@ const inflightPages = new Map<string, Promise<ProductsPageResult>>()
 
 let cachedProductOptions: FormFieldOption[] | null = null
 let inflightProductOptions: Promise<FormFieldOption[]> | null = null
+
+function normalizeProductDto(raw: Raw): CatalogProduct {
+  return {
+    id: readString(raw, 'id', 'Id'),
+    code: readString(raw, 'code', 'Code'),
+    name: readString(raw, 'name', 'Name'),
+    slug: readString(raw, 'slug', 'Slug'),
+    categoryId: readString(raw, 'categoryId', 'CategoryId'),
+    categoryName: readString(raw, 'categoryName', 'CategoryName'),
+    countryId: readString(raw, 'countryId', 'CountryId'),
+    countryName: readString(raw, 'countryName', 'CountryName'),
+    shortDescription: readString(raw, 'shortDescription', 'ShortDescription'),
+    description: readString(raw, 'description', 'Description'),
+    locationText: readString(raw, 'locationText', 'LocationText'),
+    thumbnailUrl: readString(raw, 'thumbnailUrl', 'ThumbnailUrl'),
+    isFeatured: readBool(raw, 'isFeatured', 'IsFeatured'),
+    isHot: readBool(raw, 'isHot', 'IsHot'),
+    soldCount: readNumber(raw, 'soldCount', 'SoldCount'),
+    sortOrder: readNumber(raw, 'sortOrder', 'SortOrder'),
+    isActive: readBool(raw, 'isActive', 'IsActive'),
+  }
+}
+
+function parseCreatedId(raw: unknown): string {
+  if (typeof raw === 'string') return raw
+  if (typeof raw === 'object' && raw !== null) {
+    return readString(raw as Raw, 'id', 'Id')
+  }
+  return String(raw ?? '')
+}
 
 export function invalidateProductsCache(): void {
   cachedProductOptions = null
@@ -97,7 +95,7 @@ export async function fetchProductsPage(
   if (cached) return cached
 
   const request = fetchAdminProducts(pageIndex, pageSize, filters).then((paged) => ({
-    items: paged.items.map(mapDto),
+    items: paged.items,
     totalCount: paged.totalCount,
     pageIndex: paged.pageIndex,
     pageSize: paged.pageSize,
@@ -116,7 +114,7 @@ export async function fetchAdminProducts(
   pageSize = 10,
   filters: ProductListFilters = {},
 ) {
-  const raw = await httpGet<Raw>(API_PATHS.adminProducts, {
+  const data = await httpGet<Raw>(API_PATHS.adminProducts, {
     params: {
       pageIndex,
       pageSize,
@@ -127,13 +125,13 @@ export async function fetchAdminProducts(
       isActive: filters.isActive,
     },
   })
-  return normalizePaged(raw, normalizeProductDto)
+  return normalizePaged(data, normalizeProductDto)
 }
 
 export async function fetchProductDetail(id: string): Promise<CatalogProduct | null> {
   try {
     const raw = await httpGet<Raw>(`${API_PATHS.adminProducts}/${id}`)
-    return mapDto(normalizeProductDto(raw))
+    return normalizeProductDto(raw)
   } catch {
     return null
   }
@@ -158,15 +156,14 @@ export async function fetchProductOptions(): Promise<FormFieldOption[]> {
   return inflightProductOptions
 }
 
-export async function createProduct(payload: ProductPayload): Promise<string> {
-  const raw = await httpPost<string | Raw>(API_PATHS.adminProducts, payload)
+export async function createProduct(payload: ProductCreatePayload): Promise<string> {
+  const id = await httpPost<unknown>(API_PATHS.adminProducts, payload)
   invalidateProductsCache()
-  if (typeof raw === 'string') return raw
-  return readString(raw, 'id', 'Id')
+  return parseCreatedId(id)
 }
 
 export async function updateProduct(id: string, payload: ProductUpdatePayload): Promise<void> {
-  await httpPut<boolean>(`${API_PATHS.adminProducts}/${id}`, payload)
+  await httpPut<unknown>(`${API_PATHS.adminProducts}/${id}`, payload)
   invalidateProductsCache()
 }
 

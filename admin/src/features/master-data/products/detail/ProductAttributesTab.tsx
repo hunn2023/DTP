@@ -1,4 +1,4 @@
-import { Button, Card, CardHeader, Spinner } from 'react-bootstrap'
+import { Button, Spinner } from 'react-bootstrap'
 import { LuPlus, LuSearch } from 'react-icons/lu'
 
 import DataTable from '@/components/table/DataTable'
@@ -13,23 +13,25 @@ const ProductAttributesTab = ({ productId }: Props) => {
   const crud = useProductAttributesCrud({ productId, buildColumns: buildAttributeColumns })
 
   return (
-    <Card className="border-0 shadow-none">
-      <CardHeader className="border-light justify-content-between px-0">
-        <div className="app-search">
-          <input
-            type="search"
-            className="form-control form-control-sm"
-            placeholder="Tìm thuộc tính..."
-            value={crud.globalFilter}
-            onChange={(e) => crud.setGlobalFilter(e.target.value)}
-          />
-          <LuSearch className="app-search-icon text-muted" />
-        </div>
+    <div>
+      <div className="d-flex align-items-center justify-content-between mb-3">
+        <h5 className="mb-0 fw-semibold">Thuộc tính sản phẩm</h5>
         <Button variant="primary" size="sm" onClick={crud.openCreate}>
           <LuPlus className="fs-sm me-1" />
           Thêm thuộc tính
         </Button>
-      </CardHeader>
+      </div>
+
+      <div className="app-search mb-3" style={{ maxWidth: 320 }}>
+        <input
+          type="search"
+          className="form-control form-control-sm"
+          placeholder="Tìm thuộc tính..."
+          value={crud.globalFilter}
+          onChange={(e) => crud.setGlobalFilter(e.target.value)}
+        />
+        <LuSearch className="app-search-icon text-muted" />
+      </div>
 
       {crud.isLoading ? (
         <div className="text-center py-4">
@@ -62,7 +64,7 @@ const ProductAttributesTab = ({ productId }: Props) => {
           onSubmit={(values) => void crud.saveForm(values)}
         />
       )}
-    </Card>
+    </div>
   )
 }
 
