@@ -13,14 +13,22 @@ import ProvidersPage from '@/features/providers/ProvidersPage'
 import ReportPage from '@/modules/crud/components/ReportPage'
 import { createCrudPage } from '@/modules/crud/createCrudPage'
 import { customerEntities } from '@/modules/crud/entities/customers.entities'
+import AuditLogsPage from '@/features/system/audit/AuditLogsPage'
+import PermissionsPage from '@/features/system/permissions/PermissionsPage'
+import RolesPage from '@/features/system/roles/RolesPage'
+import UsersPage from '@/features/system/users/UsersPage'
 import {
   marketingEntities,
-  systemEntities,
+  systemSeedEntities,
 } from '@/modules/crud/entities/marketing-system.entities'
 import { productEntities } from '@/modules/crud/entities/products.entities'
 import { providerEntities } from '@/modules/crud/entities/providers.entities'
 import { reportEntities } from '@/modules/crud/entities/reports.entities'
-import { salesEntities } from '@/modules/crud/entities/sales.entities'
+import { ORDER_PAGE_CONFIGS } from '@/features/sales/orders/orderFilters'
+import OrdersPage from '@/features/sales/orders/OrdersPage'
+import DeliveriesPage from '@/features/sales/deliveries/DeliveriesPage'
+import PaymentTransactionsPage from '@/features/sales/payments/PaymentTransactionsPage'
+import { salesSeedEntities } from '@/modules/crud/entities/sales.entities'
 import { settingsEntities } from '@/modules/crud/entities/settings.entities'
 import { websiteEntities } from '@/modules/crud/entities/website.entities'
 import type { ResolvedAdminEntity } from '@/modules/crud/schema/defineEntity'
@@ -43,12 +51,12 @@ export const allAdminEntities: ResolvedAdminEntity<CrudEntityBase>[] = [
   ...settingsEntities,
   ...productEntities,
   ...providerEntities,
-  ...salesEntities,
+  ...salesSeedEntities,
   ...customerEntities,
   ...websiteEntities,
   ...marketingEntities,
   ...reportEntities,
-  ...systemEntities,
+  ...systemSeedEntities,
 ] as unknown as ResolvedAdminEntity<CrudEntityBase>[]
 
 function entityRoute(entity: ResolvedAdminEntity<CrudEntityBase>): RouteObject {
@@ -127,8 +135,56 @@ const productPricesRoute: RouteObject = {
   element: <ProductPricesPage />,
 }
 
+const systemApiRoutes: RouteObject[] = [
+  { path: '/system/admin-users', element: <UsersPage /> },
+  { path: '/system/roles', element: <RolesPage /> },
+  { path: '/system/permissions', element: <PermissionsPage /> },
+  {
+    path: '/system/audit-logs',
+    element: (
+      <AuditLogsPage
+        title="Nhật ký thao tác"
+        description="Audit log từ API admin/audit/logs — chỉ xem."
+      />
+    ),
+  },
+]
+
+const salesApiRoutes: RouteObject[] = [
+  ...ORDER_PAGE_CONFIGS.map((config) => ({
+    path: config.path,
+    element: <OrdersPage config={config} />,
+  })),
+  {
+    path: '/payments/transactions',
+    element: <PaymentTransactionsPage />,
+  },
+  {
+    path: '/deliveries/list',
+    element: (
+      <DeliveriesPage
+        title="Danh sách giao hàng"
+        description="Digital delivery: eSIM QR, mã thẻ."
+      />
+    ),
+  },
+  {
+    path: '/deliveries/retry',
+    element: (
+      <DeliveriesPage
+        title="Retry giao hàng"
+        description="Đơn giao lỗi cần retry."
+        filters={{ status: 4 }}
+        searchPlaceholder="Tìm đơn lỗi giao hàng..."
+      />
+    ),
+  },
+]
+
 export const dtpAdminRoutes: RouteObject[] = [
   ...redirectRoutes,
+  ...systemApiRoutes,
+  ...salesApiRoutes,
   categoriesRoute,
   countriesRoute,
   carriersRoute,

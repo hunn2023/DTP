@@ -347,7 +347,6 @@ export const menuItems: MenuItemType[] = [
       { key: 'admin-users', label: 'Tài khoản quản trị', url: '/system/admin-users' },
       { key: 'roles', label: 'Vai trò', url: '/system/roles' },
       { key: 'permissions', label: 'Phân quyền', url: '/system/permissions' },
-      { key: 'login-history', label: 'Lịch sử đăng nhập', url: '/system/login-history' },
       { key: 'audit-logs', label: 'Nhật ký thao tác', url: '/system/audit-logs' },
       { key: 'system-settings', label: 'Cấu hình hệ thống', url: '/system/settings' },
     ],

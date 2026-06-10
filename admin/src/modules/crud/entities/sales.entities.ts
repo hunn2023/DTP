@@ -550,6 +550,21 @@ export const deliveryLogsEntity = defineAdminEntity<DeliveryLog>({
   ],
 })
 
+/** Các route đã gắn API — không dùng CRUD seed trong registry. */
+export const salesApiBackedPaths = new Set([
+  '/orders/all',
+  '/orders/pending',
+  '/orders/paid',
+  '/orders/processing',
+  '/orders/delivered',
+  '/orders/failed',
+  '/orders/cancelled',
+  '/orders/refunded',
+  '/payments/transactions',
+  '/deliveries/list',
+  '/deliveries/retry',
+])
+
 export const salesEntities = [
   ordersAllEntity,
   ordersPendingEntity,
@@ -571,3 +586,5 @@ export const salesEntities = [
   deliveryRetryEntity,
   deliveryLogsEntity,
 ]
+
+export const salesSeedEntities = salesEntities.filter((entity) => !salesApiBackedPaths.has(entity.path))

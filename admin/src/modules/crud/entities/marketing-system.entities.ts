@@ -306,41 +306,6 @@ export const permissionsEntity = defineAdminEntity<Permission>({
   ],
 })
 
-export const loginHistoryEntity = defineAdminEntity<AuditLog>({
-  path: '/system/login-history',
-  title: 'Lịch sử đăng nhập',
-  breadcrumbSubtitle: sysSub,
-  description: 'Log đăng nhập admin.',
-  entityName: 'bản ghi',
-  labels: labels('bản ghi', 'Tìm user...', 'Thêm'),
-  capabilities: readonlyCrudCapabilities,
-  seedData: [
-    {
-      id: 1,
-      userId: 1,
-      userEmail: 'staff@ezsim.vn',
-      entityName: 'Auth',
-      entityId: 0,
-      action: 'LoginSuccess',
-      oldValue: '',
-      newValue: '',
-      createdAt: '2026-06-01 08:00',
-      isActive: true,
-    },
-  ],
-  fields: [
-    { name: 'createdAt', label: 'Thời gian', type: 'text', table: true, form: false },
-    { name: 'userId', label: 'ID người dùng', type: 'number', table: true, form: false },
-    { name: 'userEmail', label: 'Người dùng', type: 'text', table: { variant: 'primary' }, form: false },
-    { name: 'entityName', label: 'Đối tượng', type: 'text', table: true, form: false },
-    { name: 'entityId', label: 'ID đối tượng', type: 'number', table: true, form: false },
-    { name: 'action', label: 'Hành động', type: 'text', table: true, form: false },
-    { name: 'oldValue', label: 'Giá trị cũ', type: 'text', table: false, form: false },
-    { name: 'newValue', label: 'Giá trị mới', type: 'text', table: false, form: false },
-    { name: 'isActive', label: '—', type: 'checkbox', form: false, table: false },
-  ],
-})
-
 export const auditLogsEntity = defineAdminEntity<AuditLog>({
   path: '/system/audit-logs',
   title: 'Nhật ký thao tác',
@@ -414,11 +379,22 @@ export const marketingEntities = [
   emailQueueEntity,
 ]
 
+/** Các route đã gắn API — không dùng CRUD seed trong registry. */
+export const systemApiBackedPaths = new Set([
+  '/system/admin-users',
+  '/system/roles',
+  '/system/permissions',
+  '/system/audit-logs',
+])
+
 export const systemEntities = [
   adminUsersEntity,
   rolesEntity,
   permissionsEntity,
-  loginHistoryEntity,
   auditLogsEntity,
   systemSettingsEntity,
 ]
+
+export const systemSeedEntities = systemEntities.filter(
+  (entity) => !systemApiBackedPaths.has(entity.path),
+)
