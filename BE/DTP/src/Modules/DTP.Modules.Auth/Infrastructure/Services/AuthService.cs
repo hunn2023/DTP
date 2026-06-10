@@ -21,9 +21,9 @@ namespace DTP.Modules.Auth.Infrastructure.Services
         private readonly IPasswordHasher _passwordHasher;
         private readonly IOtpService _otpService;
         private readonly IJwtService _jwtService;
-        private readonly IRateLimitService _rateLimitService;
         private readonly IEmailSender _emailSender;
         private readonly IAuditLogWriter _auditLogWriter;
+        private readonly IAuthRateLimitService _authRateLimitService;
         public AuthService(
             IUserRepository userRepository,
             IRoleRepository roleRepository,
@@ -33,7 +33,7 @@ namespace DTP.Modules.Auth.Infrastructure.Services
             IPasswordHasher passwordHasher,
             IOtpService otpService,
             IJwtService jwtService,
-            IRateLimitService rateLimitService,
+            IAuthRateLimitService  authRateLimitService,
             IEmailSender emailSender,
             IAuditLogWriter auditLogWriter)
         {
@@ -45,67 +45,50 @@ namespace DTP.Modules.Auth.Infrastructure.Services
             _passwordHasher = passwordHasher;
             _otpService = otpService;
             _jwtService = jwtService;
-            _rateLimitService = rateLimitService;
+            _authRateLimitService = authRateLimitService;
             _emailSender = emailSender;
             _auditLogWriter = auditLogWriter;
         }
 
         public async Task<Result> RegisterAsync(
-      RegisterRequestDto request,
-      string? ipAddress,
-      string? userAgent,
-      CancellationToken cancellationToken = default)
+          RegisterRequestDto request,
+          string? ipAddress,
+          string? userAgent,
+          CancellationToken cancellationToken = default)
         {
             var email = request.Email.Trim().ToLower();
             var ip = ipAddress ?? "unknown";
 
-            var ipAllowed = await _rateLimitService.IsAllowedAsync(
-                $"auth:register:ip:{ip}",
-                5,
-                TimeSpan.FromMinutes(10));
+            var registerBlocked = await _authRateLimitService.IsRegisterBlockedAsync(
+                                email,
+                                ip,
+                                cancellationToken);
 
-            if (!ipAllowed)
+            if (registerBlocked)
             {
                 await WriteAuditSafeAsync(
                     action: "Register Failed",
                     actionType: AuditActionType.Create,
                     status: AuditStatus.Failed,
                     entityName: "PendingRegistration",
-                    description: "Register failed because IP rate limit exceeded.",
+                    description: "Register failed because register rate limit exceeded.",
                     newValues: new
                     {
                         Email = email,
                         IpAddress = ip,
-                        Reason = "IP rate limit exceeded"
+                        Reason = "Register rate limit exceeded"
                     },
                     cancellationToken: cancellationToken);
 
                 return Result.Failure("Bạn đăng ký quá nhiều lần. Vui lòng thử lại sau.");
             }
 
-            var emailAllowed = await _rateLimitService.IsAllowedAsync(
-                $"auth:register:email:{email}",
-                3,
-                TimeSpan.FromMinutes(10));
+            await _authRateLimitService.RegisterRegisterAttemptAsync(
+                    email,
+                    ip,
+                    cancellationToken);
 
-            if (!emailAllowed)
-            {
-                await WriteAuditSafeAsync(
-                    action: "Register Failed",
-                    actionType: AuditActionType.Create,
-                    status: AuditStatus.Failed,
-                    entityName: "PendingRegistration",
-                    description: "Register failed because email rate limit exceeded.",
-                    newValues: new
-                    {
-                        Email = email,
-                        IpAddress = ip,
-                        Reason = "Email rate limit exceeded"
-                    },
-                    cancellationToken: cancellationToken);
-
-                return Result.Failure("Email này gửi yêu cầu quá nhiều lần. Vui lòng thử lại sau.");
-            }
+        
 
             var exists = await _userRepository.ExistsByEmailAsync(
                 email,
@@ -157,17 +140,7 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                 cancellationToken);
 
 
-            var emailBody = new BodyBuilder
-            {
-                HtmlBody = $@"
-                <div style='font-family:Arial,sans-serif'>
-                    <h2>Xác thực tài khoản DTP</h2>
-                    <p>Mã OTP của bạn là:</p>
-                    <h1 style='letter-spacing:4px'>{otp}</h1>
-                    <p>Mã này có hiệu lực trong 10 phút.</p>
-                    <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.</p>
-                </div>"
-            }.ToString();
+            var emailBody = BuildRegisterOtpEmailBody(otp);
 
 
             await _emailSender.SendAsync(email, "Mã xác thực đăng ký DTP", emailBody);
@@ -195,10 +168,45 @@ namespace DTP.Modules.Auth.Infrastructure.Services
         }
 
         public async Task<Result> VerifyRegisterOtpAsync(
-    VerifyOtpRequestDto request,
-    CancellationToken cancellationToken = default)
+             VerifyOtpRequestDto request,
+             CancellationToken cancellationToken = default)
         {
             var email = request.Email.Trim().ToLower();
+            var ipAddress = request.IpAddress.Trim();
+            var userAgent = request.UserAgent;
+            ipAddress = string.IsNullOrWhiteSpace(ipAddress)
+                ? "unknown"
+                : ipAddress.Trim();
+
+            userAgent = string.IsNullOrWhiteSpace(userAgent)
+                ? null
+                : userAgent.Trim();
+
+            var isOtpBlocked = await _authRateLimitService.IsOtpBlockedAsync(
+                email,
+                ipAddress,
+                cancellationToken);
+
+            if (isOtpBlocked)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Verify Register OTP Blocked",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "PendingRegistration",
+                    description: "Verify register OTP was blocked by rate limit.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        Reason = "OTP verify rate limit exceeded",
+                        BlockedAt = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Bạn nhập OTP quá nhiều lần. Vui lòng thử lại sau 15 phút.");
+            }
 
             var pending = await _pendingRegistrationRepository.GetByEmailAsync(
                 email,
@@ -206,6 +214,11 @@ namespace DTP.Modules.Auth.Infrastructure.Services
 
             if (pending == null)
             {
+                await _authRateLimitService.RegisterOtpVerifyFailedAsync(
+                    email,
+                    ipAddress,
+                    cancellationToken);
+
                 await WriteAuditSafeAsync(
                     action: "Verify Register OTP Failed",
                     actionType: AuditActionType.Create,
@@ -215,7 +228,10 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                     newValues: new
                     {
                         Email = email,
-                        Reason = "Pending registration not found"
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        Reason = "Pending registration not found",
+                        FailedAt = DateTime.UtcNow
                     },
                     cancellationToken: cancellationToken);
 
@@ -224,6 +240,11 @@ namespace DTP.Modules.Auth.Infrastructure.Services
 
             if (pending.OtpExpiredAt < DateTime.UtcNow)
             {
+                await _authRateLimitService.RegisterOtpVerifyFailedAsync(
+                    email,
+                    ipAddress,
+                    cancellationToken);
+
                 await WriteAuditSafeAsync(
                     action: "Verify Register OTP Failed",
                     actionType: AuditActionType.Create,
@@ -236,7 +257,10 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                         pending.Id,
                         pending.Email,
                         pending.OtpExpiredAt,
-                        Reason = "OTP expired"
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        Reason = "OTP expired",
+                        FailedAt = DateTime.UtcNow
                     },
                     cancellationToken: cancellationToken);
 
@@ -245,6 +269,11 @@ namespace DTP.Modules.Auth.Infrastructure.Services
 
             if (pending.VerifyFailedCount >= 5)
             {
+                await _authRateLimitService.RegisterOtpVerifyFailedAsync(
+                    email,
+                    ipAddress,
+                    cancellationToken);
+
                 await WriteAuditSafeAsync(
                     action: "Verify Register OTP Failed",
                     actionType: AuditActionType.Create,
@@ -257,7 +286,10 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                         pending.Id,
                         pending.Email,
                         pending.VerifyFailedCount,
-                        Reason = "Verify failed count exceeded"
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        Reason = "Verify failed count exceeded",
+                        FailedAt = DateTime.UtcNow
                     },
                     cancellationToken: cancellationToken);
 
@@ -277,6 +309,11 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                 await _pendingRegistrationRepository.SaveChangesAsync(
                     cancellationToken);
 
+                await _authRateLimitService.RegisterOtpVerifyFailedAsync(
+                    email,
+                    ipAddress,
+                    cancellationToken);
+
                 await WriteAuditSafeAsync(
                     action: "Verify Register OTP Failed",
                     actionType: AuditActionType.Create,
@@ -289,7 +326,10 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                         pending.Id,
                         pending.Email,
                         pending.VerifyFailedCount,
-                        Reason = "Invalid OTP"
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        Reason = "Invalid OTP",
+                        FailedAt = DateTime.UtcNow
                     },
                     cancellationToken: cancellationToken);
 
@@ -303,6 +343,11 @@ namespace DTP.Modules.Auth.Infrastructure.Services
 
             if (exists)
             {
+                await _authRateLimitService.RegisterOtpVerifyFailedAsync(
+                    email,
+                    ipAddress,
+                    cancellationToken);
+
                 await WriteAuditSafeAsync(
                     action: "Verify Register OTP Failed",
                     actionType: AuditActionType.Create,
@@ -312,7 +357,10 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                     newValues: new
                     {
                         Email = email,
-                        Reason = "Email already exists"
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        Reason = "Email already exists",
+                        FailedAt = DateTime.UtcNow
                     },
                     cancellationToken: cancellationToken);
 
@@ -335,7 +383,10 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                     {
                         Email = email,
                         RoleCode = "CUSTOMER",
-                        Reason = "Role CUSTOMER not found"
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        Reason = "Role CUSTOMER not found",
+                        FailedAt = DateTime.UtcNow
                     },
                     cancellationToken: cancellationToken);
 
@@ -367,6 +418,11 @@ namespace DTP.Modules.Auth.Infrastructure.Services
             await _userRepository.SaveChangesAsync(
                 cancellationToken);
 
+            await _authRateLimitService.RegisterOtpVerifySuccessAsync(
+                email,
+                ipAddress,
+                cancellationToken);
+
             await WriteAuditSafeAsync(
                 action: "Register Verified",
                 actionType: AuditActionType.Create,
@@ -382,7 +438,10 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                     user.FullName,
                     user.EmailConfirmed,
                     user.IsActive,
-                    Role = role.Code
+                    Role = role.Code,
+                    IpAddress = ipAddress,
+                    UserAgent = userAgent,
+                    VerifiedAt = DateTime.UtcNow
                 },
                 cancellationToken: cancellationToken);
 
@@ -391,35 +450,36 @@ namespace DTP.Modules.Auth.Infrastructure.Services
 
 
         public async Task<Result<LoginResponseDto>> LoginAsync(
-    LoginRequestDto request,
-    string? ipAddress,
-    CancellationToken cancellationToken = default)
+            LoginRequestDto request,
+            string? ipAddress,
+            CancellationToken cancellationToken = default)
         {
             var email = request.Email.Trim().ToLower();
             var ip = ipAddress ?? "unknown";
 
-            var allowed = await _rateLimitService.IsAllowedAsync(
-                $"auth:login:email:{email}",
-                10,
-                TimeSpan.FromMinutes(15));
+            var loginBlocked = await _authRateLimitService.IsLoginBlockedAsync(
+                    email,
+                    ip,
+                    cancellationToken);
 
-            if (!allowed)
+            if (loginBlocked)
             {
                 await WriteAuditSafeAsync(
                     action: "Login Failed",
                     actionType: AuditActionType.Login,
                     status: AuditStatus.Failed,
                     entityName: "User",
-                    description: "Login failed because email rate limit exceeded.",
+                    description: "Login failed because login rate limit exceeded.",
                     newValues: new
                     {
                         Email = email,
                         IpAddress = ip,
-                        Reason = "Login rate limit exceeded"
+                        Reason = "Login blocked by email or IP"
                     },
                     cancellationToken: cancellationToken);
 
-                return Result<LoginResponseDto>.Failure("Bạn đăng nhập sai quá nhiều lần. Vui lòng thử lại sau.");
+                return Result<LoginResponseDto>.Failure(
+                    "Bạn đăng nhập sai quá nhiều lần. Vui lòng thử lại sau.");
             }
 
             var user = await _userRepository.GetByEmailAsync(
@@ -428,6 +488,11 @@ namespace DTP.Modules.Auth.Infrastructure.Services
 
             if (user == null)
             {
+                await _authRateLimitService.RegisterLoginFailedAsync(
+                          email,
+                          ip,
+                          cancellationToken);
+
                 await WriteAuditSafeAsync(
                     action: "Login Failed",
                     actionType: AuditActionType.Login,
@@ -474,6 +539,11 @@ namespace DTP.Modules.Auth.Infrastructure.Services
 
             if (!validPassword)
             {
+                await _authRateLimitService.RegisterLoginFailedAsync(
+                 email,
+                 ip,
+                 cancellationToken);
+
                 await WriteAuditSafeAsync(
                     action: "Login Failed",
                     actionType: AuditActionType.Login,
@@ -537,14 +607,20 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                 },
                 cancellationToken: cancellationToken);
 
+
+            await _authRateLimitService.RegisterLoginSuccessAsync(
+                    email,
+                    ip,
+                    cancellationToken);
+
             return result;
         }
 
 
         public async Task<Result<LoginResponseDto>> RefreshTokenAsync(
-    string refreshToken,
-    string? ipAddress,
-    CancellationToken cancellationToken = default)
+            string refreshToken,
+            string? ipAddress,
+            CancellationToken cancellationToken = default)
         {
             var ip = ipAddress ?? "unknown";
 
@@ -682,9 +758,9 @@ namespace DTP.Modules.Auth.Infrastructure.Services
         }
 
         public async Task<Result> LogoutAsync(
-    string refreshToken,
-    string? ipAddress,
-    CancellationToken cancellationToken = default)
+            string refreshToken,
+            string? ipAddress,
+            CancellationToken cancellationToken = default)
         {
             var ip = ipAddress ?? "unknown";
 
@@ -762,8 +838,8 @@ namespace DTP.Modules.Auth.Infrastructure.Services
         }
 
         public async Task<Result<UserDto>> GetProfileAsync(
-    Guid userId,
-    CancellationToken cancellationToken = default)
+            Guid userId,
+            CancellationToken cancellationToken = default)
         {
             var user = await _userRepository.GetByIdWithRolesAsync(
                 userId,
@@ -807,9 +883,9 @@ namespace DTP.Modules.Auth.Infrastructure.Services
         }
 
         private async Task<Result<LoginResponseDto>> GenerateLoginResponseAsync(
-       User user,
-       string? ipAddress,
-       CancellationToken cancellationToken)
+           User user,
+           string? ipAddress,
+           CancellationToken cancellationToken)
         {
             var roles = user.UserRoles
                 .Select(x => x.Role.Code)
@@ -856,6 +932,160 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                 User = MapUserDto(user),
                 Permissions = permissions
             });
+        }
+
+
+        public async Task<Result> ResendRegisterOtpAsync(
+            ResendRegisterOtpRequestDto request,
+            string? ipAddress,
+            string? userAgent,
+            CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                return Result.Failure("Dữ liệu gửi lại OTP không hợp lệ.");
+
+            if (string.IsNullOrWhiteSpace(request.Email))
+                return Result.Failure("Vui lòng nhập email.");
+
+            var email = request.Email.Trim().ToLowerInvariant();
+            var ip = string.IsNullOrWhiteSpace(ipAddress) ? "unknown" : ipAddress.Trim();
+
+            var otpBlocked = await _authRateLimitService.IsOtpBlockedAsync(
+                email,
+                ip,
+                cancellationToken);
+
+            if (otpBlocked)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Resend Register OTP Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "PendingRegistration",
+                    description: "Resend register OTP failed because OTP rate limit exceeded.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "OTP rate limit exceeded"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Bạn yêu cầu gửi OTP quá nhiều lần. Vui lòng thử lại sau.");
+            }
+
+            var existsUser = await _userRepository.ExistsByEmailAsync(
+                email,
+                null,
+                cancellationToken);
+
+            if (existsUser)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Resend Register OTP Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    description: "Resend register OTP failed because email already exists.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "Email already exists"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Email đã tồn tại.");
+            }
+
+            var pending = await _pendingRegistrationRepository.GetByEmailAsync(
+                email,
+                cancellationToken);
+
+            if (pending == null)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Resend Register OTP Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "PendingRegistration",
+                    description: "Resend register OTP failed because pending registration was not found.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "Pending registration not found"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Không tìm thấy yêu cầu đăng ký. Vui lòng đăng ký lại.");
+            }
+
+            var otp = _otpService.GenerateOtp();
+
+            pending.OtpCodeHash = _otpService.HashOtp(otp);
+            pending.OtpExpiredAt = DateTime.UtcNow.AddMinutes(10);
+            pending.VerifyFailedCount = 0;
+            pending.IpAddress = ip;
+            pending.UserAgent = userAgent;
+
+            _pendingRegistrationRepository.Update(pending);
+
+            await _pendingRegistrationRepository.SaveChangesAsync(
+                cancellationToken);
+
+            var emailBody = BuildRegisterOtpEmailBody(otp);
+
+            await _emailSender.SendAsync(
+                email,
+                "Mã xác thực đăng ký DTP",
+                emailBody);
+
+            await _authRateLimitService.RegisterOtpSentAsync(
+                email,
+                ip,
+                cancellationToken);
+
+            await WriteAuditSafeAsync(
+                action: "Resend Register OTP Success",
+                actionType: AuditActionType.Create,
+                status: AuditStatus.Success,
+                entityName: "PendingRegistration",
+                entityId: pending.Id,
+                description: "Register OTP was resent successfully.",
+                newValues: new
+                {
+                    pending.Id,
+                    pending.Email,
+                    pending.Phone,
+                    pending.FullName,
+                    pending.OtpExpiredAt,
+                    pending.VerifyFailedCount,
+                    IpAddress = ip,
+                    UserAgent = userAgent
+                },
+                cancellationToken: cancellationToken);
+
+            return Result.Success();
+        }
+
+
+        private static string BuildRegisterOtpEmailBody(string otp)
+        {
+            return new BodyBuilder
+            {
+                HtmlBody = $@"
+                <div style='font-family:Arial,sans-serif'>
+                    <h2>Xác thực tài khoản DTP</h2>
+                    <p>Mã OTP của bạn là:</p>
+                    <h1 style='letter-spacing:4px'>{otp}</h1>
+                    <p>Mã này có hiệu lực trong 10 phút.</p>
+                    <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.</p>
+                </div>"
+            }.ToString();
         }
 
         private async Task WriteAuditSafeAsync(

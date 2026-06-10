@@ -17,7 +17,8 @@ namespace DTP.Modules.Delivery.Application.Abstractions.Services
 
         Task<Result> ProcessAsync(
             Guid deliveryId,
-            CancellationToken cancellationToken = default); 
+              string? ipAddress,
+            CancellationToken cancellationToken = default);
 
         Task<Result> MarkDeliveredAsync(
             Guid deliveryId,

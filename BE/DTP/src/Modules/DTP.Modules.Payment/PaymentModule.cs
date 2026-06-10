@@ -49,9 +49,9 @@ namespace DTP.Modules.Payment
             services.AddScoped<IPaymentService, PaymentService>(); 
             services.AddScoped<IVnptEpayClient, VnptEpayClient>();
             services.AddScoped<IPaymentAuditService, PaymentAuditService>();
-            // DÒNG ĐANG THIẾU
-            services.AddScoped<IOrderPaymentService, OrderPaymentService>();
 
+            services.AddScoped<IOrderPaymentService, OrderPaymentService>();
+            services.AddScoped<IPaymentRateLimitService, PaymentRateLimitService>();
 
             services.AddMediatR(cfg =>
             {

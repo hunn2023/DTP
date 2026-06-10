@@ -42,6 +42,9 @@ namespace DTP.Modules.Ordering
 
             services.AddScoped<IOrderDeliveryReader, OrderDeliveryReader>();
             services.AddScoped<IOrderService, OrderService>();
+
+            services.AddScoped<IOrderRateLimitService, OrderRateLimitService>();
+
             services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(OrderingModule).Assembly);

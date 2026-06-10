@@ -100,6 +100,15 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             int pageSize,
             CancellationToken cancellationToken = default)
         {
+            if (pageIndex <= 0)
+                pageIndex = 1;
+
+            if (pageSize <= 0)
+                pageSize = 10;
+
+            if (pageSize > 100)
+                pageSize = 100;
+
             var query = _context.Categories
                 .AsNoTracking()
                 .Where(x => x.IsActive);

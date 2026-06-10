@@ -31,5 +31,13 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
             int pageIndex,
             int pageSize,
             CancellationToken cancellationToken = default);
+
+
+        Task<PagedResultDto<HomeCountryEsimDto>> GetHomeCountriesAsync(
+            string? region,
+            string? keyword,
+            int pageIndex,
+            int pageSize,
+            CancellationToken cancellationToken = default);
     }
 }

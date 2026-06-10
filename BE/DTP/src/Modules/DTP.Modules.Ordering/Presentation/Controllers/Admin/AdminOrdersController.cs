@@ -6,6 +6,7 @@ using DTP.Modules.Ordering.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DTP.Modules.Ordering.Presentation.Controllers.Admin
 {
@@ -21,6 +22,7 @@ namespace DTP.Modules.Ordering.Presentation.Controllers.Admin
             _mediator = mediator;
         }
 
+        [EnableRateLimiting("ordering-admin")]
         [HttpGet]
         public async Task<IActionResult> GetPaged(
       [FromQuery] string? keyword,

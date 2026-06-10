@@ -41,5 +41,14 @@ namespace DTP.Modules.Catalog.Application.DTOs
         public int SortOrder { get; set; }
 
         public bool IsActive { get; set; }
+
+
+        public decimal? SalePrice { get; set; }
+        public decimal? OriginalPrice { get; set; }
+
+        public decimal? MinPrice { get; set; }
+        public string? Currency { get; set; }
+        public int VariantCount { get; set; }
+
     }
 }

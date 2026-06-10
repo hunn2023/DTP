@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  
+  <ItemGroup>
     <ProjectReference Include="..\..\DTP.Shared\DTP.Shared.csproj" />
     <ProjectReference Include="..\DTP.Modules.Audit\DTP.Modules.Audit.csproj" />
     <ProjectReference Include="..\DTP.Modules.Catalog\DTP.Modules.Catalog.csproj" />

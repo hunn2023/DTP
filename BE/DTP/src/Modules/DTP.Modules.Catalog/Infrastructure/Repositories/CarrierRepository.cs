@@ -127,7 +127,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     Slug = x.Slug,
                     LogoUrl = x.LogoUrl,
                     SortOrder = x.SortOrder,
-                    IsActive = x.IsActive
+                    IsActive = x.IsActive,
+                    CountryId = x.CountryId
                 })
                 .ToListAsync(cancellationToken);
 

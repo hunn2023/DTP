@@ -5,6 +5,7 @@ using DTP.Modules.Delivery.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using DTP.Shared.Application.Http;
 
 namespace DTP.Modules.Delivery.Presentation.Controllers.Admin
 {
@@ -68,8 +69,10 @@ namespace DTP.Modules.Delivery.Presentation.Controllers.Admin
             Guid id,
             CancellationToken cancellationToken = default)
         {
+            var ip = HttpContext.GetClientIp();
+
             var result = await _mediator.Send(
-                new ProcessDeliveryCommand(id),
+                new ProcessDeliveryCommand(id, ip),
                 cancellationToken);
 
             return Ok(result);

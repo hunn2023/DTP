@@ -96,5 +96,18 @@ namespace DTP.Modules.Ordering.Infrastructure.Repositories
                 .Take(pageSize)
                 .ToListAsync(cancellationToken);
         }
+
+        public async Task<int> CountWaitingPaymentOrdersAsync(
+                Guid userId,
+                CancellationToken cancellationToken = default)
+        {
+            return await _dbContext.Orders
+                .AsNoTracking()
+                .CountAsync(x =>
+                    x.CustomerId == userId &&
+                    x.Status == OrderStatus.PendingPayment &&
+                    x.PaymentStatus == OrderPaymentStatus.Unpaid,
+                    cancellationToken);
+        }
     }
 }

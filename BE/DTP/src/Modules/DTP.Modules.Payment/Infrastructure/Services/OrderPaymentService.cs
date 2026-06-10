@@ -1,5 +1,6 @@
 ﻿using DTP.Modules.Ordering.Application.Abstractions.Repositories;
 using DTP.Modules.Payment.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,11 +38,12 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 CustomerId = order.CustomerId,
                 TotalAmount = order.TotalAmount,
                 Currency = order.Currency,
-                Status = order.Status.ToString()
+                Status = order.Status.ToString(),
+                PaymentExpiredAt  = order.PaymentExpiredAt
             };
         }
 
-        public async Task MarkOrderPaidAsync(
+        public async Task<Result> MarkOrderPaidAsync(
             Guid orderId,
             Guid paymentTransactionId,
             string? providerTransactionId,
@@ -51,13 +53,15 @@ namespace DTP.Modules.Payment.Infrastructure.Services
             var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
 
             if (order == null)
-                throw new InvalidOperationException("Order not found.");
+                return Result.Failure("Order not found.");
 
             order.MarkPaid(paymentTransactionId.ToString());
 
             _orderRepository.Update(order);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return Result.Success();
         }
     }
 }
