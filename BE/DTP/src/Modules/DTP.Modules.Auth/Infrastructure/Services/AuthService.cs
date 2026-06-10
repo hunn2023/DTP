@@ -1,8 +1,12 @@
-﻿using DTP.Modules.Auth.Application.Abstractions.Repositories;
+﻿using DTP.Modules.Audit.Application.Abstractions.Services;
+using DTP.Modules.Audit.Domain.Enums;
+using DTP.Modules.Auth.Application.Abstractions.Repositories;
 using DTP.Modules.Auth.Application.Abstractions.Services;
 using DTP.Modules.Auth.Application.DTOs;
 using DTP.Modules.Auth.Domain.Entities;
 using DTP.Shared.Application;
+using DTP.Shared.Application.Emails;
+using MimeKit;
 
 
 namespace DTP.Modules.Auth.Infrastructure.Services
@@ -17,9 +21,9 @@ namespace DTP.Modules.Auth.Infrastructure.Services
         private readonly IPasswordHasher _passwordHasher;
         private readonly IOtpService _otpService;
         private readonly IJwtService _jwtService;
-        private readonly IRateLimitService _rateLimitService;
         private readonly IEmailSender _emailSender;
-
+        private readonly IAuditLogWriter _auditLogWriter;
+        private readonly IAuthRateLimitService _authRateLimitService;
         public AuthService(
             IUserRepository userRepository,
             IRoleRepository roleRepository,
@@ -29,8 +33,9 @@ namespace DTP.Modules.Auth.Infrastructure.Services
             IPasswordHasher passwordHasher,
             IOtpService otpService,
             IJwtService jwtService,
-            IRateLimitService rateLimitService,
-            IEmailSender emailSender)
+            IAuthRateLimitService  authRateLimitService,
+            IEmailSender emailSender,
+            IAuditLogWriter auditLogWriter)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
@@ -40,41 +45,78 @@ namespace DTP.Modules.Auth.Infrastructure.Services
             _passwordHasher = passwordHasher;
             _otpService = otpService;
             _jwtService = jwtService;
-            _rateLimitService = rateLimitService;
+            _authRateLimitService = authRateLimitService;
             _emailSender = emailSender;
+            _auditLogWriter = auditLogWriter;
         }
 
         public async Task<Result> RegisterAsync(
-            RegisterRequestDto request,
-            string? ipAddress,
-            string? userAgent,
-            CancellationToken cancellationToken = default)
+          RegisterRequestDto request,
+          string? ipAddress,
+          string? userAgent,
+          CancellationToken cancellationToken = default)
         {
             var email = request.Email.Trim().ToLower();
             var ip = ipAddress ?? "unknown";
 
-            var ipAllowed = await _rateLimitService.IsAllowedAsync(
-                $"auth:register:ip:{ip}",
-                5,
-                TimeSpan.FromMinutes(10));
+            var registerBlocked = await _authRateLimitService.IsRegisterBlockedAsync(
+                                email,
+                                ip,
+                                cancellationToken);
 
-            if (!ipAllowed)
+            if (registerBlocked)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Register Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "PendingRegistration",
+                    description: "Register failed because register rate limit exceeded.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ip,
+                        Reason = "Register rate limit exceeded"
+                    },
+                    cancellationToken: cancellationToken);
+
                 return Result.Failure("Bạn đăng ký quá nhiều lần. Vui lòng thử lại sau.");
+            }
 
-            var emailAllowed = await _rateLimitService.IsAllowedAsync(
-                $"auth:register:email:{email}",
-                3,
-                TimeSpan.FromMinutes(10));
+            await _authRateLimitService.RegisterRegisterAttemptAsync(
+                    email,
+                    ip,
+                    cancellationToken);
 
-            if (!emailAllowed)
-                return Result.Failure("Email này gửi yêu cầu quá nhiều lần. Vui lòng thử lại sau.");
+        
 
-            var exists = await _userRepository.ExistsByEmailAsync(email, null, cancellationToken);
+            var exists = await _userRepository.ExistsByEmailAsync(
+                email,
+                null,
+                cancellationToken);
 
             if (exists)
-                return Result.Failure("Email đã tồn tại.");
+            {
+                await WriteAuditSafeAsync(
+                    action: "Register Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    description: "Register failed because email already exists.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ip,
+                        Reason = "Email already exists"
+                    },
+                    cancellationToken: cancellationToken);
 
-            await _pendingRegistrationRepository.DeleteByEmailAsync(email, cancellationToken);
+                return Result.Failure("Email đã tồn tại.");
+            }
+
+            await _pendingRegistrationRepository.DeleteByEmailAsync(
+                email,
+                cancellationToken);
 
             var otp = _otpService.GenerateOtp();
 
@@ -90,53 +132,267 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                 UserAgent = userAgent
             };
 
-            await _pendingRegistrationRepository.AddAsync(pending, cancellationToken);
-            await _pendingRegistrationRepository.SaveChangesAsync(cancellationToken);
+            await _pendingRegistrationRepository.AddAsync(
+                pending,
+                cancellationToken);
 
-            await _emailSender.SendOtpAsync(email, otp);
+            await _pendingRegistrationRepository.SaveChangesAsync(
+                cancellationToken);
 
+
+            var emailBody = BuildRegisterOtpEmailBody(otp);
+
+
+            await _emailSender.SendAsync(email, $"{otp} - Mã xác thực đăng ký ezsim của bạn", emailBody);
+
+            await WriteAuditSafeAsync(
+                action: "Register Requested",
+                actionType: AuditActionType.Create,
+                status: AuditStatus.Success,
+                entityName: "PendingRegistration",
+                entityId: pending.Id,
+                description: "User requested registration OTP.",
+                newValues: new
+                {
+                    pending.Id,
+                    pending.Email,
+                    pending.Phone,
+                    pending.FullName,
+                    pending.OtpExpiredAt,
+                    IpAddress = ip,
+                    UserAgent = userAgent
+                },
+                cancellationToken: cancellationToken);
 
             return Result.Success();
         }
 
         public async Task<Result> VerifyRegisterOtpAsync(
-            VerifyOtpRequestDto request,
-            CancellationToken cancellationToken = default)
+             VerifyOtpRequestDto request,
+             CancellationToken cancellationToken = default)
         {
             var email = request.Email.Trim().ToLower();
+            var ipAddress = request.IpAddress.Trim();
+            var userAgent = request.UserAgent;
+            ipAddress = string.IsNullOrWhiteSpace(ipAddress)
+                ? "unknown"
+                : ipAddress.Trim();
 
-            var pending = await _pendingRegistrationRepository.GetByEmailAsync(email, cancellationToken);
+            userAgent = string.IsNullOrWhiteSpace(userAgent)
+                ? null
+                : userAgent.Trim();
+
+            var isOtpBlocked = await _authRateLimitService.IsOtpBlockedAsync(
+                email,
+                ipAddress,
+                cancellationToken);
+
+            if (isOtpBlocked)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Verify Register OTP Blocked",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "PendingRegistration",
+                    description: "Verify register OTP was blocked by rate limit.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        Reason = "OTP verify rate limit exceeded",
+                        BlockedAt = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Bạn nhập OTP quá nhiều lần. Vui lòng thử lại sau 15 phút.");
+            }
+
+            var pending = await _pendingRegistrationRepository.GetByEmailAsync(
+                email,
+                cancellationToken);
 
             if (pending == null)
+            {
+                await _authRateLimitService.RegisterOtpVerifyFailedAsync(
+                    email,
+                    ipAddress,
+                    cancellationToken);
+
+                await WriteAuditSafeAsync(
+                    action: "Verify Register OTP Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "PendingRegistration",
+                    description: "Verify register OTP failed because pending registration was not found.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        Reason = "Pending registration not found",
+                        FailedAt = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken);
+
                 return Result.Failure("Không tìm thấy yêu cầu đăng ký.");
+            }
 
             if (pending.OtpExpiredAt < DateTime.UtcNow)
+            {
+                await _authRateLimitService.RegisterOtpVerifyFailedAsync(
+                    email,
+                    ipAddress,
+                    cancellationToken);
+
+                await WriteAuditSafeAsync(
+                    action: "Verify Register OTP Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "PendingRegistration",
+                    entityId: pending.Id,
+                    description: "Verify register OTP failed because OTP expired.",
+                    newValues: new
+                    {
+                        pending.Id,
+                        pending.Email,
+                        pending.OtpExpiredAt,
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        Reason = "OTP expired",
+                        FailedAt = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken);
+
                 return Result.Failure("OTP đã hết hạn.");
+            }
 
             if (pending.VerifyFailedCount >= 5)
-                return Result.Failure("Bạn nhập sai OTP quá nhiều lần. Vui lòng thử lại sau.");
+            {
+                await _authRateLimitService.RegisterOtpVerifyFailedAsync(
+                    email,
+                    ipAddress,
+                    cancellationToken);
 
-            var validOtp = _otpService.VerifyOtp(request.OtpCode, pending.OtpCodeHash);
+                await WriteAuditSafeAsync(
+                    action: "Verify Register OTP Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "PendingRegistration",
+                    entityId: pending.Id,
+                    description: "Verify register OTP failed because failed count exceeded.",
+                    newValues: new
+                    {
+                        pending.Id,
+                        pending.Email,
+                        pending.VerifyFailedCount,
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        Reason = "Verify failed count exceeded",
+                        FailedAt = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Bạn nhập sai OTP quá nhiều lần. Vui lòng thử lại sau.");
+            }
+
+            var validOtp = _otpService.VerifyOtp(
+                request.OtpCode,
+                pending.OtpCodeHash);
 
             if (!validOtp)
             {
                 pending.VerifyFailedCount++;
-                _pendingRegistrationRepository.Update(pending);
-                await _pendingRegistrationRepository.SaveChangesAsync(cancellationToken);
 
+                _pendingRegistrationRepository.Update(pending);
+
+                await _pendingRegistrationRepository.SaveChangesAsync(
+                    cancellationToken);
+
+                await _authRateLimitService.RegisterOtpVerifyFailedAsync(
+                    email,
+                    ipAddress,
+                    cancellationToken);
+
+                await WriteAuditSafeAsync(
+                    action: "Verify Register OTP Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "PendingRegistration",
+                    entityId: pending.Id,
+                    description: "Verify register OTP failed because OTP is invalid.",
+                    newValues: new
+                    {
+                        pending.Id,
+                        pending.Email,
+                        pending.VerifyFailedCount,
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        Reason = "Invalid OTP",
+                        FailedAt = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken);
 
                 return Result.Failure("OTP không đúng.");
-
             }
 
-            var exists = await _userRepository.ExistsByEmailAsync(email, null, cancellationToken);
+            var exists = await _userRepository.ExistsByEmailAsync(
+                email,
+                null,
+                cancellationToken);
 
             if (exists)
+            {
+                await _authRateLimitService.RegisterOtpVerifyFailedAsync(
+                    email,
+                    ipAddress,
+                    cancellationToken);
+
+                await WriteAuditSafeAsync(
+                    action: "Verify Register OTP Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    description: "Verify register OTP failed because email already exists.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        Reason = "Email already exists",
+                        FailedAt = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken);
+
                 return Result.Failure("Email đã tồn tại.");
+            }
 
-            var role = await _roleRepository.GetByCodeAsync("CUSTOMER", cancellationToken);
+            var role = await _roleRepository.GetByCodeAsync(
+                "CUSTOMER",
+                cancellationToken);
 
-            if (role == null) return Result.Failure("Role CUSTOMER không tồn tại.");
+            if (role == null)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Verify Register OTP Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "Role",
+                    description: "Verify register OTP failed because CUSTOMER role does not exist.",
+                    newValues: new
+                    {
+                        Email = email,
+                        RoleCode = "CUSTOMER",
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        Reason = "Role CUSTOMER not found",
+                        FailedAt = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Role CUSTOMER không tồn tại.");
+            }
+
             var user = new User
             {
                 Email = pending.Email,
@@ -153,14 +409,45 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                 RoleId = role.Id
             });
 
-            await _userRepository.AddAsync(user, cancellationToken);
+            await _userRepository.AddAsync(
+                user,
+                cancellationToken);
 
             _pendingRegistrationRepository.Remove(pending);
 
-            await _userRepository.SaveChangesAsync(cancellationToken);
+            await _userRepository.SaveChangesAsync(
+                cancellationToken);
+
+            await _authRateLimitService.RegisterOtpVerifySuccessAsync(
+                email,
+                ipAddress,
+                cancellationToken);
+
+            await WriteAuditSafeAsync(
+                action: "Register Verified",
+                actionType: AuditActionType.Create,
+                status: AuditStatus.Success,
+                entityName: "User",
+                entityId: user.Id,
+                description: "User registered successfully after OTP verification.",
+                newValues: new
+                {
+                    user.Id,
+                    user.Email,
+                    user.Phone,
+                    user.FullName,
+                    user.EmailConfirmed,
+                    user.IsActive,
+                    Role = role.Code,
+                    IpAddress = ipAddress,
+                    UserAgent = userAgent,
+                    VerifiedAt = DateTime.UtcNow
+                },
+                cancellationToken: cancellationToken);
 
             return Result.Success();
         }
+
 
         public async Task<Result<LoginResponseDto>> LoginAsync(
             LoginRequestDto request,
@@ -170,35 +457,191 @@ namespace DTP.Modules.Auth.Infrastructure.Services
             var email = request.Email.Trim().ToLower();
             var ip = ipAddress ?? "unknown";
 
-            var allowed = await _rateLimitService.IsAllowedAsync(
-                $"auth:login:email:{email}",
-                10,
-                TimeSpan.FromMinutes(15));
+            var loginBlocked = await _authRateLimitService.IsLoginBlockedAsync(
+                    email,
+                    ip,
+                    cancellationToken);
 
-            if (!allowed)
-                return Result<LoginResponseDto>.Failure("Bạn đăng nhập sai quá nhiều lần. Vui lòng thử lại sau.");
+            if (loginBlocked)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Login Failed",
+                    actionType: AuditActionType.Login,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    description: "Login failed because login rate limit exceeded.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ip,
+                        Reason = "Login blocked by email or IP"
+                    },
+                    cancellationToken: cancellationToken);
 
-            var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
+                return Result<LoginResponseDto>.Failure(
+                    "Bạn đăng nhập sai quá nhiều lần. Vui lòng thử lại sau.");
+            }
+
+            var user = await _userRepository.GetByEmailAsync(
+                email,
+                cancellationToken);
 
             if (user == null)
+            {
+                await _authRateLimitService.RegisterLoginFailedAsync(
+                          email,
+                          ip,
+                          cancellationToken);
+
+                await WriteAuditSafeAsync(
+                    action: "Login Failed",
+                    actionType: AuditActionType.Login,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    description: "Login failed because user was not found.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ip,
+                        Reason = "User not found"
+                    },
+                    cancellationToken: cancellationToken);
+
                 return Result<LoginResponseDto>.Failure("Email hoặc mật khẩu không đúng.");
+            }
 
             if (!user.IsActive)
-                return Result<LoginResponseDto>.Failure("Tài khoản đã bị khóa.");
+            {
+                await WriteAuditSafeAsync(
+                    action: "Login Failed",
+                    actionType: AuditActionType.Login,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    entityId: user.Id,
+                    description: "Login failed because user is inactive.",
+                    newValues: new
+                    {
+                        user.Id,
+                        user.Email,
+                        user.FullName,
+                        user.IsActive,
+                        IpAddress = ip,
+                        Reason = "User inactive"
+                    },
+                    cancellationToken: cancellationToken);
 
-            var validPassword = _passwordHasher.Verify(request.Password, user.PasswordHash);
+                return Result<LoginResponseDto>.Failure("Tài khoản đã bị khóa.");
+            }
+
+            var validPassword = _passwordHasher.Verify(
+                request.Password,
+                user.PasswordHash);
 
             if (!validPassword)
-                return Result<LoginResponseDto>.Failure("Email hoặc mật khẩu không đúng.");
+            {
+                await _authRateLimitService.RegisterLoginFailedAsync(
+                 email,
+                 ip,
+                 cancellationToken);
 
-            return await GenerateLoginResponseAsync(user, ip, cancellationToken);
+                await WriteAuditSafeAsync(
+                    action: "Login Failed",
+                    actionType: AuditActionType.Login,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    entityId: user.Id,
+                    description: "Login failed because password is invalid.",
+                    newValues: new
+                    {
+                        user.Id,
+                        user.Email,
+                        user.FullName,
+                        IpAddress = ip,
+                        Reason = "Invalid password"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result<LoginResponseDto>.Failure("Email hoặc mật khẩu không đúng.");
+            }
+
+            var result = await GenerateLoginResponseAsync(
+                user,
+                ip,
+                cancellationToken);
+
+            if (!result.IsSuccess)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Login Failed",
+                    actionType: AuditActionType.Login,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    entityId: user.Id,
+                    description: "Login failed because token generation failed.",
+                    newValues: new
+                    {
+                        user.Id,
+                        user.Email,
+                        IpAddress = ip,
+                        Reason = "Generate login response failed"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return result;
+            }
+
+            await WriteAuditSafeAsync(
+                action: "Login Success",
+                actionType: AuditActionType.Login,
+                status: AuditStatus.Success,
+                entityName: "User",
+                entityId: user.Id,
+                description: "User logged in successfully.",
+                newValues: new
+                {
+                    user.Id,
+                    user.Email,
+                    user.FullName,
+                    LoginAt = DateTime.UtcNow,
+                    IpAddress = ip
+                },
+                cancellationToken: cancellationToken);
+
+
+            await _authRateLimitService.RegisterLoginSuccessAsync(
+                    email,
+                    ip,
+                    cancellationToken);
+
+            return result;
         }
+
 
         public async Task<Result<LoginResponseDto>> RefreshTokenAsync(
             string refreshToken,
             string? ipAddress,
             CancellationToken cancellationToken = default)
         {
+            var ip = ipAddress ?? "unknown";
+
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                await WriteAuditSafeAsync(
+                    action: "Refresh Token Failed",
+                    actionType: AuditActionType.Login,
+                    status: AuditStatus.Failed,
+                    entityName: "RefreshToken",
+                    description: "Refresh token failed because refresh token is empty.",
+                    newValues: new
+                    {
+                        IpAddress = ip,
+                        Reason = "Refresh token empty"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result<LoginResponseDto>.Failure("Refresh token không hợp lệ.");
+            }
+
             var tokenHash = _jwtService.HashToken(refreshToken);
 
             var oldToken = await _refreshTokenRepository.GetByTokenHashAsync(
@@ -206,14 +649,46 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                 cancellationToken);
 
             if (oldToken == null || !oldToken.IsActive)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Refresh Token Failed",
+                    actionType: AuditActionType.Login,
+                    status: AuditStatus.Failed,
+                    entityName: "RefreshToken",
+                    description: "Refresh token failed because token is invalid or inactive.",
+                    newValues: new
+                    {
+                        IpAddress = ip,
+                        Reason = "Invalid or inactive refresh token"
+                    },
+                    cancellationToken: cancellationToken);
+
                 return Result<LoginResponseDto>.Failure("Refresh token không hợp lệ.");
+            }
 
             var user = await _userRepository.GetByIdWithRolesAsync(
                 oldToken.UserId,
                 cancellationToken);
 
             if (user == null || !user.IsActive)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Refresh Token Failed",
+                    actionType: AuditActionType.Login,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    entityId: oldToken.UserId,
+                    description: "Refresh token failed because user is invalid or inactive.",
+                    newValues: new
+                    {
+                        UserId = oldToken.UserId,
+                        IpAddress = ip,
+                        Reason = "User invalid or inactive"
+                    },
+                    cancellationToken: cancellationToken);
+
                 return Result<LoginResponseDto>.Failure("Tài khoản không hợp lệ.");
+            }
 
             var newRefreshToken = _jwtService.GenerateRefreshToken();
             var newRefreshTokenHash = _jwtService.HashToken(newRefreshToken);
@@ -232,18 +707,45 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                 CreatedByIp = ipAddress
             };
 
-            await _refreshTokenRepository.AddAsync(newTokenEntity, cancellationToken);
+            await _refreshTokenRepository.AddAsync(
+                newTokenEntity,
+                cancellationToken);
 
-            await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
+            await _refreshTokenRepository.SaveChangesAsync(
+                cancellationToken);
 
-            var roles = user.UserRoles.Select(x => x.Role.Code).ToList();
+            var roles = user.UserRoles
+                .Select(x => x.Role.Code)
+                .ToList();
 
             var permissions = await _permissionRepository.GetPermissionCodesByUserIdAsync(
                 user.Id,
                 cancellationToken);
 
-            var accessToken = _jwtService.GenerateAccessToken(user.Id, user.Email, user.FullName, roles, permissions);
+            var accessToken = _jwtService.GenerateAccessToken(
+                user.Id,
+                user.Email,
+                user.FullName,
+                roles,
+                permissions);
 
+            await WriteAuditSafeAsync(
+                action: "Refresh Token Success",
+                actionType: AuditActionType.Login,
+                status: AuditStatus.Success,
+                entityName: "RefreshToken",
+                entityId: newTokenEntity.Id,
+                description: "Refresh token renewed successfully.",
+                newValues: new
+                {
+                    UserId = user.Id,
+                    user.Email,
+                    OldRefreshTokenId = oldToken.Id,
+                    NewRefreshTokenId = newTokenEntity.Id,
+                    newTokenEntity.ExpiresAt,
+                    IpAddress = ip
+                },
+                cancellationToken: cancellationToken);
 
             return Result<LoginResponseDto>.Success(new LoginResponseDto
             {
@@ -260,13 +762,49 @@ namespace DTP.Modules.Auth.Infrastructure.Services
             string? ipAddress,
             CancellationToken cancellationToken = default)
         {
+            var ip = ipAddress ?? "unknown";
+
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                await WriteAuditSafeAsync(
+                    action: "Logout Success",
+                    actionType: AuditActionType.Logout,
+                    status: AuditStatus.Success,
+                    entityName: "RefreshToken",
+                    description: "Logout requested with empty refresh token.",
+                    newValues: new
+                    {
+                        IpAddress = ip,
+                        Reason = "Empty refresh token"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Success();
+            }
+
             var tokenHash = _jwtService.HashToken(refreshToken);
 
             var token = await _refreshTokenRepository.GetByTokenHashAsync(
                 tokenHash,
                 cancellationToken);
 
-            if (token == null) return Result.Success(); // Token không tồn tại, coi như đã logout
+            if (token == null)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Logout Success",
+                    actionType: AuditActionType.Logout,
+                    status: AuditStatus.Success,
+                    entityName: "RefreshToken",
+                    description: "Logout requested but refresh token was not found.",
+                    newValues: new
+                    {
+                        IpAddress = ip,
+                        Reason = "Refresh token not found"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Success();
+            }
 
             if (!token.IsRevoked)
             {
@@ -275,8 +813,26 @@ namespace DTP.Modules.Auth.Infrastructure.Services
 
                 _refreshTokenRepository.Update(token);
 
-                await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
+                await _refreshTokenRepository.SaveChangesAsync(
+                    cancellationToken);
             }
+
+            await WriteAuditSafeAsync(
+                action: "Logout Success",
+                actionType: AuditActionType.Logout,
+                status: AuditStatus.Success,
+                entityName: "RefreshToken",
+                entityId: token.Id,
+                description: "User logged out successfully.",
+                newValues: new
+                {
+                    token.Id,
+                    token.UserId,
+                    token.RevokedAt,
+                    token.RevokedByIp,
+                    IpAddress = ip
+                },
+                cancellationToken: cancellationToken);
 
             return Result.Success();
         }
@@ -285,27 +841,66 @@ namespace DTP.Modules.Auth.Infrastructure.Services
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            var user = await _userRepository.GetByIdWithRolesAsync(userId, cancellationToken);
+            var user = await _userRepository.GetByIdWithRolesAsync(
+                userId,
+                cancellationToken);
 
             if (user == null)
+            {
+                await WriteAuditSafeAsync(
+                    action: "View Profile Failed",
+                    actionType: AuditActionType.View,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    entityId: userId,
+                    description: "View profile failed because user was not found.",
+                    newValues: new
+                    {
+                        UserId = userId,
+                        Reason = "User not found"
+                    },
+                    cancellationToken: cancellationToken);
+
                 return Result<UserDto>.Failure("Không tìm thấy user.");
+            }
+
+            await WriteAuditSafeAsync(
+                action: "View Profile",
+                actionType: AuditActionType.View,
+                status: AuditStatus.Success,
+                entityName: "User",
+                entityId: user.Id,
+                description: "User viewed profile.",
+                newValues: new
+                {
+                    user.Id,
+                    user.Email,
+                    user.FullName
+                },
+                cancellationToken: cancellationToken);
 
             return Result<UserDto>.Success(MapUserDto(user));
-
         }
 
         private async Task<Result<LoginResponseDto>> GenerateLoginResponseAsync(
-            User user,
-            string? ipAddress,
-            CancellationToken cancellationToken)
+           User user,
+           string? ipAddress,
+           CancellationToken cancellationToken)
         {
-            var roles = user.UserRoles.Select(x => x.Role.Code).ToList();
+            var roles = user.UserRoles
+                .Select(x => x.Role.Code)
+                .ToList();
 
             var permissions = await _permissionRepository.GetPermissionCodesByUserIdAsync(
                 user.Id,
                 cancellationToken);
 
-            var accessToken = _jwtService.GenerateAccessToken(user.Id, user.Email, user.FullName, roles, permissions);
+            var accessToken = _jwtService.GenerateAccessToken(
+                user.Id,
+                user.Email,
+                user.FullName,
+                roles,
+                permissions);
 
             var refreshToken = _jwtService.GenerateRefreshToken();
             var refreshTokenHash = _jwtService.HashToken(refreshToken);
@@ -320,12 +915,14 @@ namespace DTP.Modules.Auth.Infrastructure.Services
 
             user.LastLoginAt = DateTime.UtcNow;
 
-            await _refreshTokenRepository.AddAsync(refreshTokenEntity, cancellationToken);
+            await _refreshTokenRepository.AddAsync(
+                refreshTokenEntity,
+                cancellationToken);
 
             _userRepository.Update(user);
 
-            await _userRepository.SaveChangesAsync(cancellationToken);
-
+            await _userRepository.SaveChangesAsync(
+                cancellationToken);
 
             return Result<LoginResponseDto>.Success(new LoginResponseDto
             {
@@ -335,6 +932,260 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                 User = MapUserDto(user),
                 Permissions = permissions
             });
+        }
+
+
+        public async Task<Result> ResendRegisterOtpAsync(
+            ResendRegisterOtpRequestDto request,
+            string? ipAddress,
+            string? userAgent,
+            CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                return Result.Failure("Dữ liệu gửi lại OTP không hợp lệ.");
+
+            if (string.IsNullOrWhiteSpace(request.Email))
+                return Result.Failure("Vui lòng nhập email.");
+
+            var email = request.Email.Trim().ToLowerInvariant();
+            var ip = string.IsNullOrWhiteSpace(ipAddress) ? "unknown" : ipAddress.Trim();
+
+            var otpBlocked = await _authRateLimitService.IsOtpBlockedAsync(
+                email,
+                ip,
+                cancellationToken);
+
+            if (otpBlocked)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Resend Register OTP Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "PendingRegistration",
+                    description: "Resend register OTP failed because OTP rate limit exceeded.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "OTP rate limit exceeded"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Bạn yêu cầu gửi OTP quá nhiều lần. Vui lòng thử lại sau.");
+            }
+
+            var existsUser = await _userRepository.ExistsByEmailAsync(
+                email,
+                null,
+                cancellationToken);
+
+            if (existsUser)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Resend Register OTP Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    description: "Resend register OTP failed because email already exists.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "Email already exists"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Email đã tồn tại.");
+            }
+
+            var pending = await _pendingRegistrationRepository.GetByEmailAsync(
+                email,
+                cancellationToken);
+
+            if (pending == null)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Resend Register OTP Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "PendingRegistration",
+                    description: "Resend register OTP failed because pending registration was not found.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "Pending registration not found"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Không tìm thấy yêu cầu đăng ký. Vui lòng đăng ký lại.");
+            }
+
+            var otp = _otpService.GenerateOtp();
+
+            pending.OtpCodeHash = _otpService.HashOtp(otp);
+            pending.OtpExpiredAt = DateTime.UtcNow.AddMinutes(10);
+            pending.VerifyFailedCount = 0;
+            pending.IpAddress = ip;
+            pending.UserAgent = userAgent;
+
+            _pendingRegistrationRepository.Update(pending);
+
+            await _pendingRegistrationRepository.SaveChangesAsync(
+                cancellationToken);
+
+            var emailBody = BuildRegisterOtpEmailBody(otp);
+
+            await _emailSender.SendAsync(
+                email,
+                "Mã xác thực đăng ký DTP",
+                emailBody);
+
+            await _authRateLimitService.RegisterOtpSentAsync(
+                email,
+                ip,
+                cancellationToken);
+
+            await WriteAuditSafeAsync(
+                action: "Resend Register OTP Success",
+                actionType: AuditActionType.Create,
+                status: AuditStatus.Success,
+                entityName: "PendingRegistration",
+                entityId: pending.Id,
+                description: "Register OTP was resent successfully.",
+                newValues: new
+                {
+                    pending.Id,
+                    pending.Email,
+                    pending.Phone,
+                    pending.FullName,
+                    pending.OtpExpiredAt,
+                    pending.VerifyFailedCount,
+                    IpAddress = ip,
+                    UserAgent = userAgent
+                },
+                cancellationToken: cancellationToken);
+
+            return Result.Success();
+        }
+
+
+        private static string BuildRegisterOtpEmailBody(string otp)
+        {
+            return $@"
+                    <!DOCTYPE html>
+                    <html lang='vi'>
+                    <head>
+                        <meta charset='UTF-8' />
+                        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+                        <title>Mã xác thực DTP</title>
+                    </head>
+                    <body style='margin:0;padding:0;background-color:#f7f7f7;font-family:Arial,Helvetica,sans-serif;color:#191414;'>
+                        <table width='100%' cellpadding='0' cellspacing='0' style='background-color:#f7f7f7;padding:32px 0;'>
+                            <tr>
+                                <td align='center'>
+                                    <table width='100%' cellpadding='0' cellspacing='0' style='max-width:520px;background-color:#ffffff;border-radius:8px;overflow:hidden;'>
+                                        <tr>
+                                            <td style='padding:32px 32px 20px 32px;text-align:center;'>
+                                                <div style='font-size:28px;font-weight:700;color:#111111;letter-spacing:-0.5px;'>
+                                                    DTP
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <td style='padding:8px 32px 0 32px;text-align:center;'>
+                                                <h1 style='margin:0;font-size:26px;line-height:34px;font-weight:700;color:#191414;'>
+                                                    Đây là mã xác thực của bạn
+                                                </h1>
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <td style='padding:20px 32px 0 32px;text-align:center;'>
+                                                <p style='margin:0;font-size:16px;line-height:24px;color:#333333;'>
+                                                    Nhập mã bên dưới để hoàn tất xác thực tài khoản DTP.
+                                                </p>
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <td style='padding:32px 32px 24px 32px;text-align:center;'>
+                                                <div style='
+                                                    display:inline-block;
+                                                    font-size:42px;
+                                                    line-height:52px;
+                                                    font-weight:700;
+                                                    letter-spacing:8px;
+                                                    color:#191414;
+                                                    background-color:#f1f1f1;
+                                                    padding:16px 28px;
+                                                    border-radius:6px;
+                                                '>
+                                                    {otp}
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <td style='padding:0 32px 28px 32px;text-align:center;'>
+                                                <p style='margin:0;font-size:14px;line-height:22px;color:#555555;'>
+                                                    Mã này có hiệu lực trong <strong>10 phút</strong>.
+                                                </p>
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <td style='padding:0 32px 32px 32px;text-align:center;'>
+                                                <p style='margin:0;font-size:14px;line-height:22px;color:#555555;'>
+                                                    Nếu bạn không yêu cầu mã này, bạn có thể bỏ qua email.
+                                                    Không chia sẻ mã này với bất kỳ ai.
+                                                </p>
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <td style='background-color:#f7f7f7;padding:24px 32px;text-align:center;'>
+                                                <p style='margin:0;font-size:12px;line-height:18px;color:#888888;'>
+                                                    Email này được gửi tự động từ DTP. Vui lòng không trả lời email này.
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </body>
+                    </html>";
+        }
+
+        private async Task WriteAuditSafeAsync(
+            string action,
+            AuditActionType actionType,
+            AuditStatus status,
+            string? entityName = null,
+            Guid? entityId = null,
+            string? description = null,
+            object? oldValues = null,
+            object? newValues = null,
+            string? errorMessage = null,
+            CancellationToken cancellationToken = default)
+        {
+            await _auditLogWriter.WriteAsync(
+                module: "Auth",
+                action: action,
+                actionType: actionType,
+                status: status,
+                entityName: entityName,
+                entityId: entityId,
+                description: description,
+                oldValues: oldValues,
+                newValues: newValues,
+                errorMessage: errorMessage,
+                cancellationToken: cancellationToken);
         }
 
         private static UserDto MapUserDto(User user)

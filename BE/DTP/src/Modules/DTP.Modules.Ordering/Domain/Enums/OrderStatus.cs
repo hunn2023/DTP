@@ -8,13 +8,12 @@ namespace DTP.Modules.Ordering.Domain.Enums
 {
     public enum OrderStatus
     {
-        WaitingPayment = 1,
-        Paid = 2,
-        Processing = 3,
-        Delivered = 4,
+        Draft = 1,
+        PendingPayment = 2,
+        Paid = 3,
+        Processing = 4,
         Completed = 5,
         Cancelled = 6,
-        PaymentFailed = 7,
-        Refunded = 8
+        Failed = 7
     }
 }

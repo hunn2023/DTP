@@ -123,6 +123,14 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             if (!productExists)
                 return Result<ProductImageDto>.Failure("Không tìm thấy sản phẩm.");
 
+            var product = await _productRepository.GetByIdAsync(
+                 productId,
+                 cancellationToken);
+
+            if (product == null)
+                return Result<ProductImageDto>.Failure("Không tìm thấy sản phẩm.");
+
+
             var sortOrder = await _repository.GetNextSortOrderAsync(
                 productId,
                 cancellationToken);
@@ -142,6 +150,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             if (shouldBeThumbnail)
             {
                 await _repository.ClearThumbnailAsync(productId, cancellationToken);
+
+                product.UpdateThumbnail(uploadResult.Url);
             }
 
             var image = new ProductImage(

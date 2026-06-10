@@ -1,21 +1,18 @@
 ﻿using DTP.Modules.Payment.Application.Abstractions.Services;
 using DTP.Modules.Payment.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Payment.Application.Queries.Payment
 {
-    public class GetPaymentByOrderIdQuery : IRequest<PaymentTransactionDto?>
+
+    public class GetPaymentByOrderIdQuery : IRequest<Result<PaymentTransactionDto>>
     {
         public Guid OrderId { get; set; }
     }
 
     public class GetPaymentByOrderIdQueryHandler
-       : IRequestHandler<GetPaymentByOrderIdQuery, PaymentTransactionDto?>
+        : IRequestHandler<GetPaymentByOrderIdQuery, Result<PaymentTransactionDto>>
     {
         private readonly IPaymentService _paymentService;
 
@@ -24,11 +21,11 @@ namespace DTP.Modules.Payment.Application.Queries.Payment
             _paymentService = paymentService;
         }
 
-        public async Task<PaymentTransactionDto?> Handle(
+        public Task<Result<PaymentTransactionDto>> Handle(
             GetPaymentByOrderIdQuery request,
             CancellationToken cancellationToken)
         {
-            return await _paymentService.GetByOrderIdAsync(
+            return _paymentService.GetByOrderIdAsync(
                 request.OrderId,
                 cancellationToken);
         }

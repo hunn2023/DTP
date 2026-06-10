@@ -1,10 +1,11 @@
-﻿using DTP.Modules.Ordering.Application.Commands.CancelOrder;
-using DTP.Modules.Ordering.Application.Commands.Checkout;
+﻿
+using DTP.Modules.Ordering.Application.Commands.Orders;
+using DTP.Modules.Ordering.Application.DTOs;
 using DTP.Modules.Ordering.Application.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DTP.Modules.Ordering.Presentation.Controllers.Public
 {
@@ -19,119 +20,65 @@ namespace DTP.Modules.Ordering.Presentation.Controllers.Public
         {
             _mediator = mediator;
         }
-        [HttpPost("checkout")]
-        public async Task<IActionResult> Checkout(
-            [FromBody] CheckoutRequest request,
-            CancellationToken cancellationToken)
+
+        [EnableRateLimiting("ordering-create")]
+        [HttpPost]
+        public async Task<IActionResult> Create(
+         [FromBody] CreateOrderCommand command,
+         CancellationToken cancellationToken = default)
         {
-            var userId = GetUserId();
-
-            var ipAddress = GetClientIpAddress();
-            var userAgent = Request.Headers["User-Agent"].ToString();
-            var referrerUrl = Request.Headers["Referer"].ToString();
-
-            var command = new CheckoutCommand
-            {
-                UserId = userId,
-                CustomerEmail = request.CustomerEmail,
-                CustomerName = request.CustomerName,
-                CustomerPhone = request.CustomerPhone,
-                ProductId = request.ProductId,
-                ProductVariantId = request.ProductVariantId,
-                Quantity = request.Quantity,
-
-                IpAddress = ipAddress,
-                UserAgent = userAgent,
-                ReferrerUrl = referrerUrl,
-                CheckoutSource = "Web"
-            };
-
             var result = await _mediator.Send(command, cancellationToken);
 
-            return Ok(result);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-        private string? GetClientIpAddress()
+        [EnableRateLimiting("ordering-create")]
+        [HttpPost("{id:guid}/confirm")]
+        public async Task<IActionResult> Confirm(
+            Guid id,
+            [FromBody] ConfirmOrderRequest request,
+            CancellationToken cancellationToken = default)
         {
-            var cfIp = Request.Headers["CF-Connecting-IP"].FirstOrDefault();
+            var result = await _mediator.Send(new ConfirmOrderCommand
+            {
+                OrderId = id,
+                PaymentMethod = request.PaymentMethod,
+                ChangedBy = request.ChangedBy
+            }, cancellationToken);
 
-            if (!string.IsNullOrWhiteSpace(cfIp))
-                return cfIp;
-
-            var forwardedFor = Request.Headers["X-Forwarded-For"].FirstOrDefault();
-
-            if (!string.IsNullOrWhiteSpace(forwardedFor))
-                return forwardedFor.Split(',')[0].Trim();
-
-            var realIp = Request.Headers["X-Real-IP"].FirstOrDefault();
-
-            if (!string.IsNullOrWhiteSpace(realIp))
-                return realIp;
-
-            return HttpContext.Connection.RemoteIpAddress?.ToString();
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-
+        [EnableRateLimiting("ordering-read")]
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(
             Guid id,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken = default)
         {
             var result = await _mediator.Send(new GetOrderByIdQuery
             {
-                OrderId = id,
-                UserId = GetUserId(),
-                IsAdmin = false
+                Id = id
             }, cancellationToken);
 
-            return result == null ? NotFound() : Ok(result);
+            return result.IsSuccess ? Ok(result) : NotFound(result);
         }
 
+
+        [EnableRateLimiting("ordering-create")]
         [HttpPost("{id:guid}/cancel")]
         public async Task<IActionResult> Cancel(
             Guid id,
             [FromBody] CancelOrderRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken = default)
         {
             var result = await _mediator.Send(new CancelOrderCommand
             {
                 OrderId = id,
-                UserId = GetUserId(),
-                IsAdmin = false,
-                Reason = request.Reason
+                Reason = request.Reason,
+                ChangedBy = request.ChangedBy
             }, cancellationToken);
 
-            return Ok(result);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
-
-
-
-        private Guid GetUserId()
-        {
-            var value = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrWhiteSpace(value))
-                throw new UnauthorizedAccessException("User is not authenticated.");
-
-            return Guid.Parse(value);
-        }
-    }
-
-    public class CheckoutRequest
-    {
-        public string CustomerEmail { get; set; } = default!;
-        public string? CustomerName { get; set; }
-        public string? CustomerPhone { get; set; }
-
-        public Guid ProductId { get; set; }
-        public Guid? ProductVariantId { get; set; }
-
-        public int Quantity { get; set; } = 1;
-
-    }
-
-    public class CancelOrderRequest
-    {
-        public string? Reason { get; set; }
     }
 }

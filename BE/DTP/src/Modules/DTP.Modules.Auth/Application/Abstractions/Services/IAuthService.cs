@@ -17,5 +17,12 @@ namespace DTP.Modules.Auth.Application.Abstractions.Services
         Task<Result> LogoutAsync(string refreshToken, string? ipAddress, CancellationToken cancellationToken = default);
 
         Task<Result<UserDto>> GetProfileAsync(Guid userId, CancellationToken cancellationToken = default);
+
+
+        Task<Result> ResendRegisterOtpAsync(
+                ResendRegisterOtpRequestDto request,
+                string? ipAddress,
+                string? userAgent,
+                CancellationToken cancellationToken = default);
     }
 }

@@ -1,10 +1,6 @@
 ﻿using DTP.Modules.Delivery.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace DTP.Modules.Delivery.Infrastructure.Persistence
 {
@@ -15,11 +11,11 @@ namespace DTP.Modules.Delivery.Infrastructure.Persistence
         {
         }
 
-        public DbSet<EsimProfile> EsimProfiles => Set<EsimProfile>();
+        public DbSet<Domain.Entities.Delivery> Deliveries => Set<Domain.Entities.Delivery>();
 
-        public DbSet<DigitalDelivery> DigitalDeliveries => Set<DigitalDelivery>();
+        public DbSet<DeliveryItem> DeliveryItems => Set<DeliveryItem>();
 
-        public DbSet<DeliveryLog> DeliveryLogs => Set<DeliveryLog>();
+        public DbSet<DeliveryStatusHistory> DeliveryStatusHistories => Set<DeliveryStatusHistory>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

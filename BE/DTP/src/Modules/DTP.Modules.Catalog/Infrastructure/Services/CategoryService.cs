@@ -110,6 +110,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                    int sortOrder,
                    CancellationToken cancellationToken = default)
         {
+
             name = name?.Trim() ?? string.Empty;
             slug = slug?.Trim() ?? string.Empty;
             code = code?.Trim();

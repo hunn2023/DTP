@@ -1,4 +1,5 @@
-﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
+﻿using Amazon.Runtime.Internal.Util;
+using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.CacheKeys;
 using DTP.Modules.Catalog.Application.Commands.Products;
@@ -7,6 +8,9 @@ using DTP.Modules.Catalog.Infrastructure.Repositories;
 using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using DTP.Shared.Caching;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using System.Text.Json;
 
 namespace DTP.Modules.Catalog.Infrastructure.Services
 {
@@ -369,6 +373,78 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             return Result.Success();
         }
 
+
+        public async Task<Result<PagedResultDto<ProductVariantPublicDto>>> GetPublicVariantPagedAsync(
+             string? keyword,
+             Guid? categoryId,
+             Guid? countryId,
+             int pageIndex,
+             int pageSize,
+             CancellationToken cancellationToken = default)
+        {
+            pageIndex = pageIndex <= 0 ? 1 : pageIndex;
+            pageSize = pageSize <= 0 ? 20 : pageSize;
+            pageSize = pageSize > 100 ? 100 : pageSize;
+
+            keyword = string.IsNullOrWhiteSpace(keyword)
+                ? null
+                : keyword.Trim().ToLower();
+
+            var cacheKey = BuildPublicVariantPagedCacheKey(
+                keyword,
+                categoryId,
+                countryId,
+                pageIndex,
+                pageSize);
+
+            var cachedResult = await _cacheService.GetAsync<PagedResultDto<ProductVariantPublicDto>>(
+                cacheKey,
+                cancellationToken);
+
+            if (cachedResult != null)
+                return Result<PagedResultDto<ProductVariantPublicDto>>.Success(cachedResult);
+
+            var result = await _productRepository.GetPublicVariantPagedAsync(
+                keyword,
+                categoryId,
+                countryId,
+                pageIndex,
+                pageSize,
+                cancellationToken);
+
+            await _cacheService.SetAsync(
+                cacheKey,
+                result,
+                TimeSpan.FromMinutes(10),
+                cancellationToken);
+
+            return Result<PagedResultDto<ProductVariantPublicDto>>.Success(result);
+        }
+
+
+        private static string BuildPublicVariantPagedCacheKey(
+            string? keyword,
+            Guid? categoryId,
+            Guid? countryId,
+            int pageIndex,
+            int pageSize)
+        {
+            var keywordKey = string.IsNullOrWhiteSpace(keyword)
+                ? "all"
+                : keyword.Trim().ToLower();
+
+            var categoryKey = categoryId.HasValue && categoryId.Value != Guid.Empty
+                ? categoryId.Value.ToString("N")
+                : "all";
+
+            var countryKey = countryId.HasValue && countryId.Value != Guid.Empty
+                ? countryId.Value.ToString("N")
+                : "all";
+
+            return $"catalog:public:product-variants:keyword:{keywordKey}:category:{categoryKey}:country:{countryKey}:page:{pageIndex}:size:{pageSize}";
+        }
+
+
         private static Result ValidateCreate(CreateProductCommand command)
         {
             if (command is null)
@@ -484,6 +560,32 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await _cacheService.RemoveByPrefixAsync(
                 "catalog:products:public",
                 cancellationToken);
+        }
+
+
+        public async Task<Result<List<HomeEsimProductDto>>> GetHomeEsimProductsAsync(
+                CancellationToken cancellationToken = default)
+        {
+            var cacheKey = "catalog:home:esim-products";
+
+            var cached = await _cacheService.GetAsync<List<HomeEsimProductDto>>(
+                cacheKey,
+                cancellationToken);
+
+            if (cached != null)
+                return Result<List<HomeEsimProductDto>>.Success(cached);
+
+            var now = DateTime.UtcNow;
+
+            var items = await _productRepository.GetHomeEsimProductsAsync(cancellationToken);
+
+            await _cacheService.SetAsync(
+                cacheKey,
+                items,
+                TimeSpan.FromMinutes(10),
+                cancellationToken);
+
+            return Result<List<HomeEsimProductDto>>.Success(items);
         }
     }
 }

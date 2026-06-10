@@ -1,9 +1,4 @@
 ﻿using DTP.Shared.Domain;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Catalog.Domain.Entities
 {
@@ -31,6 +26,7 @@ namespace DTP.Modules.Catalog.Domain.Entities
             Guid? parentId,
             int sortOrder)
         {
+            Code = code.Trim();
             Name = name.Trim();
             Slug = slug.Trim();
             ParentId = parentId;

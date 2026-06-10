@@ -16,7 +16,7 @@ namespace DTP.Modules.Payment.Domain.Entities
 
         public PaymentCallback(
             Guid? paymentTransactionId,
-            PaymentProviderCode providerCode,
+            PaymentProvider providerCode,
             string? orderCode,
             string? transactionCode,
             string? providerTransactionCode,
@@ -41,7 +41,7 @@ namespace DTP.Modules.Payment.Domain.Entities
 
         public Guid? PaymentTransactionId { get; private set; }
 
-        public PaymentProviderCode ProviderCode { get; private set; }
+        public PaymentProvider ProviderCode { get; private set; }
 
         public string? OrderCode { get; private set; }
 

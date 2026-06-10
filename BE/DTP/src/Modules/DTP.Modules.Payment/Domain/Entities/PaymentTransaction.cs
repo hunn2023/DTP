@@ -17,114 +17,193 @@ namespace DTP.Modules.Payment.Domain.Entities
         public PaymentTransaction(
             Guid orderId,
             string orderCode,
-            PaymentProviderCode providerCode,
-            string transactionCode,
+            Guid? customerId,
             decimal amount,
-            string currencyCode)
+            string currency,
+            PaymentProvider provider,
+            PaymentMethod method,
+            string requestId,
+            string ipAddress)
         {
             Id = Guid.NewGuid();
             OrderId = orderId;
             OrderCode = orderCode;
-            ProviderCode = providerCode;
-            TransactionCode = transactionCode;
+            CustomerId = customerId;
             Amount = amount;
-            CurrencyCode = currencyCode;
-            Status = PaymentTransactionStatus.Pending;
+            Currency = currency;
+            Provider = provider;
+            Method = method;
+            RequestId = requestId;
+            Status = PaymentStatus.Pending;
+            IpAddress = ipAddress;
             CreatedAt = DateTime.UtcNow;
-            UpdatedAt = DateTime.UtcNow;
         }
 
         public Guid OrderId { get; private set; }
 
         public string OrderCode { get; private set; } = default!;
 
-        public PaymentProviderCode ProviderCode { get; private set; }
-
-        public string TransactionCode { get; private set; } = default!;
-
-        public string? ProviderTransactionCode { get; private set; }
+        public Guid? CustomerId { get; private set; }
 
         public decimal Amount { get; private set; }
 
-        public string CurrencyCode { get; private set; } = "VND";
+        public string Currency { get; private set; } = "VND";
+
+        public PaymentProvider Provider { get; private set; }
+
+        public PaymentMethod Method { get; private set; }
+
+        public PaymentStatus Status { get; private set; }
+
+        public string RequestId { get; private set; } = default!;
+
+        public string? ProviderTransactionId { get; private set; }
+
+        public string? ProviderPaymentCode { get; private set; }
+
+        public string? QrCode { get; private set; }
+
+        public string? QrImageUrl { get; private set; }
 
         public string? PaymentUrl { get; private set; }
-
-        public string? QrCodeUrl { get; private set; }
-
-        public string? QrContent { get; private set; }
-
-        public PaymentTransactionStatus Status { get; private set; }
 
         public DateTime? ExpiredAt { get; private set; }
 
         public DateTime? PaidAt { get; private set; }
 
-        public DateTime? FailedAt { get; private set; }
+        public string? BankCode { get; private set; }
 
-        public string? FailureReason { get; private set; }
+        public string? BankAccountNo { get; private set; }
 
-        public string? RawRequest { get; private set; }
+        public string? BankAccountName { get; private set; }
 
-        public string? RawResponse { get; private set; }
+        public string? TransferContent { get; private set; }
 
-        public void AttachProviderResult(
-            string? providerTransactionCode,
+        public string? ProviderResponseCode { get; private set; }
+
+        public string? ProviderResponseMessage { get; private set; }
+
+        public string? RawProviderRequest { get; private set; }
+
+        public string? RawProviderResponse { get; private set; }
+
+        public string? RawCallbackData { get; private set; }
+
+        public string? IpAddress { get; private set; }
+
+        public DateTime CreatedAt { get; private set; }
+
+        public DateTime? UpdatedAt { get; private set; }
+
+        public void MarkQrCreated(
+            string? providerTransactionId,
+            string? providerPaymentCode,
+            string? qrCode,
+            string? qrImageUrl,
             string? paymentUrl,
-            string? qrCodeUrl,
-            string? qrContent,
             DateTime? expiredAt,
-            string? rawRequest,
-            string? rawResponse)
+            string? bankCode,
+            string? bankAccountNo,
+            string? bankAccountName,
+            string? transferContent,
+            string? providerResponseCode,
+            string? providerResponseMessage,
+            string? rawProviderRequest,
+            string? rawProviderResponse)
         {
-            ProviderTransactionCode = providerTransactionCode;
+            ProviderTransactionId = providerTransactionId;
+            ProviderPaymentCode = providerPaymentCode;
+            QrCode = qrCode;
+            QrImageUrl = qrImageUrl;
             PaymentUrl = paymentUrl;
-            QrCodeUrl = qrCodeUrl;
-            QrContent = qrContent;
             ExpiredAt = expiredAt;
-            RawRequest = rawRequest;
-            RawResponse = rawResponse;
+            BankCode = bankCode;
+            BankAccountNo = bankAccountNo;
+            BankAccountName = bankAccountName;
+            TransferContent = transferContent;
+            ProviderResponseCode = providerResponseCode;
+            ProviderResponseMessage = providerResponseMessage;
+            RawProviderRequest = rawProviderRequest;
+            RawProviderResponse = rawProviderResponse;
+            Status = PaymentStatus.Pending;
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void MarkSuccess(string? providerTransactionCode = null)
+        public void MarkProcessing(string? rawCallbackData)
         {
-            if (Status == PaymentTransactionStatus.Success)
+            if (Status == PaymentStatus.Paid)
                 return;
 
-            ProviderTransactionCode = providerTransactionCode ?? ProviderTransactionCode;
-            Status = PaymentTransactionStatus.Success;
+            RawCallbackData = rawCallbackData;
+            Status = PaymentStatus.Processing;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void MarkPaid(
+            string? providerTransactionId,
+            string? providerResponseCode,
+            string? providerResponseMessage,
+            string? rawCallbackData)
+        {
+            if (Status == PaymentStatus.Paid)
+                return;
+
+            ProviderTransactionId = string.IsNullOrWhiteSpace(providerTransactionId)
+                ? ProviderTransactionId
+                : providerTransactionId;
+
+            ProviderResponseCode = providerResponseCode;
+            ProviderResponseMessage = providerResponseMessage;
+            RawCallbackData = rawCallbackData;
+            Status = PaymentStatus.Paid;
             PaidAt = DateTime.UtcNow;
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void MarkFailed(string? reason)
+        public void MarkFailed(
+            string? providerResponseCode,
+            string? providerResponseMessage,
+            string? rawCallbackData)
         {
-            if (Status == PaymentTransactionStatus.Success)
-                throw new InvalidOperationException("Successful transaction cannot be marked as failed.");
+            if (Status == PaymentStatus.Paid)
+                return;
 
-            Status = PaymentTransactionStatus.Failed;
-            FailureReason = reason;
-            FailedAt = DateTime.UtcNow;
+            ProviderResponseCode = providerResponseCode;
+            ProviderResponseMessage = providerResponseMessage;
+            RawCallbackData = rawCallbackData;
+            Status = PaymentStatus.Failed;
             UpdatedAt = DateTime.UtcNow;
         }
 
         public void MarkExpired()
         {
-            if (Status == PaymentTransactionStatus.Success)
+            if (Status == PaymentStatus.Paid)
                 return;
 
-            Status = PaymentTransactionStatus.Expired;
+            Status = PaymentStatus.Expired;
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void MarkCancelled()
-        {
-            if (Status == PaymentTransactionStatus.Success)
-                throw new InvalidOperationException("Successful transaction cannot be cancelled.");
 
-            Status = PaymentTransactionStatus.Cancelled;
+        public void MarkCreateQrFailed(
+            string? providerResponseCode,
+            string? providerResponseMessage,
+            string? rawProviderResponse)
+        {
+            if (Status == PaymentStatus.Paid)
+                return;
+
+            ProviderResponseCode = providerResponseCode;
+            ProviderResponseMessage = providerResponseMessage;
+            RawProviderResponse = rawProviderResponse;
+            Status = PaymentStatus.Failed;
             UpdatedAt = DateTime.UtcNow;
+        }
+
+
+        public bool IsPaid()
+        {
+            return Status == PaymentStatus.Paid;
         }
     }
 }

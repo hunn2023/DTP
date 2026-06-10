@@ -1,78 +1,73 @@
 ﻿using DTP.Modules.Payment.Application.Abstractions.Repositories;
 using DTP.Modules.Payment.Domain.Entities;
+using DTP.Modules.Payment.Domain.Enums;
 using DTP.Modules.Payment.Infrastructure.Persistence;
+using DTP.Shared.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 namespace DTP.Modules.Payment.Infrastructure.Repositories
 {
-    public class PaymentTransactionRepository : IPaymentTransactionRepository
+    public class PaymentTransactionRepository : RepositoryBase<PaymentTransaction>,
+         IPaymentTransactionRepository
     {
         private readonly PaymentDbContext _context;
 
-        public PaymentTransactionRepository(PaymentDbContext context)
+        public PaymentTransactionRepository(PaymentDbContext context) : base(context)
         {
             _context = context;
         }
 
-        public async Task<PaymentTransaction?> GetByIdAsync(
-            Guid id,
-            CancellationToken cancellationToken = default)
-        {
-            return await _context.PaymentTransactions
-                .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
-        }
 
-        public async Task<PaymentTransaction?> GetByOrderIdAsync(
+
+        public Task<PaymentTransaction?> GetByOrderIdAsync(
             Guid orderId,
             CancellationToken cancellationToken = default)
         {
-            return await _context.PaymentTransactions
+            return _context.PaymentTransactions
                 .OrderByDescending(x => x.CreatedAt)
-                .FirstOrDefaultAsync(x => x.OrderId == orderId && !x.IsDeleted, cancellationToken);
+                .FirstOrDefaultAsync(x => x.OrderId == orderId, cancellationToken);
         }
 
-        public async Task<PaymentTransaction?> GetByTransactionCodeAsync(
-            string transactionCode,
+        public Task<PaymentTransaction?> GetPendingByOrderIdAsync(
+            Guid orderId,
             CancellationToken cancellationToken = default)
         {
-            return await _context.PaymentTransactions
+            return _context.PaymentTransactions
+                .OrderByDescending(x => x.CreatedAt)
                 .FirstOrDefaultAsync(
-                    x => x.TransactionCode == transactionCode && !x.IsDeleted,
+                    x => x.OrderId == orderId &&
+                         x.Status == PaymentStatus.Pending,
                     cancellationToken);
         }
 
-        public async Task<PaymentTransaction?> GetByOrderCodeAsync(
-            string orderCode,
+        public Task<PaymentTransaction?> GetByRequestIdAsync(
+            string requestId,
             CancellationToken cancellationToken = default)
         {
-            return await _context.PaymentTransactions
-                .OrderByDescending(x => x.CreatedAt)
+            return _context.PaymentTransactions
+                .FirstOrDefaultAsync(x => x.RequestId == requestId, cancellationToken);
+        }
+
+        public Task<PaymentTransaction?> GetByProviderTransactionIdAsync(
+            PaymentProvider provider,
+            string providerTransactionId,
+            CancellationToken cancellationToken = default)
+        {
+            return _context.PaymentTransactions
                 .FirstOrDefaultAsync(
-                    x => x.OrderCode == orderCode && !x.IsDeleted,
+                    x => x.Provider == provider &&
+                         x.ProviderTransactionId == providerTransactionId,
                     cancellationToken);
         }
 
-        public async Task AddAsync(
-            PaymentTransaction transaction,
+        public Task<bool> HasPaidPaymentByOrderIdAsync(
+            Guid orderId,
             CancellationToken cancellationToken = default)
         {
-            await _context.PaymentTransactions.AddAsync(transaction, cancellationToken);
-        }
-
-        public async Task AddCallbackAsync(
-            PaymentCallback callback,
-            CancellationToken cancellationToken = default)
-        {
-            await _context.PaymentCallbacks.AddAsync(callback, cancellationToken);
-        }
-
-        public void Update(PaymentTransaction transaction)
-        {
-            _context.PaymentTransactions.Update(transaction);
-        }
-
-        public IQueryable<PaymentTransaction> Query()
-        {
-            return _context.PaymentTransactions.AsQueryable();
+            return _context.PaymentTransactions
+                .AnyAsync(
+                    x => x.OrderId == orderId &&
+                         x.Status == PaymentStatus.Paid,
+                    cancellationToken);
         }
     }
 }

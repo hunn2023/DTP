@@ -6,11 +6,6 @@ using DTP.Modules.Delivery.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Delivery
 {
@@ -26,16 +21,13 @@ namespace DTP.Modules.Delivery
                     configuration.GetConnectionString("DefaultConnection"));
             });
 
-            services.AddScoped<IEsimProfileRepository, EsimProfileRepository>();
-            services.AddScoped<IDigitalDeliveryRepository, DigitalDeliveryRepository>();
+            services.AddScoped<IDeliveryRepository, DeliveryRepository>();
             services.AddScoped<IDeliveryUnitOfWork, DeliveryUnitOfWork>();
 
             services.AddScoped<IDeliveryService, DeliveryService>();
-            services.AddScoped<IDeliveryOrderingService, DeliveryOrderingService>();
-
-            // Tạm fake, sau này thay bằng Notification Module
-            services.AddScoped<IDeliveryNotificationService, FakeDeliveryNotificationService>();
-
+            services.AddScoped<IEsimDeliveryEmailService, EsimDeliveryEmailService>();
+            services.AddScoped<IDigitalFulfillmentService, MockDigitalFulfillmentService>();
+            services.AddScoped<IDeliveryRateLimitService, DeliveryRateLimitService>();
             services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(DeliveryModule).Assembly);

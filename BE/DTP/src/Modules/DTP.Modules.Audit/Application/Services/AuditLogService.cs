@@ -3,6 +3,7 @@ using DTP.Modules.Audit.Application.Abstractions.Services;
 using DTP.Modules.Audit.Application.Abstractions.UnitOfWork;
 using DTP.Modules.Audit.Application.DTOs;
 using DTP.Modules.Audit.Domain.Entities;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using System;
 using System.Collections.Generic;
@@ -93,7 +94,7 @@ namespace DTP.Modules.Audit.Application.Services
             };
         }
 
-        public async Task<PagedResultDto<AuditLogListItemDto>> GetPagedAsync(
+        public async Task<Result<PagedResultDto<AuditLogListItemDto>>> GetPagedAsync(
             AuditLogFilterDto filter,
             CancellationToken cancellationToken = default)
         {
@@ -106,7 +107,9 @@ namespace DTP.Modules.Audit.Application.Services
             if (filter.PageSize > 100)
                 filter.PageSize = 100;
 
-            return await _auditLogRepository.GetPagedAsync(filter, cancellationToken);
+            var result = await _auditLogRepository.GetPagedAsync(filter, cancellationToken);
+
+            return Result<PagedResultDto<AuditLogListItemDto>>.Success(result);
         }
     }
 }

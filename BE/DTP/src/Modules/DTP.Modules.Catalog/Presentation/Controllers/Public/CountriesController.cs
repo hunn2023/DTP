@@ -15,6 +15,30 @@ namespace DTP.Modules.Catalog.Presentation.Controllers.Public
             _mediator = mediator;
         }
 
+        [HttpGet("home")]
+        public async Task<IActionResult> GetHomeCountries(
+            [FromQuery] string? region,
+            [FromQuery] string? keyword,
+            [FromQuery] int pageIndex = 1,
+            [FromQuery] int pageSize = 12,
+            CancellationToken cancellationToken = default)
+        {
+            var result = await _mediator.Send(
+                new GetHomeCountriesQuery(
+                    region,
+                    keyword,
+                    pageIndex,
+                    pageSize),
+                cancellationToken);
+
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+
+
         [HttpGet]
         public async Task<IActionResult> GetList(
             [FromQuery] GetPublicCountriesQuery query)

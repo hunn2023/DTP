@@ -15,23 +15,27 @@ namespace DTP.Modules.Payment.Application.DTOs
 
         public string OrderCode { get; set; } = default!;
 
-        public string TransactionCode { get; set; } = default!;
-
-        public string? ProviderTransactionCode { get; set; }
+        public Guid? CustomerId { get; set; }
 
         public decimal Amount { get; set; }
 
-        public string CurrencyCode { get; set; } = "VND";
+        public string Currency { get; set; } = "VND";
 
-        public PaymentTransactionStatus Status { get; set; }
+        public string Provider { get; set; } = default!;
 
-        public string StatusName { get; set; } = default!;
+        public string Method { get; set; } = default!;
+
+        public string Status { get; set; } = default!;
+
+        public string RequestId { get; set; } = default!;
+
+        public string? ProviderTransactionId { get; set; }
+
+        public string? QrCode { get; set; }
+
+        public string? QrImageUrl { get; set; }
 
         public string? PaymentUrl { get; set; }
-
-        public string? QrCodeUrl { get; set; }
-
-        public string? QrContent { get; set; }
 
         public DateTime? ExpiredAt { get; set; }
 
