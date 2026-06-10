@@ -5,6 +5,7 @@ using DTP.Modules.Payment.Application.Queries.Payment;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Text.Json;
 
 namespace DTP.Modules.Payment.Presentation.Controllers
@@ -21,6 +22,7 @@ namespace DTP.Modules.Payment.Presentation.Controllers
             _mediator = mediator;
         }
 
+        [EnableRateLimiting("payment-create-qr")]
         [Authorize]
         [HttpPost("qr")]
         public async Task<IActionResult> CreateQr(
@@ -62,6 +64,7 @@ namespace DTP.Modules.Payment.Presentation.Controllers
             return Ok(result);
         }
 
+        [EnableRateLimiting("payment-webhook")]
         [AllowAnonymous]
         [HttpPost("callback/vnpt-epay")]
         public async Task<IActionResult> VnptEpayCallback(

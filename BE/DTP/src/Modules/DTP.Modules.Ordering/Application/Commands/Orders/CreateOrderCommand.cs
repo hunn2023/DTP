@@ -7,7 +7,7 @@ namespace DTP.Modules.Ordering.Application.Commands.Orders
 {
     public class CreateOrderCommand : IRequest<Result<Guid>>
     {
-        public Guid? CustomerId { get; set; }
+        public Guid CustomerId { get; set; }
 
         public string? CustomerEmail { get; set; }
 

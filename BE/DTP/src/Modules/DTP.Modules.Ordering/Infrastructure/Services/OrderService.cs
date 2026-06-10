@@ -10,7 +10,7 @@ using DTP.Modules.Ordering.Domain.Enums;
 using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using Microsoft.AspNetCore.Http;
-using System.Net;
+using DTP.Shared.Application.Http;
 
 
 namespace DTP.Modules.Ordering.Infrastructure.Services
@@ -22,50 +22,132 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
         private readonly IOrderUnitOfWork _unitOfWork;
         private readonly IAuditLogWriter _auditLogWriter;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IOrderRateLimitService _orderRateLimitService;
         public OrderService(
             IOrderRepository orderRepository,
             IOrderHistoryRepository historyRepository,
             IOrderUnitOfWork unitOfWork,
             IAuditLogWriter auditLogWriter,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor,
+            IOrderRateLimitService orderRateLimitService
+            )
         {
             _orderRepository = orderRepository;
             _historyRepository = historyRepository;
             _unitOfWork = unitOfWork;
             _auditLogWriter = auditLogWriter;
             _httpContextAccessor = httpContextAccessor;
+            _orderRateLimitService = orderRateLimitService;
         }
 
         public async Task<Result<Guid>> CreateAsync(
-            Guid? customerId,
-            string? customerEmail,
-            string? customerPhone,
-            string? customerName,
-            string currency,
-            string? note,
-            List<CreateOrderItemRequest> items,
-            CancellationToken cancellationToken = default)
+              Guid customerId,
+              string? customerEmail,
+              string? customerPhone,
+              string? customerName,
+              string currency,
+              string? note,
+              List<CreateOrderItemRequest> items,
+              CancellationToken cancellationToken = default)
         {
             if (items == null || items.Count == 0)
                 return Result<Guid>.Failure("Đơn hàng chưa có sản phẩm.");
 
+            var ipAddress = GetClientIpAddress();
+            var userAgent = GetUserAgent();
+
+            var createBlocked = await _orderRateLimitService.IsCreateOrderBlockedAsync(
+                customerId,
+                ipAddress,
+                cancellationToken);
+
+            if (createBlocked)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Create Order Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "Order",
+                    description: "Create order failed because rate limit exceeded.",
+                    newValues: new
+                    {
+                        CustomerId = customerId,
+                        CustomerEmail = customerEmail,
+                        IpAddress = ipAddress,
+                        UserAgent = userAgent,
+                        Reason = "Create order rate limit exceeded",
+                        Request = GetRequestAuditInfo()
+                    },
+                    errorMessage: "Bạn tạo đơn hàng quá nhiều lần. Vui lòng thử lại sau.",
+                    cancellationToken: cancellationToken);
+
+                return Result<Guid>.Failure(
+                    "Bạn tạo đơn hàng quá nhiều lần. Vui lòng thử lại sau.");
+            }
+
+            await _orderRateLimitService.RegisterCreateOrderAttemptAsync(
+                customerId,
+                ipAddress,
+                cancellationToken);
+
+            if (customerId != null)
+            {
+                var pendingCount = await _orderRepository.CountWaitingPaymentOrdersAsync(
+                    customerId,
+                    cancellationToken);
+
+                if (pendingCount >= 5)
+                {
+                    await WriteAuditSafeAsync(
+                        action: "Create Order Failed",
+                        actionType: AuditActionType.Create,
+                        status: AuditStatus.Failed,
+                        entityName: "Order",
+                        description: "Create order failed because customer has too many waiting payment orders.",
+                        newValues: new
+                        {
+                            CustomerId = customerId,
+                            CustomerEmail = customerEmail,
+                            PendingCount = pendingCount,
+                            IpAddress = ipAddress,
+                            UserAgent = userAgent,
+                            Reason = "Too many waiting payment orders",
+                            Request = GetRequestAuditInfo()
+                        },
+                        errorMessage: "Bạn đang có quá nhiều đơn hàng chờ thanh toán.",
+                        cancellationToken: cancellationToken);
+
+                    return Result<Guid>.Failure(
+                        "Bạn đang có quá nhiều đơn hàng chờ thanh toán. Vui lòng thanh toán hoặc hủy bớt đơn cũ.");
+                }
+            }
+
             currency = string.IsNullOrWhiteSpace(currency)
                 ? "VND"
-                : currency.Trim().ToUpper();
+                : currency.Trim().ToUpperInvariant();
 
-            var orderCode = GenerateOrderCode();
+            if (currency.Length > 10)
+                return Result<Guid>.Failure("Mã tiền tệ không hợp lệ.");
 
-            var order = new Order(
-                orderCode,
-                customerId,
-                customerEmail?.Trim(),
-                customerPhone?.Trim(),
-                customerName?.Trim(),
-                currency,
-                note);
+            if (!string.IsNullOrWhiteSpace(customerEmail))
+                customerEmail = customerEmail.Trim().ToLowerInvariant();
+
+            if (!string.IsNullOrWhiteSpace(customerPhone))
+                customerPhone = customerPhone.Trim();
+
+            if (!string.IsNullOrWhiteSpace(customerName))
+                customerName = customerName.Trim();
+
+            if (string.IsNullOrWhiteSpace(customerEmail))
+                return Result<Guid>.Failure("Vui lòng nhập email khách hàng.");
+
+            var normalizedItems = new List<CreateOrderItemRequest>();
 
             foreach (var request in items)
             {
+                if (request == null)
+                    return Result<Guid>.Failure("Sản phẩm trong đơn hàng không hợp lệ.");
+
                 if (request.ProductId == Guid.Empty)
                     return Result<Guid>.Failure("ProductId không hợp lệ.");
 
@@ -75,9 +157,34 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
                 if (request.Quantity <= 0)
                     return Result<Guid>.Failure("Số lượng phải lớn hơn 0.");
 
+                if (request.Quantity > 10)
+                    return Result<Guid>.Failure("Số lượng mỗi sản phẩm không được vượt quá 10.");
+
                 if (request.UnitPrice < 0)
                     return Result<Guid>.Failure("Đơn giá không hợp lệ.");
 
+                if (request.UnitPrice > 100000000)
+                    return Result<Guid>.Failure("Đơn giá vượt quá giới hạn cho phép.");
+
+                normalizedItems.Add(request);
+            }
+
+            if (normalizedItems.Count > 20)
+                return Result<Guid>.Failure("Một đơn hàng không được vượt quá 20 sản phẩm.");
+
+            var orderCode = GenerateOrderCode();
+
+            var order = new Order(
+                orderCode,
+                customerId,
+                customerEmail,
+                customerPhone,
+                customerName,
+                currency,
+                note?.Trim());
+
+            foreach (var request in normalizedItems)
+            {
                 var item = new OrderItem(
                     order.Id,
                     request.ItemType,
@@ -101,17 +208,12 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
                 new OrderHistory(
                     order.Id,
                     OrderStatus.Draft,
-                    OrderStatus.Draft,
+                    order.Status,
                     "Tạo đơn hàng.",
                     customerId),
                 cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            var ipAddress = GetClientIpAddress();
-            var userAgent = GetUserAgent();
-            var requestPath = GetRequestPath();
-            var requestMethod = GetRequestMethod();
 
             await WriteAuditSafeAsync(
                action: "Create Order",
@@ -147,6 +249,11 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
                        PaymentStatus = order.PaymentStatus.ToString()
                    },
 
+                   Payment = new
+                   {
+                       order.PaymentExpiredAt
+                   },
+
                    Request = GetRequestAuditInfo(),
 
                    ItemsSummary = new
@@ -177,7 +284,12 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
                    Metadata = new
                    {
                        Source = "PublicCheckout",
-                       Module = "Ordering"
+                       Module = "Ordering",
+                       AntiDos = new
+                       {
+                           RateLimitChecked = true,
+                           PendingOrderChecked = customerId 
+                       }
                    }
                },
                cancellationToken: cancellationToken);
@@ -186,37 +298,110 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
         }
 
         public async Task<Result> ConfirmAsync(
-            Guid orderId,
-            string? paymentMethod,
-            Guid? changedBy,
-            CancellationToken cancellationToken = default)
+             Guid orderId,
+             string? paymentMethod,
+             Guid? changedBy,
+             CancellationToken cancellationToken = default)
         {
-            var order = await _orderRepository.GetDetailByIdAsync(orderId, cancellationToken);
+            if (orderId == Guid.Empty)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Confirm Order Failed",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Failed,
+                    entityName: "Order",
+                    description: "Confirm order failed because order id is empty.",
+                    newValues: new
+                    {
+                        OrderId = orderId,
+                        PaymentMethod = paymentMethod,
+                        ChangedBy = changedBy,
+                        Request = GetRequestAuditInfo()
+                    },
+                    errorMessage: "OrderId không hợp lệ.",
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("OrderId không hợp lệ.");
+            }
+
+            paymentMethod = string.IsNullOrWhiteSpace(paymentMethod)
+                ? null
+                : paymentMethod.Trim();
+
+            if (!string.IsNullOrWhiteSpace(paymentMethod) && paymentMethod.Length > 50)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Confirm Order Failed",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Failed,
+                    entityName: "Order",
+                    entityId: orderId,
+                    description: "Confirm order failed because payment method is too long.",
+                    newValues: new
+                    {
+                        OrderId = orderId,
+                        PaymentMethod = paymentMethod,
+                        ChangedBy = changedBy,
+                        Request = GetRequestAuditInfo()
+                    },
+                    errorMessage: "Phương thức thanh toán không hợp lệ.",
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Phương thức thanh toán không hợp lệ.");
+            }
+
+            var order = await _orderRepository.GetDetailByIdAsync(
+                orderId,
+                cancellationToken);
 
             if (order == null)
             {
                 await WriteAuditSafeAsync(
-                       action: "Confirm Order Failed",
-                       actionType: AuditActionType.Update,
-                       status: AuditStatus.Failed,
-                       entityName: "Order",
-                       entityId: orderId,
-                       description: "Confirm order failed because order was not found.",
-                       newValues: new
-                       {
-                           OrderId = orderId,
-                           PaymentMethod = paymentMethod,
-                           ChangedBy = changedBy,
-                           Request = GetRequestAuditInfo()
-                       },
-                       errorMessage: "Không tìm thấy đơn hàng.",
-                       cancellationToken: cancellationToken);
+                    action: "Confirm Order Failed",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Failed,
+                    entityName: "Order",
+                    entityId: orderId,
+                    description: "Confirm order failed because order was not found.",
+                    newValues: new
+                    {
+                        OrderId = orderId,
+                        PaymentMethod = paymentMethod,
+                        ChangedBy = changedBy,
+                        Request = GetRequestAuditInfo()
+                    },
+                    errorMessage: "Không tìm thấy đơn hàng.",
+                    cancellationToken: cancellationToken);
 
                 return Result.Failure("Không tìm thấy đơn hàng.");
             }
-                
+
             var oldStatus = order.Status;
             var oldValues = GetOrderSnapshot(order);
+
+            if (order.Status == OrderStatus.PendingPayment &&
+                order.PaymentStatus == OrderPaymentStatus.Unpaid)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Confirm Order Idempotent",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Success,
+                    entityName: "Order",
+                    entityId: order.Id,
+                    description: $"Order {order.OrderCode} was already confirmed.",
+                    oldValues: oldValues,
+                    newValues: new
+                    {
+                        Order = GetOrderSnapshot(order),
+                        ChangedBy = changedBy,
+                        PaymentMethod = paymentMethod,
+                        Request = GetRequestAuditInfo(),
+                        Reason = "Order already waiting payment"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Đơn hàng đã được xác nhận trước đó.");
+            }
 
             try
             {
@@ -225,22 +410,23 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
             catch (Exception ex)
             {
                 await WriteAuditSafeAsync(
-                   action: "Confirm Order Failed",
-                   actionType: AuditActionType.Update,
-                   status: AuditStatus.Failed,
-                   entityName: "Order",
-                   entityId: order.Id,
-                   description: $"Confirm order {order.OrderCode} failed.",
-                   oldValues: oldValues,
-                   newValues: new
-                   {
-                       PaymentMethod = paymentMethod,
-                       ChangedBy = changedBy,
-                       Request = GetRequestAuditInfo()
-                   },
-                   errorMessage: ex.Message,
-                   cancellationToken: cancellationToken);
-                        return Result.Failure(ex.Message);
+                    action: "Confirm Order Failed",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Failed,
+                    entityName: "Order",
+                    entityId: order.Id,
+                    description: $"Confirm order {order.OrderCode} failed.",
+                    oldValues: oldValues,
+                    newValues: new
+                    {
+                        PaymentMethod = paymentMethod,
+                        ChangedBy = changedBy,
+                        Request = GetRequestAuditInfo()
+                    },
+                    errorMessage: ex.Message,
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure(ex.Message);
             }
 
             await AddHistoryAsync(
@@ -252,34 +438,42 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
                 cancellationToken);
 
             _orderRepository.Update(order);
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-
             await WriteAuditSafeAsync(
-                   action: "Confirm Order",
-                   actionType: AuditActionType.Update,
-                   status: AuditStatus.Success,
-                   entityName: "Order",
-                   entityId: order.Id,
-                   description: $"Order {order.OrderCode} was confirmed successfully.",
-                   oldValues: oldValues,
-                   newValues: new
-                   {
-                       Order = GetOrderSnapshot(order),
-                       ChangedBy = changedBy,
-                       PaymentMethod = paymentMethod,
-                       Request = GetRequestAuditInfo()
-                   },
-                   cancellationToken: cancellationToken);
+                action: "Confirm Order",
+                actionType: AuditActionType.Update,
+                status: AuditStatus.Success,
+                entityName: "Order",
+                entityId: order.Id,
+                description: $"Order {order.OrderCode} was confirmed successfully.",
+                oldValues: oldValues,
+                newValues: new
+                {
+                    Order = GetOrderSnapshot(order),
+                    ChangedBy = changedBy,
+                    PaymentMethod = paymentMethod,
+                    Payment = new
+                    {
+                        order.PaymentMethod,
+                        order.PaymentStatus,
+                        order.PaymentExpiredAt
+                    },
+                    Request = GetRequestAuditInfo()
+                },
+                cancellationToken: cancellationToken);
 
             return Result.Success();
         }
 
+
+
         public async Task<Result> MarkPaidAsync(
-    Guid orderId,
-    string paymentTransactionId,
-    Guid? changedBy,
-    CancellationToken cancellationToken = default)
+            Guid orderId,
+            string paymentTransactionId,
+            Guid? changedBy,
+            CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(paymentTransactionId))
             {
@@ -388,9 +582,9 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
         }
 
         public async Task<Result> CompleteAsync(
-    Guid orderId,
-    Guid? changedBy,
-    CancellationToken cancellationToken = default)
+            Guid orderId,
+            Guid? changedBy,
+            CancellationToken cancellationToken = default)
         {
             var order = await _orderRepository.GetDetailByIdAsync(orderId, cancellationToken);
 
@@ -473,10 +667,10 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
             return Result.Success();
         }
         public async Task<Result> CancelAsync(
-    Guid orderId,
-    string reason,
-    Guid? changedBy,
-    CancellationToken cancellationToken = default)
+            Guid orderId,
+            string reason,
+            Guid? changedBy,
+            CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(reason))
             {
@@ -585,8 +779,8 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
         }
 
         public async Task<Result<OrderDetailDto>> GetByIdAsync(
-    Guid id,
-    CancellationToken cancellationToken = default)
+        Guid id,
+        CancellationToken cancellationToken = default)
         {
             var order = await _orderRepository.GetDetailByIdAsync(id, cancellationToken);
 
@@ -637,16 +831,19 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
         }
 
         public async Task<Result<PagedResultDto<OrderDto>>> GetPagedAsync(
-     string? keyword,
-     Guid? customerId,
-     OrderStatus? status,
-     OrderPaymentStatus? paymentStatus,
-     int pageIndex,
-     int pageSize,
-     CancellationToken cancellationToken = default)
+             string? keyword,
+             Guid? customerId,
+             OrderStatus? status,
+             OrderPaymentStatus? paymentStatus,
+             int pageIndex,
+             int pageSize,
+             CancellationToken cancellationToken = default)
         {
             pageIndex = pageIndex <= 0 ? 1 : pageIndex;
             pageSize = pageSize <= 0 ? 20 : pageSize;
+
+            if (pageSize > 100)
+                pageSize = 100;
 
             var result = await _orderRepository.GetPagedAsync(
                 keyword,
@@ -693,6 +890,63 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
 
             return Result<PagedResultDto<OrderDto>>.Success(dto);
         }
+
+
+        //public async Task<Result<int>> ExpireWaitingPaymentOrdersAsync(
+        //    CancellationToken cancellationToken = default)
+        //{
+        //    var now = DateTime.UtcNow;
+
+        //    var orders = await _orderRepository.GetExpiredWaitingPaymentOrdersAsync(
+        //        now,
+        //        200,
+        //        cancellationToken);
+
+        //    if (orders.Count == 0)
+        //        return Result<int>.Success(0);
+
+        //    foreach (var order in orders)
+        //    {
+        //        var oldStatus = order.Status;
+
+        //        try
+        //        {
+        //            order.Expire("Đơn hàng hết hạn thanh toán.");
+
+        //            await AddHistoryAsync(
+        //                order.Id,
+        //                oldStatus,
+        //                order.Status,
+        //                "Đơn hàng hết hạn thanh toán.",
+        //                null,
+        //                cancellationToken);
+
+        //            _orderRepository.Update(order);
+        //        }
+        //        catch
+        //        {
+        //            // Bỏ qua từng đơn lỗi để không làm dừng toàn bộ batch.
+        //        }
+        //    }
+
+        //    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        //    await WriteAuditSafeAsync(
+        //        action: "Expire Waiting Payment Orders",
+        //        actionType: AuditActionType.Update,
+        //        status: AuditStatus.Success,
+        //        entityName: "Order",
+        //        description: "Expired waiting payment orders successfully.",
+        //        newValues: new
+        //        {
+        //            Count = orders.Count,
+        //            ActionAt = now
+        //        },
+        //        cancellationToken: cancellationToken);
+
+        //    return Result<int>.Success(orders.Count);
+        //}
+
 
         private async Task AddHistoryAsync(
             Guid orderId,
@@ -797,7 +1051,7 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
                 PaidAt = order.PaidAt,
                 CancelledAt = order.CancelledAt,
                 CancelReason = order.CancelReason,
-
+                PaymentExpiredAt = order.PaymentExpiredAt,
                 Items = order.Items.Select(x => new OrderItemDto
                 {
                     Id = x.Id,
@@ -836,8 +1090,6 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
             {
                 IpAddress = GetClientIpAddress(),
                 UserAgent = GetUserAgent(),
-                Path = GetRequestPath(),
-                Method = GetRequestMethod(),
                 ActionAt = DateTime.UtcNow
             };
         }
@@ -874,7 +1126,9 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
                 Payment = new
                 {
                     order.PaymentMethod,
+                    order.PaymentStatus,
                     order.PaymentTransactionId,
+                    order.PaymentExpiredAt,
                     order.PaidAt
                 },
 
@@ -896,50 +1150,12 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
 
         private string? GetClientIpAddress()
         {
-            var httpContext = _httpContextAccessor.HttpContext;
-
-            if (httpContext == null)
-                return null;
-
-            var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-
-            if (!string.IsNullOrWhiteSpace(forwardedFor))
-            {
-                return forwardedFor
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .FirstOrDefault()
-                    ?.Trim();
-            }
-
-            var realIp = httpContext.Request.Headers["X-Real-IP"].FirstOrDefault();
-
-            if (!string.IsNullOrWhiteSpace(realIp))
-                return realIp.Trim();
-
-            return httpContext.Connection.RemoteIpAddress?.ToString();
+            return _httpContextAccessor.HttpContext.GetClientIp();
         }
 
         private string? GetUserAgent()
         {
-            return _httpContextAccessor.HttpContext?
-                .Request
-                .Headers["User-Agent"]
-                .FirstOrDefault();
-        }
-
-        private string? GetRequestPath()
-        {
-            return _httpContextAccessor.HttpContext?
-                .Request
-                .Path
-                .Value;
-        }
-
-        private string? GetRequestMethod()
-        {
-            return _httpContextAccessor.HttpContext?
-                .Request
-                .Method;
+            return _httpContextAccessor.HttpContext.GetUserAgent();
         }
     }
 }

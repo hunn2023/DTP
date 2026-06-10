@@ -3,13 +3,14 @@ using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Domain.Entities;
 using DTP.Modules.Catalog.Infrastructure.Persistence;
 using DTP.Shared.Application.Pagination;
+using DTP.Shared.Caching;
 using DTP.Shared.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace DTP.Modules.Catalog.Infrastructure.Repositories
 {
     public class CountryRepository
-     : RepositoryBase<Country>,ICountryRepository
+     : RepositoryBase<Country>, ICountryRepository
     {
         private readonly CatalogDbContext _context;
 
@@ -146,6 +147,119 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 .ToListAsync(cancellationToken);
 
             return new PagedResultDto<CountryDto>
+            {
+                Items = items,
+                TotalCount = totalItems,
+                PageIndex = pageIndex,
+                PageSize = pageSize
+            };
+        }
+
+        public async Task<PagedResultDto<HomeCountryEsimDto>> GetHomeCountriesAsync(
+            string? region,
+            string? keyword,
+            int pageIndex,
+            int pageSize,
+            CancellationToken cancellationToken = default)
+        {
+            if (pageIndex <= 0)
+                pageIndex = 1;
+
+            if (pageSize <= 0)
+                pageSize = 12;
+
+            if (pageSize > 100)
+                pageSize = 100;
+
+            var normalizedRegion = string.IsNullOrWhiteSpace(region)
+                ? "all"
+                : region.Trim().ToLower();
+
+            var normalizedKeyword = string.IsNullOrWhiteSpace(keyword)
+                ? null
+                : keyword.Trim().ToLower();
+
+            var now = DateTime.UtcNow;
+
+            var query = _context.Countries
+                .AsNoTracking()
+                .Where(x => x.IsActive);
+
+            if (normalizedRegion != "all")
+            {
+                query = query.Where(x =>
+                    x.Region != null &&
+                    x.Region.ToLower() == normalizedRegion);
+            }
+
+            if (!string.IsNullOrWhiteSpace(normalizedKeyword))
+            {
+                query = query.Where(x =>
+                    x.Name.ToLower().Contains(normalizedKeyword) ||
+                    x.Code.ToLower().Contains(normalizedKeyword) ||
+                    x.Slug.ToLower().Contains(normalizedKeyword));
+            }
+
+            var projectedQuery = query
+                .OrderBy(x => x.SortOrder)
+                .ThenBy(x => x.Name)
+                .Select(country => new HomeCountryEsimDto
+                {
+                    CountryId = country.Id,
+                    Code = country.Code,
+                    Name = country.Name,
+                    Slug = country.Slug,
+                    FlagUrl = country.FlagUrl,
+                    Region = country.Region,
+
+                    PackageCount = _context.EsimPackages
+                        .Count(pkg =>
+                            pkg.CountryId == country.Id &&
+                            pkg.IsActive),
+
+                    PriceFrom = _context.ProductPrices
+                        .Where(price =>
+                            price.IsActive &&
+                            price.SalePrice > 0 &&
+                            (price.StartDate == null || price.StartDate <= now) &&
+                            (price.EndDate == null || price.EndDate >= now) &&
+                            _context.Products.Any(product =>
+                                product.Id == price.ProductId &&
+                                product.CountryId == country.Id &&
+                                product.IsActive))
+                        .OrderBy(price => price.SalePrice)
+                        .Select(price => price.SalePrice)
+                        .FirstOrDefault(),
+
+                    Currency = _context.ProductPrices
+                        .Where(price =>
+                            price.IsActive &&
+                            price.SalePrice > 0 &&
+                            (price.StartDate == null || price.StartDate <= now) &&
+                            (price.EndDate == null || price.EndDate >= now) &&
+                            _context.Products.Any(product =>
+                                product.Id == price.ProductId &&
+                                product.CountryId == country.Id &&
+                                product.IsActive))
+                        .OrderBy(price => price.SalePrice)
+                        .Select(price => price.Currency)
+                        .FirstOrDefault() ?? "VND",
+
+                    IsHot = _context.Products.Any(product =>
+                        product.CountryId == country.Id &&
+                        product.IsActive &&
+                        product.IsHot)
+                })
+                .Where(x => x.PackageCount > 0 && x.PriceFrom > 0);
+
+            var totalItems = await projectedQuery.CountAsync(cancellationToken);
+
+            var items = await projectedQuery
+                .Skip((pageIndex - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+
+            return new PagedResultDto<HomeCountryEsimDto>
             {
                 Items = items,
                 TotalCount = totalItems,

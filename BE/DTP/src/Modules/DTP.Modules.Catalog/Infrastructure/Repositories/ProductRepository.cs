@@ -56,11 +56,15 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 countryId,
                 null);
 
+            var priceQuery = _context.ProductPrices.AsNoTracking();
+
+
             return await ToPagedDtoAsync(
-                query,
-                pageIndex,
-                pageSize,
-                cancellationToken);
+                    query,
+                    priceQuery,
+                    pageIndex,
+                    pageSize,
+                    cancellationToken);
         }
 
 
@@ -113,11 +117,15 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 countryId,
                 isActive);
 
+            var priceQuery = _context.ProductPrices.AsNoTracking();
+
+
             return await ToPagedDtoAsync(
-                query,
-                pageIndex,
-                pageSize,
-                cancellationToken);
+                    query,
+                    priceQuery,
+                    pageIndex,
+                    pageSize,
+                    cancellationToken);
         }
 
 
@@ -275,13 +283,21 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         }
 
         private static async Task<PagedResultDto<ProductDto>> ToPagedDtoAsync(
-            IQueryable<Product> query,
-            int pageIndex,
-            int pageSize,
-            CancellationToken cancellationToken)
+             IQueryable<Product> query,
+             IQueryable<ProductPrice> productPrices,
+             int pageIndex,
+             int pageSize,
+             CancellationToken cancellationToken)
         {
-            pageIndex = pageIndex <= 0 ? 1 : pageIndex;
-            pageSize = pageSize <= 0 ? 20 : pageSize;
+            const int defaultPageIndex = 1;
+            const int defaultPageSize = 20;
+            const int maxPageSize = 100;
+
+            pageIndex = pageIndex <= 0 ? defaultPageIndex : pageIndex;
+            pageSize = pageSize <= 0 ? defaultPageSize : pageSize;
+            pageSize = pageSize > maxPageSize ? maxPageSize : pageSize;
+
+            var now = DateTime.UtcNow;
 
             var totalItems = await query.CountAsync(cancellationToken);
 
@@ -290,31 +306,73 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 .ThenBy(x => x.Name)
                 .Skip((pageIndex - 1) * pageSize)
                 .Take(pageSize)
-               .Select(x => new ProductDto
-               {
-                   Id = x.Id,
-                   Code = x.Code,
-                   Name = x.Name,
-                   Slug = x.Slug,
+                .Select(x => new ProductDto
+                {
+                    Id = x.Id,
+                    Code = x.Code,
+                    Name = x.Name,
+                    Slug = x.Slug,
 
-                   CategoryId = x.CategoryId,
-                   CategoryName = x.Category != null ? x.Category.Name : null,
+                    CategoryId = x.CategoryId,
+                    CategoryName = x.Category != null ? x.Category.Name : null,
 
-                   CountryId = x.CountryId,
-                   CountryName = x.Country != null ? x.Country.Name : null,
+                    CountryId = x.CountryId,
+                    CountryName = x.Country != null ? x.Country.Name : null,
 
-                   ShortDescription = x.ShortDescription,
-                   Description = x.Description,
-                   LocationText = x.LocationText,
-                   ThumbnailUrl = x.ThumbnailUrl,
+                    ShortDescription = x.ShortDescription,
+                    Description = x.Description,
+                    LocationText = x.LocationText,
+                    ThumbnailUrl = x.ThumbnailUrl,
 
-                   IsFeatured = x.IsFeatured,
-                   IsHot = x.IsHot,
-                   SoldCount = x.SoldCount,
+                    OriginalPrice = productPrices
+                        .Where(p =>
+                            p.ProductId == x.Id &&
+                            p.IsActive &&
+                            p.ProductVariantId == null &&
+                            (p.StartDate == null || p.StartDate <= now) &&
+                            (p.EndDate == null || p.EndDate >= now))
+                        .OrderBy(p => p.SalePrice)
+                        .Select(p => (decimal?)p.OriginalPrice)
+                        .FirstOrDefault(),
 
-                   SortOrder = x.SortOrder,
-                   IsActive = x.IsActive
-               })
+                    SalePrice = productPrices
+                        .Where(p =>
+                            p.ProductId == x.Id &&
+                            p.IsActive &&
+                            p.ProductVariantId == null &&
+                            (p.StartDate == null || p.StartDate <= now) &&
+                            (p.EndDate == null || p.EndDate >= now))
+                        .OrderBy(p => p.SalePrice)
+                        .Select(p => (decimal?)p.SalePrice)
+                        .FirstOrDefault(),
+
+                    MinPrice = productPrices
+                        .Where(p =>
+                            p.ProductId == x.Id &&
+                            p.IsActive &&
+                            (p.StartDate == null || p.StartDate <= now) &&
+                            (p.EndDate == null || p.EndDate >= now))
+                        .OrderBy(p => p.SalePrice)
+                        .Select(p => (decimal?)p.SalePrice)
+                        .FirstOrDefault(),
+
+                    Currency = productPrices
+                        .Where(p =>
+                            p.ProductId == x.Id &&
+                            p.IsActive &&
+                            (p.StartDate == null || p.StartDate <= now) &&
+                            (p.EndDate == null || p.EndDate >= now))
+                        .OrderBy(p => p.SalePrice)
+                        .Select(p => p.Currency)
+                        .FirstOrDefault(),
+
+                    IsFeatured = x.IsFeatured,
+                    IsHot = x.IsHot,
+                    SoldCount = x.SoldCount,
+
+                    SortOrder = x.SortOrder,
+                    IsActive = x.IsActive
+                })
                 .ToListAsync(cancellationToken);
 
             return new PagedResultDto<ProductDto>
@@ -324,6 +382,247 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 PageIndex = pageIndex,
                 PageSize = pageSize
             };
+        }
+
+
+        public async Task<PagedResultDto<ProductVariantPublicDto>> GetPublicVariantPagedAsync(
+                string? keyword,
+                Guid? categoryId,
+                Guid? countryId,
+                int pageIndex,
+                int pageSize,
+                CancellationToken cancellationToken = default)
+        {
+            var variantQuery = _context.ProductVariants
+                .AsNoTracking()
+                .Where(v =>
+                    v.IsActive &&
+                    v.Product.IsActive);
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                keyword = keyword.Trim();
+
+                variantQuery = variantQuery.Where(v =>
+                    v.Product.Name.Contains(keyword) ||
+                    v.Product.Slug.Contains(keyword) ||
+                    v.Name.Contains(keyword) ||
+                    v.Sku!.Contains(keyword));
+            }
+
+            if (categoryId.HasValue && categoryId.Value != Guid.Empty)
+            {
+                variantQuery = variantQuery.Where(v =>
+                    v.Product.CategoryId == categoryId.Value);
+            }
+
+            if (countryId.HasValue && countryId.Value != Guid.Empty)
+            {
+                variantQuery = variantQuery.Where(v =>
+                    v.Product.CountryId == countryId.Value);
+            }
+
+            var priceQuery = _context.ProductPrices
+                .AsNoTracking();
+            var productVariantFeaturesQuery = _context.ProductVariantFeatures
+                .AsNoTracking();
+
+            return await ToPagedVariantDtoAsync(
+                variantQuery,
+                priceQuery,
+                productVariantFeaturesQuery,
+                pageIndex,
+                pageSize,
+                cancellationToken);
+        }
+
+
+
+        private static async Task<PagedResultDto<ProductVariantPublicDto>> ToPagedVariantDtoAsync(
+             IQueryable<ProductVariant> variantQuery,
+             IQueryable<ProductPrice> productPrices,
+             IQueryable<ProductVariantFeature> productVariantFeatures,
+             int pageIndex,
+             int pageSize,
+             CancellationToken cancellationToken)
+        {
+            const int defaultPageIndex = 1;
+            const int defaultPageSize = 20;
+            const int maxPageSize = 100;
+
+            pageIndex = pageIndex <= 0 ? defaultPageIndex : pageIndex;
+            pageSize = pageSize <= 0 ? defaultPageSize : pageSize;
+            pageSize = pageSize > maxPageSize ? maxPageSize : pageSize;
+
+            var now = DateTime.UtcNow;
+
+            var query =
+                from variant in variantQuery
+                let price = productPrices
+                    .Where(p =>
+                        p.ProductId == variant.ProductId &&
+                        p.ProductVariantId == variant.Id &&
+                        p.IsActive &&
+                        (p.StartDate == null || p.StartDate <= now) &&
+                        (p.EndDate == null || p.EndDate >= now))
+                    .OrderBy(p => p.SalePrice)
+                    .FirstOrDefault()
+                where price != null
+                select new ProductVariantPublicDto
+                {
+                    ProductId = variant.ProductId,
+                    ProductCode = variant.Product.Code,
+                    ProductName = variant.Product.Name,
+                    ProductSlug = variant.Product.Slug,
+
+                    ProductVariantId = variant.Id,
+                    Sku = variant.Sku,
+                    VariantName = variant.Name,
+                    VariantShortName = variant.ShortName,
+                    VariantDescription = variant.Description,
+
+                    CategoryId = variant.Product.CategoryId,
+                    CategoryName = variant.Product.Category != null
+                        ? variant.Product.Category.Name
+                        : null,
+
+                    CountryId = variant.Product.CountryId,
+                    CountryName = variant.Product.Country != null
+                        ? variant.Product.Country.Name
+                        : null,
+
+                    ShortDescription = variant.Product.ShortDescription,
+                    LocationText = variant.Product.LocationText,
+                    ThumbnailUrl = variant.Product.ThumbnailUrl,
+
+                    OriginalPrice = price.OriginalPrice,
+                    SalePrice = price.SalePrice,
+                    Currency = price.Currency,
+
+                    IsFeatured = variant.Product.IsFeatured,
+                    IsHot = variant.Product.IsHot,
+                    SoldCount = variant.Product.SoldCount,
+
+                    ProductSortOrder = variant.Product.SortOrder,
+                    VariantSortOrder = variant.SortOrder,
+
+                    Features = new List<ProductVariantFeaturePublicDto>()
+                };
+
+            var totalItems = await query.CountAsync(cancellationToken);
+
+            var items = await query
+                .OrderBy(x => x.ProductSortOrder)
+                .ThenBy(x => x.ProductName)
+                .ThenBy(x => x.VariantSortOrder)
+                .ThenBy(x => x.SalePrice)
+                .Skip((pageIndex - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+
+            if (items.Count > 0)
+            {
+                var variantIds = items
+                    .Select(x => x.ProductVariantId)
+                    .Distinct()
+                    .ToList();
+
+                var features = await productVariantFeatures
+                    .Where(x =>
+                        variantIds.Contains(x.ProductVariantId) &&
+                        x.IsActive)
+                    .OrderBy(x => x.SortOrder)
+                    .ThenBy(x => x.Text)
+                    .Select(x => new ProductVariantFeaturePublicDto
+                    {
+                        // Id = x.Id,
+                        ProductVariantId = x.ProductVariantId,
+                        Text = x.Text,
+                        Icon = x.Icon,
+                        SortOrder = x.SortOrder
+                    })
+                    .ToListAsync(cancellationToken);
+
+                var featureLookup = features
+                    .GroupBy(x => x.ProductVariantId)
+                    .ToDictionary(
+                        x => x.Key,
+                        x => x.ToList());
+
+                foreach (var item in items)
+                {
+                    if (featureLookup.TryGetValue(item.ProductVariantId, out var variantFeatures))
+                    {
+                        item.Features = variantFeatures;
+                    }
+                }
+            }
+
+            return new PagedResultDto<ProductVariantPublicDto>
+            {
+                Items = items,
+                TotalCount = totalItems,
+                PageIndex = pageIndex,
+                PageSize = pageSize
+            };
+        }
+
+
+
+        public async Task<List<HomeEsimProductDto>> GetHomeEsimProductsAsync(
+         CancellationToken cancellationToken = default)
+        {
+            var now = DateTime.UtcNow;
+
+            var items = await _context.Products
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .Where(x => x.IsFeatured || x.IsHot)
+                .OrderByDescending(x => x.IsHot)
+                .ThenBy(x => x.SortOrder)
+                .ThenBy(x => x.Name)
+                .Select(x => new HomeEsimProductDto
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Slug = x.Slug,
+                    LocationText = x.LocationText,
+                    ThumbnailUrl = x.ThumbnailUrl,
+
+                    FlagUrl = x.Country != null
+                        ? x.Country.FlagUrl
+                        : null,
+
+                    IsHot = x.IsHot,
+                    IsFeatured = x.IsFeatured,
+
+                    PriceFrom = _context.ProductPrices
+                        .Where(p =>
+                            p.ProductId == x.Id &&
+                            p.IsActive &&
+                            p.SalePrice > 0 &&
+                            (p.StartDate == null || p.StartDate <= now) &&
+                            (p.EndDate == null || p.EndDate >= now))
+                        .OrderBy(p => p.SalePrice)
+                        .Select(p => p.SalePrice)
+                        .FirstOrDefault(),
+
+                    Currency = _context.ProductPrices
+                        .Where(p =>
+                            p.ProductId == x.Id &&
+                            p.IsActive &&
+                            p.SalePrice > 0 &&
+                            (p.StartDate == null || p.StartDate <= now) &&
+                            (p.EndDate == null || p.EndDate >= now))
+                        .OrderBy(p => p.SalePrice)
+                        .Select(p => p.Currency)
+                        .FirstOrDefault() ?? "VND"
+                })
+                .Where(x => x.PriceFrom > 0)
+                .Take(10)
+                .ToListAsync(cancellationToken);
+
+            return items;
         }
     }
 }

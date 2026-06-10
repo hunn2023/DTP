@@ -2,11 +2,10 @@
 using DTP.Modules.Ordering.Application.Commands.Orders;
 using DTP.Modules.Ordering.Application.DTOs;
 using DTP.Modules.Ordering.Application.Queries;
-using DTP.Modules.Ordering.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DTP.Modules.Ordering.Presentation.Controllers.Public
 {
@@ -22,6 +21,7 @@ namespace DTP.Modules.Ordering.Presentation.Controllers.Public
             _mediator = mediator;
         }
 
+        [EnableRateLimiting("ordering-create")]
         [HttpPost]
         public async Task<IActionResult> Create(
          [FromBody] CreateOrderCommand command,
@@ -32,6 +32,7 @@ namespace DTP.Modules.Ordering.Presentation.Controllers.Public
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
+        [EnableRateLimiting("ordering-create")]
         [HttpPost("{id:guid}/confirm")]
         public async Task<IActionResult> Confirm(
             Guid id,
@@ -48,6 +49,7 @@ namespace DTP.Modules.Ordering.Presentation.Controllers.Public
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
+        [EnableRateLimiting("ordering-read")]
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(
             Guid id,
@@ -61,6 +63,8 @@ namespace DTP.Modules.Ordering.Presentation.Controllers.Public
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
 
+
+        [EnableRateLimiting("ordering-create")]
         [HttpPost("{id:guid}/cancel")]
         public async Task<IActionResult> Cancel(
             Guid id,

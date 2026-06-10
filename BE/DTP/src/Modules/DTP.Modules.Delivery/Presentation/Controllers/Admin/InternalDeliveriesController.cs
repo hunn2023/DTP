@@ -1,13 +1,10 @@
 ﻿using DTP.Modules.Delivery.Application.Commands.DeliverOrder;
 using DTP.Modules.Delivery.Application.Commands.Delivery;
+using DTP.Shared.Application.Http;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DTP.Modules.Delivery.Presentation.Controllers.Admin
 {
@@ -22,12 +19,13 @@ namespace DTP.Modules.Delivery.Presentation.Controllers.Admin
             _mediator = mediator;
         }
 
+        [EnableRateLimiting("delivery-process")]
         [HttpPost("create-from-paid-order")]
         public async Task<IActionResult> CreateFromPaidOrder(
             [FromBody] CreateDeliveryFromPaidOrderRequest request,
             CancellationToken cancellationToken = default)
         {
-            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var ip = HttpContext.GetClientIp();
 
             var createResult = await _mediator.Send(
                 new CreateDeliveryCommand(
@@ -39,7 +37,7 @@ namespace DTP.Modules.Delivery.Presentation.Controllers.Admin
                 return Ok(createResult);
 
             var processResult = await _mediator.Send(
-                new ProcessDeliveryCommand(createResult.Data),
+                new ProcessDeliveryCommand(createResult.Data, ip),
                 cancellationToken);
 
             return Ok(processResult);

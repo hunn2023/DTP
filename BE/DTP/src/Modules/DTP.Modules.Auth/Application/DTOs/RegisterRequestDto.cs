@@ -14,4 +14,8 @@ namespace DTP.Modules.Auth.Application.DTOs
         public string FullName { get; set; } = default!;
         public string Password { get; set; } = default!;
     }
+    public class ResendRegisterOtpRequestDto
+    {
+        public string Email { get; set; } = default!;
+    }
 }

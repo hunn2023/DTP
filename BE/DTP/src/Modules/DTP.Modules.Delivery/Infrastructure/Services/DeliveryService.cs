@@ -6,8 +6,10 @@ using DTP.Modules.Delivery.Application.DTOs;
 using DTP.Modules.Delivery.Domain.Entities;
 using DTP.Modules.Delivery.Domain.Enums;
 using DTP.Shared.Application;
-using DTP.Shared.Application.Pagination;
 using DTP.Shared.Application.Delivery;
+using DTP.Shared.Application.Pagination;
+using System.Net;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace DTP.Modules.Delivery.Infrastructure.Services
 {
@@ -19,6 +21,7 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
         private readonly IDigitalFulfillmentService _digitalFulfillmentService;
         private readonly IAuditLogWriter _auditLogService;
         private readonly IEsimDeliveryEmailService _esimDeliveryEmailService;
+        private readonly IDeliveryRateLimitService _deliveryRateLimitService;
 
         public DeliveryService(
             IDeliveryRepository deliveryRepository,
@@ -26,7 +29,8 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
             IOrderDeliveryReader orderDeliveryReader,
             IDigitalFulfillmentService digitalFulfillmentService,
             IAuditLogWriter auditLogService,
-            IEsimDeliveryEmailService esimDeliveryEmailService)
+            IEsimDeliveryEmailService esimDeliveryEmailService,
+            IDeliveryRateLimitService deliveryRateLimitService)
         {
             _deliveryRepository = deliveryRepository;
             _unitOfWork = unitOfWork;
@@ -34,6 +38,7 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
             _digitalFulfillmentService = digitalFulfillmentService;
             _auditLogService = auditLogService;
             _esimDeliveryEmailService = esimDeliveryEmailService;
+            _deliveryRateLimitService = deliveryRateLimitService;
         }
 
         public async Task<Result<Guid>> CreatePendingAsync(
@@ -44,17 +49,33 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
             if (orderId == Guid.Empty)
                 return Result<Guid>.Failure("OrderId không hợp lệ.");
 
+            ipAddress = string.IsNullOrWhiteSpace(ipAddress)
+                   ? "unknown"
+                   : ipAddress.Trim();
+
             var exists = await _deliveryRepository.ExistsByOrderIdAsync(
                 orderId,
                 cancellationToken);
 
             if (exists)
             {
+
                 var existing = await _deliveryRepository.GetByOrderIdAsync(
                     orderId,
                     cancellationToken);
 
-                return Result<Guid>.Success(existing!.Id);
+
+                if (existing != null)
+                {
+                    if (existing.Status == DeliveryStatus.Delivered)
+                        return Result<Guid>.Success(existing.Id);
+
+                    if (existing.Status == DeliveryStatus.Processing)
+                        return Result<Guid>.Failure("Đơn giao hàng đang được xử lý.");
+
+                    return Result<Guid>.Success(existing.Id);
+                }
+
             }
 
             var order = await _orderDeliveryReader.GetOrderForDeliveryAsync(
@@ -128,12 +149,18 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
             return Result<Guid>.Success(delivery.Id);
         }
 
+
         public async Task<Result> ProcessAsync(
-            Guid deliveryId,
-            CancellationToken cancellationToken = default)
+        Guid deliveryId,
+        string? ipAddress,
+        CancellationToken cancellationToken = default)
         {
             if (deliveryId == Guid.Empty)
                 return Result.Failure("DeliveryId không hợp lệ.");
+
+            ipAddress = string.IsNullOrWhiteSpace(ipAddress)
+                ? "unknown"
+                : ipAddress.Trim();
 
             var delivery = await _deliveryRepository.GetByIdAsync(
                 deliveryId,
@@ -143,51 +170,352 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
                 return Result.Failure("Không tìm thấy lệnh giao hàng.");
 
             if (delivery.Status == DeliveryStatus.Delivered)
-                return Result.Success();
-
-            delivery.StartProcessing();
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            await WriteAuditSafeAsync(
-                action: "Process Delivery",
-                actionType: AuditActionType.Update,
-                status: AuditStatus.Success,
-                entityName: "Delivery",
-                entityId: delivery.Id,
-                description: "Delivery processing started.",
-                newValues: new
-                {
-                    delivery.Id,
-                    delivery.OrderId,
-                    delivery.OrderCode,
-                    delivery.Status,
-                    delivery.AttemptCount,
-                    ProcessAt = DateTime.UtcNow
-                },
-                cancellationToken: cancellationToken);
-
-            var fulfillment = await _digitalFulfillmentService.FulfillAsync(
-                delivery.OrderId,
-                cancellationToken);
-
-            if (!fulfillment.Success)
             {
-                var error = string.IsNullOrWhiteSpace(fulfillment.ErrorMessage)
-                    ? "Không thể xử lý giao hàng số."
-                    : fulfillment.ErrorMessage;
-
-                delivery.MarkFailed(error);
-
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-
                 await WriteAuditSafeAsync(
-                    action: "Delivery Failed",
+                    action: "Process Delivery Idempotent",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Success,
+                    entityName: "Delivery",
+                    entityId: delivery.Id,
+                    description: "Delivery was already delivered. Process request ignored.",
+                    newValues: new
+                    {
+                        delivery.Id,
+                        delivery.OrderId,
+                        delivery.OrderCode,
+                        delivery.Status,
+                        delivery.DeliveredAt,
+                        IpAddress = ipAddress,
+                        Reason = "Already delivered"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Success();
+            }
+
+            if (delivery.Status == DeliveryStatus.Processing)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Process Delivery Blocked",
                     actionType: AuditActionType.Update,
                     status: AuditStatus.Failed,
                     entityName: "Delivery",
                     entityId: delivery.Id,
-                    description: "Delivery processing failed.",
+                    description: "Delivery is already processing.",
+                    newValues: new
+                    {
+                        delivery.Id,
+                        delivery.OrderId,
+                        delivery.OrderCode,
+                        delivery.Status,
+                        IpAddress = ipAddress,
+                        Reason = "Already processing"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Lệnh giao hàng đang được xử lý. Vui lòng thử lại sau.");
+            }
+
+            var blocked = await _deliveryRateLimitService.IsProcessBlockedAsync(
+                delivery.Id,
+                delivery.OrderId,
+                ipAddress,
+                cancellationToken);
+
+            if (blocked)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Process Delivery Blocked",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Failed,
+                    entityName: "Delivery",
+                    entityId: delivery.Id,
+                    description: "Delivery processing was blocked by rate limit.",
+                    newValues: new
+                    {
+                        delivery.Id,
+                        delivery.OrderId,
+                        delivery.OrderCode,
+                        delivery.Status,
+                        IpAddress = ipAddress,
+                        Reason = "Process delivery rate limit exceeded"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Bạn xử lý giao hàng quá nhiều lần. Vui lòng thử lại sau.");
+            }
+
+            await _deliveryRateLimitService.RegisterProcessAttemptAsync(
+                delivery.Id,
+                delivery.OrderId,
+                ipAddress,
+                cancellationToken);
+
+            var oldStatus = delivery.Status;
+
+            try
+            {
+                delivery.StartProcessing();
+
+                _deliveryRepository.Update(delivery);
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                await WriteAuditSafeAsync(
+                    action: "Process Delivery",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Success,
+                    entityName: "Delivery",
+                    entityId: delivery.Id,
+                    description: "Delivery processing started.",
+                    newValues: new
+                    {
+                        delivery.Id,
+                        delivery.OrderId,
+                        delivery.OrderCode,
+                        FromStatus = oldStatus.ToString(),
+                        ToStatus = delivery.Status.ToString(),
+                        delivery.AttemptCount,
+                        IpAddress = ipAddress,
+                        ProcessAt = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Process Delivery Failed",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Failed,
+                    entityName: "Delivery",
+                    entityId: delivery.Id,
+                    description: "Delivery start processing failed.",
+                    newValues: new
+                    {
+                        delivery.Id,
+                        delivery.OrderId,
+                        delivery.OrderCode,
+                        delivery.Status,
+                        IpAddress = ipAddress,
+                        errorMessage = ex.Message,
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure(ex.Message);
+            }
+
+            try
+            {
+                var fulfillment = await _digitalFulfillmentService.FulfillAsync(
+                    delivery.OrderId,
+                    cancellationToken);
+
+                if (!fulfillment.Success)
+                {
+                    var error = string.IsNullOrWhiteSpace(fulfillment.ErrorMessage)
+                        ? "Không thể xử lý giao hàng số."
+                        : fulfillment.ErrorMessage;
+
+                    delivery.MarkFailed(error);
+
+                    _deliveryRepository.Update(delivery);
+
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                    await WriteAuditSafeAsync(
+                        action: "Delivery Failed",
+                        actionType: AuditActionType.Update,
+                        status: AuditStatus.Failed,
+                        entityName: "Delivery",
+                        entityId: delivery.Id,
+                        description: "Delivery processing failed.",
+                        newValues: new
+                        {
+                            delivery.Id,
+                            delivery.OrderId,
+                            delivery.OrderCode,
+                            delivery.Status,
+                            delivery.LastError,
+                            delivery.FailedAt,
+                            IpAddress = ipAddress,
+                            errorMessage = error,
+                        },
+                        cancellationToken: cancellationToken);
+
+                    return Result.Failure(error);
+                }
+
+                if (fulfillment.Items == null || fulfillment.Items.Count == 0)
+                {
+                    var error = "Provider không trả về dữ liệu giao hàng.";
+
+                    delivery.MarkFailed(error);
+
+                    _deliveryRepository.Update(delivery);
+
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                    await WriteAuditSafeAsync(
+                        action: "Delivery Failed",
+                        actionType: AuditActionType.Update,
+                        status: AuditStatus.Failed,
+                        entityName: "Delivery",
+                        entityId: delivery.Id,
+                        description: "Delivery fulfillment returned empty items.",
+                        newValues: new
+                        {
+                            delivery.Id,
+                            delivery.OrderId,
+                            delivery.OrderCode,
+                            delivery.Status,
+                            delivery.LastError,
+                            IpAddress = ipAddress,
+                            errorMessage = error,
+                        },
+
+                        cancellationToken: cancellationToken);
+
+                    return Result.Failure(error);
+                }
+
+                foreach (var resultItem in fulfillment.Items)
+                {
+                    var deliveryItem = delivery.Items.FirstOrDefault(x =>
+                        x.OrderItemId == resultItem.OrderItemId);
+
+                    if (deliveryItem == null)
+                    {
+                        await WriteAuditSafeAsync(
+                            action: "Delivery Item Not Found",
+                            actionType: AuditActionType.Update,
+                            status: AuditStatus.Failed,
+                            entityName: "Delivery",
+                            entityId: delivery.Id,
+                            description: "Fulfillment result item did not match any delivery item.",
+                            newValues: new
+                            {
+                                delivery.Id,
+                                delivery.OrderId,
+                                delivery.OrderCode,
+                                resultItem.OrderItemId,
+                                IpAddress = ipAddress
+                            },
+                            cancellationToken: cancellationToken);
+
+                        continue;
+                    }
+
+                    if (deliveryItem.IsDelivered)
+                        continue;
+
+                    delivery.SetItemFulfillment(
+                        deliveryItem.Id,
+                        resultItem.QrCodeUrl,
+                        resultItem.ActivationCode,
+                        resultItem.SerialNumber,
+                        resultItem.ProviderReference,
+                        resultItem.RawData);
+                }
+
+                var notDeliveredItems = delivery.Items
+                    .Where(x => !x.IsDelivered)
+                    .ToList();
+
+                if (notDeliveredItems.Count > 0)
+                {
+                    var error = "Một số sản phẩm chưa được giao thành công.";
+
+                    delivery.MarkFailed(error);
+
+                    _deliveryRepository.Update(delivery);
+
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                    await WriteAuditSafeAsync(
+                        action: "Delivery Partial Failed",
+                        actionType: AuditActionType.Update,
+                        status: AuditStatus.Failed,
+                        entityName: "Delivery",
+                        entityId: delivery.Id,
+                        description: "Some delivery items were not fulfilled.",
+                        newValues: new
+                        {
+                            delivery.Id,
+                            delivery.OrderId,
+                            delivery.OrderCode,
+                            NotDeliveredItems = notDeliveredItems.Select(x => new
+                            {
+                                x.Id,
+                                x.OrderItemId,
+                                x.ProductName,
+                                x.Sku,
+                                x.IsDelivered
+                            }).ToList(),
+                            IpAddress = ipAddress
+                        },
+                        cancellationToken: cancellationToken);
+
+                    return Result.Failure(error);
+                }
+
+                delivery.MarkDelivered("Digital products delivered successfully.");
+
+                _deliveryRepository.Update(delivery);
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                await WriteAuditSafeAsync(
+                    action: "Delivery Success",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Success,
+                    entityName: "Delivery",
+                    entityId: delivery.Id,
+                    description: "Digital delivery completed successfully.",
+                    newValues: new
+                    {
+                        delivery.Id,
+                        delivery.OrderId,
+                        delivery.OrderCode,
+                        delivery.Status,
+                        delivery.DeliveredAt,
+                        IpAddress = ipAddress,
+                        Items = delivery.Items.Select(x => new
+                        {
+                            x.Id,
+                            x.OrderItemId,
+                            x.ProductName,
+                            x.Sku,
+                            x.QrCodeUrl,
+                            x.ActivationCode,
+                            x.SerialNumber,
+                            x.ProviderReference,
+                            x.IsDelivered,
+                            x.DeliveredAt
+                        }).ToList()
+                    },
+                    cancellationToken: cancellationToken);
+
+                await SendDeliveryEmailSafeAsync(
+                    delivery,
+                    cancellationToken);
+
+                return Result.Success();
+            }
+            catch (Exception ex)
+            {
+                delivery.MarkFailed(ex.Message);
+
+                _deliveryRepository.Update(delivery);
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                await WriteAuditSafeAsync(
+                    action: "Delivery Exception",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Failed,
+                    entityName: "Delivery",
+                    entityId: delivery.Id,
+                    description: "Exception occurred while processing delivery.",
                     newValues: new
                     {
                         delivery.Id,
@@ -195,124 +523,16 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
                         delivery.OrderCode,
                         delivery.Status,
                         delivery.LastError,
-                        delivery.FailedAt
+                        delivery.FailedAt,
+                        IpAddress = ipAddress,
+                        errorMessage = ex.Message,
                     },
                     cancellationToken: cancellationToken);
 
-                return Result.Failure(error);
+                return Result.Failure("Có lỗi khi xử lý giao hàng.");
             }
-
-            foreach (var resultItem in fulfillment.Items)
-            {
-                var deliveryItem = delivery.Items.FirstOrDefault(x =>
-                    x.OrderItemId == resultItem.OrderItemId);
-
-                if (deliveryItem == null)
-                    continue;
-
-                delivery.SetItemFulfillment(
-                    deliveryItem.Id,
-                    resultItem.QrCodeUrl,
-                    resultItem.ActivationCode,
-                    resultItem.SerialNumber,
-                    resultItem.ProviderReference,
-                    resultItem.RawData);
-            }
-
-            delivery.MarkDelivered("Digital products delivered successfully.");
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-
-            var deliveryDto = MapToDto(delivery);
-
-            try
-            {
-                await _esimDeliveryEmailService.SendEsimQrEmailAsync(
-                    deliveryDto,
-                    cancellationToken);
-
-                delivery.MarkEmailSent();
-
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-                await WriteAuditSafeAsync(
-                    action: "Send eSIM Email Success",
-                    actionType: AuditActionType.Create,
-                    status: AuditStatus.Success,
-                    entityName: "Delivery",
-                    entityId: delivery.Id,
-                    description: "eSIM QR email sent to customer successfully.",
-                    newValues: new
-                    {
-                        delivery.Id,
-                        delivery.OrderId,
-                        delivery.OrderCode,
-                        delivery.CustomerEmail,
-                        delivery.EmailSent,
-                        delivery.EmailSentAt
-                    },
-                    cancellationToken: cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                delivery.MarkEmailFailed(ex.Message);
-
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-                await WriteAuditSafeAsync(
-                    action: "Send eSIM Email Failed",
-                    actionType: AuditActionType.Create,
-                    status: AuditStatus.Failed,
-                    entityName: "Delivery",
-                    entityId: delivery.Id,
-                    description: "Failed to send eSIM QR email to customer.",
-                    newValues: new
-                    {
-                        delivery.Id,
-                        delivery.OrderId,
-                        delivery.OrderCode,
-                        delivery.CustomerEmail,
-                        delivery.EmailSent,
-                        delivery.EmailError,
-                        FailedAt = DateTime.UtcNow
-                    },
-                    cancellationToken: cancellationToken);
-            }
-
-
-            await WriteAuditSafeAsync(
-                action: "Delivery Success",
-                actionType: AuditActionType.Update,
-                status: AuditStatus.Success,
-                entityName: "Delivery",
-                entityId: delivery.Id,
-                description: "Digital delivery completed successfully.",
-                newValues: new
-                {
-                    delivery.Id,
-                    delivery.OrderId,
-                    delivery.OrderCode,
-                    delivery.Status,
-                    delivery.DeliveredAt,
-                    Items = delivery.Items.Select(x => new
-                    {
-                        x.Id,
-                        x.OrderItemId,
-                        x.ProductName,
-                        x.Sku,
-                        x.QrCodeUrl,
-                        x.ActivationCode,
-                        x.SerialNumber,
-                        x.ProviderReference,
-                        x.IsDelivered,
-                        x.DeliveredAt
-                    })
-                },
-                cancellationToken: cancellationToken);
-
-            return Result.Success();
         }
+
 
         public async Task<Result> MarkDeliveredAsync(
             Guid deliveryId,
@@ -558,6 +778,74 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
             };
         }
 
+
+        private async Task SendDeliveryEmailSafeAsync(
+            Domain.Entities.Delivery delivery,
+            CancellationToken cancellationToken)
+        {
+            if (delivery.EmailSent)
+                return;
+
+            var deliveryDto = MapToDto(delivery);
+
+            try
+            {
+                await _esimDeliveryEmailService.SendEsimQrEmailAsync(
+                    deliveryDto,
+                    cancellationToken);
+
+                delivery.MarkEmailSent();
+
+                _deliveryRepository.Update(delivery);
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                await WriteAuditSafeAsync(
+                    action: "Send eSIM Email Success",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Success,
+                    entityName: "Delivery",
+                    entityId: delivery.Id,
+                    description: "eSIM QR email sent to customer successfully.",
+                    newValues: new
+                    {
+                        delivery.Id,
+                        delivery.OrderId,
+                        delivery.OrderCode,
+                        delivery.CustomerEmail,
+                        delivery.EmailSent,
+                        delivery.EmailSentAt
+                    },
+                    cancellationToken: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                delivery.MarkEmailFailed(ex.Message);
+
+                _deliveryRepository.Update(delivery);
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                await WriteAuditSafeAsync(
+                    action: "Send eSIM Email Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "Delivery",
+                    entityId: delivery.Id,
+                    description: "Failed to send eSIM QR email to customer.",
+                    newValues: new
+                    {
+                        delivery.Id,
+                        delivery.OrderId,
+                        delivery.OrderCode,
+                        delivery.CustomerEmail,
+                        delivery.EmailSent,
+                        delivery.EmailError,
+                        FailedAt = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken);
+            }
+        }
 
         private async Task WriteAuditSafeAsync(
             string action,
