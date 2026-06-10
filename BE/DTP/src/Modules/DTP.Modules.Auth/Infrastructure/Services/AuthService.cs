@@ -143,7 +143,7 @@ namespace DTP.Modules.Auth.Infrastructure.Services
             var emailBody = BuildRegisterOtpEmailBody(otp);
 
 
-            await _emailSender.SendAsync(email, "Mã xác thực đăng ký DTP", emailBody);
+            await _emailSender.SendAsync(email, $"{otp} - Mã xác thực đăng ký ezsim của bạn", emailBody);
 
             await WriteAuditSafeAsync(
                 action: "Register Requested",
@@ -1075,17 +1075,91 @@ namespace DTP.Modules.Auth.Infrastructure.Services
 
         private static string BuildRegisterOtpEmailBody(string otp)
         {
-            return new BodyBuilder
-            {
-                HtmlBody = $@"
-                <div style='font-family:Arial,sans-serif'>
-                    <h2>Xác thực tài khoản DTP</h2>
-                    <p>Mã OTP của bạn là:</p>
-                    <h1 style='letter-spacing:4px'>{otp}</h1>
-                    <p>Mã này có hiệu lực trong 10 phút.</p>
-                    <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.</p>
-                </div>"
-            }.ToString();
+            return $@"
+                    <!DOCTYPE html>
+                    <html lang='vi'>
+                    <head>
+                        <meta charset='UTF-8' />
+                        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+                        <title>Mã xác thực DTP</title>
+                    </head>
+                    <body style='margin:0;padding:0;background-color:#f7f7f7;font-family:Arial,Helvetica,sans-serif;color:#191414;'>
+                        <table width='100%' cellpadding='0' cellspacing='0' style='background-color:#f7f7f7;padding:32px 0;'>
+                            <tr>
+                                <td align='center'>
+                                    <table width='100%' cellpadding='0' cellspacing='0' style='max-width:520px;background-color:#ffffff;border-radius:8px;overflow:hidden;'>
+                                        <tr>
+                                            <td style='padding:32px 32px 20px 32px;text-align:center;'>
+                                                <div style='font-size:28px;font-weight:700;color:#111111;letter-spacing:-0.5px;'>
+                                                    DTP
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <td style='padding:8px 32px 0 32px;text-align:center;'>
+                                                <h1 style='margin:0;font-size:26px;line-height:34px;font-weight:700;color:#191414;'>
+                                                    Đây là mã xác thực của bạn
+                                                </h1>
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <td style='padding:20px 32px 0 32px;text-align:center;'>
+                                                <p style='margin:0;font-size:16px;line-height:24px;color:#333333;'>
+                                                    Nhập mã bên dưới để hoàn tất xác thực tài khoản DTP.
+                                                </p>
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <td style='padding:32px 32px 24px 32px;text-align:center;'>
+                                                <div style='
+                                                    display:inline-block;
+                                                    font-size:42px;
+                                                    line-height:52px;
+                                                    font-weight:700;
+                                                    letter-spacing:8px;
+                                                    color:#191414;
+                                                    background-color:#f1f1f1;
+                                                    padding:16px 28px;
+                                                    border-radius:6px;
+                                                '>
+                                                    {otp}
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <td style='padding:0 32px 28px 32px;text-align:center;'>
+                                                <p style='margin:0;font-size:14px;line-height:22px;color:#555555;'>
+                                                    Mã này có hiệu lực trong <strong>10 phút</strong>.
+                                                </p>
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <td style='padding:0 32px 32px 32px;text-align:center;'>
+                                                <p style='margin:0;font-size:14px;line-height:22px;color:#555555;'>
+                                                    Nếu bạn không yêu cầu mã này, bạn có thể bỏ qua email.
+                                                    Không chia sẻ mã này với bất kỳ ai.
+                                                </p>
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <td style='background-color:#f7f7f7;padding:24px 32px;text-align:center;'>
+                                                <p style='margin:0;font-size:12px;line-height:18px;color:#888888;'>
+                                                    Email này được gửi tự động từ DTP. Vui lòng không trả lời email này.
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </body>
+                    </html>";
         }
 
         private async Task WriteAuditSafeAsync(
