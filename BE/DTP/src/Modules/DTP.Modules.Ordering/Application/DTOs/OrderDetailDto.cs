@@ -16,6 +16,7 @@ namespace DTP.Modules.Ordering.Application.DTOs
 
         public DateTime? CancelledAt { get; set; }
 
+        public DateTime? PaymentExpiredAt { get; set; }
         public string? CancelReason { get; set; }
 
         public List<OrderItemDto> Items { get; set; } = new();

@@ -10,7 +10,7 @@ namespace DTP.Modules.Ordering.Application.Abstractions.Services
     public interface IOrderService
     {
         Task<Result<Guid>> CreateAsync(
-               Guid? customerId,
+               Guid customerId,
                string? customerEmail,
                string? customerPhone,
                string? customerName,
@@ -54,5 +54,9 @@ namespace DTP.Modules.Ordering.Application.Abstractions.Services
             int pageIndex,
             int pageSize,
             CancellationToken cancellationToken = default);
+
+
+        //Task<Result<int>> ExpireWaitingPaymentOrdersAsync(
+        //        CancellationToken cancellationToken = default);
     }
 }

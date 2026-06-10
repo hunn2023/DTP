@@ -49,5 +49,13 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
             Guid countryId,
             IFormFile file,
             CancellationToken cancellationToken = default);
+
+
+        Task<Result<PagedResultDto<HomeCountryEsimDto>>> GetHomeCountriesAsync(
+           string? region,
+           string? keyword,
+           int pageIndex,
+           int pageSize,
+           CancellationToken cancellationToken = default);
     }
 }

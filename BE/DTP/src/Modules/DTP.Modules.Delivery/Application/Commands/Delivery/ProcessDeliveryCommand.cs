@@ -4,12 +4,13 @@ using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace DTP.Modules.Delivery.Application.Commands.Delivery
 {
-    public record ProcessDeliveryCommand(Guid DeliveryId) : IRequest<Result>;
+    public record ProcessDeliveryCommand(Guid DeliveryId,string? IpAddress) : IRequest<Result>;
 
     public class ProcessDeliveryCommandHandler
         : IRequestHandler<ProcessDeliveryCommand, Result>
@@ -27,6 +28,7 @@ namespace DTP.Modules.Delivery.Application.Commands.Delivery
         {
             return _deliveryService.ProcessAsync(
                 request.DeliveryId,
+                request.IpAddress,
                 cancellationToken);
         }
     }

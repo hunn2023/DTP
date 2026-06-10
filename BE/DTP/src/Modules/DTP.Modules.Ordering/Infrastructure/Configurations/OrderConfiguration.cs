@@ -80,6 +80,10 @@ namespace DTP.Modules.Ordering.Infrastructure.Configurations
                 .FindNavigation(nameof(Order.Histories))!
                 .SetPropertyAccessMode(PropertyAccessMode.Field);
 
+            builder.Property(x => x.PaymentExpiredAt)
+                .HasColumnType("datetime2")
+                .IsRequired(false);
+
             builder.HasIndex(x => x.CustomerId);
             builder.HasIndex(x => x.Status);
             builder.HasIndex(x => x.PaymentStatus);

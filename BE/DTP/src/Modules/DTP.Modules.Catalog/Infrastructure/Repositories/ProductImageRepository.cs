@@ -66,7 +66,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
 
             foreach (var image in images)
             {
-                //image.SetThumbnail(false);
+                image.UnsetThumbnail();
             }
         }
 

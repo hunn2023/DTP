@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 
+
 namespace DTP.Modules.Auth;
 
 public static class AuthModule
@@ -54,6 +55,9 @@ public static class AuthModule
         services.AddScoped<IOtpService, OtpService>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IRateLimitService, RateLimitService>();
+
+
+        services.AddScoped<IAuthRateLimitService, AuthRateLimitService>();
 
         services.AddMediatR(cfg =>
         {

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DTP.Shared.Application;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,7 +13,7 @@ namespace DTP.Modules.Payment.Application.Abstractions.Services
             Guid orderId,
             CancellationToken cancellationToken = default);
 
-        Task MarkOrderPaidAsync(
+        Task<Result> MarkOrderPaidAsync(
             Guid orderId,
             Guid paymentTransactionId,
             string? providerTransactionId,
@@ -33,5 +34,7 @@ namespace DTP.Modules.Payment.Application.Abstractions.Services
         public string Currency { get; set; } = "VND";
 
         public string Status { get; set; } = default!;
+
+        public DateTime? PaymentExpiredAt { get; set; }
     }
 }

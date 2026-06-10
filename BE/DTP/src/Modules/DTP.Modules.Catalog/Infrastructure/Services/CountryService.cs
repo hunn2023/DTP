@@ -278,6 +278,46 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             return Result<CountryDto>.Success(MapToDto(country));
         }
 
+
+        public async Task<Result<PagedResultDto<HomeCountryEsimDto>>> GetHomeCountriesAsync(
+            string? region,
+            string? keyword,
+            int pageIndex,
+            int pageSize,
+            CancellationToken cancellationToken = default)
+        {
+            var cacheKey = BuildHomeCountriesCacheKey(
+                    region,
+                    keyword,
+                    pageIndex,
+                    pageSize);
+
+
+            var cachedResult = await _cacheService.GetAsync<PagedResultDto<HomeCountryEsimDto>>(
+                  cacheKey,
+                  cancellationToken);
+
+            if (cachedResult != null)
+                return Result<PagedResultDto<HomeCountryEsimDto>>.Success(cachedResult);
+
+
+            var result = await _countryRepository.GetHomeCountriesAsync(
+                   region,
+                   keyword,
+                   pageIndex,
+                   pageSize,
+                   cancellationToken);
+
+            await _cacheService.SetAsync(
+                cacheKey,
+                result,
+                TimeSpan.FromMinutes(10),
+                cancellationToken);
+
+            return Result<PagedResultDto<HomeCountryEsimDto>>.Success(result);
+        }
+
+
         private async Task ClearRelatedCacheAsync(
             CancellationToken cancellationToken = default)
         {
@@ -302,6 +342,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 cancellationToken);
         }
 
+
+
         private static CountryDto MapToDto(Country country)
         {
             return new CountryDto
@@ -317,6 +359,24 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 SortOrder = country.SortOrder,
                 IsActive = country.IsActive
             };
+        }
+
+
+        private static string BuildHomeCountriesCacheKey(
+               string? region,
+               string? keyword,
+               int pageIndex,
+               int pageSize)
+        {
+            var normalizedRegion = string.IsNullOrWhiteSpace(region)
+                ? "all"
+                : region.Trim().ToLower();
+
+            var normalizedKeyword = string.IsNullOrWhiteSpace(keyword)
+                ? "none"
+                : keyword.Trim().ToLower();
+
+            return $"catalog:home-countries:region:{normalizedRegion}:keyword:{normalizedKeyword}:page:{pageIndex}:size:{pageSize}";
         }
     }
 }

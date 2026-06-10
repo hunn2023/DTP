@@ -203,5 +203,8 @@ namespace DTP.Modules.Delivery.Domain.Entities
             EmailSent = false;
             EmailError = error;
         }
+
+
+
     }
 }

@@ -36,7 +36,7 @@ namespace DTP.Modules.Ordering.Domain.Entities
             SubTotal = 0;
             DiscountAmount = 0;
             TotalAmount = 0;
-
+            PaymentExpiredAt = DateTime.UtcNow.AddMinutes(15);
             CreatedAt = DateTime.UtcNow;
         }
 
@@ -70,6 +70,7 @@ namespace DTP.Modules.Ordering.Domain.Entities
 
         public string? Note { get; private set; }
 
+        public DateTime? PaymentExpiredAt { get; private set; }
 
         public DateTime? CancelledAt { get; private set; }
 
@@ -106,15 +107,28 @@ namespace DTP.Modules.Ordering.Domain.Entities
 
         public void Confirm(string? paymentMethod)
         {
-            if (!_items.Any())
+            if (Status == OrderStatus.Cancelled)
+                throw new InvalidOperationException("Không thể xác nhận đơn hàng đã bị hủy.");
+
+            if (Status == OrderStatus.Completed)
+                throw new InvalidOperationException("Không thể xác nhận đơn hàng đã hoàn tất.");
+
+            if (PaymentStatus == OrderPaymentStatus.Paid)
+                throw new InvalidOperationException("Đơn hàng đã được thanh toán.");
+
+            if (Items == null || Items.Count == 0)
                 throw new InvalidOperationException("Đơn hàng chưa có sản phẩm.");
 
-            if (Status != OrderStatus.Draft)
-                throw new InvalidOperationException("Chỉ được xác nhận đơn hàng nháp.");
+            if (TotalAmount <= 0)
+                throw new InvalidOperationException("Tổng tiền đơn hàng không hợp lệ.");
 
-            PaymentMethod = paymentMethod;
+            PaymentMethod = string.IsNullOrWhiteSpace(paymentMethod)
+                ? null
+                : paymentMethod.Trim();
+
             Status = OrderStatus.PendingPayment;
-            PaymentStatus = OrderPaymentStatus.Pending;
+            PaymentStatus = OrderPaymentStatus.Unpaid;
+            PaymentExpiredAt = DateTime.UtcNow.AddMinutes(15);
             UpdatedAt = DateTime.UtcNow;
         }
 
@@ -183,6 +197,24 @@ namespace DTP.Modules.Ordering.Domain.Entities
 
             if (TotalAmount < 0)
                 TotalAmount = 0;
+        }
+
+
+        public void Expire(string? reason = null)
+        {
+            if (Status != OrderStatus.PendingPayment)
+                throw new InvalidOperationException("Chỉ có thể hết hạn đơn hàng đang chờ thanh toán.");
+
+            if (PaymentStatus != OrderPaymentStatus.Unpaid)
+                throw new InvalidOperationException("Chỉ có thể hết hạn đơn hàng chưa thanh toán.");
+
+            Status = OrderStatus.Cancelled;
+            CancelledAt = DateTime.UtcNow;
+            CancelReason = string.IsNullOrWhiteSpace(reason)
+                ? "Đơn hàng hết hạn thanh toán."
+                : reason.Trim();
+
+            UpdatedAt = DateTime.UtcNow;
         }
     }
 }

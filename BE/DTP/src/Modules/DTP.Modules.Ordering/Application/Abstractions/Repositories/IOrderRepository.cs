@@ -24,5 +24,10 @@ namespace DTP.Modules.Ordering.Application.Abstractions.Repositories
             int pageIndex,
             int pageSize,
             CancellationToken cancellationToken = default);
+
+
+        Task<int> CountWaitingPaymentOrdersAsync(
+                Guid userId,
+                CancellationToken cancellationToken = default);
     }
 }

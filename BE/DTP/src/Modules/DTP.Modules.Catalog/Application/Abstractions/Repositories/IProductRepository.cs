@@ -49,5 +49,18 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
         Task<bool> DeleteAsync(
             Guid id,
             CancellationToken cancellationToken = default);
+
+
+        Task<PagedResultDto<ProductVariantPublicDto>> GetPublicVariantPagedAsync(
+               string? keyword,
+               Guid? categoryId,
+               Guid? countryId,
+               int pageIndex,
+               int pageSize,
+               CancellationToken cancellationToken = default);
+
+
+        Task<List<HomeEsimProductDto>> GetHomeEsimProductsAsync(
+         CancellationToken cancellationToken = default);
     }
 }
