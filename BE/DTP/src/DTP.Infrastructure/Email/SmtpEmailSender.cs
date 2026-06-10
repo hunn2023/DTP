@@ -48,12 +48,13 @@ namespace DTP.Infrastructure.Email
             if (string.IsNullOrWhiteSpace(message.HtmlBody))
                 throw new InvalidOperationException("Nội dung email không hợp lệ.");
 
-            var host = _configuration["Email:Smtp:Host"];
-            var port = int.Parse(_configuration["Email:Smtp:Port"] ?? "587");
-            var userName = _configuration["Email:Smtp:UserName"];
-            var password = _configuration["Email:Smtp:Password"];
-            var fromEmail = _configuration["Email:Smtp:FromEmail"];
-            var fromName = _configuration["Email:Smtp:FromName"] ?? "DTP eSIM";
+            var host = _configuration["Email:Host"];
+            var port = int.Parse(_configuration["Email:Port"] ?? "587");
+            var useSsl = bool.Parse(_configuration["Email:UseSsl"] ?? "false");
+            var userName = _configuration["Email:UserName"];
+            var password = _configuration["Email:Password"];
+            var fromEmail = _configuration["Email:FromEmail"];
+            var fromName = _configuration["Email:FromName"] ?? "DTP eSIM";
 
             if (string.IsNullOrWhiteSpace(host))
                 throw new InvalidOperationException("Email:Smtp:Host chưa được cấu hình.");
