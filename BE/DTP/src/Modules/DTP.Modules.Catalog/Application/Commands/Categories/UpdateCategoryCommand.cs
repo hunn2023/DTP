@@ -15,8 +15,6 @@ namespace DTP.Modules.Catalog.Application.Commands.Category
 
         public string Slug { get; set; } = string.Empty;
 
-        public string? Description { get; set; }
-
         public bool IsActive { get; set; }
 
         public int SortOrder { get; set; }

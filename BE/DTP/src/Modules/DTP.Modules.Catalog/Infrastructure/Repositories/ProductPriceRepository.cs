@@ -29,6 +29,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             CancellationToken cancellationToken = default)
         {
             var query = _context.ProductPrices
+                 .Where(x => !x.IsDeleted)
                 .AsNoTracking()
                 .AsQueryable();
 

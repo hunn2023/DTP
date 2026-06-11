@@ -193,6 +193,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 string name,
                 string slug,
                 int sortOrder,
+                bool isActive,
                 CancellationToken cancellationToken = default)
         {
             name = name?.Trim() ?? string.Empty;
@@ -247,7 +248,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 name,
                 slug,
                 null,
-                sortOrder);
+                sortOrder,
+                isActive);
 
             _categoryRepository.Update(category);
 

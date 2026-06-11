@@ -25,9 +25,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
             bool isThumbnail,
             CancellationToken cancellationToken = default);
 
-        Task<Result> DeleteAsync(
-            Guid id,
-            CancellationToken cancellationToken = default);
+   
 
 
         Task<Result> ReplaceImageAsync(
@@ -48,6 +46,12 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
            IFormFile file,
            string? altText,
            bool isThumbnail,
+           CancellationToken cancellationToken = default);
+
+
+        Task<Result> DeleteAsync(
+           Guid productId,
+           Guid imageId,
            CancellationToken cancellationToken = default);
     }
 }

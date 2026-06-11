@@ -107,6 +107,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             CancellationToken cancellationToken = default)
         {
             var query = _context.Products
+                 .Where(x => !x.IsDeleted)
                 .AsNoTracking()
                 .AsQueryable();
 
@@ -117,7 +118,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 countryId,
                 isActive);
 
-            var priceQuery = _context.ProductPrices.AsNoTracking();
+            var priceQuery = _context.ProductPrices.Where(x => !x.IsDeleted).AsNoTracking();
 
 
             return await ToPagedDtoAsync(
@@ -576,7 +577,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
 
             var items = await _context.Products
                 .AsNoTracking()
-                .Where(x => x.IsActive)
+                .Where(x => x.IsActive && !x.IsDeleted)
                 .Where(x => x.IsFeatured || x.IsHot)
                 .OrderByDescending(x => x.IsHot)
                 .ThenBy(x => x.SortOrder)

@@ -12,7 +12,7 @@ namespace DTP.Modules.Ordering.Presentation.Controllers.Admin
 {
     [ApiController]
     [Route("api/admin/orders")]
-    [Authorize(Roles = "Admin")]
+    //[Authorize(Roles = "Admin")]
     public class AdminOrdersController : ControllerBase
     {
         private readonly IMediator _mediator;
