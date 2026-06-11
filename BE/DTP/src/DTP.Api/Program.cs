@@ -38,34 +38,39 @@ namespace DTP.Api
             });
 
 
-
             builder.Services.AddSwaggerGen(options =>
             {
-                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                {
-                    Name = "Authorization",
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "Bearer",
-                    BearerFormat = "JWT",
-                    In = ParameterLocation.Header,
-                    Description = "Nhập token dạng: Bearer {token}"
-                });
-
-                options.AddSecurityRequirement(new OpenApiSecurityRequirement
-                {
-                    {
-                        new OpenApiSecurityScheme
+                        options.SwaggerDoc("v1", new OpenApiInfo
                         {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            }
-                        },
-                        Array.Empty<string>()
-                    }
-                });
+                            Title = "DTP API",
+                            Version = "v1"
+                        });
+
+                        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                        {
+                            Name = "Authorization",
+                            Type = SecuritySchemeType.Http,
+                            Scheme = "Bearer",
+                            BearerFormat = "JWT",
+                            In = ParameterLocation.Header,
+                            Description = "Nhập token dạng: Bearer {token}"
+                        });
+
+                        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
             });
+                    });
 
             var jwtSecret = builder.Configuration["Jwt:Secret"];
 
@@ -412,11 +417,13 @@ namespace DTP.Api
 
             var app = builder.Build();
 
-            if (app.Environment.IsDevelopment() || app.Environment.IsStaging() || app.Environment.IsProduction())
+            app.UseSwagger();
+
+            app.UseSwaggerUI(options =>
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+                options.RoutePrefix = "swagger";
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "DTP API v1");
+            });
 
             app.UseRouting();
 
