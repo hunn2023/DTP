@@ -100,6 +100,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             CancellationToken cancellationToken = default)
         {
             var query = _context.Carriers
+                .Where(x => !x.IsDeleted)
                 .AsNoTracking()
                 .AsQueryable();
 
@@ -148,6 +149,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             CancellationToken cancellationToken = default)
         {
             var query = _context.Carriers
+                .Where(x => x.IsActive && !x.IsDeleted)
                 .AsNoTracking()
                 .Where(x => x.IsActive);
 

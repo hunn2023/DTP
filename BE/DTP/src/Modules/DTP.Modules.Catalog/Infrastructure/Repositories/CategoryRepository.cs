@@ -60,7 +60,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             return await query.AnyAsync(cancellationToken);
         }
 
-       
+
 
         public async Task<bool> ExistsByCodeAsync(
             string code,
@@ -110,12 +110,14 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 pageSize = 100;
 
             var query = _context.Categories
-                .AsNoTracking()
-                .Where(x => x.IsActive);
+                .Where(x =>  !x.IsDeleted)
+                .AsNoTracking();
+
 
             var totalItems = await query.CountAsync(cancellationToken);
 
             var items = await query
+                .Where(x =>  !x.IsDeleted)
                 .OrderBy(x => x.SortOrder)
                 .ThenBy(x => x.Name)
                 .Skip((pageIndex - 1) * pageSize)

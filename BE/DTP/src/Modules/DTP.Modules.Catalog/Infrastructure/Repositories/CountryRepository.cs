@@ -115,6 +115,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             CancellationToken cancellationToken = default)
         {
             var query = _context.Countries
+                .Where(x => !x.IsDeleted)
                 .AsNoTracking()
                 .AsQueryable();
 
@@ -124,12 +125,14 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
 
                 query = query.Where(x =>
                     x.Name.Contains(keyword) ||
-                    x.Code!.Contains(keyword));
+                    x.Code!.Contains(keyword) ||
+                    x.Region!.Contains(keyword));
             }
 
             var totalItems = await query.CountAsync(cancellationToken);
 
             var items = await query
+                 .Where(x => !x.IsDeleted)
                 .OrderBy(x => x.SortOrder)
                 .ThenBy(x => x.Name)
                 .Skip((pageIndex - 1) * pageSize)
@@ -142,7 +145,9 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     Slug = x.Slug,
                     FlagUrl = x.FlagUrl,
                     SortOrder = x.SortOrder,
-                    IsActive = x.IsActive
+                    IsActive = x.IsActive,
+                    Region = x.Region,
+                    Description = x.Description,
                 })
                 .ToListAsync(cancellationToken);
 
@@ -182,8 +187,9 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             var now = DateTime.UtcNow;
 
             var query = _context.Countries
-                .AsNoTracking()
-                .Where(x => x.IsActive);
+                .Where(x => x.IsActive && !x.IsDeleted)
+                .AsNoTracking();
+
 
             if (normalizedRegion != "all")
             {

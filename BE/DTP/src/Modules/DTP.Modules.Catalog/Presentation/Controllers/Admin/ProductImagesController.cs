@@ -130,17 +130,18 @@ namespace DTP.Modules.Catalog.Presentation.Controllers.Admin
             return Ok(result);
         }
 
-        //[HttpDelete("{id:guid}")]
-        //public async Task<IActionResult> Delete(
-        //    Guid id,
-        //    CancellationToken cancellationToken)
-        //{
-        //    var result = await _mediator.Send(
-        //        new DeleteProductImageCommand(id),
-        //        cancellationToken);
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> Delete(
+            Guid productId,
+            Guid imageId,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new DeleteProductImageCommand(productId, imageId),
+                cancellationToken);
 
-        //    return Ok(result);
-        //}
+            return Ok(result);
+        }
     }
 }
 

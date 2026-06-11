@@ -29,7 +29,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         {
             return await _context.ProductAttributes
                 .AsNoTracking()
-                .Where(x => x.ProductId == productId)
+                .Where(x => x.ProductId == productId && !x.IsDeleted)
                 .OrderBy(x => x.SortOrder)
                 .ThenBy(x => x.Key)
                 .ToListAsync(cancellationToken);

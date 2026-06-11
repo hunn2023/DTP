@@ -39,6 +39,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
                 string name,
                 string slug,
                 int sortOrder,
+                bool isActive,
                 CancellationToken cancellationToken = default);
     }
 }

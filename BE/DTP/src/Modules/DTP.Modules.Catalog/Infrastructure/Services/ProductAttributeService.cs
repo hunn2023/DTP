@@ -1,4 +1,4 @@
-﻿using Azure.Core;
+﻿
 using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
@@ -37,7 +37,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 Id = x.Id,
                 Key = x.Key,
                 Value = x.Value,
-                SortOrder = x.SortOrder
+                SortOrder = x.SortOrder,
+                IsVisible = x.IsVisible
             }).ToList();
 
             return Result<List<ProductAttributeDto>>.Success(result);

@@ -14,5 +14,7 @@ namespace DTP.Modules.Catalog.Application.DTOs
         public string Key { get; set; } = default!;
         public string Value { get; set; } = default!;
         public int SortOrder { get; set; }
+
+        public bool? IsVisible { get; set; }
     }
 }

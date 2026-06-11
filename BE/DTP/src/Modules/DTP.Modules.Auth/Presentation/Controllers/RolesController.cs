@@ -11,7 +11,7 @@ namespace DTP.Modules.Auth.Presentation.Controllers
 {
     [ApiController]
     [Route("api/admin/roles")]
-    [Authorize]
+    //[Authorize]
     public class RolesController : ControllerBase
     {
         private readonly IMediator _mediator;

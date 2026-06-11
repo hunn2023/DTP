@@ -1,7 +1,6 @@
 ﻿using DTP.Modules.Catalog.Application.Commands.Products;
 using DTP.Modules.Catalog.Application.Queries.Products;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 

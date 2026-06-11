@@ -28,7 +28,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             CancellationToken cancellationToken = default)
         {
             return await _context.ProductVariants
-                .Where(x => x.ProductId == productId)
+
+                .Where(x => x.ProductId == productId && !x.IsDeleted)
                 .OrderBy(x => x.SortOrder)
                 .ToListAsync(cancellationToken);
         }

@@ -31,7 +31,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         {
             var query = _context.EsimPackages
                 .AsNoTracking()
-                .Where(x => x.IsActive)
+                .Where(x => x.IsActive && !x.IsDeleted)
                 .AsQueryable();
 
             query = ApplyFilters(
@@ -125,6 +125,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         {
             var query = _context.EsimPackages
                 .AsNoTracking()
+                .Where(x => x.IsActive && !x.IsDeleted)
                 .AsQueryable();
 
             query = ApplyFilters(
@@ -319,6 +320,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             var totalItems = await query.CountAsync(cancellationToken);
 
             var items = await query
+                 .Where(x => !x.IsDeleted)
                 .OrderBy(x => x.SortOrder)
                 .ThenBy(x => x.Country.Name)
                 .ThenBy(x => x.ValidityDays)
@@ -363,6 +365,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     IsActive = x.IsActive,
 
                     Carriers = x.Carriers
+                        .Where(c => !c.IsDeleted)
                         .OrderBy(c => c.Carrier.Name)
                         .Select(c => new EsimPackageCarrierDto
                         {
@@ -390,6 +393,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         {
             return await _context.EsimPackages
                 .AsNoTracking()
+                .Where(x => x.IsActive && !x.IsDeleted)
                 .Include(x => x.Provider)
                 .Include(x => x.Country)
                 .Include(x => x.ProductVariant)
