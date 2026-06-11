@@ -31,9 +31,20 @@ function normalizeImageList(raw: unknown): ProductImageRow[] {
   return (raw as Raw[]).map(normalizeImage)
 }
 
+const inflightProductImages = new Map<string, Promise<ProductImageRow[]>>()
+
 export async function fetchProductImages(productId: string): Promise<ProductImageRow[]> {
-  const raw = await httpGet<unknown>(`${API_PATHS.adminProductImagesByProduct}/${productId}`)
-  return normalizeImageList(raw)
+  const inflight = inflightProductImages.get(productId)
+  if (inflight) return inflight
+
+  const promise = httpGet<unknown>(`${API_PATHS.adminProductImagesByProduct}/${productId}`)
+    .then(normalizeImageList)
+    .finally(() => {
+      inflightProductImages.delete(productId)
+    })
+
+  inflightProductImages.set(productId, promise)
+  return promise
 }
 
 export async function uploadProductImage(

@@ -70,6 +70,8 @@ export function useProductVariantsCrud({ productId, buildColumns }: Params) {
     },
     [showNotification],
   )
+  const notifyErrorRef = useRef(notifyError)
+  notifyErrorRef.current = notifyError
 
   const loadSeqRef = useRef(0)
 
@@ -82,15 +84,15 @@ export function useProductVariantsCrud({ productId, buildColumns }: Params) {
       setData(items)
     } catch (e) {
       if (seq !== loadSeqRef.current) return
-      notifyError(getErrorMessage(e, 'Không tải được biến thể'))
+      notifyErrorRef.current(getErrorMessage(e, 'Không tải được biến thể'))
     } finally {
       if (seq === loadSeqRef.current) setIsLoading(false)
     }
-  }, [productId, notifyError])
+  }, [productId])
 
   useEffect(() => {
     void reload()
-  }, [reload])
+  }, [productId, reload])
 
   const formConfig = useMemo(() => {
     const config = buildVariantFormConfig(productId)

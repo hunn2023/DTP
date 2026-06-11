@@ -32,10 +32,23 @@ function normalizeFeature(raw: Raw): ProductVariantFeatureRow {
   }
 }
 
+const inflightVariantFeatures = new Map<string, Promise<ProductVariantFeatureRow[]>>()
+
 export async function fetchVariantFeatures(variantId: string): Promise<ProductVariantFeatureRow[]> {
-  const raw = await httpGet<unknown>(`${API_PATHS.adminProductVariantFeaturesByVariant}/${variantId}`)
-  if (!Array.isArray(raw)) return []
-  return (raw as Raw[]).map(normalizeFeature)
+  const inflight = inflightVariantFeatures.get(variantId)
+  if (inflight) return inflight
+
+  const promise = httpGet<unknown>(`${API_PATHS.adminProductVariantFeaturesByVariant}/${variantId}`)
+    .then((raw) => {
+      if (!Array.isArray(raw)) return []
+      return (raw as Raw[]).map(normalizeFeature)
+    })
+    .finally(() => {
+      inflightVariantFeatures.delete(variantId)
+    })
+
+  inflightVariantFeatures.set(variantId, promise)
+  return promise
 }
 
 export async function createVariantFeature(payload: ProductVariantFeaturePayload): Promise<string> {

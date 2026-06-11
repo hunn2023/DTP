@@ -137,7 +137,7 @@ export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrud
     void loadData(pagination.pageIndex, pagination.pageSize, globalFilter, seq)
   }, [loadData, pagination.pageIndex, pagination.pageSize, globalFilter])
 
-  const ensureCountryLookups = useCallback(async () => {
+  const loadCountryLookups = useCallback(async () => {
     if (countryLookupsLoadedRef.current) return
 
     setIsLoadingLookups(true)
@@ -151,12 +151,20 @@ export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrud
       setCountryNameById(lookups.countryNameById)
       setData((prev) => enrichCountryNames(prev, lookups.countryNameById))
     } catch (e) {
-      notifyError(getErrorMessage(e, 'Không tải được danh sách quốc gia'))
+      notifyErrorRef.current(getErrorMessage(e, 'Không tải được danh sách quốc gia'))
       throw e
     } finally {
       setIsLoadingLookups(false)
     }
-  }, [notifyError])
+  }, [])
+
+  useEffect(() => {
+    void loadCountryLookups()
+  }, [loadCountryLookups])
+
+  const ensureCountryLookups = useCallback(async () => {
+    await loadCountryLookups()
+  }, [loadCountryLookups])
 
   const formConfig = useMemo(() => buildCarrierFormConfig(countryOptions), [countryOptions])
 

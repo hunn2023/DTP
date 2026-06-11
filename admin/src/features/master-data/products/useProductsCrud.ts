@@ -91,6 +91,8 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
     () => new Map(categoryOptions.map((item) => [item.value, item.label])),
     [categoryOptions],
   )
+  const categoryNameByIdRef = useRef(categoryNameById)
+  categoryNameByIdRef.current = categoryNameById
 
   const listFilters = useMemo(
     () => ({
@@ -112,7 +114,8 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
         setData(
           result.items.map((item) => ({
             ...item,
-            categoryName: item.categoryName || categoryNameById.get(item.categoryId) || '',
+            categoryName:
+              item.categoryName || categoryNameByIdRef.current.get(item.categoryId) || '',
           })),
         )
         setTotalCount(result.totalCount)
@@ -123,13 +126,23 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
         if (seq === loadSeqRef.current) setIsLoading(false)
       }
     },
-    [categoryNameById],
+    [],
   )
 
   useEffect(() => {
     const seq = ++loadSeqRef.current
     void loadData(pagination.pageIndex, pagination.pageSize, listFilters, seq)
   }, [pagination.pageIndex, pagination.pageSize, listFilters, loadData])
+
+  useEffect(() => {
+    if (categoryOptions.length === 0) return
+    setData((prev) =>
+      prev.map((item) => ({
+        ...item,
+        categoryName: item.categoryName || categoryNameById.get(item.categoryId) || '',
+      })),
+    )
+  }, [categoryOptions, categoryNameById])
 
   const reload = useCallback(() => {
     const seq = ++loadSeqRef.current

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Card, Container, Spinner, Tab } from 'react-bootstrap'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 
@@ -49,6 +49,9 @@ const ProductFormPage = () => {
   const [categoryOptions, setCategoryOptions] = useState<FormFieldOption[]>([])
   const [countries, setCountries] = useState<Country[]>([])
 
+  const showNotificationRef = useRef(showNotification)
+  showNotificationRef.current = showNotification
+
   const canAccessSubTabs = Boolean(productId)
 
   const loadProduct = useCallback(async (id: string) => {
@@ -68,14 +71,14 @@ const ProductFormPage = () => {
         setCountries(countryList)
       })
       .catch(() => {
-        showNotification({
+        showNotificationRef.current({
           title: 'Lỗi',
           message: 'Không tải được danh mục hoặc quốc gia',
           variant: 'danger',
           delay: 4000,
         })
       })
-  }, [showNotification])
+  }, [])
 
   useEffect(() => {
     if (isNew || !productId) return

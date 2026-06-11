@@ -4,23 +4,18 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'reac
 
 import PageBreadcrumb from '@/components/PageBreadcrumb'
 import { useNotificationContext } from '@/context/useNotificationContext'
-import { fetchProductPrices } from '@/features/master-data/product-prices/product-prices.api'
-import { fetchProductVariants } from '@/features/master-data/products/product-variants.api'
-import { fetchAdminProducts, fetchProductDetail } from '@/features/master-data/products/products.api'
-import type { ProductPriceRow, ProductVariant } from '@/features/master-data/products/types'
-import { fetchCountries } from '@/features/master-data/countries/countries.api'
+import { fetchProductDetail } from '@/features/master-data/products/products.api'
 import {
-  fetchAdminEsimPackages,
   fetchEsimPackageDetail,
   updateEsimPackage,
 } from '@/features/products/esim-packages/esim-packages.api'
-import type { EsimPackage } from '@/features/products/esim-packages/types'
 import EsimWizardFooter from '@/features/products/esim-wizard/EsimWizardFooter'
 import EsimWizardStepper from '@/features/products/esim-wizard/EsimWizardStepper'
 import { getEsimStepByTab } from '@/features/products/esim-wizard/esimWizardSteps'
 import { mapPackageToForm, toPackagePayload } from '@/features/products/esim-wizard/mapPackageForm'
 import { fetchVariantFeatures } from '@/features/products/esim-wizard/product-variant-features.api'
-import type { EsimPackageForm, EsimWizardSummary, EsimWizardTab } from '@/features/products/esim-wizard/types'
+import type { EsimWizardSummary, EsimWizardTab } from '@/features/products/esim-wizard/types'
+import { useEsimWizardLoader } from '@/features/products/esim-wizard/useEsimWizardLoader'
 import WizardCarriersTab from '@/features/products/esim-wizard/WizardCarriersTab'
 import WizardFeaturesTab from '@/features/products/esim-wizard/WizardFeaturesTab'
 import WizardPackageTab from '@/features/products/esim-wizard/WizardPackageTab'
@@ -30,10 +25,7 @@ import WizardVariantTab from '@/features/products/esim-wizard/WizardVariantTab'
 import {
   getDefaultPackageValues,
   getDefaultPriceValues,
-  getDefaultVariantValues,
 } from '@/features/products/esim-wizard/wizardDefaults'
-import { fetchProviderOptions } from '@/features/providers/providers.api'
-import type { FormFieldOption } from '@/modules/crud/form/types'
 
 const TAB_KEYS: EsimWizardTab[] = ['variants', 'prices', 'packages', 'carriers', 'features', 'review']
 
@@ -63,109 +55,39 @@ const EsimWizardPage = () => {
 
   const isNew = isNewWizardRoute(routeWizardId, location.pathname)
   const variantId = isNew ? null : (routeWizardId ?? null)
+  const productIdParam = searchParams.get('productId')
+  const packageIdParam = searchParams.get('packageId')
   const activeTab = parseTab(searchParams.get('tab'))
+
+  const buildWizardParams = (tab: EsimWizardTab, overrides?: { packageId?: string }) => {
+    const params: Record<string, string> = { tab }
+    if (productIdParam) params.productId = productIdParam
+    const pkgId = overrides?.packageId ?? packageIdParam
+    if (pkgId) params.packageId = pkgId
+    return params
+  }
   const currentStep = getEsimStepByTab(activeTab)
 
-  const [isLoading, setIsLoading] = useState(!isNew)
   const [isSaving, setIsSaving] = useState(false)
-  const [productOptions, setProductOptions] = useState<FormFieldOption[]>([])
-  const [providerOptions, setProviderOptions] = useState<FormFieldOption[]>([])
-  const [countryOptions, setCountryOptions] = useState<FormFieldOption[]>([])
-
-  const [productId, setProductId] = useState('')
-  const [variant, setVariant] = useState<ProductVariant | null>(null)
-  const [price, setPrice] = useState<ProductPriceRow | null>(null)
-  const [packageForm, setPackageForm] = useState<EsimPackageForm | null>(null)
-  const [esimPackage, setEsimPackage] = useState<EsimPackage | null>(null)
-  const [selectedCarrierIds, setSelectedCarrierIds] = useState<string[]>([])
-  const [featureCount, setFeatureCount] = useState(0)
-  const [productName, setProductName] = useState('')
-  const [providerName, setProviderName] = useState('')
-  const [defaultCountryId, setDefaultCountryId] = useState('')
-
   const featuresSaveRef = useRef<(() => Promise<boolean>) | null>(null)
 
-  const canAccessSubTabs = Boolean(variantId)
+  const onBootstrapError = useCallback(() => {
+    showNotification({
+      title: 'Lỗi',
+      message: 'Không tải được dữ liệu tham chiếu',
+      variant: 'danger',
+      delay: 4000,
+    })
+  }, [showNotification])
 
-  const loadLookups = useCallback(async () => {
-    const [products, providers, countries] = await Promise.all([
-      fetchAdminProducts(1, 200, { isActive: true }),
-      fetchProviderOptions(),
-      fetchCountries(),
-    ])
-    setProductOptions(products.items.map((p) => ({ value: p.id, label: p.name })))
-    setProviderOptions(providers)
-    setCountryOptions(
-      countries.map((c) => ({ value: c.id, label: `${c.isoCode} ${c.name}` })),
-    )
-  }, [])
-
-  const reloadSummary = useCallback(async (vId: string) => {
-    const [prices, packages, features] = await Promise.all([
-      fetchProductPrices({ productVariantId: vId }),
-      fetchAdminEsimPackages(1, 1, { productVariantId: vId }),
-      fetchVariantFeatures(vId),
-    ])
-    setPrice(prices[0] ?? null)
-    const pkg = packages.items[0] ?? null
-    setEsimPackage(pkg)
-    if (pkg) {
-      const form = mapPackageToForm(pkg)
-      setPackageForm(form)
-      setSelectedCarrierIds(form.carrierIds)
-      setProviderName(pkg.providerName)
-    }
-    setFeatureCount(features.length)
-  }, [])
-
-  const loadEditData = useCallback(
-    async (vId: string) => {
-      setIsLoading(true)
-      try {
-        await loadLookups()
-        const products = await fetchAdminProducts(1, 200)
-        let foundVariant: ProductVariant | null = null
-        let foundProductId = ''
-
-        for (const product of products.items) {
-          const variants = await fetchProductVariants(product.id)
-          const match = variants.find((v) => v.id === vId)
-          if (match) {
-            foundVariant = match
-            foundProductId = product.id
-            setProductName(product.name)
-            break
-          }
-        }
-
-        if (!foundVariant) return
-
-        setProductId(foundProductId)
-        setVariant(foundVariant)
-        const product = await fetchProductDetail(foundProductId)
-        if (product?.countryId) setDefaultCountryId(product.countryId)
-        await reloadSummary(vId)
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [loadLookups, reloadSummary],
-  )
-
-  useEffect(() => {
-    if (isNew) {
-      void loadLookups().catch(() => {
-        showNotification({
-          title: 'Lỗi',
-          message: 'Không tải được dữ liệu tham chiếu',
-          variant: 'danger',
-          delay: 4000,
-        })
-      })
-      return
-    }
-    if (variantId) void loadEditData(variantId)
-  }, [isNew, variantId, loadLookups, loadEditData, showNotification])
+  const wizard = useEsimWizardLoader({
+    isNew,
+    variantId,
+    productIdParam,
+    packageIdParam,
+    activeTab,
+    onBootstrapError,
+  })
 
   useEffect(() => {
     if (isNew && activeTab !== 'variants') {
@@ -173,52 +95,55 @@ const EsimWizardPage = () => {
     }
   }, [isNew, activeTab, setSearchParams])
 
+  const canAccessSubTabs = Boolean(variantId)
+  const hasPackage = Boolean(wizard.packageForm?.id || wizard.esimPackage?.id)
+
   const setActiveTab = (tab: EsimWizardTab) => {
     if (tab !== 'variants' && !canAccessSubTabs) return
-    setSearchParams({ tab })
+    setSearchParams(buildWizardParams(tab))
   }
 
-  const goNextTab = (tab: EsimWizardTab) => setSearchParams({ tab })
+  const goNextTab = (tab: EsimWizardTab, overrides?: { packageId?: string }) => {
+    setSearchParams(buildWizardParams(tab, overrides))
+  }
 
   const handleVariantSaved = async (id: string, pId: string) => {
-    const pName = productOptions.find((o) => o.value === pId)?.label ?? ''
-    setProductName(pName)
-    setProductId(pId)
-    setVariant((prev) => ({ ...(prev ?? getDefaultVariantValues(pId)), id, productId: pId }))
+    const pName = wizard.productOptions.find((o) => o.value === pId)?.label ?? ''
+    wizard.setProductName(pName)
     const product = await fetchProductDetail(pId)
-    if (product?.countryId) setDefaultCountryId(product.countryId)
+    if (product?.countryId) wizard.setDefaultCountryId(product.countryId)
     showNotification({ title: 'Thành công', message: 'Đã lưu variant', variant: 'success', delay: 2000 })
-    navigate(`/products/esim/wizard/${id}?tab=prices`, { replace: true })
+    navigate(`/products/esim/wizard/${id}?tab=prices&productId=${pId}`, { replace: true })
   }
 
-  const handlePriceSaved = async (priceId: string) => {
+  const handlePriceSaved = async () => {
     if (!variantId) return
-    const prices = await fetchProductPrices({ productVariantId: variantId })
-    setPrice(prices.find((p) => p.id === priceId) ?? prices[0] ?? null)
+    wizard.invalidateTab('prices')
+    await wizard.refreshPrice()
     showNotification({ title: 'Thành công', message: 'Đã lưu giá', variant: 'success', delay: 2000 })
     goNextTab('packages')
   }
 
   const handlePackageSaved = async (packageId: string) => {
     if (!variantId) return
-    const packages = await fetchAdminEsimPackages(1, 1, { productVariantId: variantId })
-    const pkg = packages.items.find((p) => p.id === packageId) ?? packages.items[0]
+    wizard.invalidateTab('packages')
+    const pkg = await fetchEsimPackageDetail(packageId)
     if (pkg) {
-      setEsimPackage(pkg)
+      wizard.setEsimPackage(pkg)
       const form = mapPackageToForm(pkg)
-      setPackageForm(form)
-      setProviderName(pkg.providerName)
+      wizard.setPackageForm(form)
+      wizard.setProviderName(pkg.providerName)
     }
     showNotification({ title: 'Thành công', message: 'Đã lưu gói eSIM', variant: 'success', delay: 2000 })
-    goNextTab('carriers')
+    goNextTab('carriers', { packageId })
   }
 
   const saveCarriers = async (): Promise<boolean> => {
-    if (!packageForm?.id) {
+    if (!wizard.packageForm?.id) {
       showNotification({ title: 'Lỗi', message: 'Chưa có gói eSIM', variant: 'danger', delay: 3000 })
       return false
     }
-    if (selectedCarrierIds.length === 0) {
+    if (wizard.selectedCarrierIds.length === 0) {
       showNotification({
         title: 'Lỗi',
         message: 'Vui lòng chọn ít nhất 1 nhà mạng',
@@ -231,12 +156,12 @@ const EsimWizardPage = () => {
     setIsSaving(true)
     try {
       await updateEsimPackage(
-        packageForm.id,
-        toPackagePayload({ ...packageForm, carrierIds: selectedCarrierIds }),
+        wizard.packageForm.id,
+        toPackagePayload({ ...wizard.packageForm, carrierIds: wizard.selectedCarrierIds }),
       )
-      setPackageForm((p) => (p ? { ...p, carrierIds: selectedCarrierIds } : p))
-      const refreshed = await fetchEsimPackageDetail(packageForm.id)
-      if (refreshed) setEsimPackage(refreshed)
+      wizard.setPackageForm((p) => (p ? { ...p, carrierIds: wizard.selectedCarrierIds } : p))
+      const refreshed = await fetchEsimPackageDetail(wizard.packageForm.id)
+      if (refreshed) wizard.setEsimPackage(refreshed)
       showNotification({ title: 'Thành công', message: 'Đã lưu nhà mạng', variant: 'success', delay: 2000 })
       return true
     } catch (e) {
@@ -263,7 +188,7 @@ const EsimWizardPage = () => {
       if (!ok) return
       if (variantId) {
         const features = await fetchVariantFeatures(variantId)
-        setFeatureCount(features.length)
+        wizard.setFeatureCount(features.length)
       }
       showNotification({ title: 'Thành công', message: 'Đã lưu tính năng', variant: 'success', delay: 2000 })
       goNextTab('review')
@@ -274,7 +199,7 @@ const EsimWizardPage = () => {
     }
   }
 
-  if (!isNew && isLoading) {
+  if (!isNew && wizard.isLoading) {
     return (
       <Container fluid className="text-center py-5">
         <Spinner animation="border" size="sm" className="me-2" />
@@ -283,7 +208,7 @@ const EsimWizardPage = () => {
     )
   }
 
-  if (!isNew && !isLoading && !variant) {
+  if (!isNew && !wizard.isLoading && !wizard.variant) {
     return (
       <Container fluid>
         <PageBreadcrumb title="Không tìm thấy" subtitle="eSIM du lịch" />
@@ -295,23 +220,23 @@ const EsimWizardPage = () => {
   }
 
   const summary: EsimWizardSummary = {
-    productName,
-    variantName: variant?.name ?? '',
-    salePrice: price?.salePrice ?? 0,
-    originalPrice: price?.originalPrice ?? 0,
-    currency: price?.currency ?? 'VND',
-    packageName: esimPackage?.name ?? packageForm?.name ?? '',
-    providerName: providerName || esimPackage?.providerName || '',
+    productName: wizard.productName,
+    variantName: wizard.variant?.name ?? '',
+    salePrice: wizard.price?.salePrice ?? 0,
+    originalPrice: wizard.price?.originalPrice ?? 0,
+    currency: wizard.price?.currency ?? 'VND',
+    packageName: wizard.esimPackage?.name ?? wizard.packageForm?.name ?? '',
+    providerName: wizard.providerName || wizard.esimPackage?.providerName || '',
     carrierNames:
-      esimPackage?.carriers.map((c) => c.carrierName) ??
-      selectedCarrierIds.map(
-        (id) => packageForm?.carriers.find((c) => c.carrierId === id)?.carrierName ?? id,
+      wizard.esimPackage?.carriers.map((c) => c.carrierName) ??
+      wizard.selectedCarrierIds.map(
+        (id) => wizard.packageForm?.carriers.find((c) => c.carrierId === id)?.carrierName ?? id,
       ),
-    featureCount,
-    isActive: packageForm?.isActive ?? esimPackage?.isActive ?? true,
+    featureCount: wizard.featureCount,
+    isActive: wizard.packageForm?.isActive ?? wizard.esimPackage?.isActive ?? true,
   }
 
-  const pageTitle = isNew ? 'Tạo eSIM Package' : `Chỉnh sửa: ${variant?.name ?? 'eSIM'}`
+  const pageTitle = isNew ? 'Tạo eSIM Package' : `Chỉnh sửa: ${wizard.variant?.name ?? 'eSIM'}`
 
   return (
     <Container fluid>
@@ -320,7 +245,7 @@ const EsimWizardPage = () => {
       <Card>
         <Card.Body className="p-4">
           <h4 className="mb-3 fw-semibold">
-            {currentStep.step}. {currentStep.title}
+            {currentStep.step}. {isNew ? 'Tạo eSIM Package' : currentStep.title}
           </h4>
 
           <EsimWizardStepper
@@ -334,35 +259,36 @@ const EsimWizardPage = () => {
               <Tab.Pane eventKey="variants" mountOnEnter>
                 <WizardVariantTab
                   isNew={isNew}
-                  productOptions={productOptions}
-                  initialValues={variant}
+                  productOptions={wizard.productOptions}
+                  initialValues={wizard.variant}
                   onSaved={handleVariantSaved}
                   onSavingChange={setIsSaving}
                 />
               </Tab.Pane>
 
-              {variantId && productId && (
+              {variantId && wizard.productId && (
                 <Tab.Pane eventKey="prices" mountOnEnter>
                   <WizardPriceTab
-                    productId={productId}
+                    productId={wizard.productId}
                     variantId={variantId}
-                    initialValues={price ?? getDefaultPriceValues(productId, variantId)}
-                    onSaved={(id) => void handlePriceSaved(id)}
+                    initialValues={wizard.price ?? getDefaultPriceValues(wizard.productId, variantId)}
+                    onSaved={() => void handlePriceSaved()}
                     onSavingChange={setIsSaving}
                   />
                 </Tab.Pane>
               )}
 
-              {variantId && productId && (
+              {variantId && wizard.productId && (
                 <Tab.Pane eventKey="packages" mountOnEnter>
                   <WizardPackageTab
-                    productId={productId}
+                    productId={wizard.productId}
                     variantId={variantId}
-                    defaultCountryId={packageForm?.countryId ?? defaultCountryId}
-                    providerOptions={providerOptions}
-                    countryOptions={countryOptions}
+                    defaultCountryId={wizard.packageForm?.countryId ?? wizard.defaultCountryId}
+                    providerOptions={wizard.providerOptions}
+                    countryOptions={wizard.countryOptions}
                     initialValues={
-                      packageForm ?? getDefaultPackageValues(productId, variantId, defaultCountryId)
+                      wizard.packageForm ??
+                      getDefaultPackageValues(wizard.productId, variantId, wizard.defaultCountryId)
                     }
                     onSaved={(id) => void handlePackageSaved(id)}
                     onSavingChange={setIsSaving}
@@ -370,11 +296,11 @@ const EsimWizardPage = () => {
                 </Tab.Pane>
               )}
 
-              {(packageForm?.id || esimPackage?.id) && (
+              {hasPackage && (
                 <Tab.Pane eventKey="carriers" mountOnEnter>
                   <WizardCarriersTab
-                    selectedCarrierIds={selectedCarrierIds}
-                    onChange={setSelectedCarrierIds}
+                    selectedCarrierIds={wizard.selectedCarrierIds}
+                    onChange={wizard.setSelectedCarrierIds}
                   />
                 </Tab.Pane>
               )}
@@ -392,7 +318,14 @@ const EsimWizardPage = () => {
               )}
 
               <Tab.Pane eventKey="review" mountOnEnter>
-                <WizardReviewTab summary={summary} isNew={isNew} />
+                {wizard.isTabLoading ? (
+                  <div className="text-center py-4">
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    Đang tải thông tin...
+                  </div>
+                ) : (
+                  <WizardReviewTab summary={summary} isNew={isNew} />
+                )}
               </Tab.Pane>
             </Tab.Content>
           </Tab.Container>

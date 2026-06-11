@@ -67,6 +67,8 @@ export function useProductAttributesCrud({ productId, buildColumns }: Params) {
     },
     [showNotification],
   )
+  const notifyErrorRef = useRef(notifyError)
+  notifyErrorRef.current = notifyError
 
   const loadSeqRef = useRef(0)
 
@@ -78,15 +80,16 @@ export function useProductAttributesCrud({ productId, buildColumns }: Params) {
       if (seq !== loadSeqRef.current) return
       setData(items)
     } catch (e) {
-      notifyError(getErrorMessage(e, 'Không tải được thuộc tính'))
+      if (seq !== loadSeqRef.current) return
+      notifyErrorRef.current(getErrorMessage(e, 'Không tải được thuộc tính'))
     } finally {
       if (seq === loadSeqRef.current) setIsLoading(false)
     }
-  }, [productId, notifyError])
+  }, [productId])
 
   useEffect(() => {
     void reload()
-  }, [reload])
+  }, [productId, reload])
 
   const formConfig = useMemo(() => buildAttributeFormConfig(productId), [productId])
 

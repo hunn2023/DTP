@@ -135,12 +135,18 @@ export async function fetchEsimPackagesPage(
   }
 }
 
+const inflightAdminEsimPackages = new Map<string, Promise<PagedEsimPackagesDto>>()
+
 export async function fetchAdminEsimPackages(
   pageIndex = 1,
   pageSize = 10,
   filters: EsimPackageListFilters = {},
 ): Promise<PagedEsimPackagesDto> {
-  const raw = await httpGet<Record<string, unknown>>(API_PATHS.adminEsimPackages, {
+  const key = `${pageIndex}:${pageSize}:${JSON.stringify(filters)}`
+  const inflight = inflightAdminEsimPackages.get(key)
+  if (inflight) return inflight
+
+  const promise = httpGet<Record<string, unknown>>(API_PATHS.adminEsimPackages, {
     params: {
       pageIndex,
       pageSize,
@@ -151,16 +157,30 @@ export async function fetchAdminEsimPackages(
       isActive: filters.isActive,
     },
   })
-  return normalizePaged(raw)
+    .then((raw) => normalizePaged(raw))
+    .finally(() => {
+      inflightAdminEsimPackages.delete(key)
+    })
+
+  inflightAdminEsimPackages.set(key, promise)
+  return promise
 }
 
+const inflightPackageDetails = new Map<string, Promise<EsimPackage | null>>()
+
 export async function fetchEsimPackageDetail(id: string): Promise<EsimPackage | null> {
-  try {
-    const raw = await httpGet<Raw>(`${API_PATHS.adminEsimPackages}/${id}`)
-    return normalizeDto(raw)
-  } catch {
-    return null
-  }
+  const inflight = inflightPackageDetails.get(id)
+  if (inflight) return inflight
+
+  const promise = httpGet<Raw>(`${API_PATHS.adminEsimPackages}/${id}`)
+    .then((raw) => normalizeDto(raw))
+    .catch(() => null)
+    .finally(() => {
+      inflightPackageDetails.delete(id)
+    })
+
+  inflightPackageDetails.set(id, promise)
+  return promise
 }
 
 export async function createEsimPackage(payload: EsimPackagePayload): Promise<string> {

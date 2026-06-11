@@ -56,49 +56,32 @@ const ProductImagesTab = ({ productId }: ProductImagesTabProps) => {
 
 
 
+  const notifyErrorRef = useRef(showNotification)
+  notifyErrorRef.current = showNotification
+
   const reload = useCallback(async () => {
-
     const seq = ++loadSeqRef.current
-
     setIsLoading(true)
-
     try {
-
       const items = await imagesApi.fetchProductImages(productId)
-
       if (seq !== loadSeqRef.current) return
-
       setData(items.sort((a, b) => a.sortOrder - b.sortOrder))
-
     } catch (e) {
-
-      showNotification({
-
+      if (seq !== loadSeqRef.current) return
+      notifyErrorRef.current({
         title: 'Lỗi',
-
         message: getErrorMessage(e, 'Không tải được hình ảnh'),
-
         variant: 'danger',
-
         delay: 4000,
-
       })
-
     } finally {
-
       if (seq === loadSeqRef.current) setIsLoading(false)
-
     }
-
-  }, [productId, showNotification])
-
-
+  }, [productId])
 
   useEffect(() => {
-
     void reload()
-
-  }, [reload])
+  }, [productId, reload])
 
 
 

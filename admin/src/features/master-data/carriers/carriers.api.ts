@@ -99,6 +99,14 @@ export type CarriersPageResult = {
 
 const inflightPages = new Map<string, Promise<CarriersPageResult>>()
 
+let cachedCarrierOptions: FormFieldOption[] | null = null
+let inflightCarrierOptions: Promise<FormFieldOption[]> | null = null
+
+export function invalidateCarriersCache(): void {
+  cachedCarrierOptions = null
+  inflightCarrierOptions = null
+}
+
 export async function fetchCarriersPage(
   pageIndex = 1,
   pageSize = 10,
@@ -138,24 +146,38 @@ export async function fetchAdminCarriers(
 }
 
 export async function fetchCarrierOptions(): Promise<FormFieldOption[]> {
-  const paged = await fetchAdminCarriers(1, 500)
-  return paged.items.map((item) => ({
-    value: item.id,
-    label: item.name,
-  }))
+  if (cachedCarrierOptions) return cachedCarrierOptions
+  if (inflightCarrierOptions) return inflightCarrierOptions
+
+  inflightCarrierOptions = fetchCarriersPage(1, 500)
+    .then((paged) => {
+      cachedCarrierOptions = paged.items.map((item) => ({
+        value: item.id,
+        label: item.name,
+      }))
+      return cachedCarrierOptions
+    })
+    .finally(() => {
+      inflightCarrierOptions = null
+    })
+
+  return inflightCarrierOptions
 }
 
 export async function createCarrier(payload: CarrierPayload): Promise<string> {
   const raw = await httpPost<string>(API_PATHS.adminCarriers, payload)
+  invalidateCarriersCache()
   return typeof raw === 'string' ? raw : String(raw)
 }
 
 export async function updateCarrier(id: string, payload: CarrierUpdatePayload): Promise<void> {
   await httpPut<boolean>(`${API_PATHS.adminCarriers}/${id}`, payload)
+  invalidateCarriersCache()
 }
 
 export async function deleteCarrier(id: string): Promise<void> {
   await httpDelete(`${API_PATHS.adminCarriers}/${id}`)
+  invalidateCarriersCache()
 }
 
 export async function fetchCarriers(countryNameById?: Map<string, string>): Promise<Carrier[]> {

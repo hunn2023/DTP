@@ -158,14 +158,18 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
 
   const openEdit = useCallback(
     (row: EsimPackage) => {
-      navigate(`/products/esim/wizard/${row.productVariantId}`)
+      navigate(
+        `/products/esim/wizard/${row.productVariantId}?productId=${row.productId}&packageId=${row.id}`,
+      )
     },
     [navigate],
   )
 
   const openView = useCallback(
     (row: EsimPackage) => {
-      navigate(`/products/esim/wizard/${row.productVariantId}?tab=review`)
+      navigate(
+        `/products/esim/wizard/${row.productVariantId}?tab=review&productId=${row.productId}&packageId=${row.id}`,
+      )
     },
     [navigate],
   )

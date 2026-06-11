@@ -46,18 +46,32 @@ function normalizePrice(raw: Raw): ProductPriceRow {
   }
 }
 
+const inflightProductPrices = new Map<string, Promise<ProductPriceRow[]>>()
+
 export async function fetchProductPrices(filters?: {
   productId?: string
   productVariantId?: string
 }): Promise<ProductPriceRow[]> {
-  const raw = await httpGet<unknown>(API_PATHS.adminProductPrices, {
+  const key = JSON.stringify(filters ?? {})
+  const inflight = inflightProductPrices.get(key)
+  if (inflight) return inflight
+
+  const promise = httpGet<unknown>(API_PATHS.adminProductPrices, {
     params: {
       productId: filters?.productId || undefined,
       productVariantId: filters?.productVariantId || undefined,
     },
   })
-  if (!Array.isArray(raw)) return []
-  return (raw as Raw[]).map(normalizePrice)
+    .then((raw) => {
+      if (!Array.isArray(raw)) return []
+      return (raw as Raw[]).map(normalizePrice)
+    })
+    .finally(() => {
+      inflightProductPrices.delete(key)
+    })
+
+  inflightProductPrices.set(key, promise)
+  return promise
 }
 
 export async function createProductPrice(payload: ProductPricePayload): Promise<string> {

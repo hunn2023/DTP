@@ -31,10 +31,23 @@ function normalizeVariant(raw: Raw): ProductVariant {
   }
 }
 
+const inflightProductVariants = new Map<string, Promise<ProductVariant[]>>()
+
 export async function fetchProductVariants(productId: string): Promise<ProductVariant[]> {
-  const raw = await httpGet<unknown>(`${API_PATHS.adminProductVariantsByProduct}/${productId}`)
-  if (!Array.isArray(raw)) return []
-  return (raw as Raw[]).map(normalizeVariant)
+  const inflight = inflightProductVariants.get(productId)
+  if (inflight) return inflight
+
+  const promise = httpGet<unknown>(`${API_PATHS.adminProductVariantsByProduct}/${productId}`)
+    .then((raw) => {
+      if (!Array.isArray(raw)) return []
+      return (raw as Raw[]).map(normalizeVariant)
+    })
+    .finally(() => {
+      inflightProductVariants.delete(productId)
+    })
+
+  inflightProductVariants.set(productId, promise)
+  return promise
 }
 
 export async function fetchProductVariantOptions(productId: string): Promise<FormFieldOption[]> {

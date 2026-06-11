@@ -45,9 +45,20 @@ function parseCreatedId(raw: unknown): string {
   return String(raw ?? '')
 }
 
+const inflightProductAttributes = new Map<string, Promise<ProductAttributeRow[]>>()
+
 export async function fetchProductAttributes(productId: string): Promise<ProductAttributeRow[]> {
-  const raw = await httpGet<unknown>(`${API_PATHS.adminProductAttributesByProduct}/${productId}`)
-  return normalizeAttributeList(raw)
+  const inflight = inflightProductAttributes.get(productId)
+  if (inflight) return inflight
+
+  const promise = httpGet<unknown>(`${API_PATHS.adminProductAttributesByProduct}/${productId}`)
+    .then(normalizeAttributeList)
+    .finally(() => {
+      inflightProductAttributes.delete(productId)
+    })
+
+  inflightProductAttributes.set(productId, promise)
+  return promise
 }
 
 export async function createProductAttribute(payload: ProductAttributePayload): Promise<string> {

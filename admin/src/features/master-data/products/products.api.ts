@@ -128,13 +128,25 @@ export async function fetchAdminProducts(
   return normalizePaged(data, normalizeProductDto)
 }
 
+const inflightProductDetails = new Map<string, Promise<CatalogProduct | null>>()
+
 export async function fetchProductDetail(id: string): Promise<CatalogProduct | null> {
-  try {
-    const raw = await httpGet<Raw>(`${API_PATHS.adminProducts}/${id}`)
-    return normalizeProductDto(raw)
-  } catch {
-    return null
-  }
+  const inflight = inflightProductDetails.get(id)
+  if (inflight) return inflight
+
+  const promise = (async () => {
+    try {
+      const raw = await httpGet<Raw>(`${API_PATHS.adminProducts}/${id}`)
+      return normalizeProductDto(raw)
+    } catch {
+      return null
+    }
+  })().finally(() => {
+    inflightProductDetails.delete(id)
+  })
+
+  inflightProductDetails.set(id, promise)
+  return promise
 }
 
 export async function fetchProductOptions(): Promise<FormFieldOption[]> {
