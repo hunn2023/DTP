@@ -74,7 +74,7 @@ $theme-material-colors: (
             --#{$prefix}sidenav-border-color:             #e7e9eb;
             --#{$prefix}sidenav-item-color:               #{$gray-700};
             --#{$prefix}sidenav-item-hover-color:         #3c7de1;
-            --#{$prefix}sidenav-item-hover-bg:          #e8f7f4;
+            --#{$prefix}sidenav-item-hover-bg:          #{rgba($primary, 0.08)};
             --#{$prefix}sidenav-item-active-color:        #212b29;
             --#{$prefix}sidenav-item-active-bg:         #e8e8ed;
         }

@@ -64,9 +64,9 @@ $theme-galaxy-colors: (
             --#{$prefix}sidenav-border-color:             #{$gray-300};
             --#{$prefix}sidenav-item-color:               #{$gray-700};
             --#{$prefix}sidenav-item-hover-color:         #{$primary};
-            --#{$prefix}sidenav-item-hover-bg:          #e8f7f4;
+            --#{$prefix}sidenav-item-hover-bg:          #{rgba($primary, 0.08)};
             --#{$prefix}sidenav-item-active-color:        #{$primary};
-            --#{$prefix}sidenav-item-active-bg:         #e8f7f4;
+            --#{$prefix}sidenav-item-active-bg:         #{rgba($primary, 0.08)};
         }
 
         // Dark Left Sidebar

@@ -28,26 +28,34 @@
     border-bottom: 1px solid var(--#{$prefix}border-color);
 }
 
-// Logo Height
+// Logo — giữ tỉ lệ, không co theo width cố định trên thẻ img
 .logo-lg {
     img {
         height: $logo-lg-height;
+        width: auto;
+        max-width: 100%;
+        object-fit: contain;
     }
 }
 
 .logo-sm {
     img {
         height: $logo-sm-height;
+        width: auto;
+        max-width: 100%;
+        object-fit: contain;
     }
 }
 
 // Sidebar Logo
 .logo {
-    display: block;
+    display: flex;
+    align-items: center;
     top: 0;
     position: sticky;
-    line-height: $topbar-height;
-    padding: 0 12px;
+    min-height: auto;
+    line-height: 1;
+    padding: 0 1rem;
 
     span.logo-lg {
         display: block;

@@ -1,3 +1,5 @@
+import { APP_DESCRIPTION, APP_KEYWORDS, APP_NAME } from '@/shared/config/brand'
+
 type PageMetaDataProps = {
   title: string
   description?: string
@@ -5,11 +7,9 @@ type PageMetaDataProps = {
 }
 
 const defaultPageMetaData: PageMetaDataProps = {
-  title: 'KẾT NỐI DỄ NHƯ CHỚP MÁT',
-  description:
-    'Inspinia is the #1 best-selling admin dashboard template on WrapBootstrap. Perfect for building CRM, CMS, project management tools, and custom web apps with clean UI, responsive design, and powerful features.',
-  keywords:
-    'Inspinia, admin dashboard, WrapBootstrap, HTML template, Bootstrap admin, CRM template, CMS template, responsive admin, web app UI, admin theme, best admin template',
+  title: APP_NAME,
+  description: APP_DESCRIPTION,
+  keywords: APP_KEYWORDS,
 }
 
 const PageMetaData = ({ title, description = defaultPageMetaData.description, keywords = defaultPageMetaData.keywords }: PageMetaDataProps) => {

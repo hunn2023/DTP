@@ -1,6 +1,8 @@
 import { BreadcrumbItem } from 'react-bootstrap'
 import { TbChevronRight } from 'react-icons/tb'
+
 import PageMetaData from './PageMetaData'
+import { APP_NAME } from '@/shared/config/brand'
 
 type PageBreadcrumbProps = {
   title: string
@@ -17,7 +19,7 @@ const PageBreadcrumb = ({ title, subtitle }: PageBreadcrumbProps) => {
         </div>
         <div className="text-end">
           <div className="breadcrumb m-0 py-0 d-flex align-items-center gap-1">
-            <BreadcrumbItem>Inspinia</BreadcrumbItem> <TbChevronRight />
+            <BreadcrumbItem>{APP_NAME}</BreadcrumbItem> <TbChevronRight />
             {subtitle && (
               <>
                 <BreadcrumbItem>{subtitle}</BreadcrumbItem> <TbChevronRight />

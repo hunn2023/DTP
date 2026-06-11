@@ -1,0 +1,105 @@
+import type { ProductPriceRow } from '@/features/master-data/products/types'
+import { API_PATHS } from '@/shared/config/api'
+import { httpDelete, httpGet, httpPost, httpPut } from '@/shared/lib/http'
+import { readBool, readDateString, readNumber, readString } from '@/shared/lib/dtoNormalize'
+
+type Raw = Record<string, unknown>
+
+export type ProductPricePayload = {
+  productId: string
+  productVariantId?: string | null
+  currency: string
+  originalPrice: number
+  salePrice: number
+  costPrice: number
+  startDate?: string | null
+  endDate?: string | null
+  note: string
+}
+
+export type ProductPriceUpdatePayload = {
+  currency: string
+  originalPrice: number
+  salePrice: number
+  costPrice: number
+  startDate?: string | null
+  endDate?: string | null
+  isActive: boolean
+  note: string
+}
+
+function normalizePrice(raw: Raw): ProductPriceRow {
+  return {
+    id: readString(raw, 'id', 'Id'),
+    productId: readString(raw, 'productId', 'ProductId'),
+    productName: readString(raw, 'productName', 'ProductName'),
+    productVariantId: readString(raw, 'productVariantId', 'ProductVariantId'),
+    productVariantName: readString(raw, 'productVariantName', 'ProductVariantName'),
+    currency: readString(raw, 'currency', 'Currency') || 'VND',
+    originalPrice: readNumber(raw, 'originalPrice', 'OriginalPrice'),
+    salePrice: readNumber(raw, 'salePrice', 'SalePrice'),
+    costPrice: readNumber(raw, 'costPrice', 'CostPrice'),
+    startDate: readDateString(raw, 'startDate', 'StartDate'),
+    endDate: readDateString(raw, 'endDate', 'EndDate'),
+    note: readString(raw, 'note', 'Note'),
+    isActive: readBool(raw, 'isActive', 'IsActive'),
+  }
+}
+
+const inflightProductPrices = new Map<string, Promise<ProductPriceRow[]>>()
+
+export async function fetchProductPrices(filters?: {
+  productId?: string
+  productVariantId?: string
+}): Promise<ProductPriceRow[]> {
+  const key = JSON.stringify(filters ?? {})
+  const inflight = inflightProductPrices.get(key)
+  if (inflight) return inflight
+
+  const promise = httpGet<unknown>(API_PATHS.adminProductPrices, {
+    params: {
+      productId: filters?.productId || undefined,
+      productVariantId: filters?.productVariantId || undefined,
+    },
+  })
+    .then((raw) => {
+      if (!Array.isArray(raw)) return []
+      return (raw as Raw[]).map(normalizePrice)
+    })
+    .finally(() => {
+      inflightProductPrices.delete(key)
+    })
+
+  inflightProductPrices.set(key, promise)
+  return promise
+}
+
+export async function createProductPrice(payload: ProductPricePayload): Promise<string> {
+  const body = {
+    ...payload,
+    productVariantId: payload.productVariantId || null,
+    startDate: payload.startDate || null,
+    endDate: payload.endDate || null,
+    note: payload.note.trim(),
+  }
+  const raw = await httpPost<{ id?: string; Id?: string } | string>(API_PATHS.adminProductPrices, body)
+  if (typeof raw === 'string') return raw
+  return raw.id ?? raw.Id ?? ''
+}
+
+export async function updateProductPrice(
+  id: string,
+  payload: ProductPriceUpdatePayload,
+): Promise<void> {
+  const body = {
+    ...payload,
+    startDate: payload.startDate || null,
+    endDate: payload.endDate || null,
+    note: payload.note.trim(),
+  }
+  await httpPut<unknown>(`${API_PATHS.adminProductPrices}/${id}`, body)
+}
+
+export async function deleteProductPrice(id: string): Promise<void> {
+  await httpDelete(`${API_PATHS.adminProductPrices}/${id}`)
+}
