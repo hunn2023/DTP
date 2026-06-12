@@ -1,5 +1,5 @@
 import type { EsimPackage } from '@/features/products/esim-packages/types'
-import type { EsimPackagePayload } from '@/features/products/esim-packages/esim-packages.api'
+import type { EsimPackagePayload } from '@/apis/esimPackagesApi'
 import type { EsimPackageForm } from '@/features/products/esim-wizard/types'
 import { slugify } from '@/modules/crud/form/slugify'
 

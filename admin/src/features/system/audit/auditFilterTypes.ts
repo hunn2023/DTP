@@ -1,4 +1,4 @@
-import type { AuditLogsQueryFilters } from '@/features/system/audit/audit-logs.api'
+import type { AuditLogsQueryFilters } from '@/apis/auditLogsApi'
 
 export type AuditLogFilterForm = {
   keyword: string

@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import type { ProviderTableHandlers } from '@/features/providers/columns'
 import { getDefaultProviderValues, providerFormConfig } from '@/features/providers/formConfig'
-import * as providersApi from '@/features/providers/providers.api'
+import * as providersApi from '@/apis/providersApi'
 import type { CatalogProvider } from '@/features/providers/types'
 import type { FormModalMode } from '@/modules/crud/form/types'
 

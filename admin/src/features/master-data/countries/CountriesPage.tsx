@@ -1,4 +1,4 @@
-import CountriesCrudTable from '@/features/master-data/countries/CountriesCrudTable'
+import CountriesCrudTable from '@/features/master-data/countries/components/CountriesCrudTable'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'
 
 const CountriesPage = () => (

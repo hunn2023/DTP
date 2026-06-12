@@ -10,12 +10,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import { useNotificationContext } from '@/context/useNotificationContext'
-import { fetchCategoryOptions } from '@/features/master-data/categories/categories.api'
-import { fetchCarrierOptions } from '@/features/master-data/carriers/carriers.api'
-import { fetchCountries } from '@/features/master-data/countries/countries.api'
+import { fetchCategoryOptions } from '@/apis/categoriesApi'
+import { fetchCarrierOptions } from '@/apis/carriersApi'
+import { fetchCountries } from '@/apis/countriesApi'
+import type { Country } from '@/features/master-data/types'
 import type { ProductTableHandlers } from '@/features/master-data/products/columns'
 import { toProductPayload } from '@/features/master-data/products/formConfig'
-import * as productsApi from '@/features/master-data/products/products.api'
+import * as productsApi from '@/apis/productsApi'
 import type { CatalogProduct } from '@/features/master-data/products/types'
 import {
   activeFilterToBool,
@@ -31,7 +32,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback
 }
 
-export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrudParams) {
+export function useProductsCrud({ buildColumns, pageSize = 12 }: UseProductsCrudParams) {
   const navigate = useNavigate()
   const { showNotification } = useNotificationContext()
   const [data, setData] = useState<CatalogProduct[]>([])
@@ -45,6 +46,7 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set())
   const [categoryOptions, setCategoryOptions] = useState<{ value: string; label: string }[]>([])
+  const [countries, setCountries] = useState<Country[]>([])
   const [countryFilterOptions, setCountryFilterOptions] = useState<{ value: string; label: string }[]>([])
   const [carrierFilterOptions, setCarrierFilterOptions] = useState<{ value: string; label: string }[]>([])
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -72,10 +74,11 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
 
   useEffect(() => {
     void Promise.all([fetchCategoryOptions(), fetchCountries(), fetchCarrierOptions()])
-      .then(([categories, countries, carriers]) => {
+      .then(([categories, countryList, carriers]) => {
         setCategoryOptions(categories)
+        setCountries(countryList)
         setCountryFilterOptions(
-          countries.map((item) => ({
+          countryList.map((item) => ({
             value: item.id,
             label: `${item.isoCode} ${item.name}`,
           })),
@@ -90,6 +93,11 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
   const categoryNameById = useMemo(
     () => new Map(categoryOptions.map((item) => [item.value, item.label])),
     [categoryOptions],
+  )
+
+  const countryFlagById = useMemo(
+    () => new Map(countries.map((item) => [item.id, item.flagUrl])),
+    [countries],
   )
   const categoryNameByIdRef = useRef(categoryNameById)
   categoryNameByIdRef.current = categoryNameById
@@ -291,6 +299,9 @@ export function useProductsCrud({ buildColumns, pageSize = 10 }: UseProductsCrud
   }, [])
 
   return {
+    items: data,
+    countryFlagById,
+    toggleActive,
     table,
     globalFilter,
     setGlobalFilter: setGlobalFilterAndReset,

@@ -1,4 +1,4 @@
-import EsimPackagesCrudTable from '@/features/products/esim-packages/EsimPackagesCrudTable'
+import EsimPackagesCrudTable from '@/features/products/esim-packages/components/EsimPackagesCrudTable'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'
 
 const EsimPackagesPage = () => (

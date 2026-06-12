@@ -1,20 +1,9 @@
-import { useCallback } from 'react'
-
-import { buildPermissionColumns } from '@/features/system/permissions/columns'
-import { fetchPermissions } from '@/features/system/permissions/permissions.api'
+import { usePermissionsPage } from '@/features/system/permissions/usePermissionsPage'
 import SystemListTable from '@/features/system/shared/SystemListTable'
-import { useFetchedList } from '@/features/system/shared/useFetchedList'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'
 
 const PermissionsPage = () => {
-  const fetchAll = useCallback(() => fetchPermissions(), [])
-  const buildColumns = useCallback(() => buildPermissionColumns(), [])
-
-  const list = useFetchedList({
-    fetchAll,
-    buildColumns,
-    emptyMessage: 'Chưa có quyền',
-  })
+  const list = usePermissionsPage()
 
   return (
     <EntityPageLayout

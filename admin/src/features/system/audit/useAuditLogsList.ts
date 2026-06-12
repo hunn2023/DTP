@@ -12,7 +12,7 @@ import {
   toAuditLogsQueryFilters,
   type AuditLogFilterForm,
 } from '@/features/system/audit/auditFilterTypes'
-import { fetchAuditLogsPage, type AuditLogRow } from '@/features/system/audit/audit-logs.api'
+import { fetchAuditLogsPage, type AuditLogRow } from '@/apis/auditLogsApi'
 import { useNotificationContext } from '@/context/useNotificationContext'
 
 const FILTER_DEBOUNCE_MS = 400

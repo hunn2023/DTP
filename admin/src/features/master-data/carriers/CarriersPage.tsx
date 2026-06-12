@@ -1,4 +1,4 @@
-import CarriersCrudTable from '@/features/master-data/carriers/CarriersCrudTable'
+import CarriersCrudTable from '@/features/master-data/carriers/components/CarriersCrudTable'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'
 
 const CarriersPage = () => (

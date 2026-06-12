@@ -1,4 +1,4 @@
-import type { OrdersQueryFilters } from '@/features/sales/orders/orders.api'
+import type { OrdersQueryFilters } from '@/apis/ordersApi'
 
 export type OrderPageConfig = {
   path: string

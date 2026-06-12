@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { fetchProductPrices } from '@/features/master-data/product-prices/product-prices.api'
-import { fetchProductVariants } from '@/features/master-data/products/product-variants.api'
-import { fetchProductDetail, fetchProductsPage } from '@/features/master-data/products/products.api'
+import { fetchProductPrices } from '@/apis/productPricesApi'
+import { fetchProductDetail, fetchProductsPage } from '@/apis/productsApi'
+import { fetchProductVariants } from '@/apis/productVariantsApi'
 import type { ProductPriceRow, ProductVariant } from '@/features/master-data/products/types'
-import { fetchCountries } from '@/features/master-data/countries/countries.api'
-import { fetchEsimPackageDetail } from '@/features/products/esim-packages/esim-packages.api'
+import { fetchCountries } from '@/apis/countriesApi'
+import { fetchEsimPackageDetail, fetchEsimPackagesPage } from '@/apis/esimPackagesApi'
 import type { EsimPackage } from '@/features/products/esim-packages/types'
 import { mapPackageToForm } from '@/features/products/esim-wizard/mapPackageForm'
-import { fetchVariantFeatures } from '@/features/products/esim-wizard/product-variant-features.api'
+import { fetchVariantFeatures } from '@/apis/productVariantFeaturesApi'
 import type { EsimPackageForm, EsimWizardTab } from '@/features/products/esim-wizard/types'
 import { getDefaultPackageValues } from '@/features/products/esim-wizard/wizardDefaults'
-import { fetchProviderOptions } from '@/features/providers/providers.api'
+import { fetchProviderOptions } from '@/apis/providersApi'
 import type { FormFieldOption } from '@/modules/crud/form/types'
 
 type LoaderParams = {
@@ -126,7 +126,6 @@ export function useEsimWizardLoader({
   onBootstrapError,
 }: LoaderParams) {
   const [isLoading, setIsLoading] = useState(!isNew)
-  const [isTabLoading, setIsTabLoading] = useState(false)
   const [bootstrapReady, setBootstrapReady] = useState(isNew)
   const [productOptions, setProductOptions] = useState<FormFieldOption[]>([])
   const [providerOptions, setProviderOptions] = useState<FormFieldOption[]>([])
@@ -156,6 +155,9 @@ export function useEsimWizardLoader({
   const esimPackageRef = useRef(esimPackage)
   esimPackageRef.current = esimPackage
 
+  const packageFormRef = useRef(packageForm)
+  packageFormRef.current = packageForm
+
   const applyPackageState = useCallback((pkg: EsimPackage) => {
     const form = mapPackageToForm(pkg)
     setEsimPackage(pkg)
@@ -170,13 +172,19 @@ export function useEsimWizardLoader({
   }, [])
 
   const loadPackageDetail = useCallback(async (): Promise<EsimPackage | null> => {
-    const pkgId = resolvePackageId()
+    let pkgId = resolvePackageId()
+
+    if (!pkgId && variantId) {
+      const paged = await fetchEsimPackagesPage(1, 1, { productVariantId: variantId })
+      pkgId = paged.items[0]?.id ?? null
+    }
+
     if (!pkgId) return null
 
     const pkg = await fetchEsimPackageDetail(pkgId)
     if (pkg) applyPackageState(pkg)
     return pkg
-  }, [resolvePackageId, applyPackageState])
+  }, [resolvePackageId, variantId, applyPackageState])
 
   const loadProductOptions = useCallback(async () => {
     const products = await fetchProductsPage(1, 200, { isActive: true })
@@ -314,14 +322,10 @@ export function useEsimWizardLoader({
     const pId = productIdRef.current
     if (!vId || !pId) return
 
-    const packageTask = esimPackageRef.current
-      ? Promise.resolve(esimPackageRef.current)
-      : loadPackageDetail()
-
     const [providers, countries, pkg] = await Promise.all([
       fetchProviderOptions(),
       fetchCountries(),
-      packageTask,
+      loadPackageDetail(),
     ])
 
     setProviderOptions(providers)
@@ -330,8 +334,12 @@ export function useEsimWizardLoader({
     if (!pkg) {
       setPackageForm(getDefaultPackageValues(pId, vId, defaultCountryId))
     }
-    loadedTabsRef.current.add('packages')
   }, [variantId, defaultCountryId, loadPackageDetail])
+
+  const loadCarriersTab = useCallback(async () => {
+    if (!variantId || !productIdRef.current) return
+    await loadPackageDetail()
+  }, [variantId, loadPackageDetail])
 
   const loadReviewTab = useCallback(async () => {
     if (!variantId || !productIdRef.current) return
@@ -348,21 +356,41 @@ export function useEsimWizardLoader({
     loadedTabsRef.current.add('review')
   }, [variantId, loadPriceTab, loadPackageDetail])
 
+  const hasResolvedPackage = useCallback((): boolean => {
+    return Boolean(esimPackageRef.current?.id || packageFormRef.current?.id)
+  }, [])
+
+  const shouldSkipTabLoad = useCallback(
+    (tab: EsimWizardTab): boolean => {
+      if (tab === 'packages') return false
+      if (!loadedTabsRef.current.has(tab)) return false
+      if (tab === 'carriers') return hasResolvedPackage()
+      return true
+    },
+    [hasResolvedPackage],
+  )
+
   const loadActiveTab = useCallback(async () => {
     if (!variantId || isNew || !productIdRef.current) return
-    if (loadedTabsRef.current.has(activeTab)) return
+    if (shouldSkipTabLoad(activeTab)) return
 
-    setIsTabLoading(true)
-    try {
-      if (activeTab === 'variants') await loadVariantsTab()
-      if (activeTab === 'prices') await loadPriceTab()
-      if (activeTab === 'packages' || activeTab === 'carriers') await loadPackageTab()
-      if (activeTab === 'review') await loadReviewTab()
-      if (activeTab !== 'review') loadedTabsRef.current.add(activeTab)
-    } finally {
-      setIsTabLoading(false)
-    }
-  }, [activeTab, variantId, isNew, loadVariantsTab, loadPriceTab, loadPackageTab, loadReviewTab])
+    if (activeTab === 'variants') await loadVariantsTab()
+    if (activeTab === 'prices') await loadPriceTab()
+    if (activeTab === 'packages') await loadPackageTab()
+    if (activeTab === 'carriers') await loadCarriersTab()
+    if (activeTab === 'review') await loadReviewTab()
+    if (activeTab !== 'review') loadedTabsRef.current.add(activeTab)
+  }, [
+    activeTab,
+    variantId,
+    isNew,
+    shouldSkipTabLoad,
+    loadVariantsTab,
+    loadPriceTab,
+    loadPackageTab,
+    loadCarriersTab,
+    loadReviewTab,
+  ])
 
   useEffect(() => {
     if (variantId) loadedTabsRef.current = getWizardLoadedTabs(variantId)
@@ -370,7 +398,10 @@ export function useEsimWizardLoader({
 
   const invalidateTab = useCallback((tab: EsimWizardTab) => {
     loadedTabsRef.current.delete(tab)
-    if (tab === 'packages') loadedTabsRef.current.delete('review')
+    if (tab === 'packages') {
+      loadedTabsRef.current.delete('carriers')
+      loadedTabsRef.current.delete('review')
+    }
     if (tab === 'prices') loadedTabsRef.current.delete('review')
     if (variantId) clearBootstrapCacheForVariant(variantId)
   }, [variantId])
@@ -446,7 +477,6 @@ export function useEsimWizardLoader({
 
   return {
     isLoading,
-    isTabLoading,
     productOptions,
     providerOptions,
     countryOptions,

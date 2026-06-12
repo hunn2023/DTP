@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { Country } from '@/features/master-data/types'
-import * as countriesApi from '@/features/master-data/countries/countries.api'
+import * as countriesApi from '@/apis/countriesApi'
 
 type CountriesQueryState = {
   data: Country[]

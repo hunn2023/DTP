@@ -8,6 +8,9 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localho
 export const API_REQUEST_BASE = import.meta.env.DEV ? '' : API_BASE_URL
 
 export const API_PATHS = {
+  authLogin: '/api/auth/login',
+  authRefresh: '/api/auth/refresh-token',
+  authLogout: '/api/auth/logout',
   adminCategories: '/api/admin/catalog/categories',
   publicCategories: '/api/catalog/categories',
   adminCountries: '/api/admin/catalog/countries',

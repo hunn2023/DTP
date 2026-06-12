@@ -1,4 +1,4 @@
-import ProvidersCrudTable from '@/features/providers/ProvidersCrudTable'
+import ProvidersCrudTable from '@/features/providers/components/ProvidersCrudTable'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'
 
 const ProvidersPage = () => (

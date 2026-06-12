@@ -1,4 +1,4 @@
-import type { PhoneCardLookups } from '@/features/products/phone-cards/lookups.api'
+import type { PhoneCardLookups } from '@/apis/phoneCardLookupsApi'
 import type { PhoneCard } from '@/features/products/phone-cards/types'
 import type { EntityFormConfig, FormFieldOption, FormModalMode } from '@/modules/crud/form/types'
 

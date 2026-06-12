@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useNotificationContext } from '@/context/useNotificationContext'
 import type { CountryTableHandlers } from '@/features/master-data/countries/columns'
-import * as countriesApi from '@/features/master-data/countries/countries.api'
+import * as countriesApi from '@/apis/countriesApi'
 import type { Country } from '@/features/master-data/types'
 import { slugify } from '@/modules/crud/form/slugify'
 import type { EntityFormConfig, FormModalMode } from '@/modules/crud/form/types'

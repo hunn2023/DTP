@@ -1,6 +1,6 @@
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table'
 
-import type { UserRow } from '@/features/system/users/users.api'
+import type { UserRow } from '@/apis/usersApi'
 
 const helper = createColumnHelper<UserRow>()
 

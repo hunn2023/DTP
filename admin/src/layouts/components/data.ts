@@ -42,7 +42,6 @@ import {
   TbReceipt,
   TbTruckDelivery,
   TbUsers,
-  TbTags,
   TbWorld,
   TbAntennaBars5,
   TbBuildingStore,

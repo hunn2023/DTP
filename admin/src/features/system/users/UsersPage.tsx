@@ -1,25 +1,9 @@
-import { useCallback } from 'react'
-
-import { buildUserColumns } from '@/features/system/users/columns'
-import { fetchUsersPage } from '@/features/system/users/users.api'
+import { useUsersPage } from '@/features/system/users/useUsersPage'
 import PagedListTable from '@/features/sales/shared/PagedListTable'
-import { usePagedList } from '@/features/sales/shared/usePagedList'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'
 
 const UsersPage = () => {
-  const fetchPage = useCallback(
-    (pageIndex: number, pageSize: number, keyword?: string) =>
-      fetchUsersPage(pageIndex + 1, pageSize, keyword),
-    [],
-  )
-
-  const buildColumns = useCallback(() => buildUserColumns(), [])
-
-  const list = usePagedList({
-    fetchPage,
-    buildColumns,
-    emptyMessage: 'Chưa có tài khoản',
-  })
+  const list = useUsersPage()
 
   return (
     <EntityPageLayout
