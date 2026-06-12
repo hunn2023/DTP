@@ -1,9 +1,6 @@
-import { useCallback, useMemo } from 'react'
-
-import { buildDeliveryColumns } from '@/features/sales/deliveries/columns'
-import { fetchDeliveriesPage, type DeliveriesQueryFilters } from '@/apis/deliveriesApi'
+import type { DeliveriesQueryFilters } from '@/apis/deliveriesApi'
+import { useDeliveriesPage } from '@/features/sales/deliveries/useDeliveriesPage'
 import PagedListTable from '@/features/sales/shared/PagedListTable'
-import { usePagedList } from '@/features/sales/shared/usePagedList'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'
 
 type DeliveriesPageProps = {
@@ -19,22 +16,7 @@ const DeliveriesPage = ({
   filters = {},
   searchPlaceholder = 'Tìm mã đơn, khách...',
 }: DeliveriesPageProps) => {
-  const fetchPage = useCallback(
-    (pageIndex: number, pageSize: number, keyword?: string) =>
-      fetchDeliveriesPage(pageIndex + 1, pageSize, keyword, filters),
-    [filters],
-  )
-
-  const buildColumns = useCallback(() => buildDeliveryColumns(), [])
-
-  const filterKey = useMemo(() => String(filters.status ?? ''), [filters.status])
-
-  const list = usePagedList({
-    fetchPage,
-    buildColumns,
-    reloadKey: filterKey,
-    emptyMessage: 'Chưa có giao hàng',
-  })
+  const list = useDeliveriesPage({ filters })
 
   return (
     <EntityPageLayout title={title} subtitle="Bán hàng" description={description}>

@@ -1,20 +1,9 @@
-import { useCallback } from 'react'
-
-import { buildRoleColumns } from '@/features/system/roles/columns'
-import { fetchRoles } from '@/apis/rolesApi'
+import { useRolesPage } from '@/features/system/roles/useRolesPage'
 import SystemListTable from '@/features/system/shared/SystemListTable'
-import { useFetchedList } from '@/features/system/shared/useFetchedList'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'
 
 const RolesPage = () => {
-  const fetchAll = useCallback(() => fetchRoles(), [])
-  const buildColumns = useCallback(() => buildRoleColumns(), [])
-
-  const list = useFetchedList({
-    fetchAll,
-    buildColumns,
-    emptyMessage: 'Chưa có vai trò',
-  })
+  const list = useRolesPage()
 
   return (
     <EntityPageLayout
