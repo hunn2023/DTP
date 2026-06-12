@@ -11,6 +11,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Category
 
         public string Name { get; set; } = string.Empty;
 
+
         public string? Code { get; set; }
 
         public string Slug { get; set; } = string.Empty;
@@ -41,6 +42,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Category
              request.Name,
              request.Slug,
              request.SortOrder,
+             request.IsActive,
              cancellationToken);
         }
     }
