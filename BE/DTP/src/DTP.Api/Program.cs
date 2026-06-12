@@ -79,6 +79,21 @@ namespace DTP.Api
                 throw new InvalidOperationException("Missing configuration: Jwt:Secret");
             }
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("FrontendCors", policy =>
+                {
+                    policy
+                        .WithOrigins(
+                        "https://dtp-admin-c5dd3.web.app",
+                        "http://localhost:5173"
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
+            });
+
             builder.Services
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>

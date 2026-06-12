@@ -24,5 +24,18 @@ namespace DTP.Modules.Auth.Application.Abstractions.Services
                 string? ipAddress,
                 string? userAgent,
                 CancellationToken cancellationToken = default);
+
+
+        Task<Result> ForgotPasswordAsync(
+            ForgotPasswordRequestDto request,
+            string? ipAddress,
+            string? userAgent,
+            CancellationToken cancellationToken = default);
+
+        Task<Result> ResetPasswordAsync(
+            ResetPasswordRequestDto request,
+            string? ipAddress,
+            string? userAgent,
+            CancellationToken cancellationToken = default);
     }
 }

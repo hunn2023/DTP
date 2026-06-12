@@ -20,6 +20,10 @@ namespace DTP.Modules.Auth.Domain.Entities
 
         public DateTime? LastLoginAt { get; set; }
 
+        public string? PasswordResetOtpHash { get; set; }
+        public DateTime? PasswordResetOtpExpiredAt { get; set; }
+        public int PasswordResetVerifyFailedCount { get; set; }
+
 
         public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();

@@ -8,9 +8,10 @@ using DTP.Modules.Ordering.Application.DTOs;
 using DTP.Modules.Ordering.Domain.Entities;
 using DTP.Modules.Ordering.Domain.Enums;
 using DTP.Shared.Application;
-using DTP.Shared.Application.Pagination;
-using Microsoft.AspNetCore.Http;
 using DTP.Shared.Application.Http;
+using DTP.Shared.Application.Pagination;
+using DTP.Shared.Caching;
+using Microsoft.AspNetCore.Http;
 
 
 namespace DTP.Modules.Ordering.Infrastructure.Services
@@ -23,14 +24,16 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
         private readonly IAuditLogWriter _auditLogWriter;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IOrderRateLimitService _orderRateLimitService;
+        private readonly ICacheService _cacheService;
         public OrderService(
             IOrderRepository orderRepository,
             IOrderHistoryRepository historyRepository,
             IOrderUnitOfWork unitOfWork,
             IAuditLogWriter auditLogWriter,
             IHttpContextAccessor httpContextAccessor,
-            IOrderRateLimitService orderRateLimitService
-            )
+            IOrderRateLimitService orderRateLimitService,
+            ICacheService cacheService)
+            
         {
             _orderRepository = orderRepository;
             _historyRepository = historyRepository;
@@ -38,6 +41,7 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
             _auditLogWriter = auditLogWriter;
             _httpContextAccessor = httpContextAccessor;
             _orderRateLimitService = orderRateLimitService;
+            _cacheService = cacheService;
         }
 
         public async Task<Result<Guid>> CreateAsync(
@@ -892,6 +896,126 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
         }
 
 
+        public async Task<Result<PagedResultDto<OrderDto>>> GetCustomerPagedAsync(
+    Guid customerId,
+    string? keyword,
+    OrderStatus? status,
+    OrderPaymentStatus? paymentStatus,
+    int pageIndex,
+    int pageSize,
+    CancellationToken cancellationToken = default)
+        {
+            if (customerId == Guid.Empty)
+                return Result<PagedResultDto<OrderDto>>.Failure("CustomerId không hợp lệ.");
+
+            pageIndex = pageIndex <= 0 ? 1 : pageIndex;
+            pageSize = pageSize <= 0 ? 20 : pageSize;
+
+            if (pageSize > 100)
+                pageSize = 100;
+
+            keyword = string.IsNullOrWhiteSpace(keyword)
+                ? null
+                : keyword.Trim();
+
+            var cacheKey = BuildCustomerOrderPagedCacheKey(
+                customerId,
+                keyword,
+                status,
+                paymentStatus,
+                pageIndex,
+                pageSize);
+
+            var cachedResult = await _cacheService.GetAsync<PagedResultDto<OrderDto>>(
+                cacheKey,
+                cancellationToken);
+
+            if (cachedResult != null)
+            {
+                await WriteAuditSafeAsync(
+                    action: "View Customer Order List From Cache",
+                    actionType: AuditActionType.View,
+                    status: AuditStatus.Success,
+                    entityName: "Order",
+                    description: "Customer order list was viewed from cache.",
+                    newValues: new
+                    {
+                        Filter = new
+                        {
+                            CustomerId = customerId,
+                            Keyword = keyword,
+                            Status = status?.ToString(),
+                            PaymentStatus = paymentStatus?.ToString(),
+                            PageIndex = pageIndex,
+                            PageSize = pageSize
+                        },
+                        Result = new
+                        {
+                            ReturnedCount = cachedResult.Items.Count,
+                            TotalCount = cachedResult.TotalCount,
+                            Source = "Cache"
+                        },
+                        Request = GetRequestAuditInfo()
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result<PagedResultDto<OrderDto>>.Success(cachedResult);
+            }
+
+            var result = await _orderRepository.GetPagedAsync(
+                keyword,
+                customerId,
+                status,
+                paymentStatus,
+                pageIndex,
+                pageSize,
+                cancellationToken);
+
+            var dto = new PagedResultDto<OrderDto>
+            {
+                Items = result.Items.Select(Map).ToList(),
+                TotalCount = result.Total,
+                PageIndex = pageIndex,
+                PageSize = pageSize
+            };
+
+            await _cacheService.SetAsync(
+                cacheKey,
+                dto,
+                TimeSpan.FromMinutes(2),
+                cancellationToken);
+
+            await WriteAuditSafeAsync(
+                action: "View Customer Order List",
+                actionType: AuditActionType.View,
+                status: AuditStatus.Success,
+                entityName: "Order",
+                description: "Customer order list was viewed.",
+                newValues: new
+                {
+                    Filter = new
+                    {
+                        CustomerId = customerId,
+                        Keyword = keyword,
+                        Status = status?.ToString(),
+                        PaymentStatus = paymentStatus?.ToString(),
+                        PageIndex = pageIndex,
+                        PageSize = pageSize
+                    },
+                    Result = new
+                    {
+                        ReturnedCount = dto.Items.Count,
+                        TotalCount = dto.TotalCount,
+                        Source = "Database"
+                    },
+                    Request = GetRequestAuditInfo()
+                },
+                cancellationToken: cancellationToken);
+
+            return Result<PagedResultDto<OrderDto>>.Success(dto);
+        }
+
+
         //public async Task<Result<int>> ExpireWaitingPaymentOrdersAsync(
         //    CancellationToken cancellationToken = default)
         //{
@@ -1081,6 +1205,33 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
                         CreatedAt = x.CreatedAt
                     }).ToList()
             };
+        }
+
+
+        private static string BuildCustomerOrderPagedCacheKey(
+                Guid customerId,
+                string? keyword,
+                OrderStatus? status,
+                OrderPaymentStatus? paymentStatus,
+                int pageIndex,
+                int pageSize)
+        {
+            var normalizedKeyword = string.IsNullOrWhiteSpace(keyword)
+                ? "all"
+                : keyword.Trim().ToLowerInvariant();
+
+            var normalizedStatus = status?.ToString().ToLowerInvariant() ?? "all";
+            var normalizedPaymentStatus = paymentStatus?.ToString().ToLowerInvariant() ?? "all";
+
+            return string.Join(":",
+                "ordering",
+                "customer-orders",
+                customerId,
+                normalizedKeyword,
+                normalizedStatus,
+                normalizedPaymentStatus,
+                pageIndex,
+                pageSize);
         }
 
 

@@ -2,6 +2,7 @@
 using DTP.Modules.Ordering.Application.Commands.Orders;
 using DTP.Modules.Ordering.Application.DTOs;
 using DTP.Modules.Ordering.Application.Queries;
+using DTP.Modules.Ordering.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -79,6 +80,30 @@ namespace DTP.Modules.Ordering.Presentation.Controllers.Public
             }, cancellationToken);
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+
+        [EnableRateLimiting("ordering-read")]
+        public async Task<IActionResult> GetPaged(
+              [FromQuery] string? keyword,
+              [FromQuery] Guid customerId,
+              [FromQuery] OrderStatus? status,
+              [FromQuery] OrderPaymentStatus? paymentStatus,
+              [FromQuery] int pageIndex = 1,
+              [FromQuery] int pageSize = 20,
+              CancellationToken cancellationToken = default)
+        {
+            var result = await _mediator.Send(new GetOrdersByCustomerQuery
+            {
+                Keyword = keyword,
+                CustomerId = customerId,
+                Status = status,
+                PaymentStatus = paymentStatus,
+                PageIndex = pageIndex,
+                PageSize = pageSize
+            }, cancellationToken);
+
+            return Ok(result);
         }
     }
 }

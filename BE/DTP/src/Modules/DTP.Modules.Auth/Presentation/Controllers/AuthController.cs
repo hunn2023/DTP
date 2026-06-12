@@ -149,5 +149,39 @@ namespace DTP.Modules.Auth.Presentation.Controllers
 
             return Ok(result);
         }
+
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(
+                [FromBody] ForgotPasswordCommand command,
+                CancellationToken cancellationToken)
+        {
+            command.IpAddress = HttpContext.GetClientIp();
+            command.UserAgent = HttpContext.GetUserAgent();
+
+            var result = await _mediator.Send(command, cancellationToken);
+
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(
+                [FromBody] ResetPasswordCommand command,
+                CancellationToken cancellationToken)
+        {
+            command.IpAddress = HttpContext.GetClientIp();
+            command.UserAgent = HttpContext.GetUserAgent();
+
+            var result = await _mediator.Send(command, cancellationToken);
+
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
     }
 }
