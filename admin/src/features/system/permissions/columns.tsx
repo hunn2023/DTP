@@ -1,6 +1,6 @@
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table'
 
-import type { PermissionRow } from '@/features/system/permissions/permissions.api'
+import type { PermissionRow } from '@/apis/permissionsApi'
 
 const helper = createColumnHelper<PermissionRow>()
 

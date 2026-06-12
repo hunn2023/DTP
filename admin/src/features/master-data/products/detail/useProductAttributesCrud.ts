@@ -14,7 +14,7 @@ import {
   buildAttributeFormConfig,
   getDefaultAttributeValues,
 } from '@/features/master-data/products/detail/attributeFormConfig'
-import * as attributesApi from '@/features/master-data/products/product-attributes.api'
+import * as attributesApi from '@/apis/productAttributesApi'
 import type { ProductAttributeRow } from '@/features/master-data/products/types'
 import type { FormModalMode } from '@/modules/crud/form/types'
 

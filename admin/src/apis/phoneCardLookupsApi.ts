@@ -1,5 +1,5 @@
-import { fetchProductVariantOptions } from '@/features/products/esim-packages/lookups.api'
-import { fetchProviderOptions } from '@/features/providers/providers.api'
+import { fetchProductVariantOptions } from '@/apis/esimPackageLookupsApi'
+import { fetchProviderOptions } from '@/apis/providersApi'
 import type { FormFieldOption } from '@/modules/crud/form/types'
 
 export type PhoneCardLookups = {

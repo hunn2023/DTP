@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 
 import { buildUserColumns } from '@/features/system/users/columns'
-import { fetchUsersPage } from '@/features/system/users/users.api'
+import { fetchUsersPage } from '@/apis/usersApi'
 import PagedListTable from '@/features/sales/shared/PagedListTable'
 import { usePagedList } from '@/features/sales/shared/usePagedList'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'

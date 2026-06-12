@@ -8,7 +8,7 @@ import {
   type AuditLogDetail,
   type AuditLogRow,
   type AuditLogsQueryFilters,
-} from '@/features/system/audit/audit-logs.api'
+} from '@/apis/auditLogsApi'
 import type { AuditLogFilterForm } from '@/features/system/audit/auditFilterTypes'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'
 import { useNotificationContext } from '@/context/useNotificationContext'

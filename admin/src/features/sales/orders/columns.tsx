@@ -7,7 +7,7 @@ import {
   ORDER_PAYMENT_STATUS_LABELS,
   ORDER_STATUS_LABELS,
 } from '@/features/sales/shared/format'
-import type { OrderRow } from '@/features/sales/orders/orders.api'
+import type { OrderRow } from '@/apis/ordersApi'
 
 const helper = createColumnHelper<OrderRow>()
 

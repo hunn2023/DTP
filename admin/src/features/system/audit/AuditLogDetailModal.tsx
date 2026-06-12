@@ -1,6 +1,6 @@
 import { Modal, Spinner } from 'react-bootstrap'
 
-import type { AuditLogDetail } from '@/features/system/audit/audit-logs.api'
+import type { AuditLogDetail } from '@/apis/auditLogsApi'
 import {
   AUDIT_ACTION_TYPE_LABELS,
   AUDIT_STATUS_LABELS,

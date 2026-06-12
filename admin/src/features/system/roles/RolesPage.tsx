@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 
 import { buildRoleColumns } from '@/features/system/roles/columns'
-import { fetchRoles } from '@/features/system/roles/roles.api'
+import { fetchRoles } from '@/apis/rolesApi'
 import SystemListTable from '@/features/system/shared/SystemListTable'
 import { useFetchedList } from '@/features/system/shared/useFetchedList'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'

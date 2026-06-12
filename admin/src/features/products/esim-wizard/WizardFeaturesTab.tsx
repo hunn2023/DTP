@@ -24,7 +24,7 @@ import {
   deleteVariantFeature,
   fetchVariantFeatures,
   updateVariantFeature,
-} from '@/features/products/esim-wizard/product-variant-features.api'
+} from '@/apis/productVariantFeaturesApi'
 
 type FeatureDraft = {
   clientId: string

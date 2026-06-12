@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Alert, Card, Col, Form, Row } from 'react-bootstrap'
 
-import { createEsimPackage, updateEsimPackage } from '@/features/products/esim-packages/esim-packages.api'
+import { createEsimPackage, updateEsimPackage } from '@/apis/esimPackagesApi'
 import { toPackagePayload } from '@/features/products/esim-wizard/mapPackageForm'
 import type { EsimPackageForm } from '@/features/products/esim-wizard/types'
 import { getDefaultPackageValues } from '@/features/products/esim-wizard/wizardDefaults'

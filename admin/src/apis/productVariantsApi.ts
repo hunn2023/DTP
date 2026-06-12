@@ -1,3 +1,4 @@
+import { fetchAdminProducts } from '@/apis/productsApi'
 import type { ProductVariant } from '@/features/master-data/products/types'
 import { API_PATHS } from '@/shared/config/api'
 import { httpDelete, httpGet, httpPost, httpPut } from '@/shared/lib/http'
@@ -76,7 +77,6 @@ export async function deleteProductVariant(id: string): Promise<void> {
 }
 
 export async function fetchAllProductVariantOptions(): Promise<FormFieldOption[]> {
-  const { fetchAdminProducts } = await import('@/features/master-data/products/products.api')
   const paged = await fetchAdminProducts(1, 100, { isActive: true })
   const groups = await Promise.all(
     paged.items.map(async (product) => {

@@ -16,8 +16,8 @@ import {
   buildPriceFormConfig,
   getDefaultPriceValues,
 } from '@/features/master-data/product-prices/formConfig'
-import * as pricesApi from '@/features/master-data/product-prices/product-prices.api'
-import { fetchProductOptions } from '@/features/master-data/products/products.api'
+import * as pricesApi from '@/apis/productPricesApi'
+import { fetchProductOptions } from '@/apis/productsApi'
 import type { ProductPriceRow } from '@/features/master-data/products/types'
 import type { FormFieldOption, FormModalMode } from '@/modules/crud/form/types'
 
@@ -111,9 +111,7 @@ export function useProductPricesCrud({ buildColumns, pageSize = 10 }: Params) {
     try {
       const [products, variants] = await Promise.all([
         fetchProductOptions(),
-        import('@/features/master-data/products/product-variants.api').then((m) =>
-          m.fetchAllProductVariantOptions(),
-        ),
+        import('@/apis/productVariantsApi').then((m) => m.fetchAllProductVariantOptions()),
       ])
       setProductOptions(products)
       setVariantOptions(variants)

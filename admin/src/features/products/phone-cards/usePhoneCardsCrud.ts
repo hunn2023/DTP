@@ -15,8 +15,8 @@ import {
   fetchPhoneCardFilterOptions,
   fetchPhoneCardLookups,
   type PhoneCardLookups,
-} from '@/features/products/phone-cards/lookups.api'
-import * as phoneCardsApi from '@/features/products/phone-cards/phone-cards.api'
+} from '@/apis/phoneCardLookupsApi'
+import * as phoneCardsApi from '@/apis/phoneCardsApi'
 import type { PhoneCard } from '@/features/products/phone-cards/types'
 import {
   activeFilterToBool,

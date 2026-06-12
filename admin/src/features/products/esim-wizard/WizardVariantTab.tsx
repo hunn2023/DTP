@@ -1,10 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Alert, Card, Col, Form, Row } from 'react-bootstrap'
 
-import {
-  createProductVariant,
-  updateProductVariant,
-} from '@/features/master-data/products/product-variants.api'
+import { createProductVariant, updateProductVariant } from '@/apis/productVariantsApi'
 import type { ProductVariant } from '@/features/master-data/products/types'
 import { getDefaultVariantValues } from '@/features/products/esim-wizard/wizardDefaults'
 import { slugify } from '@/modules/crud/form/slugify'

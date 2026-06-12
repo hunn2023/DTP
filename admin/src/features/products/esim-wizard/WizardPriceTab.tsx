@@ -4,7 +4,7 @@ import { Alert, Card, Col, Form, Row } from 'react-bootstrap'
 import {
   createProductPrice,
   updateProductPrice,
-} from '@/features/master-data/product-prices/product-prices.api'
+} from '@/apis/productPricesApi'
 import type { ProductPriceRow } from '@/features/master-data/products/types'
 import { getDefaultPriceValues } from '@/features/products/esim-wizard/wizardDefaults'
 

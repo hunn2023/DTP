@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 
 import { buildDeliveryColumns } from '@/features/sales/deliveries/columns'
-import { fetchDeliveriesPage, type DeliveriesQueryFilters } from '@/features/sales/deliveries/deliveries.api'
+import { fetchDeliveriesPage, type DeliveriesQueryFilters } from '@/apis/deliveriesApi'
 import PagedListTable from '@/features/sales/shared/PagedListTable'
 import { usePagedList } from '@/features/sales/shared/usePagedList'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'

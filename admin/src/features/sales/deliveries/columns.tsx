@@ -6,7 +6,7 @@ import {
   enumLabel,
   formatDateTime,
 } from '@/features/sales/shared/format'
-import type { DeliveryRow } from '@/features/sales/deliveries/deliveries.api'
+import type { DeliveryRow } from '@/apis/deliveriesApi'
 
 const helper = createColumnHelper<DeliveryRow>()
 

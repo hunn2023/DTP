@@ -1,7 +1,7 @@
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table'
 
 import { formatCurrency, formatDateTime } from '@/features/sales/shared/format'
-import type { PaymentRow } from '@/features/sales/payments/payments.api'
+import type { PaymentRow } from '@/apis/paymentsApi'
 
 const helper = createColumnHelper<PaymentRow>()
 

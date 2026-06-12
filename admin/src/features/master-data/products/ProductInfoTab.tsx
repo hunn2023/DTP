@@ -2,7 +2,7 @@ import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { Card, Col, Form, Row } from 'react-bootstrap'
 
 import { getDefaultProductValues, toProductPayload } from '@/features/master-data/products/formConfig'
-import { createProduct, updateProduct } from '@/features/master-data/products/products.api'
+import { createProduct, updateProduct } from '@/apis/productsApi'
 import type { CatalogProduct } from '@/features/master-data/products/types'
 import type { Country } from '@/features/master-data/types'
 import type { FormFieldOption } from '@/modules/crud/form/types'

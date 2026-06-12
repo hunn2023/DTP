@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Alert, Badge, Card, Form, Spinner, Table } from 'react-bootstrap'
 
-import { fetchCarriers } from '@/features/master-data/carriers/carriers.api'
-import { fetchCountries } from '@/features/master-data/countries/countries.api'
+import { fetchCarriers } from '@/apis/carriersApi'
+import { fetchCountries } from '@/apis/countriesApi'
 import type { Carrier } from '@/features/master-data/types'
 
 type WizardCarriersTabProps = {

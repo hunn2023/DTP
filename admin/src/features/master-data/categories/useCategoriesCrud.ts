@@ -10,7 +10,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useNotificationContext } from '@/context/useNotificationContext'
-import * as categoriesApi from '@/features/master-data/categories/categories.api'
+import * as categoriesApi from '@/apis/categoriesApi'
 import type { Category } from '@/features/master-data/types'
 import { slugify } from '@/modules/crud/form/slugify'
 import type { EntityFormConfig, FormModalMode } from '@/modules/crud/form/types'

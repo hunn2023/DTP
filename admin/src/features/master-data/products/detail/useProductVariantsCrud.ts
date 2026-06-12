@@ -15,7 +15,7 @@ import {
   buildVariantFormConfig,
   getDefaultVariantValues,
 } from '@/features/master-data/products/detail/variantFormConfig'
-import * as variantsApi from '@/features/master-data/products/product-variants.api'
+import * as variantsApi from '@/apis/productVariantsApi'
 import type { ProductVariant } from '@/features/master-data/products/types'
 import type { FormModalMode } from '@/modules/crud/form/types'
 

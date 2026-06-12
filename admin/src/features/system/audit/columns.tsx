@@ -6,7 +6,7 @@ import {
   enumLabel,
   formatDateTime,
 } from '@/features/system/shared/format'
-import type { AuditLogRow } from '@/features/system/audit/audit-logs.api'
+import type { AuditLogRow } from '@/apis/auditLogsApi'
 
 const helper = createColumnHelper<AuditLogRow>()
 

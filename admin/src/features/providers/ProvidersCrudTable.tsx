@@ -6,7 +6,7 @@ import DeleteConfirmationModal from '@/components/table/DeleteConfirmationModal'
 import TablePagination from '@/components/table/TablePagination'
 import { buildProviderColumns } from '@/features/providers/columns'
 import { providersLabels } from '@/features/providers/data'
-import { PROVIDER_PAGE_SIZE_OPTIONS } from '@/features/providers/providers.api'
+import { PROVIDER_PAGE_SIZE_OPTIONS } from '@/apis/providersApi'
 import { useProvidersCrud } from '@/features/providers/useProvidersCrud'
 import EntityFormModal from '@/modules/crud/form/EntityFormModal'
 

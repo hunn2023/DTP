@@ -1,6 +1,6 @@
-import { fetchCarrierOptions } from '@/features/master-data/carriers/carriers.api'
-import { fetchCountries } from '@/features/master-data/countries/countries.api'
-import { fetchAllProductVariantOptions } from '@/features/master-data/products/product-variants.api'
+import { fetchCarrierOptions } from '@/apis/carriersApi'
+import { fetchCountries } from '@/apis/countriesApi'
+import { fetchAllProductVariantOptions } from '@/apis/productVariantsApi'
 import type { FormFieldOption } from '@/modules/crud/form/types'
 
 export async function fetchCountryOptions(): Promise<FormFieldOption[]> {

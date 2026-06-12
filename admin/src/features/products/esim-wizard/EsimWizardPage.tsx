@@ -4,16 +4,16 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'reac
 
 import PageBreadcrumb from '@/components/PageBreadcrumb'
 import { useNotificationContext } from '@/context/useNotificationContext'
-import { fetchProductDetail } from '@/features/master-data/products/products.api'
+import { fetchProductDetail } from '@/apis/productsApi'
 import {
   fetchEsimPackageDetail,
   updateEsimPackage,
-} from '@/features/products/esim-packages/esim-packages.api'
+} from '@/apis/esimPackagesApi'
 import EsimWizardFooter from '@/features/products/esim-wizard/EsimWizardFooter'
 import EsimWizardStepper from '@/features/products/esim-wizard/EsimWizardStepper'
 import { getEsimStepByTab } from '@/features/products/esim-wizard/esimWizardSteps'
 import { mapPackageToForm, toPackagePayload } from '@/features/products/esim-wizard/mapPackageForm'
-import { fetchVariantFeatures } from '@/features/products/esim-wizard/product-variant-features.api'
+import { fetchVariantFeatures } from '@/apis/productVariantFeaturesApi'
 import type { EsimWizardSummary, EsimWizardTab } from '@/features/products/esim-wizard/types'
 import { useEsimWizardLoader } from '@/features/products/esim-wizard/useEsimWizardLoader'
 import WizardCarriersTab from '@/features/products/esim-wizard/WizardCarriersTab'

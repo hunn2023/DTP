@@ -12,7 +12,7 @@ import { useNotificationContext } from '@/context/useNotificationContext'
 
 import { formatBytes } from '@/helpers/file'
 
-import * as imagesApi from '@/features/master-data/products/product-images.api'
+import * as imagesApi from '@/apis/productImagesApi'
 
 import type { ProductImageRow } from '@/features/master-data/products/types'
 

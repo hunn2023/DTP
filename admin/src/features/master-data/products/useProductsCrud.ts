@@ -10,13 +10,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import { useNotificationContext } from '@/context/useNotificationContext'
-import { fetchCategoryOptions } from '@/features/master-data/categories/categories.api'
-import { fetchCarrierOptions } from '@/features/master-data/carriers/carriers.api'
-import { fetchCountries } from '@/features/master-data/countries/countries.api'
+import { fetchCategoryOptions } from '@/apis/categoriesApi'
+import { fetchCarrierOptions } from '@/apis/carriersApi'
+import { fetchCountries } from '@/apis/countriesApi'
 import type { Country } from '@/features/master-data/types'
 import type { ProductTableHandlers } from '@/features/master-data/products/columns'
 import { toProductPayload } from '@/features/master-data/products/formConfig'
-import * as productsApi from '@/features/master-data/products/products.api'
+import * as productsApi from '@/apis/productsApi'
 import type { CatalogProduct } from '@/features/master-data/products/types'
 import {
   activeFilterToBool,

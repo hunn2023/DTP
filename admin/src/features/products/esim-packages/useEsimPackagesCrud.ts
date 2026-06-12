@@ -11,12 +11,12 @@ import { useNavigate } from 'react-router'
 
 import { useNotificationContext } from '@/context/useNotificationContext'
 import type { EsimPackageTableHandlers } from '@/features/products/esim-packages/columns'
-import * as esimPackagesApi from '@/features/products/esim-packages/esim-packages.api'
+import * as esimPackagesApi from '@/apis/esimPackagesApi'
 import {
   fetchEsimFilterOptions,
   fetchEsimPackageLookups,
   type EsimPackageLookups,
-} from '@/features/products/esim-packages/lookups.api'
+} from '@/apis/esimPackageLookupsApi'
 import type { EsimPackage } from '@/features/products/esim-packages/types'
 import {
   mapPackageToForm,
