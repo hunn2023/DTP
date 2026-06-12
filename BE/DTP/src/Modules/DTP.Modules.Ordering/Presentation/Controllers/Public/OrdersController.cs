@@ -84,6 +84,7 @@ namespace DTP.Modules.Ordering.Presentation.Controllers.Public
 
 
         [EnableRateLimiting("ordering-read")]
+        [HttpGet("paged")]
         public async Task<IActionResult> GetPaged(
               [FromQuery] string? keyword,
               [FromQuery] Guid customerId,
