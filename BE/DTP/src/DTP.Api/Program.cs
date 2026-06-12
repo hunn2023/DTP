@@ -7,6 +7,7 @@ using DTP.Modules.Catalog;
 using DTP.Modules.Delivery;
 using DTP.Modules.Ordering;
 using DTP.Modules.Payment;
+using DTP.Modules.Report;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
@@ -123,7 +124,7 @@ namespace DTP.Api
             builder.Services.AddOrderingModule(builder.Configuration);
             builder.Services.AddPaymentModule(builder.Configuration);
             builder.Services.AddDeliveryModule(builder.Configuration);
-
+            builder.Services.AddReportModule(builder.Configuration);
             builder.Services.AddEmailInfrastructure();
 
 

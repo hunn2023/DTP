@@ -2,11 +2,8 @@
 using DTP.Modules.Report.Application.Abstractions.Services;
 using DTP.Modules.Report.Application.DTOs;
 using DTP.Modules.Report.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using DTP.Shared.Application;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Report.Infrastructure.Exports
 {
@@ -19,7 +16,7 @@ namespace DTP.Modules.Report.Infrastructure.Exports
             _reportService = reportService;
         }
 
-        public async Task<ReportExportResultDto> ExportAsync(
+        public async Task<Result<ReportExportResultDto>> ExportAsync(
             ReportMetricType reportType,
             ReportExportFormat format,
             DateTime? fromDate,
@@ -27,7 +24,7 @@ namespace DTP.Modules.Report.Infrastructure.Exports
             CancellationToken cancellationToken = default)
         {
             if (format != ReportExportFormat.Csv)
-                throw new NotSupportedException("Currently only CSV export is supported.");
+                return Result<ReportExportResultDto>.Failure("Unsupported export format.");
 
             return reportType switch
             {
@@ -37,11 +34,11 @@ namespace DTP.Modules.Report.Infrastructure.Exports
                 ReportMetricType.Products => await ExportProductsAsync(fromDate, toDate, cancellationToken),
                 ReportMetricType.Customers => await ExportCustomersAsync(fromDate, toDate, cancellationToken),
                 ReportMetricType.Providers => await ExportProvidersAsync(fromDate, toDate, cancellationToken),
-                _ => throw new NotSupportedException("This report type is not supported for export.")
+                _ => Result<ReportExportResultDto>.Failure("This report type is not supported for CSV export.")
             };
         }
 
-        private async Task<ReportExportResultDto> ExportSalesAsync(
+        private async Task<Result<ReportExportResultDto>> ExportSalesAsync(
             DateTime? fromDate,
             DateTime? toDate,
             CancellationToken cancellationToken)
@@ -52,19 +49,23 @@ namespace DTP.Modules.Report.Infrastructure.Exports
                 ReportDateGroupType.Day,
                 cancellationToken);
 
+            if (!report.IsSuccess || report.Data == null)
+                return Result<ReportExportResultDto>.Failure(report.Error ?? "Cannot get sales report.");
+
             var sb = new StringBuilder();
 
             sb.AppendLine("Date,Revenue,Count");
 
-            foreach (var item in report.RevenueByDate)
+            foreach (var item in report.Data.RevenueByDate ?? [])
             {
                 sb.AppendLine($"{Escape(item.Label)},{item.Value},{item.Count}");
             }
 
-            return CreateCsvResult("sales-report.csv", sb);
+            return Result<ReportExportResultDto>.Success(
+                CreateCsvResult("sales-report.csv", sb));
         }
 
-        private async Task<ReportExportResultDto> ExportOrdersAsync(
+        private async Task<Result<ReportExportResultDto>> ExportOrdersAsync(
             DateTime? fromDate,
             DateTime? toDate,
             CancellationToken cancellationToken)
@@ -75,22 +76,28 @@ namespace DTP.Modules.Report.Infrastructure.Exports
                 ReportDateGroupType.Day,
                 cancellationToken);
 
+            if (!report.IsSuccess || report.Data == null)
+                return Result<ReportExportResultDto>.Failure(report.Error ?? "Cannot get order report.");
+
+            var data = report.Data;
+
             var sb = new StringBuilder();
 
             sb.AppendLine("Metric,Value");
-            sb.AppendLine($"Total Orders,{report.TotalOrders}");
-            sb.AppendLine($"Pending Orders,{report.PendingOrders}");
-            sb.AppendLine($"Processing Orders,{report.ProcessingOrders}");
-            sb.AppendLine($"Completed Orders,{report.CompletedOrders}");
-            sb.AppendLine($"Cancelled Orders,{report.CancelledOrders}");
-            sb.AppendLine($"Failed Orders,{report.FailedOrders}");
-            sb.AppendLine($"Total Amount,{report.TotalOrderAmount}");
-            sb.AppendLine($"Average Amount,{report.AverageOrderAmount}");
+            sb.AppendLine($"Total Orders,{data.TotalOrders}");
+            sb.AppendLine($"Pending Orders,{data.PendingOrders}");
+            sb.AppendLine($"Processing Orders,{data.ProcessingOrders}");
+            sb.AppendLine($"Completed Orders,{data.CompletedOrders}");
+            sb.AppendLine($"Cancelled Orders,{data.CancelledOrders}");
+            sb.AppendLine($"Failed Orders,{data.FailedOrders}");
+            sb.AppendLine($"Total Amount,{data.TotalOrderAmount}");
+            sb.AppendLine($"Average Amount,{data.AverageOrderAmount}");
 
-            return CreateCsvResult("order-report.csv", sb);
+            return Result<ReportExportResultDto>.Success(
+                CreateCsvResult("orders-report.csv", sb));
         }
 
-        private async Task<ReportExportResultDto> ExportPaymentsAsync(
+        private async Task<Result<ReportExportResultDto>> ExportPaymentsAsync(
             DateTime? fromDate,
             DateTime? toDate,
             CancellationToken cancellationToken)
@@ -101,21 +108,27 @@ namespace DTP.Modules.Report.Infrastructure.Exports
                 ReportDateGroupType.Day,
                 cancellationToken);
 
+            if (!report.IsSuccess || report.Data == null)
+                return Result<ReportExportResultDto>.Failure(report.Error ?? "Cannot get payment report.");
+
+            var data = report.Data;
+
             var sb = new StringBuilder();
 
             sb.AppendLine("Metric,Value");
-            sb.AppendLine($"Total Payments,{report.TotalPayments}");
-            sb.AppendLine($"Success Payments,{report.SuccessPayments}");
-            sb.AppendLine($"Pending Payments,{report.PendingPayments}");
-            sb.AppendLine($"Failed Payments,{report.FailedPayments}");
-            sb.AppendLine($"Refunded Payments,{report.RefundedPayments}");
-            sb.AppendLine($"Total Paid Amount,{report.TotalPaidAmount}");
-            sb.AppendLine($"Total Refunded Amount,{report.TotalRefundedAmount}");
+            sb.AppendLine($"Total Payments,{data.TotalPayments}");
+            sb.AppendLine($"Success Payments,{data.SuccessPayments}");
+            sb.AppendLine($"Pending Payments,{data.PendingPayments}");
+            sb.AppendLine($"Failed Payments,{data.FailedPayments}");
+            sb.AppendLine($"Refunded Payments,{data.RefundedPayments}");
+            sb.AppendLine($"Total Paid Amount,{data.TotalPaidAmount}");
+            sb.AppendLine($"Total Refunded Amount,{data.TotalRefundedAmount}");
 
-            return CreateCsvResult("payment-report.csv", sb);
+            return Result<ReportExportResultDto>.Success(
+                CreateCsvResult("payments-report.csv", sb));
         }
 
-        private async Task<ReportExportResultDto> ExportProductsAsync(
+        private async Task<Result<ReportExportResultDto>> ExportProductsAsync(
             DateTime? fromDate,
             DateTime? toDate,
             CancellationToken cancellationToken)
@@ -125,19 +138,23 @@ namespace DTP.Modules.Report.Infrastructure.Exports
                 toDate,
                 cancellationToken);
 
+            if (!report.IsSuccess || report.Data == null)
+                return Result<ReportExportResultDto>.Failure(report.Error ?? "Cannot get product report.");
+
             var sb = new StringBuilder();
 
             sb.AppendLine("Product,Code,Quantity,Revenue");
 
-            foreach (var item in report.TopSellingProducts)
+            foreach (var item in report.Data.TopSellingProducts ?? [])
             {
                 sb.AppendLine($"{Escape(item.Name)},{Escape(item.Code)},{item.Count},{item.Value}");
             }
 
-            return CreateCsvResult("product-report.csv", sb);
+            return Result<ReportExportResultDto>.Success(
+                CreateCsvResult("products-report.csv", sb));
         }
 
-        private async Task<ReportExportResultDto> ExportCustomersAsync(
+        private async Task<Result<ReportExportResultDto>> ExportCustomersAsync(
             DateTime? fromDate,
             DateTime? toDate,
             CancellationToken cancellationToken)
@@ -148,19 +165,23 @@ namespace DTP.Modules.Report.Infrastructure.Exports
                 ReportDateGroupType.Day,
                 cancellationToken);
 
+            if (!report.IsSuccess || report.Data == null)
+                return Result<ReportExportResultDto>.Failure(report.Error ?? "Cannot get customer report.");
+
             var sb = new StringBuilder();
 
             sb.AppendLine("Customer,Code,Orders,Revenue");
 
-            foreach (var item in report.TopCustomers)
+            foreach (var item in report.Data.TopCustomers ?? [])
             {
                 sb.AppendLine($"{Escape(item.Name)},{Escape(item.Code)},{item.Count},{item.Value}");
             }
 
-            return CreateCsvResult("customer-report.csv", sb);
+            return Result<ReportExportResultDto>.Success(
+                CreateCsvResult("customers-report.csv", sb));
         }
 
-        private async Task<ReportExportResultDto> ExportProvidersAsync(
+        private async Task<Result<ReportExportResultDto>> ExportProvidersAsync(
             DateTime? fromDate,
             DateTime? toDate,
             CancellationToken cancellationToken)
@@ -170,16 +191,20 @@ namespace DTP.Modules.Report.Infrastructure.Exports
                 toDate,
                 cancellationToken);
 
+            if (!report.IsSuccess || report.Data == null)
+                return Result<ReportExportResultDto>.Failure("Cannot get provider report.");
+
             var sb = new StringBuilder();
 
             sb.AppendLine("Provider,Code,Orders,Revenue");
 
-            foreach (var item in report.RevenueByProvider)
+            foreach (var item in report.Data.RevenueByProvider ?? [])
             {
                 sb.AppendLine($"{Escape(item.Name)},{Escape(item.Code)},{item.Count},{item.Value}");
             }
 
-            return CreateCsvResult("provider-report.csv", sb);
+            return Result<ReportExportResultDto>.Success(
+                CreateCsvResult("providers-report.csv", sb));
         }
 
         private static ReportExportResultDto CreateCsvResult(
@@ -193,7 +218,7 @@ namespace DTP.Modules.Report.Infrastructure.Exports
             return new ReportExportResultDto
             {
                 FileName = fileName,
-                ContentType = "text/csv",
+                ContentType = "text/csv; charset=utf-8",
                 Content = content
             };
         }
@@ -203,7 +228,7 @@ namespace DTP.Modules.Report.Infrastructure.Exports
             if (string.IsNullOrEmpty(value))
                 return string.Empty;
 
-            if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+            if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
             {
                 return $"\"{value.Replace("\"", "\"\"")}\"";
             }

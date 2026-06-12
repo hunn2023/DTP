@@ -1,5 +1,6 @@
 ﻿using DTP.Modules.Report.Application.Abstractions.Services;
 using DTP.Modules.Report.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -9,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Report.Application.Queries
 {
-    public class GetDashboardReportQuery : IRequest<DashboardReportDto>
+    public class GetDashboardReportQuery : IRequest<Result<DashboardReportDto>>
     {
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
     }
 
     public class GetDashboardReportQueryHandler
-    : IRequestHandler<GetDashboardReportQuery, DashboardReportDto>
+    : IRequestHandler<GetDashboardReportQuery, Result<DashboardReportDto>>
     {
         private readonly IReportService _service;
 
@@ -25,7 +26,7 @@ namespace DTP.Modules.Report.Application.Queries
             _service = service;
         }
 
-        public async Task<DashboardReportDto> Handle(
+        public async Task<Result<DashboardReportDto>> Handle(
             GetDashboardReportQuery request,
             CancellationToken cancellationToken)
         {

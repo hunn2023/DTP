@@ -3,18 +3,11 @@ using DTP.Modules.Report.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace DTP.Modules.Report.Presentation.Controllers
 {
     [ApiController]
     [Route("api/admin/reports")]
-    [Authorize]
+    //[Authorize]
     public class AdminReportController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -36,6 +29,9 @@ namespace DTP.Modules.Report.Presentation.Controllers
                 ToDate = toDate
             }, cancellationToken);
 
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
             return Ok(result);
         }
 
@@ -52,6 +48,9 @@ namespace DTP.Modules.Report.Presentation.Controllers
                 ToDate = toDate,
                 GroupType = groupType
             }, cancellationToken);
+
+            if (!result.IsSuccess)
+                return BadRequest(result);
 
             return Ok(result);
         }
@@ -70,6 +69,9 @@ namespace DTP.Modules.Report.Presentation.Controllers
                 GroupType = groupType
             }, cancellationToken);
 
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
             return Ok(result);
         }
 
@@ -87,6 +89,9 @@ namespace DTP.Modules.Report.Presentation.Controllers
                 GroupType = groupType
             }, cancellationToken);
 
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
             return Ok(result);
         }
 
@@ -101,6 +106,9 @@ namespace DTP.Modules.Report.Presentation.Controllers
                 FromDate = fromDate,
                 ToDate = toDate
             }, cancellationToken);
+
+            if (!result.IsSuccess)
+                return BadRequest(result);
 
             return Ok(result);
         }
@@ -119,6 +127,9 @@ namespace DTP.Modules.Report.Presentation.Controllers
                 GroupType = groupType
             }, cancellationToken);
 
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
             return Ok(result);
         }
 
@@ -134,16 +145,19 @@ namespace DTP.Modules.Report.Presentation.Controllers
                 ToDate = toDate
             }, cancellationToken);
 
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
             return Ok(result);
         }
 
         [HttpGet("export")]
         public async Task<IActionResult> Export(
-            [FromQuery] ReportMetricType reportType,
-            [FromQuery] ReportExportFormat format = ReportExportFormat.Csv,
-            [FromQuery] DateTime? fromDate = null,
-            [FromQuery] DateTime? toDate = null,
-            CancellationToken cancellationToken = default)
+        [FromQuery] ReportMetricType reportType,
+        [FromQuery] ReportExportFormat format = ReportExportFormat.Csv,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null,
+        CancellationToken cancellationToken = default)
         {
             var result = await _mediator.Send(new ExportReportQuery
             {
@@ -153,7 +167,13 @@ namespace DTP.Modules.Report.Presentation.Controllers
                 ToDate = toDate
             }, cancellationToken);
 
-            return File(result.Content, result.ContentType, result.FileName);
+            if (!result.IsSuccess || result.Data == null)
+                return BadRequest(result);
+
+            return File(
+                result.Data.Content,
+                result.Data.ContentType,
+                result.Data.FileName);
         }
     }
 }

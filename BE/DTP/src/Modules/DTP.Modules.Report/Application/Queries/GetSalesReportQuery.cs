@@ -1,16 +1,13 @@
 ﻿using DTP.Modules.Report.Application.Abstractions.Services;
 using DTP.Modules.Report.Application.DTOs;
 using DTP.Modules.Report.Domain.Enums;
+using DTP.Shared.Application;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace DTP.Modules.Report.Application.Queries
 {
-    public class GetSalesReportQuery : IRequest<SalesReportDto>
+    public class GetSalesReportQuery : IRequest<Result<SalesReportDto>>
     {
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
@@ -18,7 +15,7 @@ namespace DTP.Modules.Report.Application.Queries
     }
 
     public class GetSalesReportQueryHandler
-    : IRequestHandler<GetSalesReportQuery, SalesReportDto>
+    : IRequestHandler<GetSalesReportQuery, Result<SalesReportDto>>
     {
         private readonly IReportService _service;
 
@@ -27,7 +24,7 @@ namespace DTP.Modules.Report.Application.Queries
             _service = service;
         }
 
-        public async Task<SalesReportDto> Handle(
+        public async Task<Result<SalesReportDto>> Handle(
             GetSalesReportQuery request,
             CancellationToken cancellationToken)
         {
