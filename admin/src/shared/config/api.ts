@@ -36,5 +36,6 @@ export const API_PATHS = {
   adminUsers: '/api/admin/users',
   adminRoles: '/api/admin/roles',
   adminPermissions: '/api/admin/permissions',
+  adminPermissionsByModule: '/api/admin/permissions/by-module',
   adminAuditLogs: '/api/admin/audit/logs',
 } as const

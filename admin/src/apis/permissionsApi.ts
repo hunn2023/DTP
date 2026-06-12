@@ -13,12 +13,14 @@ export type PermissionRow = {
   action: string
 }
 
+export type PermissionsByModule = Record<string, PermissionRow[]>
+
 function parseActionFromCode(code: string): string {
   const parts = code.split('.')
   return parts.length > 1 ? parts[parts.length - 1] : ''
 }
 
-function normalizePermission(raw: Raw): PermissionRow {
+export function normalizePermission(raw: Raw): PermissionRow {
   const code = readString(raw, 'code', 'Code')
   return {
     id: readString(raw, 'id', 'Id'),
@@ -44,7 +46,58 @@ function normalizeList(raw: unknown): PermissionRow[] {
   return []
 }
 
+function normalizeByModule(raw: unknown): PermissionsByModule {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+
+  const result: PermissionsByModule = {}
+  Object.entries(raw as Record<string, unknown>).forEach(([module, value]) => {
+    if (!Array.isArray(value)) return
+    result[module] = value.map((item) => normalizePermission(item as Raw))
+  })
+  return result
+}
+
+let cachedPermissions: PermissionRow[] | null = null
+let inflightPermissions: Promise<PermissionRow[]> | null = null
+
+let cachedPermissionsByModule: PermissionsByModule | null = null
+let inflightPermissionsByModule: Promise<PermissionsByModule> | null = null
+
+export function invalidatePermissionsCache(): void {
+  cachedPermissions = null
+  inflightPermissions = null
+  cachedPermissionsByModule = null
+  inflightPermissionsByModule = null
+}
+
 export async function fetchPermissions(): Promise<PermissionRow[]> {
-  const raw = await httpGet<unknown>(API_PATHS.adminPermissions)
-  return normalizeList(raw)
+  if (cachedPermissions) return cachedPermissions
+  if (inflightPermissions) return inflightPermissions
+
+  inflightPermissions = httpGet<unknown>(API_PATHS.adminPermissions)
+    .then((raw) => {
+      cachedPermissions = normalizeList(raw)
+      return cachedPermissions
+    })
+    .finally(() => {
+      inflightPermissions = null
+    })
+
+  return inflightPermissions
+}
+
+export async function fetchPermissionsByModule(): Promise<PermissionsByModule> {
+  if (cachedPermissionsByModule) return cachedPermissionsByModule
+  if (inflightPermissionsByModule) return inflightPermissionsByModule
+
+  inflightPermissionsByModule = httpGet<unknown>(API_PATHS.adminPermissionsByModule)
+    .then((raw) => {
+      cachedPermissionsByModule = normalizeByModule(raw)
+      return cachedPermissionsByModule
+    })
+    .finally(() => {
+      inflightPermissionsByModule = null
+    })
+
+  return inflightPermissionsByModule
 }
