@@ -1,5 +1,6 @@
 import type { ProductPriceRow } from '@/features/master-data/products/types'
 import { API_PATHS } from '@/shared/config/api'
+import { parseCreatedId } from '@/shared/lib/createdId'
 import { httpDelete, httpGet, httpPost, httpPut } from '@/shared/lib/http'
 import { readBool, readDateString, readNumber, readString } from '@/shared/lib/dtoNormalize'
 
@@ -82,9 +83,8 @@ export async function createProductPrice(payload: ProductPricePayload): Promise<
     endDate: payload.endDate || null,
     note: payload.note.trim(),
   }
-  const raw = await httpPost<{ id?: string; Id?: string } | string>(API_PATHS.adminProductPrices, body)
-  if (typeof raw === 'string') return raw
-  return raw.id ?? raw.Id ?? ''
+  const raw = await httpPost<unknown>(API_PATHS.adminProductPrices, body)
+  return parseCreatedId(raw)
 }
 
 export async function updateProductPrice(

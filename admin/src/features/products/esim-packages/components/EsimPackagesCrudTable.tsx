@@ -1,10 +1,10 @@
-import { Badge, Button, Card, CardFooter, CardHeader, Spinner } from 'react-bootstrap'
-import { LuFilter, LuPlus, LuSearch, LuWifi } from 'react-icons/lu'
+import { Button, Card, CardBody, Col, Row, Spinner } from 'react-bootstrap'
+import { LuPlus, LuSearch } from 'react-icons/lu'
 
-import DataTable from '@/components/table/DataTable'
 import DeleteConfirmationModal from '@/components/table/DeleteConfirmationModal'
 import TablePagination from '@/components/table/TablePagination'
 import { buildEsimPackageColumns } from '@/features/products/esim-packages/columns'
+import EsimPackageCard from '@/features/products/esim-packages/components/EsimPackageCard'
 import { esimPackagesLabels } from '@/features/products/esim-packages/data'
 import { ESIM_PACKAGE_PAGE_SIZE_OPTIONS } from '@/apis/esimPackagesApi'
 import { useEsimPackagesCrud } from '@/features/products/esim-packages/useEsimPackagesCrud'
@@ -22,121 +22,111 @@ const EsimPackagesCrudTable = () => {
       : `Bạn có chắc muốn xóa ${esimPackagesLabels.itemName} này?`
 
   return (
-    <Card className="border-0 shadow-sm">
-      <CardHeader className="border-0 bg-transparent flex-column align-items-stretch gap-3 p-4">
-        <div className="d-flex justify-content-between flex-wrap gap-3">
-          <div className="d-flex align-items-start gap-3">
-            <span className="avatar-md rounded bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center">
-              <LuWifi className="fs-24" />
-            </span>
-            <div>
-              <div className="d-flex align-items-center gap-2 flex-wrap mb-1">
-                <h5 className="mb-0 fw-semibold">Kho gói eSIM</h5>
-                <Badge bg="primary-subtle" text="primary" className="border border-primary-subtle">
-                  {crud.paginationInfo.total} gói
-                </Badge>
+    <>
+      <Row className="g-3 align-items-start">
+        <Col xs={12} lg={3} xl={2}>
+          <Card className="esim-packages-filter-card shadow-none border h-100">
+            <CardBody className="d-flex flex-column gap-3">
+              <div className="app-search">
+                <input
+                  type="search"
+                  className="form-control"
+                  placeholder={esimPackagesLabels.searchPlaceholder}
+                  value={crud.globalFilter}
+                  onChange={(e) => crud.setGlobalFilter(e.target.value)}
+                />
+                <LuSearch className="app-search-icon text-muted" />
               </div>
-              <p className="text-muted mb-0 fs-sm">
-                Tìm kiếm, lọc theo quốc gia/nhà mạng và quản lý trạng thái hiển thị.
-              </p>
+
+              <ListFilterSelect
+                label="Quốc gia"
+                value={crud.countryFilter}
+                onChange={crud.setCountryFilter}
+                options={crud.filterOptions.countryOptions}
+                allLabel="Tất cả quốc gia"
+                minWidth="0"
+              />
+              <ListFilterSelect
+                label="Nhà mạng"
+                value={crud.carrierFilter}
+                onChange={crud.setCarrierFilter}
+                options={crud.filterOptions.carrierOptions}
+                allLabel="Tất cả nhà mạng"
+                minWidth="0"
+              />
+              <ListFilterSelect
+                label="Biến thể"
+                value={crud.variantFilter}
+                onChange={crud.setVariantFilter}
+                options={crud.variantFilterOptions}
+                allLabel="Tất cả biến thể"
+                minWidth="0"
+                onFocus={() => void crud.loadVariantFilterOptions()}
+              />
+              <div className="d-flex flex-column">
+                <label className="form-label mb-1 small text-muted">Trạng thái</label>
+                <ActiveFilterSelect value={crud.activeFilter} onChange={crud.setActiveFilter} />
+              </div>
+
+              <Button
+                variant="primary"
+                className="w-100 mt-1"
+                onClick={crud.openCreate}
+                disabled={!crud.filtersReady}>
+                <LuPlus className="fs-sm me-1" />
+                {esimPackagesLabels.addButton}
+              </Button>
+            </CardBody>
+          </Card>
+        </Col>
+
+        <Col xs={12} lg={9} xl={10}>
+          {crud.isLoading ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" size="sm" className="me-2" />
+              Đang tải gói eSIM...
             </div>
-          </div>
-          <div className="card-action d-flex flex-nowrap align-items-center gap-2">
-            <ActiveFilterSelect value={crud.activeFilter} onChange={crud.setActiveFilter} />
-            <Button
-              variant="primary"
-              size="sm"
-              className="text-nowrap"
-              onClick={crud.openCreate}
-              disabled={!crud.filtersReady}>
-              <LuPlus className="fs-sm me-1" />
-              {esimPackagesLabels.addButton}
-            </Button>
-          </div>
-        </div>
-
-        <div className="d-flex align-items-center gap-2 flex-wrap p-2 rounded bg-light">
-          <div className="app-search flex-grow-1" style={{ minWidth: '16rem' }}>
-            <input
-              type="search"
-              className="form-control border-0 bg-white"
-              placeholder={esimPackagesLabels.searchPlaceholder}
-              value={crud.globalFilter}
-              onChange={(e) => crud.setGlobalFilter(e.target.value)}
-            />
-            <LuSearch className="app-search-icon text-muted" />
-          </div>
-          {crud.selectedCount > 0 && (
-            <Button variant="danger" size="sm" onClick={crud.requestBulkDelete}>
-              Xóa ({crud.selectedCount})
-            </Button>
+          ) : crud.items.length === 0 ? (
+            <Card className="shadow-none border">
+              <CardBody className="text-center text-muted py-5">{esimPackagesLabels.emptyMessage}</CardBody>
+            </Card>
+          ) : (
+            <Row className="row-cols-1 row-cols-sm-2 row-cols-xl-3 row-cols-xxl-4 g-3">
+              {crud.items.map((pkg) => (
+                <Col key={pkg.id}>
+                  <EsimPackageCard
+                    pkg={pkg}
+                    price={crud.priceByVariantId.get(pkg.productVariantId)}
+                    onClick={() => crud.openEdit(pkg)}
+                    onToggleActive={crud.toggleActive}
+                  />
+                </Col>
+              ))}
+            </Row>
           )}
-        </div>
 
-        <div className="d-flex align-items-end gap-2 flex-wrap">
-          <div className="d-flex align-items-center gap-1 text-muted fs-sm me-1 pb-2">
-            <LuFilter />
-            <span>Bộ lọc</span>
-          </div>
-          <ListFilterSelect
-            label="Quốc gia"
-            value={crud.countryFilter}
-            onChange={crud.setCountryFilter}
-            options={crud.filterOptions.countryOptions}
-            allLabel="Tất cả quốc gia"
-          />
-          <ListFilterSelect
-            label="Nhà mạng"
-            value={crud.carrierFilter}
-            onChange={crud.setCarrierFilter}
-            options={crud.filterOptions.carrierOptions}
-            allLabel="Tất cả nhà mạng"
-          />
-          <ListFilterSelect
-            label="Biến thể"
-            value={crud.variantFilter}
-            onChange={crud.setVariantFilter}
-            options={crud.variantFilterOptions}
-            allLabel="Tất cả biến thể"
-            minWidth="12rem"
-            onFocus={() => void crud.loadVariantFilterOptions()}
-          />
-        </div>
-      </CardHeader>
-
-      {crud.isLoading ? (
-        <div className="text-center py-5">
-          <Spinner animation="border" size="sm" className="me-2" />
-          Đang tải gói eSIM...
-        </div>
-      ) : (
-        <DataTable
-          table={crud.table}
-          emptyMessage={esimPackagesLabels.emptyMessage}
-          onRowClick={crud.openView}
-        />
-      )}
-
-      {!crud.isLoading && crud.paginationInfo.total > 0 && (
-        <CardFooter className="border-0">
-          <TablePagination
-            totalItems={crud.paginationInfo.total}
-            start={crud.paginationInfo.start}
-            end={crud.paginationInfo.end}
-            itemsName={esimPackagesLabels.itemName}
-            pageSize={crud.pageSize}
-            pageSizeOptions={ESIM_PACKAGE_PAGE_SIZE_OPTIONS}
-            onPageSizeChange={crud.setPageSize}
-            previousPage={crud.table.previousPage}
-            canPreviousPage={crud.table.getCanPreviousPage()}
-            pageCount={crud.pageCount}
-            pageIndex={crud.table.getState().pagination.pageIndex}
-            setPageIndex={crud.table.setPageIndex}
-            nextPage={crud.table.nextPage}
-            canNextPage={crud.table.getCanNextPage()}
-          />
-        </CardFooter>
-      )}
+          {!crud.isLoading && crud.paginationInfo.total > 0 && (
+            <div className="mt-3">
+              <TablePagination
+                totalItems={crud.paginationInfo.total}
+                start={crud.paginationInfo.start}
+                end={crud.paginationInfo.end}
+                itemsName={esimPackagesLabels.itemName}
+                pageSize={crud.pageSize}
+                pageSizeOptions={ESIM_PACKAGE_PAGE_SIZE_OPTIONS}
+                onPageSizeChange={crud.setPageSize}
+                previousPage={crud.table.previousPage}
+                canPreviousPage={crud.table.getCanPreviousPage()}
+                pageCount={crud.pageCount}
+                pageIndex={crud.table.getState().pagination.pageIndex}
+                setPageIndex={crud.table.setPageIndex}
+                nextPage={crud.table.nextPage}
+                canNextPage={crud.table.getCanNextPage()}
+              />
+            </div>
+          )}
+        </Col>
+      </Row>
 
       <DeleteConfirmationModal
         show={crud.showDeleteModal}
@@ -149,7 +139,7 @@ const EsimPackagesCrudTable = () => {
         cancelButtonText="Hủy">
         {deleteMessage}
       </DeleteConfirmationModal>
-    </Card>
+    </>
   )
 }
 

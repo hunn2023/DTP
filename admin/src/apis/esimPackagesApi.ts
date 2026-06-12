@@ -1,8 +1,9 @@
 import type { EsimPackage } from '@/features/products/esim-packages/types'
 import type { EsimPackageCarrierLink } from '@/features/products/esim-wizard/types'
 import { API_PATHS } from '@/shared/config/api'
-import { httpDelete, httpGet, httpPost, httpPut } from '@/shared/lib/http'
+import { parseCreatedId } from '@/shared/lib/createdId'
 import { readBool, readNumber, readOptionalNumber, readString } from '@/shared/lib/dtoNormalize'
+import { httpDelete, httpGet, httpPost, httpPut } from '@/shared/lib/http'
 
 type Raw = Record<string, unknown>
 
@@ -184,9 +185,8 @@ export async function fetchEsimPackageDetail(id: string): Promise<EsimPackage | 
 }
 
 export async function createEsimPackage(payload: EsimPackagePayload): Promise<string> {
-  const raw = await httpPost<{ id?: string; Id?: string } | string>(API_PATHS.adminEsimPackages, payload)
-  if (typeof raw === 'string') return raw
-  return raw.id ?? raw.Id ?? ''
+  const raw = await httpPost<unknown>(API_PATHS.adminEsimPackages, payload)
+  return parseCreatedId(raw)
 }
 
 export async function updateEsimPackage(id: string, payload: EsimPackageUpdatePayload): Promise<void> {

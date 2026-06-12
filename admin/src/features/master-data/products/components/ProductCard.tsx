@@ -13,7 +13,6 @@ type ProductCardProps = {
 }
 
 const ProductCard = ({ product, countryFlagUrl, onClick, onToggleActive }: ProductCardProps) => {
-  const hasDescription = Boolean(product.shortDescription || product.locationText)
   const thumbnailUrl = product.thumbnailUrl || defaultProductImage
   const isDefaultThumbnail = !product.thumbnailUrl
 
@@ -46,36 +45,34 @@ const ProductCard = ({ product, countryFlagUrl, onClick, onToggleActive }: Produ
         </div>
       </div>
 
-      <Card.Body className="p-3 d-flex flex-column gap-2">
-        <h6 className="product-card__title mb-0 text-truncate">{product.name}</h6>
+      <Card.Body className="p-3 product-card__body">
+        <div className="product-card__body-main">
+          <h6 className="product-card__title mb-0 text-truncate">{product.name}</h6>
 
-        <div className="d-flex flex-wrap align-items-center gap-3 product-card__meta">
-          {product.categoryName && (
-            <span className="d-inline-flex align-items-center gap-1 text-truncate">
-              <LuFolder className="product-card__meta-icon flex-shrink-0" />
-              <span className="product-card__meta-value text-truncate">{product.categoryName}</span>
-            </span>
-          )}
-          {product.countryName && (
-            <span className="d-inline-flex align-items-center gap-1 text-truncate">
-              {countryFlagUrl ? (
-                <img src={countryFlagUrl} alt="" className="product-card__flag flex-shrink-0" />
-              ) : null}
-              <span className="product-card__meta-value text-truncate">{product.countryName}</span>
-            </span>
-          )}
+          <div className="d-flex flex-wrap align-items-center gap-3 product-card__meta">
+            {product.categoryName && (
+              <span className="d-inline-flex align-items-center gap-1 text-truncate">
+                <LuFolder className="product-card__meta-icon flex-shrink-0" />
+                <span className="product-card__meta-value text-truncate">{product.categoryName}</span>
+              </span>
+            )}
+            {product.countryName && (
+              <span className="d-inline-flex align-items-center gap-1 text-truncate">
+                {countryFlagUrl ? (
+                  <img src={countryFlagUrl} alt="" className="product-card__flag flex-shrink-0" />
+                ) : null}
+                <span className="product-card__meta-value text-truncate">{product.countryName}</span>
+              </span>
+            )}
+          </div>
+
+          {product.shortDescription ? (
+            <p className="product-card__desc-main mb-0">{product.shortDescription}</p>
+          ) : null}
         </div>
 
-        {hasDescription ? (
-          <p className="product-card__desc mb-0">
-            {product.shortDescription ? (
-              <span className="product-card__desc-main">{product.shortDescription}</span>
-            ) : null}
-            {product.shortDescription && product.locationText ? '. ' : null}
-            {product.locationText ? (
-              <span className="product-card__desc-value">{product.locationText}</span>
-            ) : null}
-          </p>
+        {product.locationText ? (
+          <p className="product-card__desc-value mb-0">{product.locationText}</p>
         ) : null}
       </Card.Body>
 

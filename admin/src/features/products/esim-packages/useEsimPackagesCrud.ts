@@ -12,6 +12,8 @@ import { useNavigate } from 'react-router'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import type { EsimPackageTableHandlers } from '@/features/products/esim-packages/columns'
 import * as esimPackagesApi from '@/apis/esimPackagesApi'
+import { fetchProductPrices } from '@/apis/productPricesApi'
+import type { ProductPriceRow } from '@/features/master-data/products/types'
 import {
   fetchEsimFilterOptions,
   fetchEsimPackageLookups,
@@ -41,6 +43,7 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
   const navigate = useNavigate()
   const { showNotification } = useNotificationContext()
   const [data, setData] = useState<EsimPackage[]>([])
+  const [priceByVariantId, setPriceByVariantId] = useState<Map<string, ProductPriceRow>>(new Map())
   const [totalCount, setTotalCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [filterOptions, setFilterOptions] = useState<Pick<EsimPackageLookups, 'countryOptions' | 'carrierOptions'>>({
@@ -100,6 +103,23 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
     [globalFilter, countryFilter, carrierFilter, variantFilter, activeFilter],
   )
 
+  const loadPricesForPackages = useCallback(async (items: EsimPackage[]): Promise<Map<string, ProductPriceRow>> => {
+    const variantIds = [...new Set(items.map((item) => item.productVariantId).filter(Boolean))]
+    const entries = await Promise.all(
+      variantIds.map(async (variantId) => {
+        const prices = await fetchProductPrices({ productVariantId: variantId })
+        const active = prices.find((p) => p.isActive) ?? prices[0]
+        return [variantId, active] as const
+      }),
+    )
+
+    const map = new Map<string, ProductPriceRow>()
+    for (const [variantId, price] of entries) {
+      if (price) map.set(variantId, price)
+    }
+    return map
+  }, [])
+
   const loadData = useCallback(
     async (pageIndex: number, size: number, filters: esimPackagesApi.EsimPackageListFilters, seq: number) => {
       setIsLoading(true)
@@ -108,6 +128,16 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
         if (seq !== loadSeqRef.current) return
         setData(result.items)
         setTotalCount(result.totalCount)
+
+        void loadPricesForPackages(result.items)
+          .then((prices) => {
+            if (seq !== loadSeqRef.current) return
+            setPriceByVariantId(prices)
+          })
+          .catch(() => {
+            if (seq !== loadSeqRef.current) return
+            setPriceByVariantId(new Map())
+          })
       } catch (e) {
         if (seq !== loadSeqRef.current) return
         notifyErrorRef.current(getErrorMessage(e, 'Không tải được danh sách gói eSIM'))
@@ -115,7 +145,7 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
         if (seq === loadSeqRef.current) setIsLoading(false)
       }
     },
-    [],
+    [loadPricesForPackages],
   )
 
   useEffect(() => {
@@ -286,6 +316,10 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
   }, [])
 
   return {
+    items: data,
+    priceByVariantId,
+    toggleActive,
+    openEdit,
     table,
     globalFilter,
     setGlobalFilter: setGlobalFilterAndReset,
