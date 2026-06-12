@@ -16,7 +16,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useCallback, useEffect, useState } from 'react'
-import { Button, Form, Spinner } from 'react-bootstrap'
+import { Alert, Button, Card, Form, Spinner } from 'react-bootstrap'
 import { LuGripVertical, LuPlus, LuX } from 'react-icons/lu'
 
 import {
@@ -65,7 +65,7 @@ function SortableFeatureRow({ item, canRemove, onTextChange, onRemove }: Sortabl
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="d-flex gap-2 align-items-center">
+    <div ref={setNodeRef} style={style} className="d-flex gap-2 align-items-center rounded border p-2 bg-white">
       <button
         type="button"
         ref={setActivatorNodeRef}
@@ -77,8 +77,9 @@ function SortableFeatureRow({ item, canRemove, onTextChange, onRemove }: Sortabl
         <LuGripVertical className="fs-20" />
       </button>
       <Form.Control
+        className="border-0 bg-light"
         value={item.text}
-        placeholder="VD: Mạng 4G ổn định"
+        placeholder="VD: Mạng 4G ổn định tại sân bay và trung tâm thành phố"
         onChange={(e) => onTextChange(e.target.value)}
       />
       <Button
@@ -218,37 +219,42 @@ const WizardFeaturesTab = ({ variantId, onRegisterSave, onSavingChange }: Wizard
   }
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h5 className="fw-semibold mb-0">Danh sách tính năng</h5>
-          <span className="text-muted fs-sm">Kéo thả để sắp xếp thứ tự</span>
-        </div>
-      </div>
-
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={items.map((item) => item.clientId)} strategy={verticalListSortingStrategy}>
-          <div className="d-flex flex-column gap-2 mb-3">
-            {items.map((item) => (
-              <SortableFeatureRow
-                key={item.clientId}
-                item={item}
-                canRemove={items.length > 1 || Boolean(item.text)}
-                onTextChange={(text) => updateText(item.clientId, text)}
-                onRemove={() => removeItem(item.clientId)}
-              />
-            ))}
+    <Card className="border shadow-none">
+      <Card.Body>
+        <div className="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+          <div>
+            <h5 className="fw-semibold mb-1">Tính năng nổi bật</h5>
+            <span className="text-muted fs-sm">Kéo thả để sắp xếp thứ tự hiển thị trên card bán hàng.</span>
           </div>
-        </SortableContext>
-      </DndContext>
+          <Button type="button" variant="outline-primary" size="sm" onClick={addItem}>
+            <LuPlus className="me-1" />
+            Thêm tính năng
+          </Button>
+        </div>
 
-      <Button type="button" variant="outline-primary" size="sm" onClick={addItem}>
-        <LuPlus className="me-1" />
-        Thêm tính năng
-      </Button>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={items.map((item) => item.clientId)} strategy={verticalListSortingStrategy}>
+            <div className="d-flex flex-column gap-2">
+              {items.map((item) => (
+                <SortableFeatureRow
+                  key={item.clientId}
+                  item={item}
+                  canRemove={items.length > 1 || Boolean(item.text)}
+                  onTextChange={(text) => updateText(item.clientId, text)}
+                  onRemove={() => removeItem(item.clientId)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
 
-      {error && <div className="text-danger mt-3">{error}</div>}
-    </div>
+        {error && (
+          <Alert variant="danger" className="mt-3 mb-0">
+            {error}
+          </Alert>
+        )}
+      </Card.Body>
+    </Card>
   )
 }
 

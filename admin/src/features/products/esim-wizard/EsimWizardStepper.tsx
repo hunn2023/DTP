@@ -23,35 +23,48 @@ const EsimWizardStepper = ({ activeTab, canAccessSubTabs, onStepClick }: EsimWiz
   const activeIndex = getEsimStepIndex(activeTab)
 
   return (
-    <ul className="nav nav-tabs wizard-tabs product-form-stepper">
+    <div className="d-flex gap-2 overflow-auto pb-2">
       {ESIM_WIZARD_STEPS.map((step, index) => {
         const Icon = STEP_ICONS[index]
         const isDisabled = step.key !== 'variants' && !canAccessSubTabs
         const isActive = activeIndex === index
+        const isDone = activeIndex > index
 
         return (
-          <li key={step.key} className="nav-item">
-            <button
-              type="button"
-              disabled={isDisabled}
-              className={clsx('nav-link d-flex w-100 text-start border-0', isActive && 'active')}
-              onClick={() => onStepClick(step.key)}>
-              <span className="d-flex align-items-center w-100 gap-2">
-                <span className="step-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-primary-subtle text-primary">
-                  <Icon />
+          <button
+            key={step.key}
+            type="button"
+            disabled={isDisabled}
+            className={clsx(
+              'btn text-start border rounded-3 p-3 flex-shrink-0',
+              isActive && 'btn-primary text-white shadow-sm',
+              !isActive && isDone && 'btn-light border-primary-subtle',
+              !isActive && !isDone && 'btn-light',
+            )}
+            style={{ minWidth: '12.5rem' }}
+            onClick={() => onStepClick(step.key)}>
+            <span className="d-flex align-items-center gap-2">
+              <span
+                className={clsx(
+                  'rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0',
+                  isActive ? 'bg-white text-primary' : 'bg-primary-subtle text-primary',
+                )}
+                style={{ width: 34, height: 34 }}>
+                <Icon />
+              </span>
+              <span className="min-w-0">
+                <span className={clsx('d-block fw-semibold', !isActive && 'text-body')}>
+                  {step.step}. {step.title}
                 </span>
-                <span className="flex-grow-1 text-truncate">
-                  <span className="step-label mb-0 d-block fw-semibold text-body">
-                    {step.step}. {step.title}
-                  </span>
-                  <span className="step-subtitle mb-0 d-block text-muted">{step.subtitle}</span>
+                <span className={clsx('d-block fs-xs', isActive ? 'text-white-50' : 'text-muted')}>
+                  {step.subtitle}
                 </span>
               </span>
-            </button>
-          </li>
+            </span>
+          </button>
         )
       })}
-    </ul>
+    </div>
   )
 }
 

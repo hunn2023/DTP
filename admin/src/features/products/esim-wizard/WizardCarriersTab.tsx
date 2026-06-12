@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Alert, Form, Spinner, Table } from 'react-bootstrap'
+import { Alert, Badge, Card, Form, Spinner, Table } from 'react-bootstrap'
 
-import { fetchCountries } from '@/features/master-data/countries/countries.api'
 import { fetchCarriers } from '@/features/master-data/carriers/carriers.api'
+import { fetchCountries } from '@/features/master-data/countries/countries.api'
 import type { Carrier } from '@/features/master-data/types'
 
 type WizardCarriersTabProps = {
@@ -46,41 +46,54 @@ const WizardCarriersTab = ({ selectedCarrierIds, onChange }: WizardCarriersTabPr
   }
 
   return (
-    <div>
-      <h5 className="fw-semibold mb-2">Chọn nhà mạng hỗ trợ</h5>
-      <Alert variant="info" className="fs-sm">
-        Chọn các nhà mạng mà gói eSIM này hỗ trợ. Ít nhất chọn 1 nhà mạng.
-      </Alert>
+    <Card className="border shadow-none">
+      <Card.Body>
+        <div className="d-flex justify-content-between gap-2 flex-wrap mb-3">
+          <div>
+            <h5 className="fw-semibold mb-1">Nhà mạng hỗ trợ</h5>
+            <p className="text-muted mb-0 fs-sm">Chọn ít nhất một nhà mạng để gói eSIM có thể bán ra.</p>
+          </div>
+          <Badge bg="primary-subtle" text="primary" className="align-self-start">
+            {selectedCarrierIds.length} đã chọn
+          </Badge>
+        </div>
 
-      {carriers.length === 0 ? (
-        <p className="text-muted">Chưa có nhà mạng nào.</p>
-      ) : (
-        <Table responsive bordered hover className="align-middle mb-0">
-          <thead className="table-light">
-            <tr>
-              <th>Chọn</th>
-              <th>Nhà mạng</th>
-              <th>Quốc gia</th>
-            </tr>
-          </thead>
-          <tbody>
-            {carriers.map((carrier) => (
-              <tr key={carrier.id}>
-                <td>
-                  <Form.Check
-                    type="checkbox"
-                    checked={selectedCarrierIds.includes(carrier.id)}
-                    onChange={(e) => toggleCarrier(carrier.id, e.target.checked)}
-                  />
-                </td>
-                <td className="fw-semibold">{carrier.name}</td>
-                <td>{carrier.countryName || '—'}</td>
+        {selectedCarrierIds.length === 0 && (
+          <Alert variant="info" className="fs-sm">
+            Chưa có nhà mạng nào được chọn.
+          </Alert>
+        )}
+
+        {carriers.length === 0 ? (
+          <p className="text-muted mb-0">Chưa có nhà mạng nào.</p>
+        ) : (
+          <Table responsive hover className="align-middle mb-0">
+            <thead className="table-light">
+              <tr>
+                <th style={{ width: 72 }}>Chọn</th>
+                <th>Nhà mạng</th>
+                <th>Quốc gia</th>
               </tr>
-            ))}
-          </tbody>
-        </Table>
-      )}
-    </div>
+            </thead>
+            <tbody>
+              {carriers.map((carrier) => (
+                <tr key={carrier.id}>
+                  <td>
+                    <Form.Check
+                      type="checkbox"
+                      checked={selectedCarrierIds.includes(carrier.id)}
+                      onChange={(e) => toggleCarrier(carrier.id, e.target.checked)}
+                    />
+                  </td>
+                  <td className="fw-semibold">{carrier.name}</td>
+                  <td className="text-muted">{carrier.countryName || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </Card.Body>
+    </Card>
   )
 }
 

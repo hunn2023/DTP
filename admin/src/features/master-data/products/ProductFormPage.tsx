@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Card, Container, Spinner, Tab } from 'react-bootstrap'
+import { Container, Spinner } from 'react-bootstrap'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 
 import PageBreadcrumb from '@/components/PageBreadcrumb'
@@ -9,9 +9,8 @@ import { fetchCountries } from '@/features/master-data/countries/countries.api'
 import ProductAttributesTab from '@/features/master-data/products/detail/ProductAttributesTab'
 import ProductImagesTab from '@/features/master-data/products/detail/ProductImagesTab'
 import ProductFormFooter from '@/features/master-data/products/ProductFormFooter'
-import ProductFormStepper from '@/features/master-data/products/ProductFormStepper'
+import ProductWizard from '@/features/master-data/products/components/ProductWizard'
 import ProductInfoTab from '@/features/master-data/products/ProductInfoTab'
-import { getStepByTab } from '@/features/master-data/products/productFormSteps'
 import { fetchProductDetail } from '@/features/master-data/products/products.api'
 import type { CatalogProduct, ProductFormTab } from '@/features/master-data/products/types'
 import type { Country } from '@/features/master-data/types'
@@ -23,11 +22,13 @@ function parseTab(value: string | null): ProductFormTab {
   if (value && TAB_KEYS.includes(value as ProductFormTab)) {
     return value as ProductFormTab
   }
+
   return 'product'
 }
 
 function isNewProductRoute(routeProductId: string | undefined, pathname: string): boolean {
   if (routeProductId === 'new') return true
+
   return pathname.replace(/\/$/, '').endsWith('/products/new')
 }
 
@@ -39,9 +40,9 @@ const ProductFormPage = () => {
   const { showNotification } = useNotificationContext()
 
   const isNew = isNewProductRoute(routeProductId, location.pathname)
-  const productId = isNew ? null : (routeProductId ?? null)
+  //const productId = isNew ? null : (routeProductId ?? null)
+   const productId = 1212121
   const activeTab = parseTab(searchParams.get('tab'))
-  const currentStep = getStepByTab(activeTab)
 
   const [product, setProduct] = useState<CatalogProduct | null>(null)
   const [isLoading, setIsLoading] = useState(!isNew && Boolean(routeProductId))
@@ -52,10 +53,15 @@ const ProductFormPage = () => {
   const showNotificationRef = useRef(showNotification)
   showNotificationRef.current = showNotification
 
-  const canAccessSubTabs = Boolean(productId)
+  // const canAccessSubTabs = Boolean(productId)
 
+  //const canAccessSubTabs = true
+
+  const isTestWizard = true
+  const canAccessSubTabs = isTestWizard || Boolean(productId)
   const loadProduct = useCallback(async (id: string) => {
     setIsLoading(true)
+
     try {
       const detail = await fetchProductDetail(id)
       setProduct(detail)
@@ -82,17 +88,28 @@ const ProductFormPage = () => {
 
   useEffect(() => {
     if (isNew || !productId) return
+
     void loadProduct(productId)
   }, [isNew, productId, loadProduct])
 
-  useEffect(() => {
-    if (isNew && activeTab !== 'product') {
-      setSearchParams({ tab: 'product' }, { replace: true })
-    }
-  }, [isNew, activeTab, setSearchParams])
+  // useEffect(() => {
+  //   if (isNew && activeTab !== 'product') {
+  //     setSearchParams({ tab: 'product' }, { replace: true })
+  //   }
+  // }, [isNew, activeTab, setSearchParams])
+
+
+useEffect(() => {
+  if (isTestWizard) return
+
+  if (isNew && activeTab !== 'product') {
+    setSearchParams({ tab: 'product' }, { replace: true })
+  }
+}, [isTestWizard, isNew, activeTab, setSearchParams])
 
   const setActiveTab = (tab: ProductFormTab) => {
     if (tab !== 'product' && !canAccessSubTabs) return
+
     setSearchParams({ tab })
   }
 
@@ -103,6 +120,7 @@ const ProductFormPage = () => {
       variant: 'success',
       delay: 2500,
     })
+
     navigate(`/settings/products/${id}?tab=images`, { replace: true })
   }
 
@@ -113,7 +131,9 @@ const ProductFormPage = () => {
       variant: 'success',
       delay: 2500,
     })
+
     if (productId) void loadProduct(productId)
+
     if (activeTab === 'product') {
       setSearchParams({ tab: 'images' })
     }
@@ -124,6 +144,7 @@ const ProductFormPage = () => {
       setSearchParams({ tab: 'attributes' })
       return
     }
+
     if (activeTab === 'attributes') {
       navigate('/settings/products')
     }
@@ -155,52 +176,56 @@ const ProductFormPage = () => {
     <Container fluid>
       <PageBreadcrumb title={pageTitle} subtitle="Danh mục & dữ liệu" />
 
-      <Card>
-        <Card.Body className="p-4">
-          <div className="mb-2">
-            <h4 className="mb-1 fw-semibold">
-              {currentStep.step}. {isNew ? 'Tạo Product' : currentStep.title}
-            </h4>
-            {!isNew && product && (
-              <p className="text-muted mb-0 fs-sm">
-                <code>{product.slug}</code>
-                {product.code ? ` · ${product.code}` : ''}
-              </p>
+      <ProductWizard
+        title={pageTitle}
+        activeTab={activeTab}
+        canAccessSubTabs={canAccessSubTabs}
+        onStepChange={setActiveTab}
+        productStep={
+          <>
+            <ProductInfoTab
+              productId={productId}
+              initialValues={product}
+              categoryOptions={categoryOptions}
+              countries={countries}
+              isNew={isNew}
+              onCreated={handleCreated}
+              onSaved={handleSaved}
+              onSavingChange={setIsSaving}
+            />
+
+            <div className="border-top mt-4 pt-3">
+              <ProductFormFooter activeTab={activeTab} isSaving={isSaving} onContinue={handleContinue} />
+            </div>
+          </>
+        }
+        imagesStep={
+          <>
+            {productId ? (
+              <ProductImagesTab productId={productId} />
+            ) : (
+              <div className="text-muted">Test tab hình ảnh - chưa có productId</div>
             )}
-          </div>
 
-          <ProductFormStepper
-            activeTab={activeTab}
-            canAccessSubTabs={canAccessSubTabs}
-            onStepClick={setActiveTab}
-          />
+            <div className="border-top mt-4 pt-3">
+              <ProductFormFooter activeTab={activeTab} isSaving={isSaving} onContinue={handleContinue} />
+            </div>
+          </>
+        }
+        attributesStep={
+          <>
+            {productId  ? (
+              <ProductAttributesTab productId={productId} />
+            ) : (
+              <div className="text-muted">Test tab thuộc tính - chưa có productId</div>
+            )}
 
-          <Tab.Container activeKey={activeTab}>
-            <Tab.Content>
-              <Tab.Pane eventKey="product" mountOnEnter>
-                <ProductInfoTab
-                  productId={productId}
-                  initialValues={product}
-                  categoryOptions={categoryOptions}
-                  countries={countries}
-                  isNew={isNew}
-                  onCreated={handleCreated}
-                  onSaved={handleSaved}
-                  onSavingChange={setIsSaving}
-                />
-              </Tab.Pane>
-              <Tab.Pane eventKey="images" mountOnEnter>
-                {productId && <ProductImagesTab productId={productId} />}
-              </Tab.Pane>
-              <Tab.Pane eventKey="attributes" mountOnEnter>
-                {productId && <ProductAttributesTab productId={productId} />}
-              </Tab.Pane>
-            </Tab.Content>
-          </Tab.Container>
-
-          <ProductFormFooter activeTab={activeTab} isSaving={isSaving} onContinue={handleContinue} />
-        </Card.Body>
-      </Card>
+            <div className="border-top mt-4 pt-3">
+              <ProductFormFooter activeTab={activeTab} isSaving={isSaving} onContinue={handleContinue} />
+            </div>
+          </>
+        }
+      />
     </Container>
   )
 }

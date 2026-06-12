@@ -5,7 +5,7 @@ const EsimPackagesPage = () => (
   <EntityPageLayout
     title="Gói eSIM"
     subtitle="Sản phẩm bán"
-    description="Quản lý gói eSIM du lịch. Liên kết Product Variant, Country, Carrier và giá bán.">
+    description="Quản lý gói eSIM du lịch, liên kết biến thể sản phẩm, quốc gia, nhà mạng và giá bán.">
     <EsimPackagesCrudTable />
   </EntityPageLayout>
 )

@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { Card, Col, Form, Row } from 'react-bootstrap'
+import { Alert, Card, Col, Form, Row } from 'react-bootstrap'
 
 import {
   createProductVariant,
@@ -7,8 +7,8 @@ import {
 } from '@/features/master-data/products/product-variants.api'
 import type { ProductVariant } from '@/features/master-data/products/types'
 import { getDefaultVariantValues } from '@/features/products/esim-wizard/wizardDefaults'
-import type { FormFieldOption } from '@/modules/crud/form/types'
 import { slugify } from '@/modules/crud/form/slugify'
+import type { FormFieldOption } from '@/modules/crud/form/types'
 
 const DESC_MAX = 500
 
@@ -43,7 +43,7 @@ const WizardVariantTab = ({
     setError('')
 
     if (!values.productId.trim() || !values.name.trim()) {
-      setError('Vui lòng chọn sản phẩm và nhập tên variant')
+      setError('Vui lòng chọn sản phẩm và nhập tên biến thể')
       return
     }
 
@@ -67,7 +67,7 @@ const WizardVariantTab = ({
         onSaved(values.id, payload.productId)
       }
     } catch (err) {
-      setError(getErrorMessage(err, 'Không lưu được variant'))
+      setError(getErrorMessage(err, 'Không lưu được biến thể'))
     } finally {
       onSavingChange(false)
     }
@@ -75,11 +75,14 @@ const WizardVariantTab = ({
 
   return (
     <Form id="esim-wizard-variant-form" onSubmit={(e) => void handleSubmit(e)}>
-      <Row className="g-4">
+      <Row className="g-3">
         <Col lg={8}>
-          <Card className="border shadow-none">
+          <Card className="border shadow-none h-100">
             <Card.Body>
-              <h5 className="mb-3 fw-semibold">Thông tin variant</h5>
+              <div className="mb-3">
+                <h5 className="mb-1 fw-semibold">Thông tin biến thể</h5>
+                <p className="text-muted mb-0 fs-sm">Đây là lớp liên kết giữa sản phẩm và gói eSIM bán ra.</p>
+              </div>
               <Row className="g-3">
                 <Col xs={12}>
                   <Form.Label className="fw-semibold">Sản phẩm *</Form.Label>
@@ -97,7 +100,7 @@ const WizardVariantTab = ({
                   </Form.Select>
                 </Col>
                 <Col md={6}>
-                  <Form.Label className="fw-semibold">Tên variant *</Form.Label>
+                  <Form.Label className="fw-semibold">Tên biến thể *</Form.Label>
                   <Form.Control
                     value={values.name}
                     placeholder="VD: 1GB / 1 ngày"
@@ -114,7 +117,7 @@ const WizardVariantTab = ({
                   />
                 </Col>
                 <Col xs={12}>
-                  <Form.Label className="fw-semibold">Tên ngắn (hiển thị trên card)</Form.Label>
+                  <Form.Label className="fw-semibold">Tên ngắn trên card</Form.Label>
                   <Form.Control
                     value={values.shortName}
                     placeholder="VD: 1GB"
@@ -123,7 +126,7 @@ const WizardVariantTab = ({
                 </Col>
                 <Col xs={12}>
                   <div className="d-flex justify-content-between">
-                    <Form.Label className="fw-semibold mb-0">Mô tả variant</Form.Label>
+                    <Form.Label className="fw-semibold mb-0">Mô tả biến thể</Form.Label>
                     <span className="text-muted fs-xs">
                       {values.description.length}/{DESC_MAX}
                     </span>
@@ -141,9 +144,9 @@ const WizardVariantTab = ({
           </Card>
         </Col>
         <Col lg={4}>
-          <Card className="border shadow-none">
+          <Card className="border shadow-none h-100">
             <Card.Body>
-              <h5 className="mb-3 fw-semibold">Cài đặt</h5>
+              <h5 className="mb-3 fw-semibold">Cài đặt hiển thị</h5>
               <div className="mb-3">
                 <Form.Label className="fw-semibold">Thứ tự sắp xếp</Form.Label>
                 <Form.Control
@@ -159,19 +162,24 @@ const WizardVariantTab = ({
                   value={values.isActive ? 'true' : 'false'}
                   onChange={(e) => setValues((p) => ({ ...p, isActive: e.target.value === 'true' }))}>
                   <option value="true">Hoạt động</option>
-                  <option value="false">Ngưng hoạt động</option>
+                  <option value="false">Ngừng hoạt động</option>
                 </Form.Select>
               </div>
               {values.name && (
-                <p className="text-muted fs-xs mt-3 mb-0">
-                  Gợi ý slug: <code>{slugify(values.name)}</code>
-                </p>
+                <div className="rounded bg-light p-3 mt-3">
+                  <div className="text-muted fs-xs mb-1">Gợi ý slug</div>
+                  <code>{slugify(values.name)}</code>
+                </div>
               )}
             </Card.Body>
           </Card>
         </Col>
       </Row>
-      {error && <div className="text-danger mt-3">{error}</div>}
+      {error && (
+        <Alert variant="danger" className="mt-3 mb-0">
+          {error}
+        </Alert>
+      )}
     </Form>
   )
 }

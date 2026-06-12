@@ -38,17 +38,34 @@ import {
   TbTableColumn,
   TbUserCircle,
   TbUserHexagon,
-  TbDeviceSim,
-  TbPlugConnected,
   TbShoppingCart,
-  TbCash,
+  TbReceipt,
   TbTruckDelivery,
   TbUsers,
+  TbTags,
+  TbWorld,
+  TbAntennaBars5,
+  TbBuildingStore,
+  TbPlugConnected,
+  TbApi,
+  TbPhoto,
+  TbHelpCircle,
   TbArticle,
-  TbSeo,
-  TbDiscount,
+  TbSearch,
   TbReportAnalytics,
+  TbStar,
+  TbAlertTriangle,
+  TbRefresh,
   TbSettings,
+  TbUserCog,
+  TbKey,
+  TbHistory,
+  TbStackFront,
+  TbLayoutNavbar,
+  TbSitemap,
+  TbBan,
+  TbBox,
+  TbAdjustments
 } from 'react-icons/tb'
 
 type UserDropdownItemType = {
@@ -106,215 +123,154 @@ export const userDropdownItems: UserDropdownItemType[] = [
   },
 ]
 
-export const menuItems: MenuItemType[] = [
-  // =========================
-  // TỔNG QUAN
-  // =========================
-  { key: 'overview-title', label: 'TỔNG QUAN', isTitle: true },
-
+export const menuItems1: MenuItemType[] = [
+  { key: 'setup-title', label: 'TỔNG QUAN', isTitle: true },
   {
     key: 'dashboard',
     label: 'Dashboard',
     url: '/dashboard',
     icon: TbLayoutDashboard,
   },
-  // =========================
-  // CẤU HÌNH BAN ĐẦU
-  // =========================
-  { key: 'setup-title', label: 'CẤU HÌNH HỆ THỐNG', isTitle: true },
-
+  { key: 'setup-title', label: 'Nghiệp vụ', isTitle: true },
   {
-    key: 'initial-settings',
-    label: 'Danh mục & dữ liệu',
-    url: '/settings',
-    icon: TbSettings,
-    children: [
-      { key: 'categories', label: 'Danh mục', url: '/settings/categories' },
-      { key: 'products', label: 'Sản phẩm (catalog)', url: '/settings/products' },
-      { key: 'product-prices', label: 'Giá sản phẩm', url: '/settings/product-prices' },
-      { key: 'brands', label: 'Brand / Nhà phát hành', url: '/settings/brands' },
-      { key: 'tags', label: 'Tag', url: '/settings/tags' },
-      { key: 'countries', label: 'Quốc gia', url: '/settings/countries' },
-      { key: 'carriers', label: 'Nhà mạng', url: '/settings/carriers' },
-      { key: 'supported-devices', label: 'Thiết bị hỗ trợ', url: '/settings/supported-devices' },
-    ],
-  },
-
-  // =========================
-  // SẢN PHẨM BÁN
-  // =========================
-  { key: 'products-title', label: 'SẢN PHẨM BÁN', isTitle: true },
-
-  {
-    key: 'esim-management',
-    label: 'eSIM du lịch',
-    url: '/products/esim',
-    icon: TbDeviceSim,
-    children: [
-      { key: 'esim-packages', label: 'Gói eSIM', url: '/products/esim/packages' },
-      { key: 'esim-faq', label: 'FAQ eSIM', url: '/products/esim/faq' },
-    ],
-  },
-
-  {
-    key: 'cards-data',
-    label: 'Thẻ & Data',
-    url: '/products/cards-data',
-    icon: TbCreditCard,
-    children: [
-      { key: 'telecom-cards', label: 'Thẻ viễn thông', url: '/products/cards-data/telecom-cards' },
-      { key: 'game-cards', label: 'Thẻ game', url: '/products/cards-data/game-cards' },
-      { key: 'data-packages', label: 'Data 4G/5G', url: '/products/cards-data/data-packages' },
-    ],
-  },
-
-  // =========================
-  // NGUỒN HÀNG & PROVIDER
-  // =========================
-  { key: 'provider-title', label: 'NGUỒN HÀNG & PROVIDER', isTitle: true },
-
-  {
-    key: 'providers',
-    label: 'Nhà cung cấp',
-    url: '/providers',
-    icon: TbPlugConnected,
-    children: [
-      { key: 'provider-list', label: 'Danh sách nhà cung cấp', url: '/providers/list' },
-      { key: 'provider-products', label: 'Sản phẩm provider', url: '/providers/products' },
-      { key: 'provider-mapping', label: 'Mapping sản phẩm', url: '/providers/mapping' },
-      { key: 'provider-api', label: 'Cấu hình API', url: '/providers/api-configs' },
-      { key: 'provider-stock', label: 'Kiểm tra tồn kho', url: '/providers/stocks' },
-      { key: 'provider-logs', label: 'Log provider', url: '/providers/logs' },
-    ],
-  },
-
-  // =========================
-  // BÁN HÀNG
-  // =========================
-  { key: 'sales-title', label: 'BÁN HÀNG', isTitle: true },
-
-  {
-    key: 'orders',
-    label: 'Đơn hàng',
-    url: '/orders',
+    key: 'sales-management',
+    label: 'Bán hàng',
+    url: '/sales',
     icon: TbShoppingCart,
     children: [
-      { key: 'all-orders', label: 'Tất cả đơn hàng', url: '/orders/all' },
-      { key: 'pending-orders', label: 'Chờ thanh toán', url: '/orders/pending' },
-      { key: 'paid-orders', label: 'Đã thanh toán', url: '/orders/paid' },
-      { key: 'processing-orders', label: 'Đang cấp hàng', url: '/orders/processing' },
-      { key: 'delivered-orders', label: 'Đã giao', url: '/orders/delivered' },
-      { key: 'failed-orders', label: 'Đơn lỗi', url: '/orders/failed' },
-      { key: 'cancelled-orders', label: 'Đã hủy', url: '/orders/cancelled' },
-      { key: 'refunded-orders', label: 'Hoàn tiền', url: '/orders/refunded' },
+      {
+        key: 'orders',
+        label: 'Đơn hàng',
+        url: '/orders',
+        icon: TbReceipt,
+      },
+      {
+        key: 'payments',
+        label: 'Thanh toán',
+        url: '/payments',
+        icon: TbCreditCard,
+      },
+      {
+        key: 'esim-deliveries',
+        label: 'Giao eSIM cho khách',
+        url: '/deliveries',
+        icon: TbTruckDelivery,
+      },
+      {
+        key: 'customers',
+        label: 'Khách hàng',
+        url: '/customers',
+        icon: TbUsers,
+      },
     ],
   },
 
   {
-    key: 'payments',
-    label: 'Thanh toán',
-    url: '/payments',
-    icon: TbCash,
+    key: 'products',
+    label: 'Sản phẩm',
+    url: '/products',
+    icon: TbBox,
     children: [
-      { key: 'payment-transactions', label: 'Giao dịch thanh toán', url: '/payments/transactions' },
-      { key: 'payment-providers', label: 'Cổng thanh toán', url: '/payments/providers' },
-      { key: 'payment-methods', label: 'Phương thức thanh toán', url: '/payments/methods' },
-      { key: 'payment-callbacks', label: 'Callback thanh toán', url: '/payments/callbacks' },
-      { key: 'payment-reconcile', label: 'Đối soát thanh toán', url: '/payments/reconcile' },
-      { key: 'payment-refunds', label: 'Hoàn tiền', url: '/payments/refunds' },
+      { key: 'product-list', label: 'Sản phẩm eSIM', url: '/products' },
+      { key: 'product-variants', label: 'Gói eSIM', url: '/product-variants' },
+      { key: 'product-prices', label: 'Giá bán', url: '/product-prices' },
     ],
   },
 
   {
-    key: 'deliveries',
-    label: 'Giao hàng số',
-    url: '/deliveries',
-    icon: TbTruckDelivery,
+    key: 'product-management',
+    label: 'Cấu hình',
+    url: '/products',
+    icon: TbAdjustments,
     children: [
-      { key: 'delivery-list', label: 'Danh sách giao hàng', url: '/deliveries/list' },
-      { key: 'esim-profiles', label: 'Hồ sơ eSIM / QR code', url: '/deliveries/esim-profiles' },
-      { key: 'delivered-codes', label: 'Mã thẻ / PIN đã giao', url: '/deliveries/codes' },
-      { key: 'retry-delivery', label: 'Retry giao hàng', url: '/deliveries/retry' },
-      { key: 'delivery-logs', label: 'Nhật ký giao hàng', url: '/deliveries/logs' },
+      {
+        key: 'product-categories',
+        label: 'Danh mục sản phẩm',
+        url: '/categories',
+        icon: TbCategory,
+      },
+      {
+        key: 'countries',
+        label: 'Quốc gia',
+        url: '/countries',
+        icon: TbWorld,
+      },
+      {
+        key: 'carriers',
+        label: 'Nhà mạng',
+        url: '/carriers',
+        icon: TbAntennaBars5,
+      },
+      {
+        key: 'product-catalog-1',
+        label: 'Sản phẩm 111',
+        url: '/settings/products',
+        icon: TbCategory,
+      },
     ],
   },
 
-  // =========================
-  // KHÁCH HÀNG
-  // =========================
-  { key: 'customer-title', label: 'KHÁCH HÀNG', isTitle: true },
-
   {
-    key: 'customers',
-    label: 'Khách hàng',
-    url: '/customers',
-    icon: TbUsers,
+    key: 'provider-management',
+    label: 'Nhà cung cấp',
+    url: '/providers',
+    icon: TbBuildingStore,
     children: [
-      { key: 'customer-list', label: 'Danh sách khách hàng', url: '/customers/list' },
-      { key: 'customer-orders', label: 'Lịch sử mua hàng', url: '/customers/orders' },
-      { key: 'customer-notes', label: 'Ghi chú khách hàng', url: '/customers/notes' },
-      { key: 'blocked-customers', label: 'Khách hàng bị khóa', url: '/customers/blocked' },
+      {
+        key: 'providers',
+        label: 'Danh sách nhà cung cấp',
+        url: '/providers',
+        icon: TbBuildingStore,
+      },
+      {
+        key: 'provider-product-mappings',
+        label: 'Liên kết gói với nhà cung cấp',
+        url: '/provider-product-mappings',
+        icon: TbPlugConnected,
+      },
+      {
+        key: 'provider-api-logs',
+        label: 'Lịch sử gọi API',
+        url: '/provider-api-logs',
+        icon: TbApi,
+      },
     ],
   },
 
-  // =========================
-  // WEBSITE & SEO
-  // =========================
-  { key: 'website-title', label: 'WEBSITE & SEO', isTitle: true },
+
 
   {
-    key: 'content-seo',
-    label: 'Nội dung website',
-    url: '/website/content',
+    key: 'website-content',
+    label: 'Bài viết',
+    url: '/website',
     icon: TbArticle,
     children: [
-      { key: 'posts', label: 'Bài viết', url: '/website/content/posts' },
-      { key: 'post-categories', label: 'Danh mục bài viết', url: '/website/content/post-categories' },
-      { key: 'pages', label: 'Trang tĩnh', url: '/website/content/pages' },
-      { key: 'faqs', label: 'FAQ', url: '/website/content/faqs' },
-      { key: 'banners', label: 'Banner', url: '/website/content/banners' },
-      { key: 'media', label: 'Media', url: '/website/content/media' },
+      {
+        key: 'home-banners',
+        label: 'Banner trang chủ',
+        url: '/website/banners',
+        icon: TbPhoto,
+      },
+      {
+        key: 'faqs',
+        label: 'Câu hỏi thường gặp',
+        url: '/website/faqs',
+        icon: TbHelpCircle,
+      },
+      {
+        key: 'articles',
+        label: 'Bài viết',
+        url: '/website/articles',
+        icon: TbArticle,
+      },
+      {
+        key: 'seo-settings',
+        label: 'Cấu hình SEO',
+        url: '/website/seo',
+        icon: TbSearch,
+      },
     ],
   },
-
-  {
-    key: 'seo',
-    label: 'SEO',
-    url: '/website/seo',
-    icon: TbSeo,
-    children: [
-      { key: 'homepage-seo', label: 'SEO trang chủ', url: '/website/seo/homepage' },
-      { key: 'category-seo', label: 'SEO danh mục', url: '/website/seo/categories' },
-      { key: 'country-seo', label: 'SEO quốc gia', url: '/website/seo/countries' },
-      { key: 'product-seo', label: 'SEO sản phẩm', url: '/website/seo/products' },
-    ],
-  },
-
-  // =========================
-  // MARKETING
-  // =========================
-  { key: 'marketing-title', label: 'MARKETING', isTitle: true },
-
-  {
-    key: 'marketing',
-    label: 'Marketing',
-    url: '/marketing',
-    icon: TbDiscount,
-    children: [
-      { key: 'promotions', label: 'Khuyến mãi', url: '/marketing/promotions' },
-      { key: 'coupons', label: 'Mã giảm giá', url: '/marketing/coupons' },
-      { key: 'flash-sale', label: 'Flash sale', url: '/marketing/flash-sale' },
-      { key: 'featured-products', label: 'Sản phẩm nổi bật', url: '/marketing/featured-products' },
-      { key: 'best-seller-products', label: 'Sản phẩm bán chạy', url: '/marketing/best-seller-products' },
-      { key: 'email-templates', label: 'Mẫu email', url: '/marketing/email-templates' },
-      { key: 'email-queue', label: 'Hàng đợi email', url: '/marketing/email-queue' },
-    ],
-  },
-
-  // =========================
-  // BÁO CÁO
-  // =========================
-  { key: 'reports-title', label: 'BÁO CÁO', isTitle: true },
 
   {
     key: 'reports',
@@ -322,729 +278,1266 @@ export const menuItems: MenuItemType[] = [
     url: '/reports',
     icon: TbReportAnalytics,
     children: [
-      { key: 'revenue-reports', label: 'Doanh thu', url: '/reports/revenue' },
-      { key: 'order-reports', label: 'Đơn hàng', url: '/reports/orders' },
-      { key: 'product-reports', label: 'Sản phẩm bán chạy', url: '/reports/products' },
-      { key: 'customer-reports', label: 'Khách hàng', url: '/reports/customers' },
-      { key: 'payment-reports', label: 'Thanh toán', url: '/reports/payments' },
-      { key: 'provider-reports', label: 'Provider', url: '/reports/providers' },
-      { key: 'delivery-failed-reports', label: 'Lỗi cấp hàng', url: '/reports/delivery-failed' },
-      { key: 'refund-reports', label: 'Hoàn tiền', url: '/reports/refunds' },
+      {
+        key: 'revenue-reports',
+        label: 'Doanh thu',
+        url: '/reports/revenue',
+        icon: TbChartBar,
+      },
+      {
+        key: 'order-reports',
+        label: 'Đơn hàng',
+        url: '/reports/orders',
+        icon: TbReceipt,
+      },
+      {
+        key: 'best-selling-product-reports',
+        label: 'Sản phẩm bán chạy',
+        url: '/reports/products',
+        icon: TbStar,
+      },
+      {
+        key: 'customer-reports',
+        label: 'Khách hàng',
+        url: '/reports/customers',
+        icon: TbUsers,
+      },
+      {
+        key: 'payment-reports',
+        label: 'Thanh toán',
+        url: '/reports/payments',
+        icon: TbCreditCard,
+      },
+      {
+        key: 'provider-reports',
+        label: 'Nhà cung cấp',
+        url: '/reports/providers',
+        icon: TbBuildingStore,
+      },
+      {
+        key: 'delivery-failed-reports',
+        label: 'Lỗi giao eSIM',
+        url: '/reports/delivery-failed',
+        icon: TbAlertTriangle,
+      },
+      {
+        key: 'refund-reports',
+        label: 'Hoàn tiền',
+        url: '/reports/refunds',
+        icon: TbRefresh,
+      },
     ],
   },
-
-  // =========================
-  // QUẢN TRỊ HỆ THỐNG
-  // =========================
-  { key: 'admin-title', label: 'QUẢN TRỊ HỆ THỐNG', isTitle: true },
-
+  { key: 'setup-title', label: 'Quản trị', isTitle: true },
   {
     key: 'system',
     label: 'Hệ thống',
     url: '/system',
     icon: TbSettings,
     children: [
-      { key: 'admin-users', label: 'Tài khoản quản trị', url: '/system/admin-users' },
-      { key: 'roles', label: 'Vai trò', url: '/system/roles' },
-      { key: 'permissions', label: 'Phân quyền', url: '/system/permissions' },
-      { key: 'audit-logs', label: 'Nhật ký thao tác', url: '/system/audit-logs' },
-      { key: 'system-settings', label: 'Cấu hình hệ thống', url: '/system/settings' },
+      {
+        key: 'admin-users',
+        label: 'Tài khoản quản trị',
+        url: '/system/admin-users',
+        icon: TbUserCog,
+      },
+      {
+        key: 'roles',
+        label: 'Vai trò',
+        url: '/system/roles',
+        icon: TbShieldLock,
+      },
+      {
+        key: 'permissions',
+        label: 'Phân quyền',
+        url: '/system/permissions',
+        icon: TbKey,
+      },
+      {
+        key: 'audit-logs',
+        label: 'Nhật ký thao tác',
+        url: '/system/audit-logs',
+        icon: TbHistory,
+      },
+      {
+        key: 'system-settings',
+        label: 'Cấu hình hệ thống',
+        url: '/system/settings',
+        icon: TbSettings,
+      },
     ],
   },
+
+
+  // =========================
+  // CẤU HÌNH BAN ĐẦU
+  // =========================
+  //{ key: 'setup-title', label: 'CẤU HÌNH HỆ THỐNG', isTitle: true },
+
+  // {
+  //   key: 'initial-settings',
+  //   label: 'Danh mục & dữ liệu',
+  //   url: '/settings',
+  //   icon: TbSettings,
+  //   children: [
+  //     { key: 'categories', label: 'Danh mục', url: '/settings/categories' },
+  //     { key: 'products', label: 'Sản phẩm (catalog)', url: '/settings/products' },
+  //     { key: 'product-prices', label: 'Giá sản phẩm', url: '/settings/product-prices' },
+  //     { key: 'brands', label: 'Brand / Nhà phát hành', url: '/settings/brands' },
+  //     { key: 'tags', label: 'Tag', url: '/settings/tags' },
+  //     { key: 'countries', label: 'Quốc gia', url: '/settings/countries' },
+  //     { key: 'carriers', label: 'Nhà mạng', url: '/settings/carriers' },
+  //   ],
+  // },
+
+  // // =========================
+  // // SẢN PHẨM BÁN
+  // // =========================
+  // { key: 'products-title', label: 'SẢN PHẨM BÁN', isTitle: true },
+
+  // {
+  //   key: 'esim-management',
+  //   label: 'eSIM du lịch',
+  //   url: '/products/esim',
+  //   icon: TbDeviceSim,
+  //   children: [
+  //     { key: 'esim-packages', label: 'Gói eSIM', url: '/products/esim/packages' },
+  //     { key: 'esim-faq', label: 'FAQ eSIM', url: '/products/esim/faq' },
+  //   ],
+  // },
+
+  // {
+  //   key: 'cards-data',
+  //   label: 'Thẻ & Data',
+  //   url: '/products/cards-data',
+  //   icon: TbCreditCard,
+  //   children: [
+  //     { key: 'telecom-cards', label: 'Thẻ viễn thông', url: '/products/cards-data/telecom-cards' },
+  //     { key: 'game-cards', label: 'Thẻ game', url: '/products/cards-data/game-cards' },
+  //     { key: 'data-packages', label: 'Data 4G/5G', url: '/products/cards-data/data-packages' },
+  //   ],
+  // },
+
+  // // =========================
+  // // NGUỒN HÀNG & PROVIDER
+  // // =========================
+  // { key: 'provider-title', label: 'NGUỒN HÀNG & PROVIDER', isTitle: true },
+
+  // {
+  //   key: 'providers',
+  //   label: 'Nhà cung cấp',
+  //   url: '/providers',
+  //   icon: TbPlugConnected,
+  //   children: [
+  //     { key: 'provider-list', label: 'Danh sách nhà cung cấp', url: '/providers/list' },
+  //     { key: 'provider-products', label: 'Sản phẩm provider', url: '/providers/products' },
+  //     { key: 'provider-mapping', label: 'Mapping sản phẩm', url: '/providers/mapping' },
+  //     { key: 'provider-api', label: 'Cấu hình API', url: '/providers/api-configs' },
+  //     { key: 'provider-stock', label: 'Kiểm tra tồn kho', url: '/providers/stocks' },
+  //     { key: 'provider-logs', label: 'Log provider', url: '/providers/logs' },
+  //   ],
+  // },
+
+  // // =========================
+  // // BÁN HÀNG
+  // // =========================
+  // { key: 'sales-title', label: 'BÁN HÀNG', isTitle: true },
+
+  // {
+  //   key: 'orders',
+  //   label: 'Đơn hàng',
+  //   url: '/orders',
+  //   icon: TbShoppingCart,
+  //   children: [
+  //     { key: 'all-orders', label: 'Tất cả đơn hàng', url: '/orders/all' },
+  //     { key: 'pending-orders', label: 'Chờ thanh toán', url: '/orders/pending' },
+  //     { key: 'paid-orders', label: 'Đã thanh toán', url: '/orders/paid' },
+  //     { key: 'processing-orders', label: 'Đang cấp hàng', url: '/orders/processing' },
+  //     { key: 'delivered-orders', label: 'Đã giao', url: '/orders/delivered' },
+  //     { key: 'failed-orders', label: 'Đơn lỗi', url: '/orders/failed' },
+  //     { key: 'cancelled-orders', label: 'Đã hủy', url: '/orders/cancelled' },
+  //     { key: 'refunded-orders', label: 'Hoàn tiền', url: '/orders/refunded' },
+  //   ],
+  // },
+
+  // {
+  //   key: 'payments',
+  //   label: 'Thanh toán',
+  //   url: '/payments',
+  //   icon: TbCash,
+  //   children: [
+  //     { key: 'payment-transactions', label: 'Giao dịch thanh toán', url: '/payments/transactions' },
+  //     { key: 'payment-providers', label: 'Cổng thanh toán', url: '/payments/providers' },
+  //     { key: 'payment-methods', label: 'Phương thức thanh toán', url: '/payments/methods' },
+  //     { key: 'payment-callbacks', label: 'Callback thanh toán', url: '/payments/callbacks' },
+  //     { key: 'payment-reconcile', label: 'Đối soát thanh toán', url: '/payments/reconcile' },
+  //     { key: 'payment-refunds', label: 'Hoàn tiền', url: '/payments/refunds' },
+  //   ],
+  // },
+
+  // {
+  //   key: 'deliveries',
+  //   label: 'Giao hàng số',
+  //   url: '/deliveries',
+  //   icon: TbTruckDelivery,
+  //   children: [
+  //     { key: 'delivery-list', label: 'Danh sách giao hàng', url: '/deliveries/list' },
+  //     { key: 'esim-profiles', label: 'Hồ sơ eSIM / QR code', url: '/deliveries/esim-profiles' },
+  //     { key: 'delivered-codes', label: 'Mã thẻ / PIN đã giao', url: '/deliveries/codes' },
+  //     { key: 'retry-delivery', label: 'Retry giao hàng', url: '/deliveries/retry' },
+  //     { key: 'delivery-logs', label: 'Nhật ký giao hàng', url: '/deliveries/logs' },
+  //   ],
+  // },
+
+  // // =========================
+  // // KHÁCH HÀNG
+  // // =========================
+  // { key: 'customer-title', label: 'KHÁCH HÀNG', isTitle: true },
+
+  // {
+  //   key: 'customers',
+  //   label: 'Khách hàng',
+  //   url: '/customers',
+  //   icon: TbUsers,
+  //   children: [
+  //     { key: 'customer-list', label: 'Danh sách khách hàng', url: '/customers/list' },
+  //     { key: 'customer-orders', label: 'Lịch sử mua hàng', url: '/customers/orders' },
+  //     { key: 'customer-notes', label: 'Ghi chú khách hàng', url: '/customers/notes' },
+  //     { key: 'blocked-customers', label: 'Khách hàng bị khóa', url: '/customers/blocked' },
+  //   ],
+  // },
+
+  // // =========================
+  // // WEBSITE & SEO
+  // // =========================
+  // { key: 'website-title', label: 'WEBSITE & SEO', isTitle: true },
+
+  // {
+  //   key: 'content-seo',
+  //   label: 'Nội dung website',
+  //   url: '/website/content',
+  //   icon: TbArticle,
+  //   children: [
+  //     { key: 'posts', label: 'Bài viết', url: '/website/content/posts' },
+  //     { key: 'post-categories', label: 'Danh mục bài viết', url: '/website/content/post-categories' },
+  //     { key: 'pages', label: 'Trang tĩnh', url: '/website/content/pages' },
+  //     { key: 'faqs', label: 'FAQ', url: '/website/content/faqs' },
+  //     { key: 'banners', label: 'Banner', url: '/website/content/banners' },
+  //     { key: 'media', label: 'Media', url: '/website/content/media' },
+  //   ],
+  // },
+
+  // {
+  //   key: 'seo',
+  //   label: 'SEO',
+  //   url: '/website/seo',
+  //   icon: TbSeo,
+  //   children: [
+  //     { key: 'homepage-seo', label: 'SEO trang chủ', url: '/website/seo/homepage' },
+  //     { key: 'category-seo', label: 'SEO danh mục', url: '/website/seo/categories' },
+  //     { key: 'country-seo', label: 'SEO quốc gia', url: '/website/seo/countries' },
+  //     { key: 'product-seo', label: 'SEO sản phẩm', url: '/website/seo/products' },
+  //   ],
+  // },
+
+  // // =========================
+  // // MARKETING
+  // // =========================
+  // { key: 'marketing-title', label: 'MARKETING', isTitle: true },
+
+  // {
+  //   key: 'marketing',
+  //   label: 'Marketing',
+  //   url: '/marketing',
+  //   icon: TbDiscount,
+  //   children: [
+  //     { key: 'promotions', label: 'Khuyến mãi', url: '/marketing/promotions' },
+  //     { key: 'coupons', label: 'Mã giảm giá', url: '/marketing/coupons' },
+  //     { key: 'flash-sale', label: 'Flash sale', url: '/marketing/flash-sale' },
+  //     { key: 'featured-products', label: 'Sản phẩm nổi bật', url: '/marketing/featured-products' },
+  //     { key: 'best-seller-products', label: 'Sản phẩm bán chạy', url: '/marketing/best-seller-products' },
+  //     { key: 'email-templates', label: 'Mẫu email', url: '/marketing/email-templates' },
+  //     { key: 'email-queue', label: 'Hàng đợi email', url: '/marketing/email-queue' },
+  //   ],
+  // },
+
+  // // =========================
+  // // BÁO CÁO
+  // // =========================
+  // { key: 'reports-title', label: 'BÁO CÁO', isTitle: true },
+
+  // {
+  //   key: 'reports',
+  //   label: 'Báo cáo',
+  //   url: '/reports',
+  //   icon: TbReportAnalytics,
+  //   children: [
+  //     { key: 'revenue-reports', label: 'Doanh thu', url: '/reports/revenue' },
+  //     { key: 'order-reports', label: 'Đơn hàng', url: '/reports/orders' },
+  //     { key: 'product-reports', label: 'Sản phẩm bán chạy', url: '/reports/products' },
+  //     { key: 'customer-reports', label: 'Khách hàng', url: '/reports/customers' },
+  //     { key: 'payment-reports', label: 'Thanh toán', url: '/reports/payments' },
+  //     { key: 'provider-reports', label: 'Provider', url: '/reports/providers' },
+  //     { key: 'delivery-failed-reports', label: 'Lỗi cấp hàng', url: '/reports/delivery-failed' },
+  //     { key: 'refund-reports', label: 'Hoàn tiền', url: '/reports/refunds' },
+  //   ],
+  // },
+
+  // // =========================
+  // // QUẢN TRỊ HỆ THỐNG
+  // // =========================
+  // { key: 'admin-title', label: 'QUẢN TRỊ HỆ THỐNG', isTitle: true },
+
+  // {
+  //   key: 'system',
+  //   label: 'Hệ thống',
+  //   url: '/system',
+  //   icon: TbSettings,
+  //   children: [
+  //     { key: 'admin-users', label: 'Tài khoản quản trị', url: '/system/admin-users' },
+  //     { key: 'roles', label: 'Vai trò', url: '/system/roles' },
+  //     { key: 'permissions', label: 'Phân quyền', url: '/system/permissions' },
+  //     { key: 'audit-logs', label: 'Nhật ký thao tác', url: '/system/audit-logs' },
+  //     { key: 'system-settings', label: 'Cấu hình hệ thống', url: '/system/settings' },
+  //   ],
+  // },
 ];
 
-// export const menuItems: MenuItemType[] = [
+export const menuItems: MenuItemType[] = [
+{ key: 'setup-title', label: 'TỔNG QUAN', isTitle: true },
+  {
+    key: 'dashboard',
+    label: 'Dashboard',
+    url: '/dashboard',
+    icon: TbLayoutDashboard,
+  },
+  { key: 'setup-title', label: 'Nghiệp vụ', isTitle: true },
+  {
+    key: 'sales-management',
+    label: 'Bán hàng',
+    url: '/sales',
+    icon: TbShoppingCart,
+    children: [
+      {
+        key: 'orders',
+        label: 'Đơn hàng',
+        url: '/orders/all',
+        icon: TbReceipt,
+      },
+      {
+        key: 'payments',
+        label: 'Thanh toán',
+        url: '/payments/transactions',
+        icon: TbCreditCard,
+      },
+      {
+        key: 'esim-deliveries',
+        label: 'Giao eSIM cho khách',
+        url: '/deliveries/list',
+        icon: TbTruckDelivery,
+      },
+      {
+        key: 'customers',
+        label: 'Khách hàng',
+        url: '/customers/list',
+        icon: TbUsers,
+      },
+    ],
+  },
 
-//   { key: 'menu1', label: 'TODO', isTitle: true },
-//   {
-//     key: 'dashboards',
-//     label: 'Dashboards',
-//     icon: TbLayoutDashboard,
-//     badge: { variant: 'success', text: '5' },
-//     children: [
-//       { key: 'dashboard-v1', label: 'Dashboard v.1', url: '/dashboard' },
-//       { key: 'dashboard-v2', label: 'Dashboard v.2', url: '/dashboard2' },
-//       { key: 'dashboard-v3', label: 'Dashboard v.3', url: '/dashboard3' },
-//       {
-//         key: 'dashboard-v4',
-//         label: 'Dashboard v.4',
-//         url: '#',
-//         isDisabled: true,
-//         badge: { variant: 'light', text: 'soon' },
-//       },
-//       {
-//         key: 'dashboard-v5',
-//         label: 'Dashboard v.5',
-//         url: '#',
-//         isDisabled: true,
-//         badge: { variant: 'light', text: 'soon' },
-//       },
-//     ],
-//   },
-//   { key: 'landing', label: 'Landing Page', icon: TbStackFront, url: '/landing' },
-//   { key: 'apps', label: 'Apps', isTitle: true },
-//   {
-//     key: 'ecommerce',
-//     label: 'Ecommerce',
-//     icon: TbBasket,
-//     children: [
-//       {
-//         key: 'products',
-//         label: 'Products',
-//         children: [
-//           { key: 'product-list', label: 'Product', url: '/products' },
-//           { key: 'product-grid', label: 'Product Grid', url: '/products-grid' },
-//           { key: 'product-details', label: 'Product Details', url: '/products/1' },
-//           { key: 'add-product', label: 'Add Product', url: '/add-product' },
-//         ],
-//       },
-//       { key: 'categories', label: 'Categories', url: '/categories' },
-//       {
-//         key: 'orders',
-//         label: 'Orders',
-//         children: [
-//           { key: 'orders-list', label: 'Orders', url: '/orders' },
-//           { key: 'order-details', label: 'Order Details', url: '/orders/1' },
-//         ],
-//       },
-//       { key: 'customers', label: 'Customers', url: '/customers' },
-//       {
-//         key: 'sellers',
-//         label: 'Sellers',
-//         children: [
-//           { key: 'sellers-list', label: 'Sellers', url: '/sellers' },
-//           { key: 'seller-details', label: 'Seller Details', url: '/sellers/1' },
-//         ],
-//       },
-//       { key: 'reviews', label: 'Reviews', url: '/reviews' },
-//       {
-//         key: 'reports',
-//         label: 'Reports',
-//         children: [
-//           { key: 'product-views', label: 'Product Views', url: '/reports/product-views' },
-//           { key: 'sales', label: 'Sales', url: '/reports/sales' },
-//         ],
-//       },
-//     ],
-//   },
-//   {
-//     key: 'email',
-//     label: 'Email',
-//     icon: TbMail,
-//     badge: { variant: 'danger', text: 'New' },
-//     children: [
-//       { key: 'inbox', label: 'Inbox', url: '/inbox' },
-//       { key: 'inbox-details', label: 'Details', url: '/inbox/1' },
-//       { key: 'email-compose', label: 'Compose', url: '/email-compose' },
-//     ],
-//   },
-//   {
-//     key: 'users',
-//     label: 'Users',
-//     icon: TbUsers,
-//     children: [
-//       { key: 'contacts', label: 'Contacts', url: '/users/contacts' },
-//       { key: 'roles', label: 'Roles', url: '/users/roles' },
-//       { key: 'permissions', label: 'Permissions', url: '/users/permissions' },
-//     ],
-//   },
-//   {
-//     key: 'projects',
-//     label: 'Projects',
-//     icon: TbBriefcase,
-//     children: [
-//       { key: 'my-projects', label: 'My Projects', url: '/projects' },
-//       { key: 'projects-list', label: 'Projects List', url: '/projects-list' },
-//       { key: 'project-details', label: 'View Project', url: '/projects/1' },
-//       { key: 'kanban-board', label: 'Kanban Board', url: '/kanban-board' },
-//       { key: 'team-board', label: 'Team Board', url: '/team-board' },
-//       { key: 'activity-stream', label: 'Activity Stream', url: '/activity-stream' },
-//     ],
-//   },
-//   { key: 'file-manager', label: 'File Manager', icon: TbFolder, url: '/file-manager' },
-//   { key: 'chat', label: 'Chat', icon: TbMessageDots, url: '/chat' },
-//   { key: 'calendar', label: 'Calendar', icon: TbCalendar, url: '/calendar' },
-//   {
-//     key: 'invoice',
-//     label: 'Invoice',
-//     icon: TbInvoice,
-//     children: [
-//       { key: 'invoice-list', label: 'Invoice', url: '/invoices' },
-//       { key: 'invoice-details', label: 'Invoice Details', url: '/invoices/1' },
-//       { key: 'add-invoice', label: 'Add Invoice', url: '/add-invoice' },
-//     ],
-//   },
-//   {
-//     key: 'other-apps',
-//     label: 'Other Apps',
-//     icon: TbApps,
-//     children: [
-//       { key: 'companies', label: 'Companies', url: '/companies' },
-//       { key: 'clients', label: 'Clients', url: '/clients' },
-//       { key: 'outlook-view', label: 'Outlook View', url: '/outlook-view' },
-//       { key: 'vote-list', label: 'Vote List', url: '/vote-list' },
-//       { key: 'issue-tracker', label: 'Issue Tracker', url: '/issue-tracker' },
-//       { key: 'api-keys', label: 'Api Keys', url: '/api-keys' },
-//       { key: 'blogs', label: 'Blogs', url: '/blogs' },
-//       { key: 'article', label: 'Article', url: '/article' },
-//       { key: 'pin-board', label: 'Pin Board', url: '/pin-board' },
-//       { key: 'forum-view', label: 'Forum View', url: '/forum-view' },
-//       { key: 'forum-post', label: 'Forum Post', url: '/forum-post' },
-//     ],
-//   },
-//   { key: 'custom', label: 'Custom Pages', isTitle: true },
-//   {
-//     key: 'pages',
-//     label: 'Pages',
-//     icon: TbFiles,
-//     children: [
-//       { key: 'profile', label: 'Profile', url: '/pages/profile' },
-//       { key: 'faq', label: 'FAQ', url: '/pages/faq' },
-//       { key: 'pricing', label: 'Pricing', url: '/pages/pricing' },
-//       { key: 'empty-page', label: 'Empty Page', url: '/pages/empty-page' },
-//       { key: 'timeline', label: 'Timeline', url: '/pages/timeline' },
-//       { key: 'search-results', label: 'Search Results', url: '/pages/search-results' },
-//       { key: 'coming-soon', label: 'Coming Soon', url: '/coming-soon' },
-//       { key: 'terms-conditions', label: 'Terms & Conditions', url: '/pages/terms-conditions' },
-//     ],
-//   },
-//   {
-//     key: 'miscellaneous',
-//     label: 'Miscellaneous',
-//     icon: TbPackage,
-//     children: [
-//       { key: 'nestable-list', label: 'Nestable List', url: '/miscellaneous/nestable-list' },
-//       { key: 'text-different', label: 'Text Different', url: '/miscellaneous/text-different' },
-//       { key: 'pdf-viewer', label: 'PDF Viewer', url: '/miscellaneous/pdf-viewer' },
-//       { key: 'sweet-alert', label: 'Sweet Alert', url: '/miscellaneous/sweet-alert' },
-//       { key: 'idle-timer', label: 'Idle Timer', url: '/miscellaneous/idle-timer' },
-//       { key: 'password-meter', label: 'Password Meter', url: '/miscellaneous/password-meter' },
-//       { key: 'clipboard', label: 'Clipboard', url: '/miscellaneous/clipboard' },
-//       { key: 'tree-view', label: 'Tree View', url: '/miscellaneous/tree-view' },
-//       { key: 'loading-buttons', label: 'Loading Buttons', url: '/miscellaneous/loading-buttons' },
-//       { key: 'gallery', label: 'Gallery', url: '/miscellaneous/gallery' },
-//       { key: 'masonry', label: 'Masonry', url: '/miscellaneous/masonry' },
-//       { key: 'tour', label: 'Tour', url: '/miscellaneous/tour' },
-//       { key: 'animation', label: 'Animation', url: '/miscellaneous/animation' },
-//     ],
-//   },
-//   {
-//     key: 'auth',
-//     label: 'Authentication',
-//     icon: TbLock,
-//     children: [
-//       {
-//         key: 'version-1',
-//         label: 'Version 1',
-//         parentKey: 'auth',
-//         children: [
-//           { key: 'sign-in', label: 'Sign In', url: '/auth-1/sign-in' },
-//           { key: 'sign-up', label: 'Sign Up', url: '/auth-1/sign-up' },
-//           { key: 'reset-pass', label: 'Reset Password', url: '/auth-1/reset-password' },
-//           { key: 'new-pass', label: 'New Password', url: '/auth-1/new-password' },
-//           { key: 'two-factor', label: 'Two Factor', url: '/auth-1/two-factor' },
-//           { key: 'lock-screen', label: 'Lock Screen', url: '/auth-1/lock-screen' },
-//           { key: 'success-mail', label: 'Success Mail', url: '/auth-1/success-mail' },
-//           { key: 'login-pin', label: 'Login with PIN', url: '/auth-1/login-pin' },
-//           { key: 'delete-account', label: 'Delete Account', url: '/auth-1/delete-account' },
-//         ],
-//       },
-//       {
-//         key: 'version-2',
-//         label: 'Version 2',
-//         parentKey: 'auth',
-//         children: [
-//           { key: 'sign-in-2', label: 'Sign In', url: '/auth-2/sign-in' },
-//           { key: 'sign-up-2', label: 'Sign Up', url: '/auth-2/sign-up' },
-//           {
-//             key: 'reset-pass-2',
-//             label: 'Reset Password',
-//             url: '/auth-2/reset-password',
-//           },
-//           { key: 'new-pass-2', label: 'New Password', url: '/auth-2/new-password' },
-//           { key: 'two-factor-2', label: 'Two Factor', url: '/auth-2/two-factor' },
-//           { key: 'lock-screen-2', label: 'Lock Screen', url: '/auth-2/lock-screen' },
-//           { key: 'success-mail-2', label: 'Success Mail', url: '/auth-2/success-mail' },
-//           { key: 'login-pin-2', label: 'Login with PIN', url: '/auth-2/login-pin' },
-//           {
-//             key: 'delete-account-2',
-//             label: 'Delete Account',
-//             url: '/auth-2/delete-account',
-//           },
-//         ],
-//       },
-//       {
-//         key: 'version-3',
-//         label: 'Version 3',
-//         parentKey: 'auth',
-//         children: [
-//           { key: 'sign-in-3', label: 'Sign In', url: '/auth-3/sign-in' },
-//           { key: 'sign-up-3', label: 'Sign Up', url: '/auth-3/sign-up' },
-//           {
-//             key: 'reset-pass-3',
-//             label: 'Reset Password',
-//             url: '/auth-3/reset-password',
-//           },
-//           { key: 'new-pass-3', label: 'New Password', url: '/auth-3/new-password' },
-//           { key: 'two-factor-3', label: 'Two Factor', url: '/auth-3/two-factor' },
-//           { key: 'lock-screen-3', label: 'Lock Screen', url: '/auth-3/lock-screen' },
-//           { key: 'success-mail-3', label: 'Success Mail', url: '/auth-3/success-mail' },
-//           { key: 'login-pin-3', label: 'Login with PIN', url: '/auth-3/login-pin' },
-//           {
-//             key: 'delete-account-3',
-//             label: 'Delete Account',
-//             url: '/auth-3/delete-account',
-//           },
-//         ],
-//       },
-//     ],
-//   },
-//   {
-//     key: 'error',
-//     label: 'Error Pages',
-//     icon: TbAlertHexagon,
-//     children: [
-//       { key: 'error-400', label: '400', url: '/error/400' },
-//       { key: 'error-401', label: '401', url: '/error/401' },
-//       { key: 'error-403', label: '403', url: '/error/403' },
-//       { key: 'error-404', label: '404', url: '/error/404' },
-//       { key: 'error-408', label: '408', url: '/error/408' },
-//       { key: 'error-500', label: '500', url: '/error/500' },
-//       { key: 'maintenance', label: 'Maintenance', url: '/maintenance' },
-//     ],
-//   },
-//   { key: 'layouts', label: 'Layouts', isTitle: true },
-//   {
-//     key: 'layout-options',
-//     label: 'Layout Options',
-//     icon: TbLayout,
-//     children: [
-//       { key: 'scrollable', label: 'Scrollable', url: '/layouts/scrollable' },
-//       { key: 'compact', label: 'Compact', url: '/layouts/compact' },
-//       { key: 'boxed', label: 'Boxed', url: '/layouts/boxed' },
-//       { key: 'horizontal', label: 'Horizontal', url: '/layouts/horizontal' },
-//     ],
-//   },
-//   {
-//     key: 'sidebars',
-//     label: 'Sidebars',
-//     icon: TbLayoutSidebar,
-//     children: [
-//       { key: 'compact-menu', label: 'Compact Menu', url: '/layouts/sidebars/compact' },
-//       { key: 'icon-view-menu', label: 'Icon View Menu', url: '/layouts/sidebars/icon-view' },
-//       { key: 'on-hover-menu', label: 'On Hover Menu', url: '/layouts/sidebars/on-hover' },
-//       {
-//         key: 'on-hover-active-menu',
-//         label: 'On Hover Active Menu',
-//         url: '/layouts/sidebars/on-hover-active',
-//       },
-//       { key: 'offcanvas-menu', label: 'Offcanvas Menu', url: '/layouts/sidebars/offcanvas' },
-//       {
-//         key: 'no-icons-with-lines-menu',
-//         label: 'No Icons With Lines',
-//         url: '/layouts/sidebars/no-icons-with-lines',
-//       },
-//       {
-//         key: 'with-lines-menu',
-//         label: 'Sidebar With Lines',
-//         url: '/layouts/sidebars/with-lines',
-//       },
-//       { key: 'light-menu', label: 'Light Menu', url: '/layouts/sidebars/light' },
-//       { key: 'gradient-menu', label: 'Gradient Menu', url: '/layouts/sidebars/gradient' },
-//       { key: 'gray-menu', label: 'Gray Menu', url: '/layouts/sidebars/gray' },
-//       { key: 'image-menu', label: 'Image Menu', url: '/layouts/sidebars/image' },
-//     ],
-//   },
-//   {
-//     key: 'topbars',
-//     label: 'Topbars',
-//     icon: TbLayoutNavbar,
-//     children: [
-//       { key: 'dark-topbar', label: 'Dark Topbar', url: '/layouts/topbars/dark' },
-//       { key: 'gray-topbar', label: 'Gray Topbar', url: '/layouts/topbars/gray' },
-//       { key: 'gradient-topbar', label: 'Gradient Topbar', url: '/layouts/topbars/gradient' },
-//       {
-//         key: 'with-sub-items-topbar',
-//         label: 'Topbar with Sub Items',
-//         url: '/layouts/topbars/with-sub-items',
-//       },
-//       {
-//         key: 'with-tools-topbar',
-//         label: 'Topbar with Tools',
-//         url: '/layouts/topbars/with-tools',
-//       },
-//     ],
-//   },
-//   { key: 'components', label: 'Components', isTitle: true },
-//   {
-//     key: 'ui',
-//     label: 'Base UI',
-//     icon: TbPalette,
-//     children: [
-//       {
-//         key: 'accordions',
-//         label: 'Accordions',
-//         url: '/ui/accordions',
-//       },
-//       {
-//         key: 'alerts',
-//         label: 'Alerts',
-//         url: '/ui/alerts',
-//       },
-//       {
-//         key: 'images',
-//         label: 'Images',
-//         url: '/ui/images',
-//       },
-//       {
-//         key: 'badges',
-//         label: 'Badges',
-//         url: '/ui/badges',
-//       },
-//       {
-//         key: 'breadcrumb',
-//         label: 'Breadcrumb',
-//         url: '/ui/breadcrumb',
-//       },
-//       {
-//         key: 'buttons',
-//         label: 'Buttons',
-//         url: '/ui/buttons',
-//       },
-//       {
-//         key: 'cards',
-//         label: 'Cards',
-//         url: '/ui/cards',
-//       },
-//       {
-//         key: 'carousel',
-//         label: 'Carousel',
-//         url: '/ui/carousel',
-//       },
-//       {
-//         key: 'collapse',
-//         label: 'Collapse',
-//         url: '/ui/collapse',
-//       },
-//       {
-//         key: 'colors',
-//         label: 'Colors',
-//         url: '/ui/colors',
-//       },
-//       {
-//         key: 'dropdowns',
-//         label: 'Dropdowns',
-//         url: '/ui/dropdowns',
-//       },
-//       {
-//         key: 'videos',
-//         label: 'Videos',
-//         url: '/ui/videos',
-//       },
-//       {
-//         key: 'grid',
-//         label: 'Grid Options',
-//         url: '/ui/grid',
-//       },
-//       {
-//         key: 'links',
-//         label: 'Links',
-//         url: '/ui/links',
-//       },
-//       {
-//         key: 'list-group',
-//         label: 'List Group',
-//         url: '/ui/list-group',
-//       },
-//       {
-//         key: 'modals',
-//         label: 'Modals',
-//         url: '/ui/modals',
-//       },
-//       {
-//         key: 'notifications',
-//         label: 'Notifications',
-//         url: '/ui/notifications',
-//       },
-//       {
-//         key: 'offcanvas',
-//         label: 'Offcanvas',
-//         url: '/ui/offcanvas',
-//       },
-//       {
-//         key: 'placeholders',
-//         label: 'Placeholders',
-//         url: '/ui/placeholders',
-//       },
-//       {
-//         key: 'pagination',
-//         label: 'Pagination',
-//         url: '/ui/pagination',
-//       },
-//       {
-//         key: 'popovers',
-//         label: 'Popovers',
-//         url: '/ui/popovers',
-//       },
-//       {
-//         key: 'progress',
-//         label: 'Progress',
-//         url: '/ui/progress',
-//       },
-//       {
-//         key: 'spinners',
-//         label: 'Spinners',
-//         url: '/ui/spinners',
-//       },
-//       {
-//         key: 'tabs',
-//         label: 'Tabs',
-//         url: '/ui/tabs',
-//       },
-//       {
-//         key: 'tooltips',
-//         label: 'Tooltips',
-//         url: '/ui/tooltips',
-//       },
-//       {
-//         key: 'typography',
-//         label: 'Typography',
-//         url: '/ui/typography',
-//       },
-//       {
-//         key: 'utilities',
-//         label: 'Utilities',
-//         url: '/ui/utilities',
-//       },
-//     ],
-//   },
-//   {
-//     key: 'widgets',
-//     label: 'Widgets',
-//     icon: TbCategory,
-//     url: '/widgets',
-//   },
-//   {
-//     key: 'metrics',
-//     label: 'Metrics',
-//     icon: TbChartHistogram,
-//     url: '/metrics',
-//   },
-//   {
-//     key: 'graphs',
-//     label: 'Graphs',
-//     icon: TbMap,
-//     children: [
-//       {
-//         key: 'apexchart',
-//         label: 'Apex Charts',
-//         children: [
-//           { key: 'apex-area-chart', label: 'Area', url: '/graphs/apex/area' },
-//           { key: 'apex-bar-chart', label: 'Bar', url: '/graphs/apex/bar' },
-//           { key: 'apex-bubble-chart', label: 'Bubble', url: '/graphs/apex/bubble' },
-//           { key: 'apex-candlestick-chart', label: 'Candlestick', url: '/graphs/apex/candlestick' },
-//           { key: 'apex-column-chart', label: 'Column', url: '/graphs/apex/column' },
-//           { key: 'apex-heatmap-chart', label: 'Heatmap', url: '/graphs/apex/heatmap' },
-//           { key: 'apex-line-chart', label: 'Line', url: '/graphs/apex/line' },
-//           { key: 'apex-mixed-chart', label: 'Mixed', url: '/graphs/apex/mixed' },
-//           { key: 'apex-timeline-chart', label: 'Timeline', url: '/graphs/apex/timeline' },
-//           { key: 'apex-boxplot-chart', label: 'Boxplot', url: '/graphs/apex/boxplot' },
-//           { key: 'apex-treemap-chart', label: 'Treemap', url: '/graphs/apex/treemap' },
-//           { key: 'apex-pie-chart', label: 'Pie', url: '/graphs/apex/pie' },
-//           { key: 'apex-radar-chart', label: 'Radar', url: '/graphs/apex/radar' },
-//           { key: 'apex-radialbar-chart', label: 'Radialbar', url: '/graphs/apex/radialbar' },
-//           { key: 'apex-scatter-chart', label: 'Scatter', url: '/graphs/apex/scatter' },
-//           { key: 'apex-polar-area-chart', label: 'Polar Area', url: '/graphs/apex/polar-area' },
-//           { key: 'apex-sparkline-chart', label: 'Sparklines', url: '/graphs/apex/sparklines' },
-//           { key: 'apex-range-chart', label: 'Range', url: '/graphs/apex/range' },
-//           { key: 'apex-funnel-chart', label: 'Funnel', url: '/graphs/apex/funnel' },
-//           { key: 'apex-slope-chart', label: 'Slope', url: '/graphs/apex/slope' },
-//         ],
-//       },
-//       {
-//         key: 'echart',
-//         label: 'Echarts',
-//         children: [
-//           { key: 'echart-line-chart', label: 'Line', url: '/graphs/echart/line' },
-//           { key: 'echart-bar-chart', label: 'Bar', url: '/graphs/echart/bar' },
-//           { key: 'echart-pie-chart', label: 'Pie', url: '/graphs/echart/pie' },
-//           { key: 'echart-scatter-chart', label: 'Scatter ', url: '/graphs/echart/scatter' },
-//           { key: 'echart-geo-map', label: 'GEO Map ', url: '/graphs/echart/geo-map' },
-//           { key: 'echart-gauge-chart', label: 'Gauge ', url: '/graphs/echart/gauge' },
-//           { key: 'echart-candlestick-chart', label: 'Candlestick ', url: '/graphs/echart/candlestick' },
-//           { key: 'echart-area-chart', label: 'Area ', url: '/graphs/echart/area' },
-//           { key: 'echart-radar-chart', label: 'Radar ', url: '/graphs/echart/radar' },
-//           { key: 'echart-heatmap-chart', label: 'Heatmap ', url: '/graphs/echart/heatmap' },
-//           { key: 'echart-other-chart', label: 'Other ', url: '/graphs/echart/other' },
-//         ],
-//       },
-//       {
-//         key: 'apex-tree',
-//         label: 'Apex Tree',
-//         url: '/graphs/apex-tree',
-//       },
-//     ],
-//   },
-//   {
-//     key: 'forms',
-//     label: 'Forms',
-//     icon: TbCheckupList,
-//     children: [
-//       {
-//         key: 'form-basic-elements',
-//         label: 'Basic Elements',
-//         url: '/forms/basic',
-//       },
-//       {
-//         key: 'form-pickers',
-//         label: 'Pickers',
-//         url: '/forms/pickers',
-//       },
-//       {
-//         key: 'form-select',
-//         label: 'Select',
-//         url: '/forms/select',
-//       },
-//       {
-//         key: 'form-validation',
-//         label: 'Validation',
-//         url: '/forms/validation',
-//       },
-//       {
-//         key: 'form-wizard',
-//         label: 'Wizard',
-//         url: '/forms/wizard',
-//       },
-//       {
-//         key: 'form-file-uploads',
-//         label: 'File Uploads',
-//         url: '/forms/file-uploads',
-//       },
-//       {
-//         key: 'form-text-editors',
-//         label: 'Text Editors',
-//         url: '/forms/editors',
-//       },
-//       {
-//         key: 'form-slider',
-//         label: 'Slider',
-//         url: '/forms/slider',
-//       },
-//       {
-//         key: 'form-layouts',
-//         label: 'Layouts',
-//         url: '/forms/layouts',
-//       },
-//       {
-//         key: 'form-other-plugins',
-//         label: 'Other Plugins',
-//         url: '/forms/other-plugins',
-//       },
-//     ],
-//   },
-//   {
-//     key: 'tables',
-//     label: 'Tables',
-//     icon: TbTableColumn,
-//     children: [
-//       {
-//         key: 'static-tables',
-//         label: 'Static Tables',
-//         url: '/tables/static',
-//       },
-//       {
-//         key: 'tanstack-tables',
-//         label: 'Tanstack Tables',
-//         url: '/tables/tanstack',
-//       },
-//     ],
-//   },
-//   {
-//     key: 'icons',
-//     label: 'Icons',
-//     icon: TbIcons,
-//     children: [
-//       {
-//         key: 'tabler-icons',
-//         label: 'Tabler',
-//         url: '/icons/tabler',
-//       },
-//       {
-//         key: 'lucide-icons',
-//         label: 'Lucide',
-//         url: '/icons/lucide',
-//       },
-//       {
-//         key: 'flags',
-//         label: 'Flags',
-//         url: '/icons/flags',
-//       },
-//     ],
-//   },
-//   {
-//     key: 'maps',
-//     label: 'Maps',
-//     icon: TbMap,
-//     children: [
-//       {
-//         key: 'google-maps',
-//         label: 'Google Maps',
-//         url: '/maps/google',
-//       },
-//       {
-//         key: 'vector-maps',
-//         label: 'Vector Maps',
-//         url: '/maps/vector',
-//       },
-//       {
-//         key: 'leaflet-maps',
-//         label: 'Leaflet Maps',
-//         url: '/maps/leaflet',
-//       },
-//     ],
-//   },
-//   { key: 'items', label: 'Menu Items', isTitle: true },
-//   {
-//     key: 'menu-levels',
-//     label: 'Menu Levels',
-//     icon: TbSitemap,
-//     children: [
-//       {
-//         key: 'second-level',
-//         label: 'Second Level',
-//         children: [
-//           { key: 'item-2-1', label: 'Item 2.1', url: 'javascript: void(0);' },
-//           { key: 'item-2-2', label: 'Item 2.2', url: 'javascript: void(0);' },
-//         ],
-//       },
-//       {
-//         key: 'third-level',
-//         label: 'Third Level',
-//         children: [
-//           { key: 'item-3-1', label: 'Item 1', url: 'javascript: void(0);' },
-//           {
-//             key: 'fourth-level',
-//             label: 'Item 2',
-//             children: [
-//               {
-//                 key: 'item-4-1',
-//                 label: 'Item 3.1',
-//                 url: 'javascript: void(0);',
-//               },
-//               {
-//                 key: 'item-4-2',
-//                 label: 'Item 3.2',
-//                 url: 'javascript: void(0);',
-//               },
-//             ],
-//           },
-//         ],
-//       },
-//     ],
-//   },
-//   { key: 'disabled-menu', label: 'Disabled Menu', icon: TbBan, url: '#!', isDisabled: true },
-//   { key: 'special-menu', label: 'Special Menu', icon: TbStar, url: '#!', isSpecial: true },
-// ]
+  {
+    key: 'products',
+    label: 'Sản phẩm',
+    url: '/products',
+    icon: TbBox,
+    children: [
+      { key: 'product-list', label: 'Sản phẩm eSIM', url: '/products/esim/packages' },
+      //{ key: 'product-variants', label: 'Gói eSIM', url: '/product-variants' },
+      { key: 'product-prices', label: 'Giá bán', url: '/product-prices' },
+    ],
+  },
+
+  {
+    key: 'product-management',
+    label: 'Cấu hình',
+    url: '/products',
+    icon: TbAdjustments,
+    children: [
+      {
+        key: 'product-categories',
+        label: 'Danh mục sản phẩm',
+        url: '/settings/categories',
+        icon: TbCategory,
+      },
+      {
+        key: 'countries',
+        label: 'Quốc gia',
+        url: '/settings/countries',
+        icon: TbWorld,
+      },
+      {
+        key: 'carriers',
+        label: 'Nhà mạng',
+        url: '/settings/carriers',
+        icon: TbAntennaBars5,
+      },
+      {
+        key: 'product-catalog',
+        label: 'Sản phẩm',
+        url: '/settings/products',
+        icon: TbCategory,
+      },
+    ],
+  },
+
+  {
+    key: 'provider-management',
+    label: 'Nhà cung cấp',
+    url: '/providers',
+    icon: TbBuildingStore,
+    children: [
+      {
+        key: 'providers',
+        label: 'Danh sách nhà cung cấp',
+        url: '/providers/list',
+        icon: TbBuildingStore,
+      },
+      {
+        key: 'provider-product-mappings',
+        label: 'Liên kết gói với nhà cung cấp',
+        url: '/providers/mapping',
+        icon: TbPlugConnected,
+      },
+      {
+        key: 'provider-api-logs',
+        label: 'Lịch sử gọi API',
+        url: '/providers/logs',
+        icon: TbApi,
+      },
+    ],
+  },
+
+
+
+  {
+    key: 'website-content',
+    label: 'Bài viết',
+    url: '/website',
+    icon: TbArticle,
+    children: [
+      {
+        key: 'home-banners',
+        label: 'Banner trang chủ',
+        url: '/website/banners',
+        icon: TbPhoto,
+      },
+      {
+        key: 'faqs',
+        label: 'Câu hỏi thường gặp',
+        url: '/website/faqs',
+        icon: TbHelpCircle,
+      },
+      {
+        key: 'articles',
+        label: 'Bài viết',
+        url: '/website/articles',
+        icon: TbArticle,
+      },
+      {
+        key: 'seo-settings',
+        label: 'Cấu hình SEO',
+        url: '/website/seo',
+        icon: TbSearch,
+      },
+    ],
+  },
+
+  {
+    key: 'reports',
+    label: 'Báo cáo',
+    url: '/reports',
+    icon: TbReportAnalytics,
+    children: [
+      {
+        key: 'revenue-reports',
+        label: 'Doanh thu',
+        url: '/reports/revenue',
+        icon: TbChartBar,
+      },
+      {
+        key: 'order-reports',
+        label: 'Đơn hàng',
+        url: '/reports/orders',
+        icon: TbReceipt,
+      },
+      {
+        key: 'best-selling-product-reports',
+        label: 'Sản phẩm bán chạy',
+        url: '/reports/products',
+        icon: TbStar,
+      },
+      {
+        key: 'customer-reports',
+        label: 'Khách hàng',
+        url: '/reports/customers',
+        icon: TbUsers,
+      },
+      {
+        key: 'payment-reports',
+        label: 'Thanh toán',
+        url: '/reports/payments',
+        icon: TbCreditCard,
+      },
+      {
+        key: 'provider-reports',
+        label: 'Nhà cung cấp',
+        url: '/reports/providers',
+        icon: TbBuildingStore,
+      },
+      {
+        key: 'delivery-failed-reports',
+        label: 'Lỗi giao eSIM',
+        url: '/reports/delivery-failed',
+        icon: TbAlertTriangle,
+      },
+      {
+        key: 'refund-reports',
+        label: 'Hoàn tiền',
+        url: '/reports/refunds',
+        icon: TbRefresh,
+      },
+    ],
+  },
+  { key: 'setup-title', label: 'Quản trị', isTitle: true },
+  {
+    key: 'system',
+    label: 'Hệ thống',
+    url: '/system',
+    icon: TbSettings,
+    children: [
+      {
+        key: 'admin-users',
+        label: 'Tài khoản quản trị',
+        url: '/system/admin-users',
+        icon: TbUserCog,
+      },
+      {
+        key: 'roles',
+        label: 'Vai trò',
+        url: '/system/roles',
+        icon: TbShieldLock,
+      },
+      {
+        key: 'permissions',
+        label: 'Phân quyền',
+        url: '/system/permissions',
+        icon: TbKey,
+      },
+      {
+        key: 'audit-logs',
+        label: 'Nhật ký thao tác',
+        url: '/system/audit-logs',
+        icon: TbHistory,
+      },
+      {
+        key: 'system-settings',
+        label: 'Cấu hình hệ thống',
+        url: '/system/settings',
+        icon: TbSettings,
+      },
+    ],
+  },
+
+  { key: 'menu1', label: 'TODO', isTitle: true },
+  {
+    key: 'dashboards',
+    label: 'Dashboards',
+    icon: TbLayoutDashboard,
+    badge: { variant: 'success', text: '5' },
+    children: [
+      { key: 'dashboard-v1', label: 'Dashboard v.1', url: '/dashboard' },
+      { key: 'dashboard-v2', label: 'Dashboard v.2', url: '/dashboard2' },
+      { key: 'dashboard-v3', label: 'Dashboard v.3', url: '/dashboard3' },
+      {
+        key: 'dashboard-v4',
+        label: 'Dashboard v.4',
+        url: '#',
+        isDisabled: true,
+        badge: { variant: 'light', text: 'soon' },
+      },
+      {
+        key: 'dashboard-v5',
+        label: 'Dashboard v.5',
+        url: '#',
+        isDisabled: true,
+        badge: { variant: 'light', text: 'soon' },
+      },
+    ],
+  },
+  { key: 'landing', label: 'Landing Page', icon: TbStackFront, url: '/landing' },
+  { key: 'apps', label: 'Apps', isTitle: true },
+  {
+    key: 'ecommerce',
+    label: 'Ecommerce',
+    icon: TbBasket,
+    children: [
+      {
+        key: 'products',
+        label: 'Products',
+        children: [
+          { key: 'product-list', label: 'Product', url: '/products' },
+          { key: 'product-grid', label: 'Product Grid', url: '/products-grid' },
+          { key: 'product-details', label: 'Product Details', url: '/products/1' },
+          { key: 'add-product', label: 'Add Product', url: '/add-product' },
+        ],
+      },
+      { key: 'categories', label: 'Categories', url: '/categories' },
+      {
+        key: 'orders',
+        label: 'Orders',
+        children: [
+          { key: 'orders-list', label: 'Orders', url: '/orders' },
+          { key: 'order-details', label: 'Order Details', url: '/orders/1' },
+        ],
+      },
+      { key: 'customers', label: 'Customers', url: '/customers' },
+      {
+        key: 'sellers',
+        label: 'Sellers',
+        children: [
+          { key: 'sellers-list', label: 'Sellers', url: '/sellers' },
+          { key: 'seller-details', label: 'Seller Details', url: '/sellers/1' },
+        ],
+      },
+      { key: 'reviews', label: 'Reviews', url: '/reviews' },
+      {
+        key: 'reports',
+        label: 'Reports',
+        children: [
+          { key: 'product-views', label: 'Product Views', url: '/reports/product-views' },
+          { key: 'sales', label: 'Sales', url: '/reports/sales' },
+        ],
+      },
+    ],
+  },
+  {
+    key: 'email',
+    label: 'Email',
+    icon: TbMail,
+    badge: { variant: 'danger', text: 'New' },
+    children: [
+      { key: 'inbox', label: 'Inbox', url: '/inbox' },
+      { key: 'inbox-details', label: 'Details', url: '/inbox/1' },
+      { key: 'email-compose', label: 'Compose', url: '/email-compose' },
+    ],
+  },
+  {
+    key: 'users',
+    label: 'Users',
+    icon: TbUsers,
+    children: [
+      { key: 'contacts', label: 'Contacts', url: '/users/contacts' },
+      { key: 'roles', label: 'Roles', url: '/users/roles' },
+      { key: 'permissions', label: 'Permissions', url: '/users/permissions' },
+    ],
+  },
+  {
+    key: 'projects',
+    label: 'Projects',
+    icon: TbBriefcase,
+    children: [
+      { key: 'my-projects', label: 'My Projects', url: '/projects' },
+      { key: 'projects-list', label: 'Projects List', url: '/projects-list' },
+      { key: 'project-details', label: 'View Project', url: '/projects/1' },
+      { key: 'kanban-board', label: 'Kanban Board', url: '/kanban-board' },
+      { key: 'team-board', label: 'Team Board', url: '/team-board' },
+      { key: 'activity-stream', label: 'Activity Stream', url: '/activity-stream' },
+    ],
+  },
+  { key: 'file-manager', label: 'File Manager', icon: TbFolder, url: '/file-manager' },
+  { key: 'chat', label: 'Chat', icon: TbMessageDots, url: '/chat' },
+  { key: 'calendar', label: 'Calendar', icon: TbCalendar, url: '/calendar' },
+  {
+    key: 'invoice',
+    label: 'Invoice',
+    icon: TbInvoice,
+    children: [
+      { key: 'invoice-list', label: 'Invoice', url: '/invoices' },
+      { key: 'invoice-details', label: 'Invoice Details', url: '/invoices/1' },
+      { key: 'add-invoice', label: 'Add Invoice', url: '/add-invoice' },
+    ],
+  },
+  {
+    key: 'other-apps',
+    label: 'Other Apps',
+    icon: TbApps,
+    children: [
+      { key: 'companies', label: 'Companies', url: '/companies' },
+      { key: 'clients', label: 'Clients', url: '/clients' },
+      { key: 'outlook-view', label: 'Outlook View', url: '/outlook-view' },
+      { key: 'vote-list', label: 'Vote List', url: '/vote-list' },
+      { key: 'issue-tracker', label: 'Issue Tracker', url: '/issue-tracker' },
+      { key: 'api-keys', label: 'Api Keys', url: '/api-keys' },
+      { key: 'blogs', label: 'Blogs', url: '/blogs' },
+      { key: 'article', label: 'Article', url: '/article' },
+      { key: 'pin-board', label: 'Pin Board', url: '/pin-board' },
+      { key: 'forum-view', label: 'Forum View', url: '/forum-view' },
+      { key: 'forum-post', label: 'Forum Post', url: '/forum-post' },
+    ],
+  },
+  { key: 'custom', label: 'Custom Pages', isTitle: true },
+  {
+    key: 'pages',
+    label: 'Pages',
+    icon: TbFiles,
+    children: [
+      { key: 'profile', label: 'Profile', url: '/pages/profile' },
+      { key: 'faq', label: 'FAQ', url: '/pages/faq' },
+      { key: 'pricing', label: 'Pricing', url: '/pages/pricing' },
+      { key: 'empty-page', label: 'Empty Page', url: '/pages/empty-page' },
+      { key: 'timeline', label: 'Timeline', url: '/pages/timeline' },
+      { key: 'search-results', label: 'Search Results', url: '/pages/search-results' },
+      { key: 'coming-soon', label: 'Coming Soon', url: '/coming-soon' },
+      { key: 'terms-conditions', label: 'Terms & Conditions', url: '/pages/terms-conditions' },
+    ],
+  },
+  {
+    key: 'miscellaneous',
+    label: 'Miscellaneous',
+    icon: TbPackage,
+    children: [
+      { key: 'nestable-list', label: 'Nestable List', url: '/miscellaneous/nestable-list' },
+      { key: 'text-different', label: 'Text Different', url: '/miscellaneous/text-different' },
+      { key: 'pdf-viewer', label: 'PDF Viewer', url: '/miscellaneous/pdf-viewer' },
+      { key: 'sweet-alert', label: 'Sweet Alert', url: '/miscellaneous/sweet-alert' },
+      { key: 'idle-timer', label: 'Idle Timer', url: '/miscellaneous/idle-timer' },
+      { key: 'password-meter', label: 'Password Meter', url: '/miscellaneous/password-meter' },
+      { key: 'clipboard', label: 'Clipboard', url: '/miscellaneous/clipboard' },
+      { key: 'tree-view', label: 'Tree View', url: '/miscellaneous/tree-view' },
+      { key: 'loading-buttons', label: 'Loading Buttons', url: '/miscellaneous/loading-buttons' },
+      { key: 'gallery', label: 'Gallery', url: '/miscellaneous/gallery' },
+      { key: 'masonry', label: 'Masonry', url: '/miscellaneous/masonry' },
+      { key: 'tour', label: 'Tour', url: '/miscellaneous/tour' },
+      { key: 'animation', label: 'Animation', url: '/miscellaneous/animation' },
+    ],
+  },
+  {
+    key: 'auth',
+    label: 'Authentication',
+    icon: TbLock,
+    children: [
+      {
+        key: 'version-1',
+        label: 'Version 1',
+        parentKey: 'auth',
+        children: [
+          { key: 'sign-in', label: 'Sign In', url: '/auth-1/sign-in' },
+          { key: 'sign-up', label: 'Sign Up', url: '/auth-1/sign-up' },
+          { key: 'reset-pass', label: 'Reset Password', url: '/auth-1/reset-password' },
+          { key: 'new-pass', label: 'New Password', url: '/auth-1/new-password' },
+          { key: 'two-factor', label: 'Two Factor', url: '/auth-1/two-factor' },
+          { key: 'lock-screen', label: 'Lock Screen', url: '/auth-1/lock-screen' },
+          { key: 'success-mail', label: 'Success Mail', url: '/auth-1/success-mail' },
+          { key: 'login-pin', label: 'Login with PIN', url: '/auth-1/login-pin' },
+          { key: 'delete-account', label: 'Delete Account', url: '/auth-1/delete-account' },
+        ],
+      },
+      {
+        key: 'version-2',
+        label: 'Version 2',
+        parentKey: 'auth',
+        children: [
+          { key: 'sign-in-2', label: 'Sign In', url: '/auth-2/sign-in' },
+          { key: 'sign-up-2', label: 'Sign Up', url: '/auth-2/sign-up' },
+          {
+            key: 'reset-pass-2',
+            label: 'Reset Password',
+            url: '/auth-2/reset-password',
+          },
+          { key: 'new-pass-2', label: 'New Password', url: '/auth-2/new-password' },
+          { key: 'two-factor-2', label: 'Two Factor', url: '/auth-2/two-factor' },
+          { key: 'lock-screen-2', label: 'Lock Screen', url: '/auth-2/lock-screen' },
+          { key: 'success-mail-2', label: 'Success Mail', url: '/auth-2/success-mail' },
+          { key: 'login-pin-2', label: 'Login with PIN', url: '/auth-2/login-pin' },
+          {
+            key: 'delete-account-2',
+            label: 'Delete Account',
+            url: '/auth-2/delete-account',
+          },
+        ],
+      },
+      {
+        key: 'version-3',
+        label: 'Version 3',
+        parentKey: 'auth',
+        children: [
+          { key: 'sign-in-3', label: 'Sign In', url: '/auth-3/sign-in' },
+          { key: 'sign-up-3', label: 'Sign Up', url: '/auth-3/sign-up' },
+          {
+            key: 'reset-pass-3',
+            label: 'Reset Password',
+            url: '/auth-3/reset-password',
+          },
+          { key: 'new-pass-3', label: 'New Password', url: '/auth-3/new-password' },
+          { key: 'two-factor-3', label: 'Two Factor', url: '/auth-3/two-factor' },
+          { key: 'lock-screen-3', label: 'Lock Screen', url: '/auth-3/lock-screen' },
+          { key: 'success-mail-3', label: 'Success Mail', url: '/auth-3/success-mail' },
+          { key: 'login-pin-3', label: 'Login with PIN', url: '/auth-3/login-pin' },
+          {
+            key: 'delete-account-3',
+            label: 'Delete Account',
+            url: '/auth-3/delete-account',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    key: 'error',
+    label: 'Error Pages',
+    icon: TbAlertHexagon,
+    children: [
+      { key: 'error-400', label: '400', url: '/error/400' },
+      { key: 'error-401', label: '401', url: '/error/401' },
+      { key: 'error-403', label: '403', url: '/error/403' },
+      { key: 'error-404', label: '404', url: '/error/404' },
+      { key: 'error-408', label: '408', url: '/error/408' },
+      { key: 'error-500', label: '500', url: '/error/500' },
+      { key: 'maintenance', label: 'Maintenance', url: '/maintenance' },
+    ],
+  },
+  { key: 'layouts', label: 'Layouts', isTitle: true },
+  {
+    key: 'layout-options',
+    label: 'Layout Options',
+    icon: TbLayout,
+    children: [
+      { key: 'scrollable', label: 'Scrollable', url: '/layouts/scrollable' },
+      { key: 'compact', label: 'Compact', url: '/layouts/compact' },
+      { key: 'boxed', label: 'Boxed', url: '/layouts/boxed' },
+      { key: 'horizontal', label: 'Horizontal', url: '/layouts/horizontal' },
+    ],
+  },
+  {
+    key: 'sidebars',
+    label: 'Sidebars',
+    icon: TbLayoutSidebar,
+    children: [
+      { key: 'compact-menu', label: 'Compact Menu', url: '/layouts/sidebars/compact' },
+      { key: 'icon-view-menu', label: 'Icon View Menu', url: '/layouts/sidebars/icon-view' },
+      { key: 'on-hover-menu', label: 'On Hover Menu', url: '/layouts/sidebars/on-hover' },
+      {
+        key: 'on-hover-active-menu',
+        label: 'On Hover Active Menu',
+        url: '/layouts/sidebars/on-hover-active',
+      },
+      { key: 'offcanvas-menu', label: 'Offcanvas Menu', url: '/layouts/sidebars/offcanvas' },
+      {
+        key: 'no-icons-with-lines-menu',
+        label: 'No Icons With Lines',
+        url: '/layouts/sidebars/no-icons-with-lines',
+      },
+      {
+        key: 'with-lines-menu',
+        label: 'Sidebar With Lines',
+        url: '/layouts/sidebars/with-lines',
+      },
+      { key: 'light-menu', label: 'Light Menu', url: '/layouts/sidebars/light' },
+      { key: 'gradient-menu', label: 'Gradient Menu', url: '/layouts/sidebars/gradient' },
+      { key: 'gray-menu', label: 'Gray Menu', url: '/layouts/sidebars/gray' },
+      { key: 'image-menu', label: 'Image Menu', url: '/layouts/sidebars/image' },
+    ],
+  },
+  {
+    key: 'topbars',
+    label: 'Topbars',
+    icon: TbLayoutNavbar,
+    children: [
+      { key: 'dark-topbar', label: 'Dark Topbar', url: '/layouts/topbars/dark' },
+      { key: 'gray-topbar', label: 'Gray Topbar', url: '/layouts/topbars/gray' },
+      { key: 'gradient-topbar', label: 'Gradient Topbar', url: '/layouts/topbars/gradient' },
+      {
+        key: 'with-sub-items-topbar',
+        label: 'Topbar with Sub Items',
+        url: '/layouts/topbars/with-sub-items',
+      },
+      {
+        key: 'with-tools-topbar',
+        label: 'Topbar with Tools',
+        url: '/layouts/topbars/with-tools',
+      },
+    ],
+  },
+  { key: 'components', label: 'Components', isTitle: true },
+  {
+    key: 'ui',
+    label: 'Base UI',
+    icon: TbPalette,
+    children: [
+      {
+        key: 'accordions',
+        label: 'Accordions',
+        url: '/ui/accordions',
+      },
+      {
+        key: 'alerts',
+        label: 'Alerts',
+        url: '/ui/alerts',
+      },
+      {
+        key: 'images',
+        label: 'Images',
+        url: '/ui/images',
+      },
+      {
+        key: 'badges',
+        label: 'Badges',
+        url: '/ui/badges',
+      },
+      {
+        key: 'breadcrumb',
+        label: 'Breadcrumb',
+        url: '/ui/breadcrumb',
+      },
+      {
+        key: 'buttons',
+        label: 'Buttons',
+        url: '/ui/buttons',
+      },
+      {
+        key: 'cards',
+        label: 'Cards',
+        url: '/ui/cards',
+      },
+      {
+        key: 'carousel',
+        label: 'Carousel',
+        url: '/ui/carousel',
+      },
+      {
+        key: 'collapse',
+        label: 'Collapse',
+        url: '/ui/collapse',
+      },
+      {
+        key: 'colors',
+        label: 'Colors',
+        url: '/ui/colors',
+      },
+      {
+        key: 'dropdowns',
+        label: 'Dropdowns',
+        url: '/ui/dropdowns',
+      },
+      {
+        key: 'videos',
+        label: 'Videos',
+        url: '/ui/videos',
+      },
+      {
+        key: 'grid',
+        label: 'Grid Options',
+        url: '/ui/grid',
+      },
+      {
+        key: 'links',
+        label: 'Links',
+        url: '/ui/links',
+      },
+      {
+        key: 'list-group',
+        label: 'List Group',
+        url: '/ui/list-group',
+      },
+      {
+        key: 'modals',
+        label: 'Modals',
+        url: '/ui/modals',
+      },
+      {
+        key: 'notifications',
+        label: 'Notifications',
+        url: '/ui/notifications',
+      },
+      {
+        key: 'offcanvas',
+        label: 'Offcanvas',
+        url: '/ui/offcanvas',
+      },
+      {
+        key: 'placeholders',
+        label: 'Placeholders',
+        url: '/ui/placeholders',
+      },
+      {
+        key: 'pagination',
+        label: 'Pagination',
+        url: '/ui/pagination',
+      },
+      {
+        key: 'popovers',
+        label: 'Popovers',
+        url: '/ui/popovers',
+      },
+      {
+        key: 'progress',
+        label: 'Progress',
+        url: '/ui/progress',
+      },
+      {
+        key: 'spinners',
+        label: 'Spinners',
+        url: '/ui/spinners',
+      },
+      {
+        key: 'tabs',
+        label: 'Tabs',
+        url: '/ui/tabs',
+      },
+      {
+        key: 'tooltips',
+        label: 'Tooltips',
+        url: '/ui/tooltips',
+      },
+      {
+        key: 'typography',
+        label: 'Typography',
+        url: '/ui/typography',
+      },
+      {
+        key: 'utilities',
+        label: 'Utilities',
+        url: '/ui/utilities',
+      },
+    ],
+  },
+  {
+    key: 'widgets',
+    label: 'Widgets',
+    icon: TbCategory,
+    url: '/widgets',
+  },
+  {
+    key: 'metrics',
+    label: 'Metrics',
+    icon: TbChartHistogram,
+    url: '/metrics',
+  },
+  {
+    key: 'graphs',
+    label: 'Graphs',
+    icon: TbMap,
+    children: [
+      {
+        key: 'apexchart',
+        label: 'Apex Charts',
+        children: [
+          { key: 'apex-area-chart', label: 'Area', url: '/graphs/apex/area' },
+          { key: 'apex-bar-chart', label: 'Bar', url: '/graphs/apex/bar' },
+          { key: 'apex-bubble-chart', label: 'Bubble', url: '/graphs/apex/bubble' },
+          { key: 'apex-candlestick-chart', label: 'Candlestick', url: '/graphs/apex/candlestick' },
+          { key: 'apex-column-chart', label: 'Column', url: '/graphs/apex/column' },
+          { key: 'apex-heatmap-chart', label: 'Heatmap', url: '/graphs/apex/heatmap' },
+          { key: 'apex-line-chart', label: 'Line', url: '/graphs/apex/line' },
+          { key: 'apex-mixed-chart', label: 'Mixed', url: '/graphs/apex/mixed' },
+          { key: 'apex-timeline-chart', label: 'Timeline', url: '/graphs/apex/timeline' },
+          { key: 'apex-boxplot-chart', label: 'Boxplot', url: '/graphs/apex/boxplot' },
+          { key: 'apex-treemap-chart', label: 'Treemap', url: '/graphs/apex/treemap' },
+          { key: 'apex-pie-chart', label: 'Pie', url: '/graphs/apex/pie' },
+          { key: 'apex-radar-chart', label: 'Radar', url: '/graphs/apex/radar' },
+          { key: 'apex-radialbar-chart', label: 'Radialbar', url: '/graphs/apex/radialbar' },
+          { key: 'apex-scatter-chart', label: 'Scatter', url: '/graphs/apex/scatter' },
+          { key: 'apex-polar-area-chart', label: 'Polar Area', url: '/graphs/apex/polar-area' },
+          { key: 'apex-sparkline-chart', label: 'Sparklines', url: '/graphs/apex/sparklines' },
+          { key: 'apex-range-chart', label: 'Range', url: '/graphs/apex/range' },
+          { key: 'apex-funnel-chart', label: 'Funnel', url: '/graphs/apex/funnel' },
+          { key: 'apex-slope-chart', label: 'Slope', url: '/graphs/apex/slope' },
+        ],
+      },
+      {
+        key: 'echart',
+        label: 'Echarts',
+        children: [
+          { key: 'echart-line-chart', label: 'Line', url: '/graphs/echart/line' },
+          { key: 'echart-bar-chart', label: 'Bar', url: '/graphs/echart/bar' },
+          { key: 'echart-pie-chart', label: 'Pie', url: '/graphs/echart/pie' },
+          { key: 'echart-scatter-chart', label: 'Scatter ', url: '/graphs/echart/scatter' },
+          { key: 'echart-geo-map', label: 'GEO Map ', url: '/graphs/echart/geo-map' },
+          { key: 'echart-gauge-chart', label: 'Gauge ', url: '/graphs/echart/gauge' },
+          { key: 'echart-candlestick-chart', label: 'Candlestick ', url: '/graphs/echart/candlestick' },
+          { key: 'echart-area-chart', label: 'Area ', url: '/graphs/echart/area' },
+          { key: 'echart-radar-chart', label: 'Radar ', url: '/graphs/echart/radar' },
+          { key: 'echart-heatmap-chart', label: 'Heatmap ', url: '/graphs/echart/heatmap' },
+          { key: 'echart-other-chart', label: 'Other ', url: '/graphs/echart/other' },
+        ],
+      },
+      {
+        key: 'apex-tree',
+        label: 'Apex Tree',
+        url: '/graphs/apex-tree',
+      },
+    ],
+  },
+  {
+    key: 'forms',
+    label: 'Forms',
+    icon: TbCheckupList,
+    children: [
+      {
+        key: 'form-basic-elements',
+        label: 'Basic Elements',
+        url: '/forms/basic',
+      },
+      {
+        key: 'form-pickers',
+        label: 'Pickers',
+        url: '/forms/pickers',
+      },
+      {
+        key: 'form-select',
+        label: 'Select',
+        url: '/forms/select',
+      },
+      {
+        key: 'form-validation',
+        label: 'Validation',
+        url: '/forms/validation',
+      },
+      {
+        key: 'form-wizard',
+        label: 'Wizard',
+        url: '/forms/wizard',
+      },
+      {
+        key: 'form-file-uploads',
+        label: 'File Uploads',
+        url: '/forms/file-uploads',
+      },
+      {
+        key: 'form-text-editors',
+        label: 'Text Editors',
+        url: '/forms/editors',
+      },
+      {
+        key: 'form-slider',
+        label: 'Slider',
+        url: '/forms/slider',
+      },
+      {
+        key: 'form-layouts',
+        label: 'Layouts',
+        url: '/forms/layouts',
+      },
+      {
+        key: 'form-other-plugins',
+        label: 'Other Plugins',
+        url: '/forms/other-plugins',
+      },
+    ],
+  },
+  {
+    key: 'tables',
+    label: 'Tables',
+    icon: TbTableColumn,
+    children: [
+      {
+        key: 'static-tables',
+        label: 'Static Tables',
+        url: '/tables/static',
+      },
+      {
+        key: 'tanstack-tables',
+        label: 'Tanstack Tables',
+        url: '/tables/tanstack',
+      },
+    ],
+  },
+  {
+    key: 'icons',
+    label: 'Icons',
+    icon: TbIcons,
+    children: [
+      {
+        key: 'tabler-icons',
+        label: 'Tabler',
+        url: '/icons/tabler',
+      },
+      {
+        key: 'lucide-icons',
+        label: 'Lucide',
+        url: '/icons/lucide',
+      },
+      {
+        key: 'flags',
+        label: 'Flags',
+        url: '/icons/flags',
+      },
+    ],
+  },
+  {
+    key: 'maps',
+    label: 'Maps',
+    icon: TbMap,
+    children: [
+      {
+        key: 'google-maps',
+        label: 'Google Maps',
+        url: '/maps/google',
+      },
+      {
+        key: 'vector-maps',
+        label: 'Vector Maps',
+        url: '/maps/vector',
+      },
+      {
+        key: 'leaflet-maps',
+        label: 'Leaflet Maps',
+        url: '/maps/leaflet',
+      },
+    ],
+  },
+  { key: 'items', label: 'Menu Items', isTitle: true },
+  {
+    key: 'menu-levels',
+    label: 'Menu Levels',
+    icon: TbSitemap,
+    children: [
+      {
+        key: 'second-level',
+        label: 'Second Level',
+        children: [
+          { key: 'item-2-1', label: 'Item 2.1', url: 'javascript: void(0);' },
+          { key: 'item-2-2', label: 'Item 2.2', url: 'javascript: void(0);' },
+        ],
+      },
+      {
+        key: 'third-level',
+        label: 'Third Level',
+        children: [
+          { key: 'item-3-1', label: 'Item 1', url: 'javascript: void(0);' },
+          {
+            key: 'fourth-level',
+            label: 'Item 2',
+            children: [
+              {
+                key: 'item-4-1',
+                label: 'Item 3.1',
+                url: 'javascript: void(0);',
+              },
+              {
+                key: 'item-4-2',
+                label: 'Item 3.2',
+                url: 'javascript: void(0);',
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  { key: 'disabled-menu', label: 'Disabled Menu', icon: TbBan, url: '#!', isDisabled: true },
+  { key: 'special-menu', label: 'Special Menu', icon: TbStar, url: '#!', isSpecial: true },
+]
 
 export const horizontalMenuItems: MenuItemType[] = [
   {

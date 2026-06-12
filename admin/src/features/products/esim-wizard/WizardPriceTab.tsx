@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { Card, Col, Form, Row } from 'react-bootstrap'
+import { Alert, Card, Col, Form, Row } from 'react-bootstrap'
 
 import {
   createProductPrice,
@@ -86,9 +86,12 @@ const WizardPriceTab = ({
     <Form id="esim-wizard-price-form" onSubmit={(e) => void handleSubmit(e)}>
       <Card className="border shadow-none">
         <Card.Body>
-          <h5 className="mb-3 fw-semibold">Thông tin giá</h5>
+          <div className="mb-3">
+            <h5 className="mb-1 fw-semibold">Giá bán</h5>
+            <p className="text-muted mb-0 fs-sm">Thiết lập giá hiển thị và khoảng thời gian áp dụng.</p>
+          </div>
           <Row className="g-3">
-            <Col md={6}>
+            <Col md={4}>
               <Form.Label className="fw-semibold">Đơn vị tiền tệ *</Form.Label>
               <Form.Select
                 value={values.currency}
@@ -97,7 +100,7 @@ const WizardPriceTab = ({
                 <option value="USD">USD</option>
               </Form.Select>
             </Col>
-            <Col md={6}>
+            <Col md={4}>
               <Form.Label className="fw-semibold">Giá gốc</Form.Label>
               <Form.Control
                 type="number"
@@ -106,7 +109,7 @@ const WizardPriceTab = ({
                 onChange={(e) => setValues((p) => ({ ...p, originalPrice: Number(e.target.value) }))}
               />
             </Col>
-            <Col md={6}>
+            <Col md={4}>
               <Form.Label className="fw-semibold">Giá bán *</Form.Label>
               <Form.Control
                 type="number"
@@ -116,7 +119,7 @@ const WizardPriceTab = ({
                 required
               />
             </Col>
-            <Col md={6}>
+            <Col md={4}>
               <Form.Label className="fw-semibold">Giá vốn</Form.Label>
               <Form.Control
                 type="number"
@@ -125,7 +128,7 @@ const WizardPriceTab = ({
                 onChange={(e) => setValues((p) => ({ ...p, costPrice: Number(e.target.value) }))}
               />
             </Col>
-            <Col md={6}>
+            <Col md={4}>
               <Form.Label className="fw-semibold">Từ ngày</Form.Label>
               <Form.Control
                 type="date"
@@ -133,8 +136,8 @@ const WizardPriceTab = ({
                 onChange={(e) => setValues((p) => ({ ...p, startDate: e.target.value }))}
               />
             </Col>
-            <Col md={6}>
-              <Form.Label className="fw-semibold">Đến ngày (tùy chọn)</Form.Label>
+            <Col md={4}>
+              <Form.Label className="fw-semibold">Đến ngày</Form.Label>
               <Form.Control
                 type="date"
                 value={values.endDate}
@@ -159,7 +162,11 @@ const WizardPriceTab = ({
           </Row>
         </Card.Body>
       </Card>
-      {error && <div className="text-danger mt-3">{error}</div>}
+      {error && (
+        <Alert variant="danger" className="mt-3 mb-0">
+          {error}
+        </Alert>
+      )}
     </Form>
   )
 }

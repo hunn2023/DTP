@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Card, Container, Spinner, Tab } from 'react-bootstrap'
+import { Badge, Card, Col, Container, Row, Spinner, Tab } from 'react-bootstrap'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 
 import PageBreadcrumb from '@/components/PageBreadcrumb'
@@ -44,6 +44,11 @@ function getFormId(tab: EsimWizardTab): string | undefined {
   if (tab === 'prices') return 'esim-wizard-price-form'
   if (tab === 'packages') return 'esim-wizard-package-form'
   return undefined
+}
+
+function formatPrice(value: number | undefined, currency: string | undefined): string {
+  if (!value) return 'Chưa có giá'
+  return `${value.toLocaleString('vi-VN')} ${currency ?? 'VND'}`
 }
 
 const EsimWizardPage = () => {
@@ -112,7 +117,7 @@ const EsimWizardPage = () => {
     wizard.setProductName(pName)
     const product = await fetchProductDetail(pId)
     if (product?.countryId) wizard.setDefaultCountryId(product.countryId)
-    showNotification({ title: 'Thành công', message: 'Đã lưu variant', variant: 'success', delay: 2000 })
+    showNotification({ title: 'Thành công', message: 'Đã lưu biến thể', variant: 'success', delay: 2000 })
     navigate(`/products/esim/wizard/${id}?tab=prices&productId=${pId}`, { replace: true })
   }
 
@@ -213,7 +218,7 @@ const EsimWizardPage = () => {
       <Container fluid>
         <PageBreadcrumb title="Không tìm thấy" subtitle="eSIM du lịch" />
         <p className="text-muted">
-          Variant không tồn tại. <Link to="/products/esim/packages">Quay lại danh sách</Link>
+          Biến thể không tồn tại. <Link to="/products/esim/packages">Quay lại danh sách</Link>
         </p>
       </Container>
     )
@@ -236,18 +241,45 @@ const EsimWizardPage = () => {
     isActive: wizard.packageForm?.isActive ?? wizard.esimPackage?.isActive ?? true,
   }
 
-  const pageTitle = isNew ? 'Tạo eSIM Package' : `Chỉnh sửa: ${wizard.variant?.name ?? 'eSIM'}`
+  const pageTitle = isNew ? 'Tạo gói eSIM' : `Chỉnh sửa: ${wizard.variant?.name ?? 'eSIM'}`
 
   return (
     <Container fluid>
       <PageBreadcrumb title={pageTitle} subtitle="eSIM du lịch" />
 
-      <Card>
+      <Card className="border-0 shadow-sm mb-3">
         <Card.Body className="p-4">
-          <h4 className="mb-3 fw-semibold">
-            {currentStep.step}. {isNew ? 'Tạo eSIM Package' : currentStep.title}
-          </h4>
+          <Row className="align-items-center g-3">
+            <Col lg={7}>
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <Badge bg={isNew ? 'success-subtle' : 'primary-subtle'} text={isNew ? 'success' : 'primary'}>
+                  {isNew ? 'Tạo mới' : 'Đang chỉnh sửa'}
+                </Badge>
+                <span className="text-muted fs-sm">Bước {currentStep.step}/6</span>
+              </div>
+              <h4 className="mb-1 fw-semibold">{currentStep.title}</h4>
+              <p className="text-muted mb-0">{currentStep.subtitle}</p>
+            </Col>
+            <Col lg={5}>
+              <div className="d-flex gap-2 flex-wrap justify-content-lg-end">
+                <div className="rounded bg-light px-3 py-2">
+                  <div className="text-muted fs-xs">Sản phẩm</div>
+                  <div className="fw-semibold text-truncate" style={{ maxWidth: '12rem' }}>
+                    {wizard.productName || 'Chưa chọn'}
+                  </div>
+                </div>
+                <div className="rounded bg-light px-3 py-2">
+                  <div className="text-muted fs-xs">Giá bán</div>
+                  <div className="fw-semibold">{formatPrice(wizard.price?.salePrice, wizard.price?.currency)}</div>
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
 
+      <Card className="border-0 shadow-sm">
+        <Card.Body className="p-4">
           <EsimWizardStepper
             activeTab={activeTab}
             canAccessSubTabs={canAccessSubTabs}
@@ -255,7 +287,7 @@ const EsimWizardPage = () => {
           />
 
           <Tab.Container activeKey={activeTab}>
-            <Tab.Content>
+            <Tab.Content className="pt-3">
               <Tab.Pane eventKey="variants" mountOnEnter>
                 <WizardVariantTab
                   isNew={isNew}

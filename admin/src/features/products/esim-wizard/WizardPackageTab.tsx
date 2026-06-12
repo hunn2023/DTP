@@ -1,12 +1,12 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { Card, Col, Form, Row } from 'react-bootstrap'
+import { Alert, Card, Col, Form, Row } from 'react-bootstrap'
 
 import { createEsimPackage, updateEsimPackage } from '@/features/products/esim-packages/esim-packages.api'
 import { toPackagePayload } from '@/features/products/esim-wizard/mapPackageForm'
 import type { EsimPackageForm } from '@/features/products/esim-wizard/types'
 import { getDefaultPackageValues } from '@/features/products/esim-wizard/wizardDefaults'
-import type { FormFieldOption } from '@/modules/crud/form/types'
 import { slugify } from '@/modules/crud/form/slugify'
+import type { FormFieldOption } from '@/modules/crud/form/types'
 
 type WizardPackageTabProps = {
   productId: string
@@ -71,11 +71,14 @@ const WizardPackageTab = ({
 
   return (
     <Form id="esim-wizard-package-form" onSubmit={(e) => void handleSubmit(e)}>
-      <Row className="g-4">
-        <Col lg={8}>
-          <Card className="border shadow-none mb-4">
+      <Row className="g-3">
+        <Col xl={8}>
+          <Card className="border shadow-none h-100">
             <Card.Body>
-              <h5 className="mb-3 fw-semibold">Thông tin eSIM Package</h5>
+              <div className="mb-3">
+                <h5 className="mb-1 fw-semibold">Thông tin gói</h5>
+                <p className="text-muted mb-0 fs-sm">Tên gói, nguồn cung cấp, vùng phủ sóng và thông số data.</p>
+              </div>
               <Row className="g-3">
                 <Col md={6}>
                   <Form.Label className="fw-semibold">Tên gói eSIM *</Form.Label>
@@ -135,7 +138,17 @@ const WizardPackageTab = ({
                     ))}
                   </Form.Select>
                 </Col>
-                <Col md={3}>
+                <Col md={6}>
+                  <Form.Label className="fw-semibold">Loại phủ sóng</Form.Label>
+                  <Form.Select
+                    value={values.coverageType}
+                    onChange={(e) => setValues((p) => ({ ...p, coverageType: e.target.value }))}>
+                    <option value="Country">Quốc gia</option>
+                    <option value="Region">Khu vực</option>
+                    <option value="Global">Toàn cầu</option>
+                  </Form.Select>
+                </Col>
+                <Col md={4}>
                   <Form.Label className="fw-semibold">Dung lượng</Form.Label>
                   <Form.Control
                     type="number"
@@ -145,7 +158,7 @@ const WizardPackageTab = ({
                     onChange={(e) => setValues((p) => ({ ...p, dataAmount: Number(e.target.value) }))}
                   />
                 </Col>
-                <Col md={3}>
+                <Col md={4}>
                   <Form.Label className="fw-semibold">Đơn vị</Form.Label>
                   <Form.Select
                     value={values.dataUnit}
@@ -154,7 +167,7 @@ const WizardPackageTab = ({
                     <option value="MB">MB</option>
                   </Form.Select>
                 </Col>
-                <Col md={3}>
+                <Col md={4}>
                   <Form.Label className="fw-semibold">Số ngày *</Form.Label>
                   <Form.Control
                     type="number"
@@ -163,24 +176,14 @@ const WizardPackageTab = ({
                     onChange={(e) => setValues((p) => ({ ...p, validityDays: Number(e.target.value) }))}
                   />
                 </Col>
-                <Col md={3} className="d-flex align-items-end">
+                <Col xs={12}>
                   <Form.Check
-                    type="checkbox"
+                    type="switch"
                     id="pkg-unlimited"
-                    label="Không giới hạn DL"
+                    label="Không giới hạn dung lượng"
                     checked={values.isUnlimited}
                     onChange={(e) => setValues((p) => ({ ...p, isUnlimited: e.target.checked }))}
                   />
-                </Col>
-                <Col md={6}>
-                  <Form.Label className="fw-semibold">Loại phủ sóng</Form.Label>
-                  <Form.Select
-                    value={values.coverageType}
-                    onChange={(e) => setValues((p) => ({ ...p, coverageType: e.target.value }))}>
-                    <option value="Country">Country</option>
-                    <option value="Region">Region</option>
-                    <option value="Global">Global</option>
-                  </Form.Select>
                 </Col>
                 <Col xs={12}>
                   <Form.Label className="fw-semibold">Mô tả phủ sóng</Form.Label>
@@ -195,8 +198,8 @@ const WizardPackageTab = ({
             </Card.Body>
           </Card>
         </Col>
-        <Col lg={4}>
-          <Card className="border shadow-none">
+        <Col xl={4}>
+          <Card className="border shadow-none h-100">
             <Card.Body>
               <h5 className="mb-3 fw-semibold">Chính sách & tính năng</h5>
               <div className="d-flex flex-column gap-3">
@@ -205,8 +208,8 @@ const WizardPackageTab = ({
                   <Form.Select
                     value={values.activationPolicy}
                     onChange={(e) => setValues((p) => ({ ...p, activationPolicy: e.target.value }))}>
-                    <option value="FirstUse">First use</option>
-                    <option value="Immediate">Immediate</option>
+                    <option value="FirstUse">Kích hoạt khi dùng lần đầu</option>
+                    <option value="Immediate">Kích hoạt ngay</option>
                   </Form.Select>
                 </div>
                 <div>
@@ -219,34 +222,36 @@ const WizardPackageTab = ({
                     <option value="3G">3G</option>
                   </Form.Select>
                 </div>
-                <Form.Check
-                  type="switch"
-                  id="pkg-hotspot"
-                  label="Hỗ trợ Hotspot"
-                  checked={values.hotspotSupported}
-                  onChange={(e) => setValues((p) => ({ ...p, hotspotSupported: e.target.checked }))}
-                />
-                <Form.Check
-                  type="switch"
-                  id="pkg-phone"
-                  label="Hỗ trợ số điện thoại"
-                  checked={values.phoneNumberSupported}
-                  onChange={(e) => setValues((p) => ({ ...p, phoneNumberSupported: e.target.checked }))}
-                />
-                <Form.Check
-                  type="switch"
-                  id="pkg-sms"
-                  label="Hỗ trợ SMS"
-                  checked={values.smsSupported}
-                  onChange={(e) => setValues((p) => ({ ...p, smsSupported: e.target.checked }))}
-                />
-                <Form.Check
-                  type="switch"
-                  id="pkg-kyc"
-                  label="Yêu cầu KYC"
-                  checked={values.kycRequired}
-                  onChange={(e) => setValues((p) => ({ ...p, kycRequired: e.target.checked }))}
-                />
+                <div className="rounded bg-light p-3 d-flex flex-column gap-2">
+                  <Form.Check
+                    type="switch"
+                    id="pkg-hotspot"
+                    label="Hỗ trợ Hotspot"
+                    checked={values.hotspotSupported}
+                    onChange={(e) => setValues((p) => ({ ...p, hotspotSupported: e.target.checked }))}
+                  />
+                  <Form.Check
+                    type="switch"
+                    id="pkg-phone"
+                    label="Hỗ trợ số điện thoại"
+                    checked={values.phoneNumberSupported}
+                    onChange={(e) => setValues((p) => ({ ...p, phoneNumberSupported: e.target.checked }))}
+                  />
+                  <Form.Check
+                    type="switch"
+                    id="pkg-sms"
+                    label="Hỗ trợ SMS"
+                    checked={values.smsSupported}
+                    onChange={(e) => setValues((p) => ({ ...p, smsSupported: e.target.checked }))}
+                  />
+                  <Form.Check
+                    type="switch"
+                    id="pkg-kyc"
+                    label="Yêu cầu KYC"
+                    checked={values.kycRequired}
+                    onChange={(e) => setValues((p) => ({ ...p, kycRequired: e.target.checked }))}
+                  />
+                </div>
                 <div>
                   <Form.Label className="fw-semibold">Hình thức giao QR</Form.Label>
                   <Form.Select
@@ -270,7 +275,7 @@ const WizardPackageTab = ({
                     value={values.isActive ? 'true' : 'false'}
                     onChange={(e) => setValues((p) => ({ ...p, isActive: e.target.value === 'true' }))}>
                     <option value="true">Hoạt động</option>
-                    <option value="false">Ngưng</option>
+                    <option value="false">Ngừng</option>
                   </Form.Select>
                 </div>
               </div>
@@ -278,7 +283,11 @@ const WizardPackageTab = ({
           </Card>
         </Col>
       </Row>
-      {error && <div className="text-danger mt-3">{error}</div>}
+      {error && (
+        <Alert variant="danger" className="mt-3 mb-0">
+          {error}
+        </Alert>
+      )}
     </Form>
   )
 }

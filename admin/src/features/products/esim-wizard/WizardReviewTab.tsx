@@ -1,4 +1,4 @@
-import { Alert, Badge, ListGroup } from 'react-bootstrap'
+import { Alert, Badge, Card, Col, Row } from 'react-bootstrap'
 import { Link } from 'react-router'
 
 import type { EsimWizardSummary } from '@/features/products/esim-wizard/types'
@@ -13,66 +13,63 @@ function formatPrice(value: number, currency: string): string {
 }
 
 const WizardReviewTab = ({ summary, isNew }: WizardReviewTabProps) => {
+  const items = [
+    ['Sản phẩm', summary.productName || '-'],
+    ['Biến thể', summary.variantName || '-'],
+    ['Gói eSIM', summary.packageName || '-'],
+    ['Nhà cung cấp', summary.providerName || '-'],
+    ['Nhà mạng hỗ trợ', summary.carrierNames.length > 0 ? summary.carrierNames.join(', ') : '-'],
+    ['Tính năng', `${summary.featureCount} tính năng`],
+  ]
+
   return (
     <div>
       {isNew && (
-        <Alert variant="primary" className="mb-4">
-          Đã tạo eSIM Package thành công! Bạn có thể xem hoặc tạo thêm variant khác.
+        <Alert variant="primary" className="mb-3">
+          Đã tạo gói eSIM thành công. Bạn có thể kiểm tra lại thông tin hoặc quay về danh sách.
         </Alert>
       )}
 
-      <h5 className="fw-semibold mb-3">Xem lại thông tin</h5>
-
-      <ListGroup variant="flush" className="border rounded">
-        <ListGroup.Item className="d-flex justify-content-between">
-          <span className="text-muted">Product</span>
-          <span className="fw-semibold">{summary.productName || '—'}</span>
-        </ListGroup.Item>
-        <ListGroup.Item className="d-flex justify-content-between">
-          <span className="text-muted">Variant</span>
-          <span className="fw-semibold">{summary.variantName || '—'}</span>
-        </ListGroup.Item>
-        <ListGroup.Item className="d-flex justify-content-between">
-          <span className="text-muted">Giá bán</span>
-          <span>
-            <strong>{formatPrice(summary.salePrice, summary.currency)}</strong>
-            {summary.originalPrice > summary.salePrice && (
-              <span className="text-muted text-decoration-line-through ms-2 fs-sm">
-                {formatPrice(summary.originalPrice, summary.currency)}
-              </span>
-            )}
-          </span>
-        </ListGroup.Item>
-        <ListGroup.Item className="d-flex justify-content-between">
-          <span className="text-muted">Gói eSIM</span>
-          <span>{summary.packageName || '—'}</span>
-        </ListGroup.Item>
-        <ListGroup.Item className="d-flex justify-content-between">
-          <span className="text-muted">Nhà cung cấp</span>
-          <span>{summary.providerName || '—'}</span>
-        </ListGroup.Item>
-        <ListGroup.Item className="d-flex justify-content-between">
-          <span className="text-muted">Nhà mạng hỗ trợ</span>
-          <span>{summary.carrierNames.length > 0 ? summary.carrierNames.join(', ') : '—'}</span>
-        </ListGroup.Item>
-        <ListGroup.Item className="d-flex justify-content-between">
-          <span className="text-muted">Tính năng</span>
-          <span>{summary.featureCount} tính năng</span>
-        </ListGroup.Item>
-        <ListGroup.Item className="d-flex justify-content-between">
-          <span className="text-muted">Trạng thái</span>
-          <Badge bg={summary.isActive ? 'primary' : 'secondary'}>
-            {summary.isActive ? 'Hoạt động' : 'Ngưng'}
-          </Badge>
-        </ListGroup.Item>
-      </ListGroup>
+      <Row className="g-3">
+        <Col lg={4}>
+          <Card className="border shadow-none h-100">
+            <Card.Body>
+              <div className="text-muted fs-sm mb-1">Giá bán</div>
+              <div className="h4 fw-semibold mb-1">{formatPrice(summary.salePrice, summary.currency)}</div>
+              {summary.originalPrice > summary.salePrice && (
+                <div className="text-muted text-decoration-line-through">
+                  {formatPrice(summary.originalPrice, summary.currency)}
+                </div>
+              )}
+              <Badge bg={summary.isActive ? 'primary' : 'secondary'} className="mt-3">
+                {summary.isActive ? 'Hoạt động' : 'Ngừng'}
+              </Badge>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col lg={8}>
+          <Card className="border shadow-none h-100">
+            <Card.Body>
+              <h5 className="fw-semibold mb-3">Tổng quan cấu hình</h5>
+              <div className="d-flex flex-column gap-3">
+                {items.map(([label, value]) => (
+                  <div key={label} className="d-flex justify-content-between gap-3 border-bottom pb-2">
+                    <span className="text-muted">{label}</span>
+                    <span className="fw-semibold text-end">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
       <div className="mt-4 d-flex justify-content-between align-items-center">
         <Link to="/products/esim/packages" className="btn btn-light">
           Quay về danh sách
         </Link>
         <Link to="/products/esim/wizard/new" className="btn btn-outline-primary">
-          + Tạo variant khác
+          Tạo gói khác
         </Link>
       </div>
     </div>

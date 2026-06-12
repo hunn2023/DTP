@@ -1,5 +1,5 @@
-import { Button, Card, CardFooter, CardHeader, Spinner } from 'react-bootstrap'
-import { LuPlus, LuSearch } from 'react-icons/lu'
+import { Badge, Button, Card, CardFooter, CardHeader, Spinner } from 'react-bootstrap'
+import { LuFilter, LuPlus, LuSearch, LuWifi } from 'react-icons/lu'
 
 import DataTable from '@/components/table/DataTable'
 import DeleteConfirmationModal from '@/components/table/DeleteConfirmationModal'
@@ -10,6 +10,7 @@ import { ESIM_PACKAGE_PAGE_SIZE_OPTIONS } from '@/features/products/esim-package
 import { useEsimPackagesCrud } from '@/features/products/esim-packages/useEsimPackagesCrud'
 import ActiveFilterSelect from '@/modules/crud/components/ActiveFilterSelect'
 import ListFilterSelect from '@/modules/crud/components/ListFilterSelect'
+
 const EsimPackagesCrudTable = () => {
   const crud = useEsimPackagesCrud({
     buildColumns: buildEsimPackageColumns,
@@ -21,14 +22,44 @@ const EsimPackagesCrudTable = () => {
       : `Bạn có chắc muốn xóa ${esimPackagesLabels.itemName} này?`
 
   return (
-    <Card>
-      <CardHeader className="border-light flex-column align-items-stretch gap-2">
-        <div className="d-flex justify-content-between flex-wrap gap-2">
-        <div className="d-flex align-items-center gap-2 flex-wrap">
-          <div className="app-search">
+    <Card className="border-0 shadow-sm">
+      <CardHeader className="border-0 bg-transparent flex-column align-items-stretch gap-3 p-4">
+        <div className="d-flex justify-content-between flex-wrap gap-3">
+          <div className="d-flex align-items-start gap-3">
+            <span className="avatar-md rounded bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center">
+              <LuWifi className="fs-24" />
+            </span>
+            <div>
+              <div className="d-flex align-items-center gap-2 flex-wrap mb-1">
+                <h5 className="mb-0 fw-semibold">Kho gói eSIM</h5>
+                <Badge bg="primary-subtle" text="primary" className="border border-primary-subtle">
+                  {crud.paginationInfo.total} gói
+                </Badge>
+              </div>
+              <p className="text-muted mb-0 fs-sm">
+                Tìm kiếm, lọc theo quốc gia/nhà mạng và quản lý trạng thái hiển thị.
+              </p>
+            </div>
+          </div>
+          <div className="card-action d-flex flex-nowrap align-items-center gap-2">
+            <ActiveFilterSelect value={crud.activeFilter} onChange={crud.setActiveFilter} />
+            <Button
+              variant="primary"
+              size="sm"
+              className="text-nowrap"
+              onClick={crud.openCreate}
+              disabled={!crud.filtersReady}>
+              <LuPlus className="fs-sm me-1" />
+              {esimPackagesLabels.addButton}
+            </Button>
+          </div>
+        </div>
+
+        <div className="d-flex align-items-center gap-2 flex-wrap p-2 rounded bg-light">
+          <div className="app-search flex-grow-1" style={{ minWidth: '16rem' }}>
             <input
               type="search"
-              className="form-control"
+              className="form-control border-0 bg-white"
               placeholder={esimPackagesLabels.searchPlaceholder}
               value={crud.globalFilter}
               onChange={(e) => crud.setGlobalFilter(e.target.value)}
@@ -41,20 +72,12 @@ const EsimPackagesCrudTable = () => {
             </Button>
           )}
         </div>
-        <div className="card-action d-flex flex-nowrap align-items-center gap-2">
-          <ActiveFilterSelect value={crud.activeFilter} onChange={crud.setActiveFilter} />
-          <Button
-            variant="primary"
-            size="sm"
-            className="text-nowrap"
-            onClick={crud.openCreate}
-            disabled={!crud.filtersReady}>
-            <LuPlus className="fs-sm me-1" />
-            {esimPackagesLabels.addButton}
-          </Button>
-        </div>
-        </div>
+
         <div className="d-flex align-items-end gap-2 flex-wrap">
+          <div className="d-flex align-items-center gap-1 text-muted fs-sm me-1 pb-2">
+            <LuFilter />
+            <span>Bộ lọc</span>
+          </div>
           <ListFilterSelect
             label="Quốc gia"
             value={crud.countryFilter}
@@ -126,7 +149,6 @@ const EsimPackagesCrudTable = () => {
         cancelButtonText="Hủy">
         {deleteMessage}
       </DeleteConfirmationModal>
-
     </Card>
   )
 }
