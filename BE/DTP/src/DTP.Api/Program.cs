@@ -1,5 +1,8 @@
-﻿using DTP.Modules.Audit;
+﻿using DTP.Infrastructure.Email;
+using DTP.Modules.Audit;
 using DTP.Modules.Auth;
+using DTP.Modules.Auth.Infrastructure.Persistence;
+using DTP.Modules.Auth.Infrastructure.Seed;
 using DTP.Modules.Catalog;
 using DTP.Modules.Delivery;
 using DTP.Modules.Ordering;
@@ -9,14 +12,13 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-using DTP.Infrastructure.Email;
 using System.Threading.RateLimiting;
 
 namespace DTP.Api
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -436,7 +438,12 @@ namespace DTP.Api
             var app = builder.Build();
 
             app.UseSwagger();
+            using (var scope = app.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
 
+                await AuthSeeder.SeedAdminAsync(dbContext);
+            }
             app.UseSwaggerUI(options =>
             {
                 options.RoutePrefix = "swagger";

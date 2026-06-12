@@ -15,8 +15,8 @@ namespace DTP.Modules.Auth.Domain.Entities
         public string? AvatarUrl { get; set; }
 
         public bool IsActive { get; set; } = true;
-        public bool EmailConfirmed { get; set; }
-        public bool PhoneConfirmed { get; set; }
+        public bool EmailConfirmed { get; set; } = true;
+        public bool PhoneConfirmed { get; set; } = true;
 
         public DateTime? LastLoginAt { get; set; }
 

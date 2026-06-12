@@ -33,7 +33,7 @@ namespace DTP.Modules.Auth.Infrastructure.Services
             IPasswordHasher passwordHasher,
             IOtpService otpService,
             IJwtService jwtService,
-            IAuthRateLimitService  authRateLimitService,
+            IAuthRateLimitService authRateLimitService,
             IEmailSender emailSender,
             IAuditLogWriter auditLogWriter)
         {
@@ -88,7 +88,7 @@ namespace DTP.Modules.Auth.Infrastructure.Services
                     ip,
                     cancellationToken);
 
-        
+
 
             var exists = await _userRepository.ExistsByEmailAsync(
                 email,
@@ -1079,328 +1079,328 @@ namespace DTP.Modules.Auth.Infrastructure.Services
             string? ipAddress,
             string? userAgent,
             CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                return Result.Failure("Dữ liệu quên mật khẩu không hợp lệ.");
+
+            if (string.IsNullOrWhiteSpace(request.Email))
+                return Result.Failure("Vui lòng nhập email.");
+
+            var email = request.Email.Trim().ToLowerInvariant();
+            var ip = string.IsNullOrWhiteSpace(ipAddress) ? "unknown" : ipAddress.Trim();
+
+            var otpBlocked = await _authRateLimitService.IsOtpBlockedAsync(
+                email,
+                ip,
+                cancellationToken);
+
+            if (otpBlocked)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Forgot Password Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    description: "Forgot password failed because OTP rate limit exceeded.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "OTP rate limit exceeded"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Bạn yêu cầu gửi OTP quá nhiều lần. Vui lòng thử lại sau.");
+            }
+
+            var user = await _userRepository.GetByEmailAsync(
+                email,
+                cancellationToken);
+
+            // Không nên báo email không tồn tại để tránh lộ thông tin tài khoản
+            if (user == null || !user.IsActive)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Forgot Password Requested",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Success,
+                    entityName: "User",
+                    description: "Forgot password requested but user was not found or inactive.",
+                    newValues: new
+                    {
+                        Email = email,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = user == null ? "User not found" : "User inactive"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Success();
+            }
+
+            var otp = _otpService.GenerateOtp();
+
+            user.PasswordResetOtpHash = _otpService.HashOtp(otp);
+            user.PasswordResetOtpExpiredAt = DateTime.UtcNow.AddMinutes(10);
+            user.PasswordResetVerifyFailedCount = 0;
+
+            _userRepository.Update(user);
+
+            await _userRepository.SaveChangesAsync(cancellationToken);
+
+            var emailBody = BuildForgotPasswordOtpEmailBody(otp);
+
+            await _emailSender.SendAsync(
+                email,
+                $"{otp} - Mã đặt lại mật khẩu ezsim của bạn",
+                emailBody);
+
+            await _authRateLimitService.RegisterOtpSentAsync(
+                email,
+                ip,
+                cancellationToken);
+
+            await WriteAuditSafeAsync(
+                action: "Forgot Password OTP Sent",
+                actionType: AuditActionType.Create,
+                status: AuditStatus.Success,
+                entityName: "User",
+                entityId: user.Id,
+                description: "Forgot password OTP was sent successfully.",
+                newValues: new
                 {
-                    if (request == null)
-                        return Result.Failure("Dữ liệu quên mật khẩu không hợp lệ.");
+                    user.Id,
+                    user.Email,
+                    user.PasswordResetOtpExpiredAt,
+                    IpAddress = ip,
+                    UserAgent = userAgent
+                },
+                cancellationToken: cancellationToken);
 
-                    if (string.IsNullOrWhiteSpace(request.Email))
-                        return Result.Failure("Vui lòng nhập email.");
+            return Result.Success();
+        }
 
-                    var email = request.Email.Trim().ToLowerInvariant();
-                    var ip = string.IsNullOrWhiteSpace(ipAddress) ? "unknown" : ipAddress.Trim();
+        public async Task<Result> ResetPasswordAsync(
+                ResetPasswordRequestDto request,
+                string? ipAddress,
+                string? userAgent,
+                CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                return Result.Failure("Dữ liệu đặt lại mật khẩu không hợp lệ.");
 
-                    var otpBlocked = await _authRateLimitService.IsOtpBlockedAsync(
-                        email,
-                        ip,
-                        cancellationToken);
+            if (string.IsNullOrWhiteSpace(request.Email))
+                return Result.Failure("Vui lòng nhập email.");
 
-                    if (otpBlocked)
+            if (string.IsNullOrWhiteSpace(request.OtpCode))
+                return Result.Failure("Vui lòng nhập mã OTP.");
+
+            if (string.IsNullOrWhiteSpace(request.NewPassword))
+                return Result.Failure("Vui lòng nhập mật khẩu mới.");
+
+            if (request.NewPassword.Length < 6)
+                return Result.Failure("Mật khẩu mới phải có ít nhất 6 ký tự.");
+
+            var email = request.Email.Trim().ToLowerInvariant();
+            var ip = string.IsNullOrWhiteSpace(ipAddress) ? "unknown" : ipAddress.Trim();
+
+            var otpBlocked = await _authRateLimitService.IsOtpBlockedAsync(
+                email,
+                ip,
+                cancellationToken);
+
+            if (otpBlocked)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Reset Password Blocked",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    description: "Reset password was blocked by rate limit.",
+                    newValues: new
                     {
-                        await WriteAuditSafeAsync(
-                            action: "Forgot Password Failed",
-                            actionType: AuditActionType.Create,
-                            status: AuditStatus.Failed,
-                            entityName: "User",
-                            description: "Forgot password failed because OTP rate limit exceeded.",
-                            newValues: new
-                            {
-                                Email = email,
-                                IpAddress = ip,
-                                UserAgent = userAgent,
-                                Reason = "OTP rate limit exceeded"
-                            },
-                            cancellationToken: cancellationToken);
+                        Email = email,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "OTP verify rate limit exceeded"
+                    },
+                    cancellationToken: cancellationToken);
 
-                        return Result.Failure("Bạn yêu cầu gửi OTP quá nhiều lần. Vui lòng thử lại sau.");
-                    }
+                return Result.Failure("Bạn nhập OTP quá nhiều lần. Vui lòng thử lại sau.");
+            }
 
-                    var user = await _userRepository.GetByEmailAsync(
-                        email,
-                        cancellationToken);
+            var user = await _userRepository.GetByEmailAsync(
+                email,
+                cancellationToken);
 
-                    // Không nên báo email không tồn tại để tránh lộ thông tin tài khoản
-                    if (user == null || !user.IsActive)
+            if (user == null)
+            {
+                await _authRateLimitService.RegisterOtpVerifyFailedAsync(
+                    email,
+                    ip,
+                    cancellationToken);
+
+                await WriteAuditSafeAsync(
+                    action: "Reset Password Failed",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    description: "Reset password failed because user was not found.",
+                    newValues: new
                     {
-                        await WriteAuditSafeAsync(
-                            action: "Forgot Password Requested",
-                            actionType: AuditActionType.Create,
-                            status: AuditStatus.Success,
-                            entityName: "User",
-                            description: "Forgot password requested but user was not found or inactive.",
-                            newValues: new
-                            {
-                                Email = email,
-                                IpAddress = ip,
-                                UserAgent = userAgent,
-                                Reason = user == null ? "User not found" : "User inactive"
-                            },
-                            cancellationToken: cancellationToken);
+                        Email = email,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "User not found"
+                    },
+                    cancellationToken: cancellationToken);
 
-                        return Result.Success();
-                    }
+                return Result.Failure("OTP không đúng hoặc đã hết hạn.");
+            }
 
-                    var otp = _otpService.GenerateOtp();
+            if (!user.IsActive)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Reset Password Failed",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    entityId: user.Id,
+                    description: "Reset password failed because user is inactive.",
+                    newValues: new
+                    {
+                        user.Id,
+                        user.Email,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "User inactive"
+                    },
+                    cancellationToken: cancellationToken);
 
-                    user.PasswordResetOtpHash = _otpService.HashOtp(otp);
-                    user.PasswordResetOtpExpiredAt = DateTime.UtcNow.AddMinutes(10);
-                    user.PasswordResetVerifyFailedCount = 0;
+                return Result.Failure("Tài khoản đã bị khóa.");
+            }
 
-                    _userRepository.Update(user);
+            if (string.IsNullOrWhiteSpace(user.PasswordResetOtpHash) ||
+                user.PasswordResetOtpExpiredAt == null)
+            {
+                await _authRateLimitService.RegisterOtpVerifyFailedAsync(
+                    email,
+                    ip,
+                    cancellationToken);
 
-                    await _userRepository.SaveChangesAsync(cancellationToken);
+                return Result.Failure("OTP không đúng hoặc đã hết hạn.");
+            }
 
-                    var emailBody = BuildForgotPasswordOtpEmailBody(otp);
+            if (user.PasswordResetOtpExpiredAt < DateTime.UtcNow)
+            {
+                await _authRateLimitService.RegisterOtpVerifyFailedAsync(
+                    email,
+                    ip,
+                    cancellationToken);
 
-                    await _emailSender.SendAsync(
-                        email,
-                        $"{otp} - Mã đặt lại mật khẩu ezsim của bạn",
-                        emailBody);
+                await WriteAuditSafeAsync(
+                    action: "Reset Password Failed",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    entityId: user.Id,
+                    description: "Reset password failed because OTP expired.",
+                    newValues: new
+                    {
+                        user.Id,
+                        user.Email,
+                        user.PasswordResetOtpExpiredAt,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "OTP expired"
+                    },
+                    cancellationToken: cancellationToken);
 
-                    await _authRateLimitService.RegisterOtpSentAsync(
-                        email,
-                        ip,
-                        cancellationToken);
+                return Result.Failure("OTP đã hết hạn.");
+            }
 
-                    await WriteAuditSafeAsync(
-                        action: "Forgot Password OTP Sent",
-                        actionType: AuditActionType.Create,
-                        status: AuditStatus.Success,
-                        entityName: "User",
-                        entityId: user.Id,
-                        description: "Forgot password OTP was sent successfully.",
-                        newValues: new
-                        {
-                            user.Id,
-                            user.Email,
-                            user.PasswordResetOtpExpiredAt,
-                            IpAddress = ip,
-                            UserAgent = userAgent
-                        },
-                        cancellationToken: cancellationToken);
+            if (user.PasswordResetVerifyFailedCount >= 5)
+            {
+                await _authRateLimitService.RegisterOtpVerifyFailedAsync(
+                    email,
+                    ip,
+                    cancellationToken);
 
-                    return Result.Success();
-                }
+                return Result.Failure("Bạn nhập sai OTP quá nhiều lần. Vui lòng yêu cầu mã mới.");
+            }
 
-                public async Task<Result> ResetPasswordAsync(
-            ResetPasswordRequestDto request,
-            string? ipAddress,
-            string? userAgent,
-            CancellationToken cancellationToken = default)
+            var validOtp = _otpService.VerifyOtp(
+                request.OtpCode,
+                user.PasswordResetOtpHash);
+
+            if (!validOtp)
+            {
+                user.PasswordResetVerifyFailedCount++;
+
+                _userRepository.Update(user);
+
+                await _userRepository.SaveChangesAsync(cancellationToken);
+
+                await _authRateLimitService.RegisterOtpVerifyFailedAsync(
+                    email,
+                    ip,
+                    cancellationToken);
+
+                await WriteAuditSafeAsync(
+                    action: "Reset Password Failed",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    entityId: user.Id,
+                    description: "Reset password failed because OTP is invalid.",
+                    newValues: new
+                    {
+                        user.Id,
+                        user.Email,
+                        user.PasswordResetVerifyFailedCount,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "Invalid OTP"
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("OTP không đúng.");
+            }
+
+            user.PasswordHash = _passwordHasher.Hash(request.NewPassword);
+            user.PasswordResetOtpHash = null;
+            user.PasswordResetOtpExpiredAt = null;
+            user.PasswordResetVerifyFailedCount = 0;
+
+            _userRepository.Update(user);
+
+            await _userRepository.SaveChangesAsync(cancellationToken);
+
+            await _authRateLimitService.RegisterOtpVerifySuccessAsync(
+                email,
+                ip,
+                cancellationToken);
+
+            await WriteAuditSafeAsync(
+                action: "Reset Password Success",
+                actionType: AuditActionType.Update,
+                status: AuditStatus.Success,
+                entityName: "User",
+                entityId: user.Id,
+                description: "User reset password successfully.",
+                newValues: new
                 {
-                    if (request == null)
-                        return Result.Failure("Dữ liệu đặt lại mật khẩu không hợp lệ.");
+                    user.Id,
+                    user.Email,
+                    IpAddress = ip,
+                    UserAgent = userAgent,
+                    ResetAt = DateTime.UtcNow
+                },
+                cancellationToken: cancellationToken);
 
-                    if (string.IsNullOrWhiteSpace(request.Email))
-                        return Result.Failure("Vui lòng nhập email.");
-
-                    if (string.IsNullOrWhiteSpace(request.OtpCode))
-                        return Result.Failure("Vui lòng nhập mã OTP.");
-
-                    if (string.IsNullOrWhiteSpace(request.NewPassword))
-                        return Result.Failure("Vui lòng nhập mật khẩu mới.");
-
-                    if (request.NewPassword.Length < 6)
-                        return Result.Failure("Mật khẩu mới phải có ít nhất 6 ký tự.");
-
-                    var email = request.Email.Trim().ToLowerInvariant();
-                    var ip = string.IsNullOrWhiteSpace(ipAddress) ? "unknown" : ipAddress.Trim();
-
-                    var otpBlocked = await _authRateLimitService.IsOtpBlockedAsync(
-                        email,
-                        ip,
-                        cancellationToken);
-
-                    if (otpBlocked)
-                    {
-                        await WriteAuditSafeAsync(
-                            action: "Reset Password Blocked",
-                            actionType: AuditActionType.Update,
-                            status: AuditStatus.Failed,
-                            entityName: "User",
-                            description: "Reset password was blocked by rate limit.",
-                            newValues: new
-                            {
-                                Email = email,
-                                IpAddress = ip,
-                                UserAgent = userAgent,
-                                Reason = "OTP verify rate limit exceeded"
-                            },
-                            cancellationToken: cancellationToken);
-
-                        return Result.Failure("Bạn nhập OTP quá nhiều lần. Vui lòng thử lại sau.");
-                    }
-
-                    var user = await _userRepository.GetByEmailAsync(
-                        email,
-                        cancellationToken);
-
-                    if (user == null)
-                    {
-                        await _authRateLimitService.RegisterOtpVerifyFailedAsync(
-                            email,
-                            ip,
-                            cancellationToken);
-
-                        await WriteAuditSafeAsync(
-                            action: "Reset Password Failed",
-                            actionType: AuditActionType.Update,
-                            status: AuditStatus.Failed,
-                            entityName: "User",
-                            description: "Reset password failed because user was not found.",
-                            newValues: new
-                            {
-                                Email = email,
-                                IpAddress = ip,
-                                UserAgent = userAgent,
-                                Reason = "User not found"
-                            },
-                            cancellationToken: cancellationToken);
-
-                        return Result.Failure("OTP không đúng hoặc đã hết hạn.");
-                    }
-
-                    if (!user.IsActive)
-                    {
-                        await WriteAuditSafeAsync(
-                            action: "Reset Password Failed",
-                            actionType: AuditActionType.Update,
-                            status: AuditStatus.Failed,
-                            entityName: "User",
-                            entityId: user.Id,
-                            description: "Reset password failed because user is inactive.",
-                            newValues: new
-                            {
-                                user.Id,
-                                user.Email,
-                                IpAddress = ip,
-                                UserAgent = userAgent,
-                                Reason = "User inactive"
-                            },
-                            cancellationToken: cancellationToken);
-
-                        return Result.Failure("Tài khoản đã bị khóa.");
-                    }
-
-                    if (string.IsNullOrWhiteSpace(user.PasswordResetOtpHash) ||
-                        user.PasswordResetOtpExpiredAt == null)
-                    {
-                        await _authRateLimitService.RegisterOtpVerifyFailedAsync(
-                            email,
-                            ip,
-                            cancellationToken);
-
-                        return Result.Failure("OTP không đúng hoặc đã hết hạn.");
-                    }
-
-                    if (user.PasswordResetOtpExpiredAt < DateTime.UtcNow)
-                    {
-                        await _authRateLimitService.RegisterOtpVerifyFailedAsync(
-                            email,
-                            ip,
-                            cancellationToken);
-
-                        await WriteAuditSafeAsync(
-                            action: "Reset Password Failed",
-                            actionType: AuditActionType.Update,
-                            status: AuditStatus.Failed,
-                            entityName: "User",
-                            entityId: user.Id,
-                            description: "Reset password failed because OTP expired.",
-                            newValues: new
-                            {
-                                user.Id,
-                                user.Email,
-                                user.PasswordResetOtpExpiredAt,
-                                IpAddress = ip,
-                                UserAgent = userAgent,
-                                Reason = "OTP expired"
-                            },
-                            cancellationToken: cancellationToken);
-
-                        return Result.Failure("OTP đã hết hạn.");
-                    }
-
-                    if (user.PasswordResetVerifyFailedCount >= 5)
-                    {
-                        await _authRateLimitService.RegisterOtpVerifyFailedAsync(
-                            email,
-                            ip,
-                            cancellationToken);
-
-                        return Result.Failure("Bạn nhập sai OTP quá nhiều lần. Vui lòng yêu cầu mã mới.");
-                    }
-
-                    var validOtp = _otpService.VerifyOtp(
-                        request.OtpCode,
-                        user.PasswordResetOtpHash);
-
-                    if (!validOtp)
-                    {
-                        user.PasswordResetVerifyFailedCount++;
-
-                        _userRepository.Update(user);
-
-                        await _userRepository.SaveChangesAsync(cancellationToken);
-
-                        await _authRateLimitService.RegisterOtpVerifyFailedAsync(
-                            email,
-                            ip,
-                            cancellationToken);
-
-                        await WriteAuditSafeAsync(
-                            action: "Reset Password Failed",
-                            actionType: AuditActionType.Update,
-                            status: AuditStatus.Failed,
-                            entityName: "User",
-                            entityId: user.Id,
-                            description: "Reset password failed because OTP is invalid.",
-                            newValues: new
-                            {
-                                user.Id,
-                                user.Email,
-                                user.PasswordResetVerifyFailedCount,
-                                IpAddress = ip,
-                                UserAgent = userAgent,
-                                Reason = "Invalid OTP"
-                            },
-                            cancellationToken: cancellationToken);
-
-                        return Result.Failure("OTP không đúng.");
-                    }
-
-                    user.PasswordHash = _passwordHasher.Hash(request.NewPassword);
-                    user.PasswordResetOtpHash = null;
-                    user.PasswordResetOtpExpiredAt = null;
-                    user.PasswordResetVerifyFailedCount = 0;
-
-                    _userRepository.Update(user);
-
-                    await _userRepository.SaveChangesAsync(cancellationToken);
-
-                    await _authRateLimitService.RegisterOtpVerifySuccessAsync(
-                        email,
-                        ip,
-                        cancellationToken);
-
-                    await WriteAuditSafeAsync(
-                        action: "Reset Password Success",
-                        actionType: AuditActionType.Update,
-                        status: AuditStatus.Success,
-                        entityName: "User",
-                        entityId: user.Id,
-                        description: "User reset password successfully.",
-                        newValues: new
-                        {
-                            user.Id,
-                            user.Email,
-                            IpAddress = ip,
-                            UserAgent = userAgent,
-                            ResetAt = DateTime.UtcNow
-                        },
-                        cancellationToken: cancellationToken);
-
-                    return Result.Success();
-                }
+            return Result.Success();
+        }
 
 
 
