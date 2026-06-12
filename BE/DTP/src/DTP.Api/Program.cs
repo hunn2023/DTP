@@ -438,12 +438,12 @@ namespace DTP.Api
             var app = builder.Build();
 
             app.UseSwagger();
-            using (var scope = app.Services.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+            //using (var scope = app.Services.CreateScope())
+            //{
+            //    var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
 
-                await AuthSeeder.SeedAdminAsync(dbContext);
-            }
+            //    await AuthSeeder.SeedAdminAsync(dbContext);
+            //}
             app.UseSwaggerUI(options =>
             {
                 options.RoutePrefix = "swagger";
