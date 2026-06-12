@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import clsx from 'clsx'
 import {
   TbChecklist,
@@ -7,6 +8,7 @@ import {
   TbPackage,
   TbRadio,
 } from 'react-icons/tb'
+import { useWizard } from 'react-use-wizard'
 
 import { ESIM_WIZARD_STEPS, getEsimStepIndex } from '@/features/products/esim-wizard/esimWizardSteps'
 import type { EsimWizardTab } from '@/features/products/esim-wizard/types'
@@ -16,55 +18,65 @@ const STEP_ICONS = [TbPackage, TbCurrencyDollar, TbDeviceMobile, TbRadio, TbList
 type EsimWizardStepperProps = {
   activeTab: EsimWizardTab
   canAccessSubTabs: boolean
-  onStepClick: (tab: EsimWizardTab) => void
+  onStepChange: (tab: EsimWizardTab) => void
+  className?: string
 }
 
-const EsimWizardStepper = ({ activeTab, canAccessSubTabs, onStepClick }: EsimWizardStepperProps) => {
+function isStepDisabled(key: EsimWizardTab, canAccessSubTabs: boolean): boolean {
+  if (key === 'variants') return false
+  return !canAccessSubTabs
+}
+
+const EsimWizardStepper = ({
+  activeTab,
+  canAccessSubTabs,
+  onStepChange,
+  className,
+}: EsimWizardStepperProps) => {
+  const { goToStep, activeStep } = useWizard()
   const activeIndex = getEsimStepIndex(activeTab)
 
+  useEffect(() => {
+    if (activeStep !== activeIndex) {
+      goToStep(activeIndex)
+    }
+  }, [activeTab, activeIndex, activeStep, goToStep])
+
+  const handleGoToStep = (key: EsimWizardTab) => {
+    if (isStepDisabled(key, canAccessSubTabs)) return
+    onStepChange(key)
+  }
+
   return (
-    <div className="d-flex gap-2 overflow-auto pb-2">
+    <ul className={clsx('nav nav-tabs wizard-tabs mb-3', className)}>
       {ESIM_WIZARD_STEPS.map((step, index) => {
         const Icon = STEP_ICONS[index]
-        const isDisabled = step.key !== 'variants' && !canAccessSubTabs
-        const isActive = activeIndex === index
-        const isDone = activeIndex > index
+        const disabled = isStepDisabled(step.key, canAccessSubTabs)
 
         return (
-          <button
-            key={step.key}
-            type="button"
-            disabled={isDisabled}
-            className={clsx(
-              'btn text-start border rounded-3 p-3 flex-shrink-0',
-              isActive && 'btn-primary text-white shadow-sm',
-              !isActive && isDone && 'btn-light border-primary-subtle',
-              !isActive && !isDone && 'btn-light',
-            )}
-            style={{ minWidth: '12.5rem' }}
-            onClick={() => onStepClick(step.key)}>
-            <span className="d-flex align-items-center gap-2">
-              <span
-                className={clsx(
-                  'rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0',
-                  isActive ? 'bg-white text-primary' : 'bg-primary-subtle text-primary',
-                )}
-                style={{ width: 34, height: 34 }}>
-                <Icon />
-              </span>
-              <span className="min-w-0">
-                <span className={clsx('d-block fw-semibold', !isActive && 'text-body')}>
-                  {step.step}. {step.title}
-                </span>
-                <span className={clsx('d-block fs-xs', isActive ? 'text-white-50' : 'text-muted')}>
-                  {step.subtitle}
+          <li key={step.key} className="nav-item">
+            <button
+              type="button"
+              disabled={disabled}
+              className={clsx(
+                'nav-link d-flex w-100 text-start border-0',
+                activeStep === index && 'active',
+                activeStep > index && 'wizard-item-done',
+                disabled && 'disabled opacity-50',
+              )}
+              onClick={() => handleGoToStep(step.key)}>
+              <span className="d-flex align-items-center">
+                <Icon className="fs-32" />
+                <span className="flex-grow-1 ms-2 text-truncate">
+                  <span className="mb-0 lh-base d-block fw-semibold text-body fs-base">{step.title}</span>
+                  <span className="fs-xxs mb-0">{step.subtitle}</span>
                 </span>
               </span>
-            </span>
-          </button>
+            </button>
+          </li>
         )
       })}
-    </div>
+    </ul>
   )
 }
 

@@ -99,7 +99,7 @@ const WizardFeaturesTab = ({ variantId, onRegisterSave, onSavingChange }: Wizard
     { clientId: createClientId(), text: '', sortOrder: 1 },
   ])
   const [removedIds, setRemovedIds] = useState<string[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
   const sensors = useSensors(
@@ -108,22 +108,30 @@ const WizardFeaturesTab = ({ variantId, onRegisterSave, onSavingChange }: Wizard
   )
 
   useEffect(() => {
+    let active = true
+    setIsLoading(true)
+
     void fetchVariantFeatures(variantId)
       .then((features) => {
-        if (features.length > 0) {
-          setItems(
-            features
-              .sort((a, b) => a.sortOrder - b.sortOrder)
-              .map((f) => ({
-                clientId: f.id,
-                id: f.id,
-                text: f.text,
-                sortOrder: f.sortOrder,
-              })),
-          )
-        }
+        if (!active || features.length === 0) return
+        setItems(
+          features
+            .sort((a, b) => a.sortOrder - b.sortOrder)
+            .map((f) => ({
+              clientId: f.id,
+              id: f.id,
+              text: f.text,
+              sortOrder: f.sortOrder,
+            })),
+        )
       })
-      .finally(() => setIsLoading(false))
+      .finally(() => {
+        if (active) setIsLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
   }, [variantId])
 
   const reorderItems = (activeId: string, overId: string) => {
@@ -210,14 +218,6 @@ const WizardFeaturesTab = ({ variantId, onRegisterSave, onSavingChange }: Wizard
     setItems((prev) => prev.map((item) => (item.clientId === clientId ? { ...item, text } : item)))
   }
 
-  if (isLoading) {
-    return (
-      <div className="text-center py-5">
-        <Spinner animation="border" size="sm" />
-      </div>
-    )
-  }
-
   return (
     <Card className="border shadow-none">
       <Card.Body>
@@ -226,10 +226,13 @@ const WizardFeaturesTab = ({ variantId, onRegisterSave, onSavingChange }: Wizard
             <h5 className="fw-semibold mb-1">Tính năng nổi bật</h5>
             <span className="text-muted fs-sm">Kéo thả để sắp xếp thứ tự hiển thị trên card bán hàng.</span>
           </div>
-          <Button type="button" variant="outline-primary" size="sm" onClick={addItem}>
-            <LuPlus className="me-1" />
-            Thêm tính năng
-          </Button>
+          <div className="d-flex align-items-center gap-2">
+            {isLoading && <Spinner animation="border" size="sm" />}
+            <Button type="button" variant="outline-primary" size="sm" onClick={addItem}>
+              <LuPlus className="me-1" />
+              Thêm tính năng
+            </Button>
+          </div>
         </div>
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

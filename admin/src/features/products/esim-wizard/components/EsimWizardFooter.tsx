@@ -12,7 +12,7 @@ type EsimWizardFooterProps = {
 
 const EsimWizardFooter = ({ activeTab, isSaving, formId, onContinue }: EsimWizardFooterProps) => {
   const isLastStep = activeTab === 'review'
-  const continueLabel = isLastStep ? 'Quay về danh sách' : 'Lưu và tiếp tục'
+  const continueLabel = isLastStep ? 'Hoàn tất' : 'Tiếp tục →'
 
   return (
     <div className="d-flex align-items-center justify-content-between border-top pt-3 mt-4">
