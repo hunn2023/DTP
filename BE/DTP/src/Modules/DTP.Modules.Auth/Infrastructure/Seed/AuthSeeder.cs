@@ -52,17 +52,18 @@ namespace DTP.Modules.Auth.Infrastructure.Seed
                 await context.SaveChangesAsync();
             }
 
-            var hasRole = await context.UserRoles
-                .AnyAsync(x => x.UserId == user.Id && x.RoleId == role.Id);
+            var adminRole = await context.Roles.FirstOrDefaultAsync(x => x.Code == "ADMIN");
 
-            if (!hasRole)
+            if (adminRole == null)
             {
-                context.UserRoles.Add(new UserRole
+                adminRole = new Role
                 {
-                    UserId = user.Id,
-                    RoleId = role.Id
-                });
+                    Code = "ADMIN",
+                    Name = "Admin",
+                    IsActive = true,
+                };
 
+                context.Roles.Add(adminRole);
                 await context.SaveChangesAsync();
             }
         }
