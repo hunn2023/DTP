@@ -28,7 +28,7 @@ export type ProductCreatePayload = {
 
 export type ProductUpdatePayload = ProductCreatePayload
 
-export const PRODUCT_PAGE_SIZE_OPTIONS = [5, 10, 15, 20] as const
+export const PRODUCT_PAGE_SIZE_OPTIONS = [8, 12, 16, 24] as const
 
 export type ProductsPageResult = {
   items: CatalogProduct[]

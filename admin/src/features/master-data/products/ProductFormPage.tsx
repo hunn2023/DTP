@@ -40,8 +40,7 @@ const ProductFormPage = () => {
   const { showNotification } = useNotificationContext()
 
   const isNew = isNewProductRoute(routeProductId, location.pathname)
-  //const productId = isNew ? null : (routeProductId ?? null)
-   const productId = 1212121
+  const productId = isNew ? null : (routeProductId ?? null)
   const activeTab = parseTab(searchParams.get('tab'))
 
   const [product, setProduct] = useState<CatalogProduct | null>(null)
@@ -53,12 +52,7 @@ const ProductFormPage = () => {
   const showNotificationRef = useRef(showNotification)
   showNotificationRef.current = showNotification
 
-  // const canAccessSubTabs = Boolean(productId)
-
-  //const canAccessSubTabs = true
-
-  const isTestWizard = true
-  const canAccessSubTabs = isTestWizard || Boolean(productId)
+  const canAccessSubTabs = Boolean(productId)
   const loadProduct = useCallback(async (id: string) => {
     setIsLoading(true)
 
@@ -92,20 +86,11 @@ const ProductFormPage = () => {
     void loadProduct(productId)
   }, [isNew, productId, loadProduct])
 
-  // useEffect(() => {
-  //   if (isNew && activeTab !== 'product') {
-  //     setSearchParams({ tab: 'product' }, { replace: true })
-  //   }
-  // }, [isNew, activeTab, setSearchParams])
-
-
-useEffect(() => {
-  if (isTestWizard) return
-
-  if (isNew && activeTab !== 'product') {
-    setSearchParams({ tab: 'product' }, { replace: true })
-  }
-}, [isTestWizard, isNew, activeTab, setSearchParams])
+  useEffect(() => {
+    if (isNew && activeTab !== 'product') {
+      setSearchParams({ tab: 'product' }, { replace: true })
+    }
+  }, [isNew, activeTab, setSearchParams])
 
   const setActiveTab = (tab: ProductFormTab) => {
     if (tab !== 'product' && !canAccessSubTabs) return
@@ -201,11 +186,7 @@ useEffect(() => {
         }
         imagesStep={
           <>
-            {productId ? (
-              <ProductImagesTab productId={productId} />
-            ) : (
-              <div className="text-muted">Test tab hình ảnh - chưa có productId</div>
-            )}
+            {productId && <ProductImagesTab productId={productId} />}
 
             <div className="border-top mt-4 pt-3">
               <ProductFormFooter activeTab={activeTab} isSaving={isSaving} onContinue={handleContinue} />
@@ -214,11 +195,7 @@ useEffect(() => {
         }
         attributesStep={
           <>
-            {productId  ? (
-              <ProductAttributesTab productId={productId} />
-            ) : (
-              <div className="text-muted">Test tab thuộc tính - chưa có productId</div>
-            )}
+            {productId && <ProductAttributesTab productId={productId} />}
 
             <div className="border-top mt-4 pt-3">
               <ProductFormFooter activeTab={activeTab} isSaving={isSaving} onContinue={handleContinue} />
