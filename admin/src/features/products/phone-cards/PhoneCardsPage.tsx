@@ -1,4 +1,4 @@
-import PhoneCardsCrudTable from '@/features/products/phone-cards/PhoneCardsCrudTable'
+import PhoneCardsCrudTable from '@/features/products/phone-cards/components/PhoneCardsCrudTable'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'
 
 const PhoneCardsPage = () => (

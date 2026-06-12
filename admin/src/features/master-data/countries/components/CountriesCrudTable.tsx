@@ -8,7 +8,7 @@ import { COUNTRY_PAGE_SIZE_OPTIONS } from '@/apis/countriesApi'
 import { buildCountryColumns } from '@/features/master-data/countries/columns'
 import { countriesLabels } from '@/features/master-data/countries/data'
 import { countryFormConfig } from '@/features/master-data/countries/formConfig'
-import CountryFormModal from '@/features/master-data/countries/CountryFormModal'
+import CountryFormModal from './CountryFormModal'
 import { useCountriesCrud } from '@/features/master-data/countries/useCountriesCrud'
 
 const CountriesCrudTable = () => {

@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 
-import AuditLogDetailModal from '@/features/system/audit/AuditLogDetailModal'
+import AuditLogDetailModal from '@/features/system/audit/components/AuditLogDetailModal'
 import { defaultAuditLogFilterForm } from '@/features/system/audit/auditFilterTypes'
-import { AuditLogsTable } from '@/features/system/audit/AuditLogsTable'
+import { AuditLogsTable } from '@/features/system/audit/components/AuditLogsTable'
 import {
   fetchAuditLogById,
   type AuditLogDetail,

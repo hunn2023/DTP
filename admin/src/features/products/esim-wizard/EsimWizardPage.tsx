@@ -9,19 +9,19 @@ import {
   fetchEsimPackageDetail,
   updateEsimPackage,
 } from '@/apis/esimPackagesApi'
-import EsimWizardFooter from '@/features/products/esim-wizard/EsimWizardFooter'
-import EsimWizardStepper from '@/features/products/esim-wizard/EsimWizardStepper'
+import EsimWizardFooter from '@/features/products/esim-wizard/components/EsimWizardFooter'
+import EsimWizardStepper from '@/features/products/esim-wizard/components/EsimWizardStepper'
 import { getEsimStepByTab } from '@/features/products/esim-wizard/esimWizardSteps'
 import { mapPackageToForm, toPackagePayload } from '@/features/products/esim-wizard/mapPackageForm'
 import { fetchVariantFeatures } from '@/apis/productVariantFeaturesApi'
 import type { EsimWizardSummary, EsimWizardTab } from '@/features/products/esim-wizard/types'
 import { useEsimWizardLoader } from '@/features/products/esim-wizard/useEsimWizardLoader'
-import WizardCarriersTab from '@/features/products/esim-wizard/WizardCarriersTab'
-import WizardFeaturesTab from '@/features/products/esim-wizard/WizardFeaturesTab'
-import WizardPackageTab from '@/features/products/esim-wizard/WizardPackageTab'
-import WizardPriceTab from '@/features/products/esim-wizard/WizardPriceTab'
-import WizardReviewTab from '@/features/products/esim-wizard/WizardReviewTab'
-import WizardVariantTab from '@/features/products/esim-wizard/WizardVariantTab'
+import WizardCarriersTab from '@/features/products/esim-wizard/components/WizardCarriersTab'
+import WizardFeaturesTab from '@/features/products/esim-wizard/components/WizardFeaturesTab'
+import WizardPackageTab from '@/features/products/esim-wizard/components/WizardPackageTab'
+import WizardPriceTab from '@/features/products/esim-wizard/components/WizardPriceTab'
+import WizardReviewTab from '@/features/products/esim-wizard/components/WizardReviewTab'
+import WizardVariantTab from '@/features/products/esim-wizard/components/WizardVariantTab'
 import {
   getDefaultPackageValues,
   getDefaultPriceValues,

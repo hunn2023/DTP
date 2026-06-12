@@ -1,6 +1,6 @@
 import { Card, CardBody, CardFooter, Spinner } from 'react-bootstrap'
 
-import AuditLogFiltersBar from '@/features/system/audit/AuditLogFiltersBar'
+import AuditLogFiltersBar from './AuditLogFiltersBar'
 import type { AuditLogFilterForm } from '@/features/system/audit/auditFilterTypes'
 import { useAuditLogsList } from '@/features/system/audit/useAuditLogsList'
 import type { AuditLogRow } from '@/apis/auditLogsApi'

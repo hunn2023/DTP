@@ -10,11 +10,11 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useNotificationContext } from '@/context/useNotificationContext'
-import type { VariantTableHandlers } from '@/features/master-data/products/detail/variantColumns'
+import type { VariantTableHandlers } from '@/features/master-data/products/components/detail/variantColumns'
 import {
   buildVariantFormConfig,
   getDefaultVariantValues,
-} from '@/features/master-data/products/detail/variantFormConfig'
+} from '@/features/master-data/products/components/detail/variantFormConfig'
 import * as variantsApi from '@/apis/productVariantsApi'
 import type { ProductVariant } from '@/features/master-data/products/types'
 import type { FormModalMode } from '@/modules/crud/form/types'

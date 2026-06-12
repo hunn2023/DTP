@@ -1,4 +1,4 @@
-import ProductPricesCrudTable from '@/features/master-data/product-prices/ProductPricesCrudTable'
+import ProductPricesCrudTable from '@/features/master-data/product-prices/components/ProductPricesCrudTable'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'
 
 const ProductPricesPage = () => (

@@ -1,4 +1,4 @@
-import CategoriesCrudTable from '@/features/master-data/categories/CategoriesCrudTable'
+import CategoriesCrudTable from '@/features/master-data/categories/components/CategoriesCrudTable'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'
 
 const CategoriesPage = () => (

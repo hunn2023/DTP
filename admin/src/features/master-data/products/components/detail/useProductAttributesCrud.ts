@@ -9,11 +9,11 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useNotificationContext } from '@/context/useNotificationContext'
-import type { AttributeTableHandlers } from '@/features/master-data/products/detail/attributeColumns'
+import type { AttributeTableHandlers } from '@/features/master-data/products/components/detail/attributeColumns'
 import {
   buildAttributeFormConfig,
   getDefaultAttributeValues,
-} from '@/features/master-data/products/detail/attributeFormConfig'
+} from '@/features/master-data/products/components/detail/attributeFormConfig'
 import * as attributesApi from '@/apis/productAttributesApi'
 import type { ProductAttributeRow } from '@/features/master-data/products/types'
 import type { FormModalMode } from '@/modules/crud/form/types'

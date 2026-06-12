@@ -3,8 +3,8 @@ import { LuPlus, LuSearch } from 'react-icons/lu'
 
 import DataTable from '@/components/table/DataTable'
 import DeleteConfirmationModal from '@/components/table/DeleteConfirmationModal'
-import { buildAttributeColumns } from '@/features/master-data/products/detail/attributeColumns'
-import { useProductAttributesCrud } from '@/features/master-data/products/detail/useProductAttributesCrud'
+import { buildAttributeColumns } from '@/features/master-data/products/components/detail/attributeColumns'
+import { useProductAttributesCrud } from '@/features/master-data/products/components/detail/useProductAttributesCrud'
 import EntityFormModal from '@/modules/crud/form/EntityFormModal'
 
 type Props = { productId: string }
