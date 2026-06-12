@@ -20,6 +20,22 @@ namespace DTP.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("DtpCors", policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "https://dtp-admin-c5dd3.web.app",
+                            "http://localhost:5173",
+                            "http://localhost:3000"
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
+            });
+
             builder.Services
                 .AddControllers()
                 .AddApplicationPart(typeof(CatalogModule).Assembly)
@@ -79,20 +95,7 @@ namespace DTP.Api
                 throw new InvalidOperationException("Missing configuration: Jwt:Secret");
             }
 
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("FrontendCors", policy =>
-                {
-                    policy
-                        .WithOrigins(
-                        "https://dtp-admin-c5dd3.web.app",
-                        "http://localhost:5173"
-                        )
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials();
-                });
-            });
+        
 
             builder.Services
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -441,7 +444,7 @@ namespace DTP.Api
             });
 
             app.UseRouting();
-
+            app.UseCors("DtpCors");
             app.UseForwardedHeaders();
             app.UseHttpsRedirection();
 
