@@ -33,9 +33,8 @@ function applySlugFromName(values: Category, formConfig: EntityFormConfig<Catego
 function toPayload(values: Category): categoriesApi.CategoryPayload {
   return {
     name: values.name.trim(),
-    code: values.code.trim() || undefined,
+    code: values.code.trim(),
     slug: values.slug.trim(),
-    description: values.description.trim() || undefined,
     isActive: values.isActive,
     sortOrder: values.sortOrder,
   }

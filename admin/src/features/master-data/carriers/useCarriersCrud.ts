@@ -49,20 +49,33 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback
 }
 
+type CountryLookup = { name: string; flagUrl: string }
+
 function buildCountryLookups(countries: Awaited<ReturnType<typeof fetchCountries>>) {
-  const countryNameById = new Map(countries.map((c) => [c.id, c.name]))
+  const countryById = new Map<string, CountryLookup>(
+    countries.map((c) => [c.id, { name: c.name, flagUrl: c.flagUrl }]),
+  )
   const countryOptions: FormFieldOption[] = countries.map((c) => ({
     value: c.id,
     label: `${c.isoCode} ${c.name}`,
   }))
-  return { countryNameById, countryOptions }
+  return { countryById, countryOptions }
 }
 
-function enrichCountryNames(items: Carrier[], countryNameById: Map<string, string>): Carrier[] {
-  return items.map((item) => ({
-    ...item,
-    countryName: countryNameById.get(item.countryId) ?? item.countryName,
-  }))
+function toCountryNameMap(countryById: Map<string, CountryLookup>): Map<string, string> {
+  return new Map([...countryById.entries()].map(([id, country]) => [id, country.name]))
+}
+
+function enrichCarriersFromCountries(items: Carrier[], countryById: Map<string, CountryLookup>): Carrier[] {
+  return items.map((item) => {
+    const country = countryById.get(item.countryId)
+    if (!country) return item
+    return {
+      ...item,
+      countryName: country.name,
+      countryFlagUrl: country.flagUrl,
+    }
+  })
 }
 
 export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrudParams) {
@@ -71,7 +84,7 @@ export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrud
   const [totalCount, setTotalCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [countryOptions, setCountryOptions] = useState<FormFieldOption[]>([])
-  const [countryNameById, setCountryNameById] = useState<Map<string, string>>(new Map())
+  const [countryById, setCountryById] = useState<Map<string, CountryLookup>>(new Map())
   const [isLoadingLookups, setIsLoadingLookups] = useState(false)
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
@@ -102,9 +115,8 @@ export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrud
   notifyErrorRef.current = notifyError
 
   const loadSeqRef = useRef(0)
-  const countryNameByIdRef = useRef(countryNameById)
-  countryNameByIdRef.current = countryNameById
-  const countryLookupsLoadedRef = useRef(false)
+  const countryByIdRef = useRef(countryById)
+  countryByIdRef.current = countryById
   const countryOptionsRef = useRef<FormFieldOption[]>([])
 
   const loadData = useCallback(async (pageIndex: number, size: number, keyword: string, seq: number) => {
@@ -114,10 +126,10 @@ export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrud
         pageIndex + 1,
         size,
         keyword || undefined,
-        countryNameByIdRef.current,
+        toCountryNameMap(countryByIdRef.current),
       )
       if (seq !== loadSeqRef.current) return
-      setData(result.items)
+      setData(enrichCarriersFromCountries(result.items, countryByIdRef.current))
       setTotalCount(result.totalCount)
     } catch (e) {
       if (seq !== loadSeqRef.current) return
@@ -138,18 +150,15 @@ export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrud
   }, [loadData, pagination.pageIndex, pagination.pageSize, globalFilter])
 
   const loadCountryLookups = useCallback(async () => {
-    if (countryLookupsLoadedRef.current) return
-
     setIsLoadingLookups(true)
     try {
       const countries = await fetchCountries()
       const lookups = buildCountryLookups(countries)
-      countryLookupsLoadedRef.current = true
       countryOptionsRef.current = lookups.countryOptions
-      countryNameByIdRef.current = lookups.countryNameById
+      countryByIdRef.current = lookups.countryById
       setCountryOptions(lookups.countryOptions)
-      setCountryNameById(lookups.countryNameById)
-      setData((prev) => enrichCountryNames(prev, lookups.countryNameById))
+      setCountryById(lookups.countryById)
+      setData((prev) => enrichCarriersFromCountries(prev, lookups.countryById))
     } catch (e) {
       notifyErrorRef.current(getErrorMessage(e, 'Không tải được danh sách quốc gia'))
       throw e
@@ -163,6 +172,7 @@ export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrud
   }, [loadCountryLookups])
 
   const ensureCountryLookups = useCallback(async () => {
+    if (countryOptionsRef.current.length > 0) return
     await loadCountryLookups()
   }, [loadCountryLookups])
 
@@ -222,8 +232,12 @@ export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrud
       if (!formMode || formMode === 'view') return
 
       let values = applySlugFromName(rawValues)
-      const countryName = countryNameByIdRef.current.get(values.countryId) ?? ''
-      values = { ...values, countryName }
+      const country = countryByIdRef.current.get(values.countryId)
+      values = {
+        ...values,
+        countryName: country?.name ?? '',
+        countryFlagUrl: country?.flagUrl ?? '',
+      }
 
       setIsSaving(true)
       try {

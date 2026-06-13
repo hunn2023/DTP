@@ -17,16 +17,14 @@ export type CategoryDto = {
   name: string
   slug: string
   code: string
-  description: string
   isActive: boolean
   sortOrder: number
 }
 
 export type CategoryPayload = {
   name: string
-  code?: string
+  code: string
   slug: string
-  description?: string
   isActive: boolean
   sortOrder: number
 }
@@ -46,7 +44,6 @@ function normalizeDto(raw: Raw): CategoryDto {
     name: readString(raw, 'name', 'Name'),
     slug: readString(raw, 'slug', 'Slug'),
     code: readString(raw, 'code', 'Code'),
-    description: readString(raw, 'description', 'Description'),
     isActive: readBool(raw, 'isActive', 'IsActive'),
     sortOrder: readNumber(raw, 'sortOrder', 'SortOrder'),
   }
@@ -58,7 +55,6 @@ function mapDto(dto: CategoryDto): Category {
     name: dto.name,
     slug: dto.slug,
     code: dto.code,
-    description: dto.description,
     isActive: dto.isActive,
     sortOrder: dto.sortOrder,
   }
