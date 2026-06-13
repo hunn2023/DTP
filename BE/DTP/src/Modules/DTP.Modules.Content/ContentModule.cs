@@ -5,11 +5,10 @@ using DTP.Modules.Content.Infrastructure.Persistence;
 using DTP.Modules.Content.Infrastructure.Repositories;
 using DTP.Modules.Content.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.SqlServer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DTP.Modules.Customer
+namespace DTP.Modules.Content
 {
     public static class ContentModule
     {
