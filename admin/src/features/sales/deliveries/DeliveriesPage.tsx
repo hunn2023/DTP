@@ -1,6 +1,5 @@
 import type { DeliveriesQueryFilters } from '@/apis/deliveriesApi'
-import { useDeliveriesPage } from '@/features/sales/deliveries/useDeliveriesPage'
-import PagedListTable from '@/features/sales/shared/PagedListTable'
+import DeliveriesTable from '@/features/sales/deliveries/components/DeliveriesTable'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'
 
 type DeliveriesPageProps = {
@@ -14,19 +13,11 @@ const DeliveriesPage = ({
   title,
   description,
   filters = {},
-  searchPlaceholder = 'Tìm mã đơn, khách...',
-}: DeliveriesPageProps) => {
-  const list = useDeliveriesPage({ filters })
-
-  return (
-    <EntityPageLayout title={title} subtitle="Bán hàng" description={description}>
-      <PagedListTable
-        searchPlaceholder={searchPlaceholder}
-        loadingLabel="Đang tải giao hàng..."
-        {...list}
-      />
-    </EntityPageLayout>
-  )
-}
+  searchPlaceholder,
+}: DeliveriesPageProps) => (
+  <EntityPageLayout title={title} subtitle="Bán hàng" description={description}>
+    <DeliveriesTable filters={filters} searchPlaceholder={searchPlaceholder} />
+  </EntityPageLayout>
+)
 
 export default DeliveriesPage
