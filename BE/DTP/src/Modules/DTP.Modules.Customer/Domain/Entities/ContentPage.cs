@@ -23,7 +23,6 @@ namespace DTP.Modules.Content.Domain.Entities
             ContentPageStatus status,
             int sortOrder)
         {
-            Id = Guid.NewGuid();
             Code = code.Trim();
             Title = title.Trim();
             Slug = slug.Trim().ToLowerInvariant();
@@ -31,7 +30,6 @@ namespace DTP.Modules.Content.Domain.Entities
             Content = content;
             Status = status;
             SortOrder = sortOrder;
-            CreatedAt = DateTime.UtcNow;
         }
 
         public string Code { get; private set; } = default!;
@@ -42,12 +40,8 @@ namespace DTP.Modules.Content.Domain.Entities
         public string? ThumbnailUrl { get; private set; }
         public ContentPageStatus Status { get; private set; }
         public int SortOrder { get; private set; }
-
-        public DateTime CreatedAt { get; private set; }
-        public DateTime? UpdatedAt { get; private set; }
         public DateTime? PublishedAt { get; private set; }
-
-        public bool IsPublished => Status == ContentPageStatus.Published;
+       public bool IsPublished => Status == ContentPageStatus.Published;
 
         public void Update(
             string title,

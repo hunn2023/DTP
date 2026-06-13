@@ -1,6 +1,7 @@
 ﻿using DTP.Modules.Content.Application.Abstractions.Services;
 using DTP.Modules.Content.Application.DTOs;
 using DTP.Modules.Content.Domain.Enums;
+using DTP.Shared.Application;
 using MediatR;
 
 namespace DTP.Modules.Content.Application.Commands.Articles
@@ -16,11 +17,11 @@ namespace DTP.Modules.Content.Application.Commands.Articles
       string? Tags,
       ContentArticleStatus Status,
       bool IsFeatured,
-      int SortOrder) : IRequest<ContentArticleDto>;
+      int SortOrder) : IRequest<Result<ContentArticleDto>>;
 
 
     public class CreateContentArticleCommandHandler
-    : IRequestHandler<CreateContentArticleCommand, ContentArticleDto>
+    : IRequestHandler<CreateContentArticleCommand, Result<ContentArticleDto>>
     {
         private readonly IContentArticleService _service;
 
@@ -29,7 +30,7 @@ namespace DTP.Modules.Content.Application.Commands.Articles
             _service = service;
         }
 
-        public Task<ContentArticleDto> Handle(
+        public Task<Result<ContentArticleDto>> Handle(
             CreateContentArticleCommand request,
             CancellationToken cancellationToken)
         {

@@ -1,13 +1,14 @@
 ﻿using DTP.Modules.Content.Application.Abstractions.Services;
 using DTP.Modules.Content.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
 
 namespace DTP.Modules.Content.Application.Queries.Articles
 {
-    public record GetContentArticleByIdQuery(Guid Id) : IRequest<ContentArticleDto?>;
+    public record GetContentArticleByIdQuery(Guid Id) : IRequest<Result<ContentArticleDto?>>;
 
     public class GetContentArticleByIdQueryHandler
-    : IRequestHandler<GetContentArticleByIdQuery, ContentArticleDto?>
+    : IRequestHandler<GetContentArticleByIdQuery, Result<ContentArticleDto?>>
     {
         private readonly IContentArticleService _service;
 
@@ -16,7 +17,7 @@ namespace DTP.Modules.Content.Application.Queries.Articles
             _service = service;
         }
 
-        public Task<ContentArticleDto?> Handle(
+        public Task<Result<ContentArticleDto?>> Handle(
             GetContentArticleByIdQuery request,
             CancellationToken cancellationToken)
         {

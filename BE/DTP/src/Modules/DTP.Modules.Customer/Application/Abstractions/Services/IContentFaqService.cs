@@ -1,16 +1,13 @@
 ﻿using DTP.Modules.Content.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace DTP.Modules.Content.Application.Abstractions.Services
 {
     public interface IContentFaqService
     {
-        Task<ContentFaqDto> CreateAsync(
+        Task<Result<ContentFaqDto>> CreateAsync(
             string question,
             string answer,
             string? categoryCode,
@@ -18,7 +15,7 @@ namespace DTP.Modules.Content.Application.Abstractions.Services
             bool isActive,
             CancellationToken cancellationToken = default);
 
-        Task<ContentFaqDto> UpdateAsync(
+        Task<Result<ContentFaqDto>> UpdateAsync(
             Guid id,
             string question,
             string answer,
@@ -27,19 +24,19 @@ namespace DTP.Modules.Content.Application.Abstractions.Services
             bool isActive,
             CancellationToken cancellationToken = default);
 
-        Task<bool> EnableAsync(
+        Task<Result> EnableAsync(
             Guid id,
             CancellationToken cancellationToken = default);
 
-        Task<bool> DisableAsync(
+        Task<Result> DisableAsync(
             Guid id,
             CancellationToken cancellationToken = default);
 
-        Task<ContentFaqDto?> GetByIdAsync(
+        Task<Result<ContentFaqDto?>> GetByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default);
 
-        Task<PagedResultDto<ContentFaqDto>> GetPagedAsync(
+        Task<Result<PagedResultDto<ContentFaqDto>>> GetPagedAsync(
             string? keyword,
             string? categoryCode,
             bool? isActive,
@@ -47,7 +44,7 @@ namespace DTP.Modules.Content.Application.Abstractions.Services
             int pageSize,
             CancellationToken cancellationToken = default);
 
-        Task<IReadOnlyList<ContentFaqDto>> GetActiveAsync(
+        Task<Result<IReadOnlyList<ContentFaqDto>>> GetActiveAsync(
             string? categoryCode,
             CancellationToken cancellationToken = default);
     }

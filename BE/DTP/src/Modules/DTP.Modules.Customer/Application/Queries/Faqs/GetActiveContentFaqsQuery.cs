@@ -1,15 +1,16 @@
 ﻿using DTP.Modules.Content.Application.Abstractions.Services;
 using DTP.Modules.Content.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
 
 namespace DTP.Modules.Content.Application.Queries.Faqs
 {
     public record GetActiveContentFaqsQuery(
-     string? CategoryCode) : IRequest<IReadOnlyList<ContentFaqDto>>;
+     string? CategoryCode) : IRequest<Result<IReadOnlyList<ContentFaqDto>>>;
 
 
     public class GetActiveContentFaqsQueryHandler
-    : IRequestHandler<GetActiveContentFaqsQuery, IReadOnlyList<ContentFaqDto>>
+    : IRequestHandler<GetActiveContentFaqsQuery, Result<IReadOnlyList<ContentFaqDto>>>
     {
         private readonly IContentFaqService _service;
 
@@ -18,7 +19,7 @@ namespace DTP.Modules.Content.Application.Queries.Faqs
             _service = service;
         }
 
-        public Task<IReadOnlyList<ContentFaqDto>> Handle(
+        public Task<Result<IReadOnlyList<ContentFaqDto>>> Handle(
             GetActiveContentFaqsQuery request,
             CancellationToken cancellationToken)
         {

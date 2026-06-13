@@ -1,13 +1,14 @@
 ﻿using DTP.Modules.Content.Application.Abstractions.Services;
+using DTP.Shared.Application;
 using MediatR;
 
 namespace DTP.Modules.Content.Application.Commands.Faqs
 {
-    public record DisableContentFaqCommand(Guid Id) : IRequest<bool>;
+    public record DisableContentFaqCommand(Guid Id) : IRequest<Result>;
 
 
     public class DisableContentFaqCommandHandler
-    : IRequestHandler<DisableContentFaqCommand, bool>
+    : IRequestHandler<DisableContentFaqCommand, Result>
     {
         private readonly IContentFaqService _service;
 
@@ -16,7 +17,7 @@ namespace DTP.Modules.Content.Application.Commands.Faqs
             _service = service;
         }
 
-        public Task<bool> Handle(
+        public Task<Result> Handle(
             DisableContentFaqCommand request,
             CancellationToken cancellationToken)
         {

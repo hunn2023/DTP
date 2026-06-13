@@ -51,6 +51,8 @@ namespace DTP.Modules.Content.Domain.Entities
         public string? Summary { get; private set; }
         public string Content { get; private set; } = default!;
         public string? ThumbnailUrl { get; private set; }
+
+        public string? ThumbnailKey { get; private set; }
         public string? AuthorName { get; private set; }
         public string? CategoryCode { get; private set; }
         public string? Tags { get; private set; }
@@ -60,8 +62,6 @@ namespace DTP.Modules.Content.Domain.Entities
         public int SortOrder { get; private set; }
         public int ViewCount { get; private set; }
 
-        public DateTime CreatedAt { get; private set; }
-        public DateTime? UpdatedAt { get; private set; }
         public DateTime? PublishedAt { get; private set; }
 
         public bool IsPublished => Status == ContentArticleStatus.Published;
@@ -115,6 +115,14 @@ namespace DTP.Modules.Content.Domain.Entities
             Status = ContentArticleStatus.Published;
             PublishedAt ??= DateTime.UtcNow;
             UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void UpdateThumbnail(
+              string thumbnailUrl,
+              string thumbnailKey)
+        {
+            ThumbnailUrl = thumbnailUrl;
+            ThumbnailKey = thumbnailKey;
         }
     }
 }

@@ -4,12 +4,11 @@ using DTP.Modules.Content.Application.Abstractions.Services;
 using DTP.Modules.Content.Application.DTOs;
 using DTP.Modules.Content.Domain.Entities;
 using DTP.Modules.Content.Domain.Enums;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using DTP.Shared.Caching;
+using DTP.Shared.Storage;
+using Microsoft.AspNetCore.Http;
 
 namespace DTP.Modules.Content.Infrastructure.Services
 {
@@ -17,16 +16,23 @@ namespace DTP.Modules.Content.Infrastructure.Services
     {
         private readonly IContentArticleRepository _repository;
         private readonly IContentUnitOfWork _unitOfWork;
-
+        private readonly ICacheService _cacheService;
+        private readonly IFileStorageService _fileStorageService;
+        public const string ContentArticleThumbnails = "content/articles/thumbnails";
         public ContentArticleService(
             IContentArticleRepository repository,
-            IContentUnitOfWork unitOfWork)
+            IContentUnitOfWork unitOfWork,
+            ICacheService cacheService,
+            IFileStorageService fileStorageService
+            )
         {
             _repository = repository;
             _unitOfWork = unitOfWork;
+            _cacheService = cacheService;
+            _fileStorageService = fileStorageService;
         }
 
-        public async Task<ContentArticleDto> CreateAsync(
+        public async Task<Result<ContentArticleDto>> CreateAsync(
             string title,
             string slug,
             string? summary,
@@ -43,7 +49,8 @@ namespace DTP.Modules.Content.Infrastructure.Services
             ValidateArticle(title, slug, content, summary);
 
             if (await _repository.ExistsSlugAsync(slug, null, cancellationToken))
-                throw new Exception("Article slug already exists.");
+                return Result<ContentArticleDto>.Failure("Slug already exists.");
+
 
             var article = new ContentArticle(
                 title,
@@ -61,10 +68,12 @@ namespace DTP.Modules.Content.Infrastructure.Services
             await _repository.AddAsync(article, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Map(article);
+            await RemoveArticleCacheAsync(cancellationToken);
+            return Result<ContentArticleDto>.Success(Map(article));
+
         }
 
-        public async Task<ContentArticleDto> UpdateAsync(
+        public async Task<Result<ContentArticleDto>> UpdateAsync(
             Guid id,
             string title,
             string slug,
@@ -82,12 +91,13 @@ namespace DTP.Modules.Content.Infrastructure.Services
             var article = await _repository.GetByIdAsync(id, cancellationToken);
 
             if (article == null)
-                throw new Exception("Article not found.");
+                return Result<ContentArticleDto>.Failure("Article not found.");
 
             ValidateArticle(title, slug, content, summary);
 
             if (await _repository.ExistsSlugAsync(slug, id, cancellationToken))
-                throw new Exception("Article slug already exists.");
+                return Result<ContentArticleDto>.Failure("Slug already exists.");
+
 
             article.Update(
                 title,
@@ -105,113 +115,200 @@ namespace DTP.Modules.Content.Infrastructure.Services
             _repository.Update(article);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Map(article);
+            await RemoveArticleCacheAsync(cancellationToken);
+
+            return Result<ContentArticleDto>.Success(Map(article));
         }
 
-        public async Task<bool> PublishAsync(
+        public async Task<Result<ContentArticleDto>> UploadThumbnailAsync(
+            Guid articleId,
+            IFormFile file,
+            CancellationToken cancellationToken = default)
+        {
+            if (articleId == Guid.Empty)
+                return Result<ContentArticleDto>.Failure("Id bài viết không hợp lệ.");
+
+            if (file == null || file.Length == 0)
+                return Result<ContentArticleDto>.Failure("Vui lòng chọn file ảnh.");
+
+            var article = await _repository.GetByIdAsync(
+                articleId,
+                cancellationToken);
+
+            if (article == null)
+                return Result<ContentArticleDto>.Failure("Không tìm thấy bài viết.");
+
+            var uploadResult = await _fileStorageService.UploadImageAsync(
+                file,
+                ContentArticleThumbnails,
+                cancellationToken);
+
+            article.UpdateThumbnail(
+                thumbnailUrl: uploadResult.Url,
+                thumbnailKey: uploadResult.Key);
+
+            _repository.Update(article);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await RemoveArticleCacheAsync(cancellationToken);
+
+            return Result<ContentArticleDto>.Success(Map(article));
+        }
+
+
+        public async Task<Result> PublishAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
             var article = await _repository.GetByIdAsync(id, cancellationToken);
 
             if (article == null)
-                throw new Exception("Article not found.");
+                return Result.Failure("Article not found.");
 
             article.Publish();
 
             _repository.Update(article);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return true;
+            await RemoveArticleCacheAsync(cancellationToken);
+            return Result.Success();
         }
 
-        public async Task<bool> HideAsync(
+        public async Task<Result> HideAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
             var article = await _repository.GetByIdAsync(id, cancellationToken);
 
             if (article == null)
-                throw new Exception("Article not found.");
+                return Result.Failure("Article not found.");
 
             article.Hide();
 
             _repository.Update(article);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return true;
+            await RemoveArticleCacheAsync(cancellationToken);
+            return Result.Success();
         }
 
-        public async Task<bool> MarkAsFeaturedAsync(
+        public async Task<Result> MarkAsFeaturedAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
             var article = await _repository.GetByIdAsync(id, cancellationToken);
 
             if (article == null)
-                throw new Exception("Article not found.");
+                return Result.Failure("Article not found.");
 
             //article.MarkAsFeatured();
 
             _repository.Update(article);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return true;
+            return Result.Success();
         }
 
-        public async Task<bool> UnmarkAsFeaturedAsync(
+        public async Task<Result> UnmarkAsFeaturedAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
             var article = await _repository.GetByIdAsync(id, cancellationToken);
 
             if (article == null)
-                throw new Exception("Article not found.");
+                return Result.Failure("Article not found.");
 
             //article.UnmarkAsFeatured();
 
             _repository.Update(article);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return true;
+            return Result.Success();
         }
 
-        public async Task<ContentArticleDto?> GetByIdAsync(
-            Guid id,
-            CancellationToken cancellationToken = default)
+        public async Task<Result<ContentArticleDto?>> GetByIdAsync(
+           Guid id,
+           CancellationToken cancellationToken = default)
         {
+            var cacheKey = CacheKeys.DetailById(id);
+
+            var cached = await _cacheService.GetAsync<ContentArticleDto?>(cacheKey, cancellationToken);
+
+            if (cached != null)
+                return Result<ContentArticleDto?>.Success(cached);
+
+
             var article = await _repository.GetByIdAsync(id, cancellationToken);
 
-            return article == null ? null : Map(article);
+            if (article == null) return Result<ContentArticleDto?>.Success(null);
+
+
+            var dto = Map(article);
+
+            await _cacheService.SetAsync(
+                cacheKey,
+                dto,
+                TimeSpan.FromMinutes(10),
+                cancellationToken);
+
+            return Result<ContentArticleDto?>.Success(dto);
         }
 
-        public async Task<ContentArticleDto?> GetBySlugAsync(
-            string slug,
-            bool increaseView,
-            CancellationToken cancellationToken = default)
+        public async Task<Result<ContentArticleDto?>> GetBySlugAsync(
+             string slug,
+             bool increaseView,
+             CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(slug))
-                return null;
+                return Result<ContentArticleDto?>.Success(null);
+
+            slug = slug.Trim();
+
+            if (!increaseView)
+            {
+                var cacheKey = CacheKeys.DetailBySlug(slug);
+
+                var cached = await _cacheService.GetAsync<ContentArticleDto?>(cacheKey, cancellationToken);
+
+                if (cached != null)
+                    return Result<ContentArticleDto?>.Success(cached);
+
+            }
 
             var article = await _repository.GetBySlugAsync(slug, cancellationToken);
 
-            if (article == null)
-                return null;
+            if (article == null) return Result<ContentArticleDto?>.Success(null);
+
 
             if (!article.IsPublished)
-                return null;
+                return Result<ContentArticleDto?>.Success(null);
 
             if (increaseView)
             {
                 article.IncreaseView();
+
                 _repository.Update(article);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                await RemoveArticleCacheAsync(cancellationToken);
             }
 
-            return Map(article);
+            var dto = Map(article);
+
+            if (!increaseView)
+            {
+                await _cacheService.SetAsync(
+                    CacheKeys.DetailBySlug(slug),
+                    dto,
+                    TimeSpan.FromMinutes(10),
+                    cancellationToken);
+            }
+
+            return Result<ContentArticleDto?>.Success(dto);
         }
 
-        public async Task<PagedResultDto<ContentArticleListItemDto>> GetPagedAsync(
+        public async Task<Result<PagedResultDto<ContentArticleListItemDto>>> GetPagedAsync(
             string? keyword,
             string? categoryCode,
             ContentArticleStatus? status,
@@ -233,14 +330,16 @@ namespace DTP.Modules.Content.Infrastructure.Services
                 pageSize,
                 cancellationToken);
 
-            return new PagedResultDto<ContentArticleListItemDto>(
-                result.Items.Select(MapListItem).ToList(),
-                result.TotalCount,
-                pageIndex,
-                pageSize);
+
+            return Result<PagedResultDto<ContentArticleListItemDto>>.Success(new PagedResultDto<ContentArticleListItemDto>(
+                 result.Items.Select(MapListItem).ToList(),
+                 result.TotalCount,
+                 pageIndex,
+                 pageSize));
+
         }
 
-        public async Task<PagedResultDto<ContentArticleListItemDto>> GetPublicPagedAsync(
+        public async Task<Result<PagedResultDto<ContentArticleListItemDto>>> GetPublicPagedAsync(
             string? keyword,
             string? categoryCode,
             int pageIndex,
@@ -251,6 +350,18 @@ namespace DTP.Modules.Content.Infrastructure.Services
 
             categoryCode = NormalizeCategoryCode(categoryCode);
 
+            var cacheKey = CacheKeys.PublicPaged(
+                keyword,
+                categoryCode,
+                pageIndex,
+                pageSize);
+
+            var cached = await _cacheService.GetAsync<PagedResultDto<ContentArticleListItemDto>>(
+                cacheKey,
+                cancellationToken);
+
+            if (cached != null) return Result<PagedResultDto<ContentArticleListItemDto>>.Success(cached);
+
             var result = await _repository.GetPublicPagedAsync(
                 keyword,
                 categoryCode,
@@ -258,16 +369,24 @@ namespace DTP.Modules.Content.Infrastructure.Services
                 pageSize,
                 cancellationToken);
 
-            return new PagedResultDto<ContentArticleListItemDto>(
+            var dto = new PagedResultDto<ContentArticleListItemDto>(
                 result.Items.Select(MapListItem).ToList(),
                 result.TotalCount,
                 pageIndex,
                 pageSize);
+
+            await _cacheService.SetAsync(
+                cacheKey,
+                dto,
+                TimeSpan.FromMinutes(5),
+                cancellationToken);
+
+            return Result<PagedResultDto<ContentArticleListItemDto>>.Success(dto);
         }
 
-        public async Task<IReadOnlyList<ContentArticleListItemDto>> GetFeaturedAsync(
-            int take,
-            CancellationToken cancellationToken = default)
+        public async Task<Result<IReadOnlyList<ContentArticleListItemDto>>> GetFeaturedAsync(
+             int take,
+             CancellationToken cancellationToken = default)
         {
             if (take <= 0)
                 take = 6;
@@ -275,11 +394,28 @@ namespace DTP.Modules.Content.Infrastructure.Services
             if (take > 20)
                 take = 20;
 
+            var cacheKey = CacheKeys.Featured(take);
+
+            var cached = await _cacheService.GetAsync<IReadOnlyList<ContentArticleListItemDto>>(
+                cacheKey,
+                cancellationToken);
+
+            if (cached != null) return Result<IReadOnlyList<ContentArticleListItemDto>>.Success(cached);
+
+
             var articles = await _repository.GetFeaturedAsync(
                 take,
                 cancellationToken);
 
-            return articles.Select(MapListItem).ToList();
+            var dto = articles.Select(MapListItem).ToList();
+
+            await _cacheService.SetAsync(
+                cacheKey,
+                dto,
+                TimeSpan.FromMinutes(10),
+                cancellationToken);
+
+            return Result<IReadOnlyList<ContentArticleListItemDto>>.Success(dto);
         }
 
         private static void ValidateArticle(
@@ -368,6 +504,45 @@ namespace DTP.Modules.Content.Infrastructure.Services
                 CreatedAt = article.CreatedAt,
                 PublishedAt = article.PublishedAt
             };
+        }
+
+        private async Task RemoveArticleCacheAsync(CancellationToken cancellationToken)
+        {
+            await _cacheService.RemoveByPrefixAsync(CacheKeys.Prefix, cancellationToken);
+        }
+        private static class CacheKeys
+        {
+            public const string Prefix = "content:article";
+
+            public static string DetailById(Guid id)
+                => $"{Prefix}:detail:id:{id}";
+
+            public static string DetailBySlug(string slug)
+                => $"{Prefix}:detail:slug:{slug.Trim().ToLowerInvariant()}";
+
+            public static string AdminPaged(
+                string? keyword,
+                string? categoryCode,
+                ContentArticleStatus? status,
+                bool? isFeatured,
+                int pageIndex,
+                int pageSize)
+                => $"{Prefix}:admin:paged:{Normalize(keyword)}:{Normalize(categoryCode)}:{status}:{isFeatured}:{pageIndex}:{pageSize}";
+
+            public static string PublicPaged(
+                string? keyword,
+                string? categoryCode,
+                int pageIndex,
+                int pageSize)
+                => $"{Prefix}:public:paged:{Normalize(keyword)}:{Normalize(categoryCode)}:{pageIndex}:{pageSize}";
+
+            public static string Featured(int take)
+                => $"{Prefix}:featured:{take}";
+
+            private static string Normalize(string? value)
+                => string.IsNullOrWhiteSpace(value)
+                    ? "all"
+                    : value.Trim().ToLowerInvariant();
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using DTP.Modules.Content.Application.Abstractions.Services;
 using DTP.Modules.Content.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
 
 namespace DTP.Modules.Content.Application.Commands.Faqs
@@ -9,11 +10,11 @@ namespace DTP.Modules.Content.Application.Commands.Faqs
      string Answer,
      string? CategoryCode,
      int SortOrder,
-     bool IsActive) : IRequest<ContentFaqDto>;
+     bool IsActive) : IRequest<Result<ContentFaqDto>>;
 
 
     public class CreateContentFaqCommandHandler
-    : IRequestHandler<CreateContentFaqCommand, ContentFaqDto>
+    : IRequestHandler<CreateContentFaqCommand, Result<ContentFaqDto>>
     {
         private readonly IContentFaqService _service;
 
@@ -22,7 +23,7 @@ namespace DTP.Modules.Content.Application.Commands.Faqs
             _service = service;
         }
 
-        public Task<ContentFaqDto> Handle(
+        public Task<Result<ContentFaqDto>> Handle(
             CreateContentFaqCommand request,
             CancellationToken cancellationToken)
         {

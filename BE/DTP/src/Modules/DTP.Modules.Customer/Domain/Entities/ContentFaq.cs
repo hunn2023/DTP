@@ -35,9 +35,6 @@ namespace DTP.Modules.Content.Domain.Entities
         public int SortOrder { get; private set; }
         public bool IsActive { get; private set; }
 
-        public DateTime CreatedAt { get; private set; }
-        public DateTime? UpdatedAt { get; private set; }
-
         public void Update(
             string question,
             string answer,
@@ -56,6 +53,12 @@ namespace DTP.Modules.Content.Domain.Entities
         public void Disable()
         {
             IsActive = false;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void Enable()
+        {
+            IsActive = true;
             UpdatedAt = DateTime.UtcNow;
         }
     }

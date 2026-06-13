@@ -1,17 +1,14 @@
 ﻿using DTP.Modules.Content.Application.DTOs;
 using DTP.Modules.Content.Domain.Enums;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace DTP.Modules.Content.Application.Abstractions.Services
 {
     public interface IContentArticleService
     {
-        Task<ContentArticleDto> CreateAsync(
+        Task<Result<ContentArticleDto>> CreateAsync(
             string title,
             string slug,
             string? summary,
@@ -25,7 +22,7 @@ namespace DTP.Modules.Content.Application.Abstractions.Services
             int sortOrder,
             CancellationToken cancellationToken = default);
 
-        Task<ContentArticleDto> UpdateAsync(
+        Task<Result<ContentArticleDto>> UpdateAsync(
             Guid id,
             string title,
             string slug,
@@ -40,32 +37,32 @@ namespace DTP.Modules.Content.Application.Abstractions.Services
             int sortOrder,
             CancellationToken cancellationToken = default);
 
-        Task<bool> PublishAsync(
+        Task<Result> PublishAsync(
             Guid id,
             CancellationToken cancellationToken = default);
 
-        Task<bool> HideAsync(
+        Task<Result> HideAsync(
             Guid id,
             CancellationToken cancellationToken = default);
 
-        Task<bool> MarkAsFeaturedAsync(
+        Task<Result> MarkAsFeaturedAsync(
             Guid id,
             CancellationToken cancellationToken = default);
 
-        Task<bool> UnmarkAsFeaturedAsync(
+        Task<Result> UnmarkAsFeaturedAsync(
             Guid id,
             CancellationToken cancellationToken = default);
 
-        Task<ContentArticleDto?> GetByIdAsync(
+        Task<Result<ContentArticleDto?>> GetByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default);
 
-        Task<ContentArticleDto?> GetBySlugAsync(
+        Task<Result<ContentArticleDto?>> GetBySlugAsync(
             string slug,
             bool increaseView,
             CancellationToken cancellationToken = default);
 
-        Task<PagedResultDto<ContentArticleListItemDto>> GetPagedAsync(
+        Task<Result<PagedResultDto<ContentArticleListItemDto>>> GetPagedAsync(
             string? keyword,
             string? categoryCode,
             ContentArticleStatus? status,
@@ -74,15 +71,21 @@ namespace DTP.Modules.Content.Application.Abstractions.Services
             int pageSize,
             CancellationToken cancellationToken = default);
 
-        Task<PagedResultDto<ContentArticleListItemDto>> GetPublicPagedAsync(
+        Task<Result<PagedResultDto<ContentArticleListItemDto>>> GetPublicPagedAsync(
             string? keyword,
             string? categoryCode,
             int pageIndex,
             int pageSize,
             CancellationToken cancellationToken = default);
 
-        Task<IReadOnlyList<ContentArticleListItemDto>> GetFeaturedAsync(
+        Task<Result<IReadOnlyList<ContentArticleListItemDto>>> GetFeaturedAsync(
             int take,
+            CancellationToken cancellationToken = default);
+
+
+        Task<Result<ContentArticleDto>> UploadThumbnailAsync(
+            Guid articleId,
+            IFormFile file,
             CancellationToken cancellationToken = default);
     }
 }

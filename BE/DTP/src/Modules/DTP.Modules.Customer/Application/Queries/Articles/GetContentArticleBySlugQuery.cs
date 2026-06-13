@@ -1,16 +1,17 @@
 ﻿using DTP.Modules.Content.Application.Abstractions.Services;
 using DTP.Modules.Content.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
 
 namespace DTP.Modules.Content.Application.Queries.Articles
 {
     public record GetContentArticleBySlugQuery(
       string Slug,
-      bool IncreaseView) : IRequest<ContentArticleDto?>;
+      bool IncreaseView) : IRequest<Result<ContentArticleDto?>>;
 
 
     public class GetContentArticleBySlugQueryHandler
-    : IRequestHandler<GetContentArticleBySlugQuery, ContentArticleDto?>
+    : IRequestHandler<GetContentArticleBySlugQuery, Result<ContentArticleDto?>>
     {
         private readonly IContentArticleService _service;
 
@@ -19,7 +20,7 @@ namespace DTP.Modules.Content.Application.Queries.Articles
             _service = service;
         }
 
-        public Task<ContentArticleDto?> Handle(
+        public Task<Result<ContentArticleDto?>> Handle(
             GetContentArticleBySlugQuery request,
             CancellationToken cancellationToken)
         {

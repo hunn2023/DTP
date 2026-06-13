@@ -1,15 +1,16 @@
 ﻿using DTP.Modules.Content.Application.Abstractions.Services;
 using DTP.Modules.Content.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
 
 namespace DTP.Modules.Content.Application.Queries.Articles
 {
     public record GetFeaturedContentArticlesQuery(
-      int Take) : IRequest<IReadOnlyList<ContentArticleListItemDto>>;
+      int Take) : IRequest<Result<IReadOnlyList<ContentArticleListItemDto>>>;
 
 
     public class GetFeaturedContentArticlesQueryHandler
-    : IRequestHandler<GetFeaturedContentArticlesQuery, IReadOnlyList<ContentArticleListItemDto>>
+    : IRequestHandler<GetFeaturedContentArticlesQuery, Result<IReadOnlyList<ContentArticleListItemDto>>>
     {
         private readonly IContentArticleService _service;
 
@@ -18,7 +19,7 @@ namespace DTP.Modules.Content.Application.Queries.Articles
             _service = service;
         }
 
-        public Task<IReadOnlyList<ContentArticleListItemDto>> Handle(
+        public Task<Result<IReadOnlyList<ContentArticleListItemDto>>> Handle(
             GetFeaturedContentArticlesQuery request,
             CancellationToken cancellationToken)
         {

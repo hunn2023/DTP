@@ -1,5 +1,6 @@
 ﻿using DTP.Modules.Content.Application.Abstractions.Services;
 using DTP.Modules.Content.Application.DTOs;
+using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using MediatR;
 namespace DTP.Modules.Content.Application.Queries.Articles
@@ -8,10 +9,10 @@ namespace DTP.Modules.Content.Application.Queries.Articles
       string? Keyword,
       string? CategoryCode,
       int PageIndex,
-      int PageSize) : IRequest<PagedResultDto<ContentArticleListItemDto>>;
+      int PageSize) : IRequest<Result<PagedResultDto<ContentArticleListItemDto>>>;
 
     public class GetPublicContentArticlesPagedQueryHandler
-    : IRequestHandler<GetPublicContentArticlesPagedQuery, PagedResultDto<ContentArticleListItemDto>>
+    : IRequestHandler<GetPublicContentArticlesPagedQuery, Result<PagedResultDto<ContentArticleListItemDto>>>
     {
         private readonly IContentArticleService _service;
 
@@ -20,7 +21,7 @@ namespace DTP.Modules.Content.Application.Queries.Articles
             _service = service;
         }
 
-        public Task<PagedResultDto<ContentArticleListItemDto>> Handle(
+        public Task<Result<PagedResultDto<ContentArticleListItemDto>>> Handle(
             GetPublicContentArticlesPagedQuery request,
             CancellationToken cancellationToken)
         {
