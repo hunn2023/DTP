@@ -1,0 +1,49 @@
+.page-card {
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0.25rem 0.75rem rgba(var(--bs-primary-rgb), 0.12);
+  }
+
+  &__title {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.35;
+  }
+
+  &__slug {
+    font-size: 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__summary {
+    font-size: 0.8125rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 0;
+  }
+
+  &__meta {
+    font-size: 0.75rem;
+    color: var(--bs-secondary-color);
+  }
+
+  &__meta-icon {
+    font-size: 0.875rem;
+    opacity: 0.85;
+  }
+}
+
+.pages-filter-card {
+  position: sticky;
+  top: 1rem;
+}
