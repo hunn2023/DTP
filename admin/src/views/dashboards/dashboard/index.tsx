@@ -1,16 +1,15 @@
+import { lazy, Suspense } from 'react'
 import { Col, Container, Row } from 'react-bootstrap'
 
+import Loader from '@/components/Loader'
 import PageMetaData from '@/components/PageMetaData'
 
-import BestSellingPackages from './components/BestSellingPackages'
 import DashboardHeader from './components/DashboardHeader'
-import OrderStatusCard from './components/OrderStatusCard'
-import PaymentMethodsCard from './components/PaymentMethodsCard'
 import RecentOrdersTable from './components/RecentOrdersTable'
-import RevenueSevenDaysCard from './components/RevenueSevenDaysCard'
 import StatCards from './components/StatCards'
-import TopCountriesCard from './components/TopCountriesCard'
-import TopRegionsCard from './components/TopRegionsCard'
+
+const DashboardChartsRow = lazy(() => import('./components/DashboardChartsRow'))
+const DashboardSideWidgets = lazy(() => import('./components/DashboardSideWidgets'))
 
 const Page = () => (
   <>
@@ -19,18 +18,16 @@ const Page = () => (
       <DashboardHeader />
       <StatCards />
 
-      <Row className="g-3 mb-3">
-        <RevenueSevenDaysCard />
-        <OrderStatusCard />
-        <TopCountriesCard />
-      </Row>
+      <Suspense fallback={<Loader height="320px" />}>
+        <DashboardChartsRow />
+      </Suspense>
 
       <Row className="g-3">
         <RecentOrdersTable />
         <Col xxl={4}>
-          <BestSellingPackages />
-          <PaymentMethodsCard />
-          <TopRegionsCard />
+          <Suspense fallback={<Loader height="520px" />}>
+            <DashboardSideWidgets />
+          </Suspense>
         </Col>
       </Row>
     </Container>

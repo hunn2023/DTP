@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { Card, CardBody, CardHeader, CardTitle } from 'react-bootstrap'
 
 import { PaymentMethodsChart } from './charts'
@@ -11,9 +10,7 @@ const PaymentMethodsCard = () => (
       </CardTitle>
     </CardHeader>
     <CardBody>
-      <Suspense>
-        <PaymentMethodsChart />
-      </Suspense>
+      <PaymentMethodsChart />
     </CardBody>
   </Card>
 )

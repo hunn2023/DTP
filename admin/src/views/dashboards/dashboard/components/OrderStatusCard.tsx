@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { Card, CardBody, CardHeader, CardTitle, Col } from 'react-bootstrap'
 
 import { OrderStatusChart } from './charts'
@@ -12,9 +11,7 @@ const OrderStatusCard = () => (
         </CardTitle>
       </CardHeader>
       <CardBody>
-        <Suspense>
-          <OrderStatusChart />
-        </Suspense>
+        <OrderStatusChart />
       </CardBody>
     </Card>
   </Col>

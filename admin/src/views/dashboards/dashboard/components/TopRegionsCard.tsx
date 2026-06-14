@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { Card, CardBody, CardHeader, CardTitle } from 'react-bootstrap'
 
 import { regionShares } from '../data'
@@ -12,9 +11,7 @@ const TopRegionsCard = () => (
       </CardTitle>
     </CardHeader>
     <CardBody>
-      <Suspense>
-        <TopRegionsMap />
-      </Suspense>
+      <TopRegionsMap />
       <div className="mt-3">
         {regionShares.map((region) => (
           <div key={region.id} className="d-flex justify-content-between align-items-center mb-2">

@@ -1,11 +1,11 @@
 import { BarChart, LineChart, PieChart } from 'echarts/charts'
 import { TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import { useId } from 'react'
+import { lazy, Suspense, useId } from 'react'
 import { useIsClient } from 'usehooks-ts'
 
+import Loader from '@/components/Loader'
 import CustomEChart from '@/components/CustomEChart.tsx'
-import BaseVectorMap from '@/components/maps/BaseVectorMap.tsx'
 
 import {
   getOrderStatusOptions,
@@ -14,6 +14,8 @@ import {
   getTopCountriesBarOptions,
   getTopRegionsMapOptions,
 } from '../data'
+
+const BaseVectorMap = lazy(() => import('@/components/maps/BaseVectorMap.tsx'))
 
 export const RevenueSevenDaysChart = () => (
   <CustomEChart
@@ -50,5 +52,12 @@ export const PaymentMethodsChart = () => (
 export const TopRegionsMap = () => {
   const id = useId()
   const isClient = useIsClient()
-  return isClient ? <BaseVectorMap id={id} options={getTopRegionsMapOptions()} style={{ height: 180 }} /> : null
+
+  if (!isClient) return <Loader height="180px" />
+
+  return (
+    <Suspense fallback={<Loader height="180px" />}>
+      <BaseVectorMap id={id} options={getTopRegionsMapOptions()} style={{ height: 180 }} />
+    </Suspense>
+  )
 }

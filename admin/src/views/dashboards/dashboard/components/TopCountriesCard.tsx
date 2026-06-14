@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { Card, CardBody, CardHeader, CardTitle, Col, Form } from 'react-bootstrap'
 
 import { TopCountriesBarChart } from './charts'
@@ -15,9 +14,7 @@ const TopCountriesCard = () => (
         </Form.Select>
       </CardHeader>
       <CardBody>
-        <Suspense>
-          <TopCountriesBarChart />
-        </Suspense>
+        <TopCountriesBarChart />
       </CardBody>
     </Card>
   </Col>

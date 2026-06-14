@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { Card, CardBody, CardHeader, CardTitle, Col, Form } from 'react-bootstrap'
 
 import { RevenueSevenDaysChart } from './charts'
@@ -15,9 +14,7 @@ const RevenueSevenDaysCard = () => (
         </Form.Select>
       </CardHeader>
       <CardBody>
-        <Suspense>
-          <RevenueSevenDaysChart />
-        </Suspense>
+        <RevenueSevenDaysChart />
       </CardBody>
     </Card>
   </Col>
