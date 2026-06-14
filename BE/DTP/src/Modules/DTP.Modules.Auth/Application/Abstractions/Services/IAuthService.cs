@@ -37,5 +37,13 @@ namespace DTP.Modules.Auth.Application.Abstractions.Services
             string? ipAddress,
             string? userAgent,
             CancellationToken cancellationToken = default);
+
+
+        Task<Result> ChangePasswordAsync(
+            Guid userId,
+            ChangePasswordRequestDto request,
+            string? ipAddress,
+            string? userAgent,
+            CancellationToken cancellationToken = default);
     }
 }

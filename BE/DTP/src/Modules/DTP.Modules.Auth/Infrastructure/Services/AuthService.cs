@@ -1403,6 +1403,149 @@ namespace DTP.Modules.Auth.Infrastructure.Services
         }
 
 
+        public async Task<Result> ChangePasswordAsync(
+                Guid userId,
+                ChangePasswordRequestDto request,
+                string? ipAddress,
+                string? userAgent,
+                CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                return Result.Failure("Dữ liệu đổi mật khẩu không hợp lệ.");
+
+            if (userId == Guid.Empty)
+                return Result.Failure("User không hợp lệ.");
+
+            if (string.IsNullOrWhiteSpace(request.CurrentPassword))
+                return Result.Failure("Vui lòng nhập mật khẩu hiện tại.");
+
+            if (string.IsNullOrWhiteSpace(request.NewPassword))
+                return Result.Failure("Vui lòng nhập mật khẩu mới.");
+
+            if (string.IsNullOrWhiteSpace(request.ConfirmNewPassword))
+                return Result.Failure("Vui lòng nhập xác nhận mật khẩu mới.");
+
+            if (request.NewPassword.Length < 6)
+                return Result.Failure("Mật khẩu mới phải có ít nhất 6 ký tự.");
+
+            if (request.NewPassword != request.ConfirmNewPassword)
+                return Result.Failure("Xác nhận mật khẩu mới không khớp.");
+
+            if (request.CurrentPassword == request.NewPassword)
+                return Result.Failure("Mật khẩu mới không được trùng với mật khẩu hiện tại.");
+
+            var ip = string.IsNullOrWhiteSpace(ipAddress)
+                ? "unknown"
+                : ipAddress.Trim();
+
+            var user = await _userRepository.GetByIdWithRolesAsync(
+                userId,
+                cancellationToken);
+
+            if (user == null)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Change Password Failed",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    entityId: userId,
+                    description: "Change password failed because user was not found.",
+                    newValues: new
+                    {
+                        UserId = userId,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "User not found",
+                        FailedAt = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Không tìm thấy user.");
+            }
+
+            if (!user.IsActive)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Change Password Failed",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    entityId: user.Id,
+                    description: "Change password failed because user is inactive.",
+                    newValues: new
+                    {
+                        user.Id,
+                        user.Email,
+                        user.IsActive,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "User inactive",
+                        FailedAt = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Tài khoản đã bị khóa.");
+            }
+
+            var validCurrentPassword = _passwordHasher.Verify(
+                request.CurrentPassword,
+                user.PasswordHash);
+
+            if (!validCurrentPassword)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Change Password Failed",
+                    actionType: AuditActionType.Update,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    entityId: user.Id,
+                    description: "Change password failed because current password is invalid.",
+                    newValues: new
+                    {
+                        user.Id,
+                        user.Email,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "Invalid current password",
+                        FailedAt = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result.Failure("Mật khẩu hiện tại không đúng.");
+            }
+
+            user.PasswordHash = _passwordHasher.Hash(request.NewPassword);
+
+            // Nếu user đang có OTP reset password cũ thì xóa luôn để tránh dùng lại
+            user.PasswordResetOtpHash = null;
+            user.PasswordResetOtpExpiredAt = null;
+            user.PasswordResetVerifyFailedCount = 0;
+
+            _userRepository.Update(user);
+
+            await _userRepository.SaveChangesAsync(cancellationToken);
+
+            await WriteAuditSafeAsync(
+                action: "Change Password Success",
+                actionType: AuditActionType.Update,
+                status: AuditStatus.Success,
+                entityName: "User",
+                entityId: user.Id,
+                description: "User changed password successfully.",
+                newValues: new
+                {
+                    user.Id,
+                    user.Email,
+                    IpAddress = ip,
+                    UserAgent = userAgent,
+                    ChangedAt = DateTime.UtcNow
+                },
+                cancellationToken: cancellationToken);
+
+            return Result.Success();
+        }
+
 
         private static string BuildRegisterOtpEmailBody(string otp)
         {

@@ -1,12 +1,13 @@
 ﻿using DTP.Modules.Auth.Application.Commands.Auths;
 using DTP.Modules.Auth.Application.DTOs;
 using DTP.Modules.Auth.Application.Queries.Users;
+using DTP.Shared.Application;
+using DTP.Shared.Application.Http;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
-using DTP.Shared.Application.Http;
 
 namespace DTP.Modules.Auth.Presentation.Controllers
 {
@@ -173,6 +174,33 @@ namespace DTP.Modules.Auth.Presentation.Controllers
                 [FromBody] ResetPasswordCommand command,
                 CancellationToken cancellationToken)
         {
+            command.IpAddress = HttpContext.GetClientIp();
+            command.UserAgent = HttpContext.GetUserAgent();
+
+            var result = await _mediator.Send(command, cancellationToken);
+
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+
+
+        [Authorize]
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword(
+            [FromBody] ChangePasswordCommand command,
+            CancellationToken cancellationToken)
+        {
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue("sub")
+                ?? User.FindFirstValue("userId");
+
+            if (!Guid.TryParse(userIdValue, out var userId))
+                return Unauthorized(Result.Failure("Token không hợp lệ."));
+
+            command.UserId = userId;
             command.IpAddress = HttpContext.GetClientIp();
             command.UserAgent = HttpContext.GetUserAgent();
 
