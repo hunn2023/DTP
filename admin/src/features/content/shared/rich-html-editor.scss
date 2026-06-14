@@ -67,5 +67,21 @@
     font-size: 1rem;
     line-height: 1.65;
     padding: 1.25rem 1.5rem;
+
+    img {
+      max-width: 100%;
+      height: auto;
+      content-visibility: auto;
+    }
+  }
+
+  &__quill-loading {
+    min-height: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0 0 0.375rem 0.375rem;
+    background: var(--bs-body-bg);
   }
 }

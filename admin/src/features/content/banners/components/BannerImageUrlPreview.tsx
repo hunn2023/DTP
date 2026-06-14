@@ -53,6 +53,8 @@ const BannerImageUrlPreview = ({
           <img
             src={trimmed}
             alt={label}
+            loading="lazy"
+            decoding="async"
             onError={() => setPreviewFailed(true)}
           />
         ) : (

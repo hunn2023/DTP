@@ -30,6 +30,7 @@ export function useArticleFormPage() {
   const [isLoading, setIsLoading] = useState(!isNew)
   const [isSaving, setIsSaving] = useState(false)
   const [loadFailed, setLoadFailed] = useState(false)
+  const [isEditorReady, setIsEditorReady] = useState(isNew)
 
   const notifyErrorRef = useRef(showNotification)
   notifyErrorRef.current = showNotification
@@ -56,6 +57,16 @@ export function useArticleFormPage() {
       })
       .finally(() => setIsLoading(false))
   }, [isNew, articleId])
+
+  useEffect(() => {
+    if (isLoading) {
+      setIsEditorReady(false)
+      return
+    }
+
+    const idleId = requestIdleCallback(() => setIsEditorReady(true), { timeout: 500 })
+    return () => cancelIdleCallback(idleId)
+  }, [isLoading, articleId])
 
   const updateField = useCallback(<K extends keyof ContentArticle>(name: K, value: ContentArticle[K]) => {
     setValues((prev) => {
@@ -183,6 +194,7 @@ export function useArticleFormPage() {
     categoryOptions,
     isNew,
     isLoading,
+    isEditorReady,
     isSaving,
     isActioning: isNew ? false : isActioning,
     loadFailed,

@@ -131,6 +131,8 @@ const PageFormPage = () => {
             <div className="mt-4">
               <RichHtmlEditor
                 label="Nội dung *"
+                editorKey={form.values.id || 'new'}
+                defaultTab={form.isNew ? 'visual' : 'preview'}
                 value={form.values.content}
                 onChange={(v) => form.updateField('content', v)}
               />

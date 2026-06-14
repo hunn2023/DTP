@@ -145,11 +145,20 @@ const ArticleFormPage = () => {
 
             <Card>
               <CardBody>
-                <RichHtmlEditor
-                  label="Nội dung bài viết *"
-                  value={form.values.content}
-                  onChange={(value) => form.updateField('content', value)}
-                />
+                {form.isEditorReady ? (
+                  <RichHtmlEditor
+                    label="Nội dung bài viết *"
+                    editorKey={form.values.id || 'new'}
+                    defaultTab={form.isNew ? 'visual' : 'preview'}
+                    value={form.values.content}
+                    onChange={(value) => form.updateField('content', value)}
+                  />
+                ) : (
+                  <div className="text-center py-5 text-muted">
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    Đang chuẩn bị editor...
+                  </div>
+                )}
                 {form.errors.content ? (
                   <div className="text-danger fs-xs mt-2">{form.errors.content}</div>
                 ) : null}
