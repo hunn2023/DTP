@@ -12,8 +12,8 @@ namespace DTP.Modules.Auth.Application.DTOs
         public string Email { get; set; } = default!;
         public string OtpCode { get; set; } = default!;
 
-        public string IpAddress { get; set; } = default!;
+        public string? IpAddress { get; set; } = default!;
 
-        public string    UserAgent { get; set; } = default!;
+        public string? UserAgent { get; set; } = default!;
     }
 }

@@ -1,5 +1,6 @@
 ﻿using DTP.Modules.Report.Application.DTOs;
 using DTP.Modules.Report.Domain.Enums;
+using DTP.Shared.Application;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +11,7 @@ namespace DTP.Modules.Report.Application.Abstractions.Exports
 {
     public interface IReportExportService
     {
-        Task<ReportExportResultDto> ExportAsync(
+        Task<Result<ReportExportResultDto>> ExportAsync(
             ReportMetricType reportType,
             ReportExportFormat format,
             DateTime? fromDate,

@@ -1,6 +1,7 @@
 ﻿using DTP.Modules.Report.Application.Abstractions.Exports;
 using DTP.Modules.Report.Application.DTOs;
 using DTP.Modules.Report.Domain.Enums;
+using DTP.Shared.Application;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Report.Application.Queries
 {
-    public class ExportReportQuery : IRequest<ReportExportResultDto>
+    public class ExportReportQuery : IRequest<Result<ReportExportResultDto>>
     {
         public ReportMetricType ReportType { get; set; }
         public ReportExportFormat Format { get; set; } = ReportExportFormat.Csv;
@@ -20,7 +21,7 @@ namespace DTP.Modules.Report.Application.Queries
     }
 
     public class ExportReportQueryHandler
-    : IRequestHandler<ExportReportQuery, ReportExportResultDto>
+    : IRequestHandler<ExportReportQuery, Result<ReportExportResultDto>>
     {
         private readonly IReportExportService _exportService;
 
@@ -29,7 +30,7 @@ namespace DTP.Modules.Report.Application.Queries
             _exportService = exportService;
         }
 
-        public async Task<ReportExportResultDto> Handle(
+        public async Task<Result<ReportExportResultDto>> Handle(
             ExportReportQuery request,
             CancellationToken cancellationToken)
         {

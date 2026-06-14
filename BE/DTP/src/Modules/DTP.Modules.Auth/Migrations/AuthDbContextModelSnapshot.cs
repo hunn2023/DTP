@@ -347,6 +347,15 @@ namespace DTP.Modules.Auth.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<DateTime?>("PasswordResetOtpExpiredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PasswordResetOtpHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PasswordResetVerifyFailedCount")
+                        .HasColumnType("int");
+
                     b.Property<string>("Phone")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");

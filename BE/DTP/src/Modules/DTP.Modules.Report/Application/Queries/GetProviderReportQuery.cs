@@ -1,5 +1,6 @@
 ﻿using DTP.Modules.Report.Application.Abstractions.Services;
 using DTP.Modules.Report.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Report.Application.Queries
 {
-    public class GetProviderReportQuery : IRequest<ProviderReportDto>
+    public class GetProviderReportQuery : IRequest<Result<ProviderReportDto>>
     {
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
@@ -17,7 +18,7 @@ namespace DTP.Modules.Report.Application.Queries
 
 
     public class GetProviderReportQueryHandler
-    : IRequestHandler<GetProviderReportQuery, ProviderReportDto>
+    : IRequestHandler<GetProviderReportQuery, Result<ProviderReportDto>>
     {
         private readonly IReportService _service;
 
@@ -26,7 +27,7 @@ namespace DTP.Modules.Report.Application.Queries
             _service = service;
         }
 
-        public async Task<ProviderReportDto> Handle(
+        public async Task<Result<ProviderReportDto>> Handle(
             GetProviderReportQuery request,
             CancellationToken cancellationToken)
         {

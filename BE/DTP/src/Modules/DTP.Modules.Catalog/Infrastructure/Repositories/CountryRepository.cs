@@ -31,14 +31,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<Country?> GetByIdAsync(
-            Guid id,
-            CancellationToken cancellationToken = default)
-        {
-            return await _context.Countries
-                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-        }
-
         public async Task<bool> ExistsByCodeAsync(
             string code,
             Guid? excludeId = null,

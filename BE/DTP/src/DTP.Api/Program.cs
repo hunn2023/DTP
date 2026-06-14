@@ -1,24 +1,44 @@
-﻿using DTP.Modules.Audit;
+﻿using DTP.Infrastructure.Email;
+using DTP.Modules.Audit;
 using DTP.Modules.Auth;
 using DTP.Modules.Catalog;
 using DTP.Modules.Delivery;
 using DTP.Modules.Ordering;
 using DTP.Modules.Payment;
+using DTP.Modules.Report;
+using DTP.Modules.Content;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-using DTP.Infrastructure.Email;
 using System.Threading.RateLimiting;
+///using DTP.Modules.Customer;
 
 namespace DTP.Api
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("DtpCors", policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "https://dtp-admin-c5dd3.web.app",
+                            "https://dtpweb-94f64.web.app",
+                            "http://localhost:5173",
+                            "http://localhost:3000"
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
+            });
 
             builder.Services
                 .AddControllers()
@@ -79,6 +99,8 @@ namespace DTP.Api
                 throw new InvalidOperationException("Missing configuration: Jwt:Secret");
             }
 
+        
+
             builder.Services
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
@@ -103,7 +125,8 @@ namespace DTP.Api
             builder.Services.AddOrderingModule(builder.Configuration);
             builder.Services.AddPaymentModule(builder.Configuration);
             builder.Services.AddDeliveryModule(builder.Configuration);
-
+            builder.Services.AddReportModule(builder.Configuration);
+            builder.Services.AddContentModule(builder.Configuration);
             builder.Services.AddEmailInfrastructure();
 
 
@@ -418,7 +441,7 @@ namespace DTP.Api
             var app = builder.Build();
 
             app.UseSwagger();
-
+       
             app.UseSwaggerUI(options =>
             {
                 options.RoutePrefix = "swagger";
@@ -426,7 +449,7 @@ namespace DTP.Api
             });
 
             app.UseRouting();
-
+            app.UseCors("DtpCors");
             app.UseForwardedHeaders();
             app.UseHttpsRedirection();
 

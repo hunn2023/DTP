@@ -25,13 +25,13 @@ namespace DTP.Modules.Ordering.Presentation.Controllers.Admin
         [EnableRateLimiting("ordering-admin")]
         [HttpGet]
         public async Task<IActionResult> GetPaged(
-      [FromQuery] string? keyword,
-      [FromQuery] Guid? customerId,
-      [FromQuery] OrderStatus? status,
-      [FromQuery] OrderPaymentStatus? paymentStatus,
-      [FromQuery] int pageIndex = 1,
-      [FromQuery] int pageSize = 20,
-      CancellationToken cancellationToken = default)
+              [FromQuery] string? keyword,
+              [FromQuery] Guid? customerId,
+              [FromQuery] OrderStatus? status,
+              [FromQuery] OrderPaymentStatus? paymentStatus,
+              [FromQuery] int pageIndex = 1,
+              [FromQuery] int pageSize = 20,
+              CancellationToken cancellationToken = default)
         {
             var result = await _mediator.Send(new GetOrdersPagedQuery
             {

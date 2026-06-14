@@ -56,6 +56,16 @@ namespace DTP.Modules.Ordering.Application.Abstractions.Services
             CancellationToken cancellationToken = default);
 
 
+        Task<Result<PagedResultDto<OrderDto>>> GetCustomerPagedAsync(
+            Guid customerId,
+            string? keyword,
+            OrderStatus? status,
+            OrderPaymentStatus? paymentStatus,
+            int pageIndex,
+            int pageSize,
+            CancellationToken cancellationToken = default);
+
+
         //Task<Result<int>> ExpireWaitingPaymentOrdersAsync(
         //        CancellationToken cancellationToken = default);
     }

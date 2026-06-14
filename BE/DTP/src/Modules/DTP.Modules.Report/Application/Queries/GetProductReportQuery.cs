@@ -1,22 +1,18 @@
 ﻿using DTP.Modules.Report.Application.Abstractions.Services;
 using DTP.Modules.Report.Application.DTOs;
+using DTP.Shared.Application;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Report.Application.Queries
 {
-    public class GetProductReportQuery : IRequest<ProductReportDto>
+    public class GetProductReportQuery : IRequest<Result<ProductReportDto>>
     {
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
     }
 
     public class GetProductReportQueryHandler
-    : IRequestHandler<GetProductReportQuery, ProductReportDto>
+    : IRequestHandler<GetProductReportQuery, Result<ProductReportDto>>
     {
         private readonly IReportService _service;
 
@@ -25,7 +21,7 @@ namespace DTP.Modules.Report.Application.Queries
             _service = service;
         }
 
-        public async Task<ProductReportDto> Handle(
+        public async Task<Result<ProductReportDto>> Handle(
             GetProductReportQuery request,
             CancellationToken cancellationToken)
         {

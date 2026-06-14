@@ -15,10 +15,14 @@ namespace DTP.Modules.Auth.Domain.Entities
         public string? AvatarUrl { get; set; }
 
         public bool IsActive { get; set; } = true;
-        public bool EmailConfirmed { get; set; }
-        public bool PhoneConfirmed { get; set; }
+        public bool EmailConfirmed { get; set; } = true;
+        public bool PhoneConfirmed { get; set; } = true;
 
         public DateTime? LastLoginAt { get; set; }
+
+        public string? PasswordResetOtpHash { get; set; }
+        public DateTime? PasswordResetOtpExpiredAt { get; set; }
+        public int PasswordResetVerifyFailedCount { get; set; }
 
 
         public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
