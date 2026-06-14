@@ -8,7 +8,7 @@ namespace DTP.Modules.Content.Presentation.Controllers.Admin
 {
     [ApiController]
     [Route("api/admin/content/faqs")]
-    [Authorize]
+    //[Authorize]
     public class AdminContentFaqsController : ControllerBase
     {
         private readonly IMediator _mediator;

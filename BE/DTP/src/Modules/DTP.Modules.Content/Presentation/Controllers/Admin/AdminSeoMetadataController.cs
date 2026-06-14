@@ -9,7 +9,7 @@ namespace DTP.Modules.Content.Presentation.Controllers.Admin
 {
     [ApiController]
     [Route("api/admin/content/seo")]
-    [Authorize]
+    //[Authorize]
     public class AdminSeoMetadataController : ControllerBase
     {
         private readonly IMediator _mediator;
