@@ -1,4 +1,5 @@
-﻿using DTP.Shared.Domain;
+﻿using DTP.Modules.Catalog.Domain.Enums;
+using DTP.Shared.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +23,6 @@ namespace DTP.Modules.Catalog.Domain.Entities
             int sortOrder,
             bool isActive)
         {
-            Id = Guid.NewGuid();
             ProductId = productId;
             ContentType = contentType;
             Title = title.Trim();
@@ -30,7 +30,6 @@ namespace DTP.Modules.Catalog.Domain.Entities
             BodyHtml = bodyHtml.Trim();
             SortOrder = sortOrder;
             IsActive = isActive;
-            CreatedAt = DateTime.UtcNow;
         }
 
 

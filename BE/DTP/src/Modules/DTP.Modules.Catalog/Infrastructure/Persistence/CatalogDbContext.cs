@@ -33,6 +33,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Persistence
 
         public DbSet<PhoneCard> PhoneCards => Set<PhoneCard>();
 
+        public DbSet<ProductContent> ProductContents => Set<ProductContent>();
+
+        public DbSet<ProductFaq> ProductFaqs => Set<ProductFaq>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(

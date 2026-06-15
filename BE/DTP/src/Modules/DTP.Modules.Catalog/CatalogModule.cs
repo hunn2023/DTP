@@ -97,6 +97,12 @@ namespace DTP.Modules.Catalog
             services.AddScoped<IProductAttributeService, ProductAttributeService>();
             services.AddScoped<IProductVariantFeatureRepository, ProductVariantFeatureRepository>();
             services.AddScoped<IProductVariantFeatureService, ProductVariantFeatureService>();
+
+            services.AddScoped<IProductContentRepository, ProductContentRepository>();
+            services.AddScoped<IProductFaqRepository, ProductFaqRepository>();
+
+            services.AddScoped<IProductContentService, ProductContentService>();
+            services.AddScoped<IProductFaqService, ProductFaqService>();
             services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(CatalogModule).Assembly);
