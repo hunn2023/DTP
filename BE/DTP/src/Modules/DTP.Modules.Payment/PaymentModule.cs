@@ -4,6 +4,8 @@ using DTP.Modules.Payment.Infrastructure.Clients;
 using DTP.Modules.Payment.Infrastructure.Persistence;
 using DTP.Modules.Payment.Infrastructure.Repositories;
 using DTP.Modules.Payment.Infrastructure.Services;
+using DTP.Modules.Provider.Application.Abstractions.Services;
+using DTP.Modules.Provider.Application.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,6 +54,8 @@ namespace DTP.Modules.Payment
 
             services.AddScoped<IOrderPaymentService, OrderPaymentService>();
             services.AddScoped<IPaymentRateLimitService, PaymentRateLimitService>();
+
+            services.AddScoped<IProviderReservationService, ProviderReservationService>();
 
             services.AddMediatR(cfg =>
             {

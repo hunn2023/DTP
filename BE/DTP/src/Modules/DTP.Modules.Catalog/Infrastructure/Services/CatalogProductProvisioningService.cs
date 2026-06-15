@@ -2,13 +2,6 @@
 using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Domain.Entities;
-using DTP.Modules.Catalog.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Catalog.Infrastructure.Services
 {

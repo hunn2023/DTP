@@ -1,9 +1,5 @@
 ﻿using DTP.Shared.Application;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace DTP.Modules.Payment.Application.Abstractions.Services
 {
@@ -18,6 +14,11 @@ namespace DTP.Modules.Payment.Application.Abstractions.Services
             Guid paymentTransactionId,
             string? providerTransactionId,
             DateTime paidAt,
+            CancellationToken cancellationToken = default);
+
+        Task<Result> MarkFulfillmentFailedAsync(
+            Guid orderId,
+            string reason,
             CancellationToken cancellationToken = default);
     }
 

@@ -22,6 +22,14 @@ namespace DTP.Modules.Provider.Application.DTOs
         public string? CoverageType { get; set; }
         public string? CoverageDescription { get; set; }
 
+        public string? ActivationPolicy { get; set; }
+        public string? SpeedPolicy { get; set; }
+
+        public bool HotspotSupported { get; set; }
+        public bool PhoneNumberSupported { get; set; }
+        public bool SmsSupported { get; set; }
+        public bool KycRequired { get; set; }
+
         public List<ProviderCoverageCountryDto> Countries { get; set; } = new();
         public List<string> Operators { get; set; } = new();
 

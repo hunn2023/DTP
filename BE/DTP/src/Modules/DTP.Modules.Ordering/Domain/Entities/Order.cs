@@ -180,6 +180,15 @@ namespace DTP.Modules.Ordering.Domain.Entities
             UpdatedAt = DateTime.UtcNow;
         }
 
+
+        public void MarkFulfillmentFailed(string reason)
+        {
+            if (Status != OrderStatus.Processing)
+                throw new InvalidOperationException("Chỉ đánh dấu lỗi giao hàng cho đơn hàng đang xử lý.");
+            Status = OrderStatus.FulfillmentFailed;
+            CancelReason = reason;
+            UpdatedAt = DateTime.UtcNow;
+        }
         public void ApplyDiscount(decimal discountAmount)
         {
             if (discountAmount < 0)

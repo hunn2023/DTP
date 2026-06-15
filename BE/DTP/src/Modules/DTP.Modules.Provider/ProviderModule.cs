@@ -8,7 +8,7 @@ using DTP.Modules.Provider.Infrastructure.Clients;
 using DTP.Modules.Provider.Infrastructure.Persistence;
 using DTP.Modules.Provider.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.SqlServer; 
+using Microsoft.EntityFrameworkCore.SqlServer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
@@ -36,9 +36,13 @@ namespace DTP.Modules.Provider
 
             services.AddScoped<IProviderPackageSyncService, ProviderPackageSyncService>();
             services.AddScoped<IProviderFulfillmentService, ProviderFulfillmentService>();
+            services.AddScoped<IProviderOrderRepository, ProviderOrderRepository>();
+            services.AddScoped<IProviderOrderItemRepository, ProviderOrderItemRepository>();
 
-            services.AddHttpClient<IEsimProviderClient, PeacomProviderClient>();
+            services.AddHttpClient<IPeacomProviderClient, PeacomProviderClient>();
 
+            services.AddScoped<IProviderOrderReader, ProviderOrderReader>();
+            services.AddScoped<IProviderRedeemRepository, ProviderRedeemRepository>();
             services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(ProviderModule).Assembly);

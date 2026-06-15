@@ -32,10 +32,6 @@ namespace DTP.Modules.Provider.Domain.Entities
 
         public string? ErrorMessage { get; private set; }
 
-        public DateTime CreatedAt { get; private set; }
-
-        public DateTime? UpdatedAt { get; private set; }
-
         private readonly List<ProviderOrderItem> _items = new();
         public IReadOnlyCollection<ProviderOrderItem> Items => _items.AsReadOnly();
 

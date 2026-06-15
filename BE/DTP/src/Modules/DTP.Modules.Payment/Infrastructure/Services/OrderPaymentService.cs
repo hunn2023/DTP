@@ -1,5 +1,6 @@
 ﻿using DTP.Modules.Ordering.Application.Abstractions.Repositories;
 using DTP.Modules.Payment.Application.Abstractions.Services;
+using DTP.Modules.Payment.Domain.Entities;
 using DTP.Shared.Application;
 using System;
 using System.Collections.Generic;
@@ -39,7 +40,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 TotalAmount = order.TotalAmount,
                 Currency = order.Currency,
                 Status = order.Status.ToString(),
-                PaymentExpiredAt  = order.PaymentExpiredAt
+                PaymentExpiredAt = order.PaymentExpiredAt
             };
         }
 
@@ -56,6 +57,26 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 return Result.Failure("Order not found.");
 
             order.MarkPaid(paymentTransactionId.ToString());
+
+            _orderRepository.Update(order);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return Result.Success();
+        }
+
+        public async Task<Result> MarkFulfillmentFailedAsync(Guid orderId,
+            string reason,
+            CancellationToken cancellationToken = default)
+        {
+
+            var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
+
+            if (order == null)
+                return Result.Failure("Order not found.");
+
+
+            order.MarkFulfillmentFailed(reason);
 
             _orderRepository.Update(order);
 

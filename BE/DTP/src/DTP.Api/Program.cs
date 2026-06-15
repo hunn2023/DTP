@@ -2,11 +2,12 @@
 using DTP.Modules.Audit;
 using DTP.Modules.Auth;
 using DTP.Modules.Catalog;
+using DTP.Modules.Content;
 using DTP.Modules.Delivery;
 using DTP.Modules.Ordering;
 using DTP.Modules.Payment;
+using DTP.Modules.Provider;
 using DTP.Modules.Report;
-using DTP.Modules.Content;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
@@ -127,6 +128,7 @@ namespace DTP.Api
             builder.Services.AddDeliveryModule(builder.Configuration);
             builder.Services.AddReportModule(builder.Configuration);
             builder.Services.AddContentModule(builder.Configuration);
+            builder.Services.AddProviderModule(builder.Configuration);
             builder.Services.AddEmailInfrastructure();
 
 

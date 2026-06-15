@@ -71,7 +71,7 @@ namespace DTP.Modules.Provider.Application.Services
             if (!provider.IsActive)
                 throw new InvalidOperationException("Provider PEACOM đang inactive.");
 
-            var dtpOrder = await _orderReader.GetOrderForProviderAsync(
+            var dtpOrder = await _orderReader.GetOrderForReservationAsync(
                 dtpOrderId,
                 cancellationToken);
 
@@ -89,7 +89,7 @@ namespace DTP.Modules.Provider.Application.Services
             foreach (var item in dtpOrder.Items)
             {
                 var mapping = await _mappingRepository.GetByEsimPackageIdAsync(
-                    item.EsimPackageId,
+                    item.EsimPackageId.Value,
                     cancellationToken);
 
                 if (mapping is null)
@@ -98,7 +98,7 @@ namespace DTP.Modules.Provider.Application.Services
                 if (!int.TryParse(mapping.ProviderProductId, out var providerProductId))
                     throw new InvalidOperationException($"ProviderProductId không hợp lệ cho SKU {mapping.ProviderSku}.");
 
-                createOrderRequest.Products.Add(new PeacomCreateOrderItemRequest
+                createOrderRequest.Products.Add(new PeacomCreateOrderProductDto
                 {
                     ProductId = providerProductId,
                     Sku = mapping.ProviderSku,
@@ -131,6 +131,22 @@ namespace DTP.Modules.Provider.Application.Services
                 ProviderOrderPublicId = providerOrder.ProviderOrderPublicId,
                 ReservedUntil = providerOrder.ReservedUntil
             };
+        }
+
+
+        public async Task<bool> IsReservationValidAsync(
+            Guid dtpOrderId,
+            CancellationToken cancellationToken = default)
+        {
+            var providerOrder = await _providerOrderRepository.GetByDtpOrderIdAsync(
+                dtpOrderId,
+                cancellationToken);
+
+            return providerOrder is not null &&
+                   !providerOrder.IsExpired() &&
+                   providerOrder.Status != "Expired" &&
+                   providerOrder.Status != "Failed" &&
+                   providerOrder.Status != "Cancelled";
         }
     }
 }

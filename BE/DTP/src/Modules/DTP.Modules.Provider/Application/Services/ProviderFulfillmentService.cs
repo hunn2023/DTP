@@ -2,7 +2,7 @@
 using DTP.Modules.Provider.Application.Abstractions.Clients;
 using DTP.Modules.Provider.Application.Abstractions.Repositories;
 using DTP.Modules.Provider.Application.Abstractions.Services;
-using DTP.Modules.Provider.Application.DTOs;
+using DTP.Modules.Provider.Application.DTOs.Peacoms;
 using DTP.Modules.Provider.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -60,7 +60,7 @@ namespace DTP.Modules.Provider.Application.Services
                 throw new InvalidOperationException("ProviderOrder đã quá hạn giữ hàng 15 phút.");
             }
 
-            var dtpOrder = await _orderReader.GetOrderForProviderAsync(
+            var dtpOrder = await _orderReader.GetOrderForReservationAsync(
                 dtpOrderId,
                 cancellationToken);
 

@@ -11,6 +11,10 @@ namespace DTP.Modules.Provider.Application.Abstractions.Services
         Task<ProviderReservationResult> ReserveOrderAsync(
             Guid dtpOrderId,
             CancellationToken cancellationToken = default);
+
+        Task<bool> IsReservationValidAsync(
+            Guid dtpOrderId,
+            CancellationToken cancellationToken = default);
     }
 
     public class ProviderReservationResult

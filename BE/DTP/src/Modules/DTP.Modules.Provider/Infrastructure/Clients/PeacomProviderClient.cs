@@ -21,6 +21,129 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
             _httpClient = httpClient;
         }
 
+        public async Task<IReadOnlyList<ProviderPackageProductRemoteDto>> GetPackageProductsAsync(
+            Domain.Entities.Provider provider,
+            CancellationToken cancellationToken = default)
+        {
+            var response = await _httpClient.GetAsync(
+                "/eip/partner/v2/package-product",
+                cancellationToken);
+
+            var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+
+            var result = JsonSerializer.Deserialize<PeacomPackageProductResponse>(
+                rawJson,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+            if (result?.Data == null || result.Data.Count == 0)
+                return Array.Empty<ProviderPackageProductRemoteDto>();
+
+            return result.Data.Select(x => new ProviderPackageProductRemoteDto
+            {
+                Id = x.Id.ToString(),
+                Sku = x.Sku,
+                Name = x.Name,
+                Price = x.Price,
+                CurrencyCode = "VND",
+                ImageUrl = x.ImageUrl,
+                //Description = x.Description,
+                //AvailableQty = x.AvailableQty,
+                //Type = x.Type,
+                RawJson = JsonSerializer.Serialize(x)
+            }).ToList();
+        }
+
+        public async Task<ProviderEsimProductRemoteDto> GetProductEsimAsync(
+                Domain.Entities.Provider provider,
+                string sku,
+                CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(sku))
+                throw new ArgumentException("SKU không được để trống.", nameof(sku));
+
+            var response = await _httpClient.GetAsync(
+                $"/eip/partner/v2/product-esim/{Uri.EscapeDataString(sku)}",
+                cancellationToken);
+
+            var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+
+            var result = JsonSerializer.Deserialize<PeacomProductEsimResponse>(
+                rawJson,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+            if (result == null)
+                throw new InvalidOperationException($"Không parse được PRODUCT ESIM Peacom. SKU: {sku}");
+
+            var extraData = result.ExtraData;
+            var operatorInfo = extraData?.Operator;
+
+            var dataAmount = ParseVolume(extraData?.Volume);
+            var isUnlimited = IsUnlimitedVolume(extraData?.Volume);
+
+            var countries = BuildCountries(operatorInfo?.Coverages);
+            var operators = countries
+                .SelectMany(x => x.Operators)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToList();
+
+            var coverageType =
+                operatorInfo?.Type
+                ?? (countries.Count > 1 ? "regional" : "local");
+
+            var coverageDescription =
+                operatorInfo?.UsageRange
+                ?? result.Regional
+                ?? extraData?.CountryCode;
+
+            return new ProviderEsimProductRemoteDto
+            {
+                Sku = result.Sku,
+                Name = !string.IsNullOrWhiteSpace(extraData?.Title)
+                    ? extraData.Title
+                    : result.Name,
+
+                Price = result.Price,
+                CurrencyCode = string.IsNullOrWhiteSpace(result.CurrencyCode)
+                    ? "VND"
+                    : result.CurrencyCode,
+
+                DataAmount = dataAmount,
+                DataUnit = isUnlimited ? null : "MB",
+                ValidityDays = extraData?.Duration ?? result.Validity,
+                IsUnlimited = isUnlimited,
+
+                CoverageType = coverageType,
+                CoverageDescription = coverageDescription,
+
+                ActivationPolicy = operatorInfo?.ActivationPolicy
+                    ?? extraData?.ActiveType?.ToString(),
+
+                SpeedPolicy = extraData?.Speed,
+
+                HotspotSupported = true,
+                PhoneNumberSupported = false,
+                SmsSupported = extraData?.SmsStatus == 1,
+                KycRequired = operatorInfo?.IsKycVerify ?? false,
+
+                Countries = countries,
+                Operators = operators,
+
+                RawJson = rawJson
+            };
+        }
+
+
         public async Task<PeacomCreateOrderResponse> CreateOrderAsync(
             PeacomCreateOrderRequest request,
             CancellationToken cancellationToken = default)
@@ -148,6 +271,116 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
             result.RawJson = rawJson;
 
             return result;
+        }
+
+
+        private static decimal? ParseVolume(JsonElement? volume)
+        {
+            if (volume == null)
+                return null;
+
+            var element = volume.Value;
+
+            if (element.ValueKind == JsonValueKind.Number)
+            {
+                if (element.TryGetDecimal(out var number))
+                    return number;
+            }
+
+            if (element.ValueKind == JsonValueKind.String)
+            {
+                var text = element.GetString();
+
+                if (string.IsNullOrWhiteSpace(text))
+                    return null;
+
+                if (text.Equals("unlimited", StringComparison.OrdinalIgnoreCase))
+                    return null;
+
+                if (decimal.TryParse(
+                        text,
+                        System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out var number))
+                {
+                    return number;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsUnlimitedVolume(JsonElement? volume)
+        {
+            if (volume == null)
+                return false;
+
+            var element = volume.Value;
+
+            if (element.ValueKind != JsonValueKind.String)
+                return false;
+
+            var text = element.GetString();
+
+            return text != null &&
+                   text.Equals("unlimited", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static List<ProviderCoverageCountryDto> BuildCountries(
+    List<PeacomCoverageResponse>? coverages)
+        {
+            if (coverages == null || coverages.Count == 0)
+                return new List<ProviderCoverageCountryDto>();
+
+            var countries = new List<ProviderCoverageCountryDto>();
+
+            foreach (var coverage in coverages)
+            {
+                var code = coverage.LocationCode ?? coverage.Code;
+                var name = coverage.LocationName ?? coverage.Name ?? code;
+                var logoUrl = coverage.LocationLogo;
+
+                if (string.IsNullOrWhiteSpace(code))
+                    continue;
+
+                var operators = new List<string>();
+                var networkTypes = new List<string>();
+
+                if (coverage.OperatorList != null)
+                {
+                    foreach (var op in coverage.OperatorList)
+                    {
+                        if (!string.IsNullOrWhiteSpace(op.OperatorName))
+                            operators.Add(op.OperatorName);
+
+                        if (!string.IsNullOrWhiteSpace(op.NetworkType))
+                            networkTypes.Add(op.NetworkType);
+                    }
+                }
+
+                if (coverage.Networks != null)
+                {
+                    foreach (var network in coverage.Networks)
+                    {
+                        if (!string.IsNullOrWhiteSpace(network.Name))
+                            operators.Add(network.Name);
+
+                        if (network.Types != null)
+                            networkTypes.AddRange(network.Types.Where(x => !string.IsNullOrWhiteSpace(x)));
+                    }
+                }
+
+                countries.Add(new ProviderCoverageCountryDto
+                {
+                    Code = code.Trim().ToUpperInvariant(),
+                    Name = name ?? code,
+                    LogoUrl = logoUrl,
+                    Operators = operators.Distinct().ToList(),
+                    NetworkTypes = networkTypes.Distinct().ToList()
+                });
+            }
+
+            return countries;
         }
     }
 }

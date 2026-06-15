@@ -8,7 +8,11 @@ namespace DTP.Modules.Provider.Application.DTOs
 {
     public class ProviderCoverageCountryDto
     {
-        public string CountryCode { get; set; } = default!;
-        public string CountryName { get; set; } = default!;
+        public string Code { get; set; } = default!;
+        public string Name { get; set; } = default!;
+        public string? LogoUrl { get; set; }
+
+        public List<string> Operators { get; set; } = new();
+        public List<string> NetworkTypes { get; set; } = new();
     }
 }

@@ -1,0 +1,48 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DTP.Modules.Ordering.Application.DTOs
+{
+    public class OrderForProviderDto
+    {
+        public Guid OrderId { get; set; }
+
+        public string OrderCode { get; set; } = default!;
+
+        public Guid UserId { get; set; }
+
+        public string CustomerEmail { get; set; } = default!;
+
+        public string? CustomerName { get; set; }
+
+        public string? CustomerPhone { get; set; }
+
+        public decimal TotalAmount { get; set; }
+
+        public string CurrencyCode { get; set; } = "VND";
+
+        public List<OrderItemForProviderDto> Items { get; set; } = new();
+    }
+
+    public class OrderItemForProviderDto
+    {
+        public Guid OrderItemId { get; set; }
+
+        public Guid ProductId { get; set; }
+
+        public Guid? ProductVariantId { get; set; }
+
+        public Guid? EsimPackageId { get; set; }
+
+        public string Sku { get; set; } = default!;
+
+        public string ProductName { get; set; } = default!;
+
+        public int Quantity { get; set; }
+
+        public decimal UnitPrice { get; set; }
+    }
+}

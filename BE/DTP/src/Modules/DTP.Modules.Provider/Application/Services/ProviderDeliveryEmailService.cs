@@ -26,7 +26,7 @@ namespace DTP.Modules.Provider.Application.Services
             ProviderRedeem redeem,
             CancellationToken cancellationToken = default)
         {
-            var order = await _orderReader.GetOrderForProviderAsync(
+            var order = await _orderReader.GetOrderForReservationAsync(
                 redeem.DtpOrderId,
                 cancellationToken);
 
@@ -63,7 +63,7 @@ namespace DTP.Modules.Provider.Application.Services
             ProviderRedeem redeem,
             CancellationToken cancellationToken = default)
         {
-            var order = await _orderReader.GetOrderForProviderAsync(
+            var order = await _orderReader.GetOrderForReservationAsync(
                 redeem.DtpOrderId,
                 cancellationToken);
 

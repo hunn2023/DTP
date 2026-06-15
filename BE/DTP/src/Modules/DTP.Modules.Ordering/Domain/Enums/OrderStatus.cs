@@ -14,6 +14,7 @@ namespace DTP.Modules.Ordering.Domain.Enums
         Processing = 4,
         Completed = 5,
         Cancelled = 6,
-        Failed = 7
+        Failed = 7,
+        FulfillmentFailed = 8,
     }
 }

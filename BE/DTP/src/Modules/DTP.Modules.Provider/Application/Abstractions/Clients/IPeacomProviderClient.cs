@@ -11,6 +11,16 @@ namespace DTP.Modules.Provider.Application.Abstractions.Clients
     public interface IPeacomProviderClient
     {
 
+        Task<IReadOnlyList<ProviderPackageProductRemoteDto>> GetPackageProductsAsync(
+          Domain.Entities.Provider provider,
+          CancellationToken cancellationToken = default);
+
+        Task<ProviderEsimProductRemoteDto> GetProductEsimAsync(
+            Domain.Entities.Provider provider,
+            string sku,
+            CancellationToken cancellationToken = default);
+
+
         Task<PeacomCreateOrderResponse> CreateOrderAsync(
           PeacomCreateOrderRequest request,
           CancellationToken cancellationToken = default);

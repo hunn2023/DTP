@@ -1,15 +1,12 @@
-﻿using DTP.Modules.Provider.Application.Abstractions;
+﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Modules.Provider.Application.Abstractions;
 using DTP.Modules.Provider.Application.Abstractions.Clients;
 using DTP.Modules.Provider.Application.Abstractions.Repositories;
 using DTP.Modules.Provider.Application.Abstractions.Services;
 using DTP.Modules.Provider.Application.DTOs;
 using DTP.Modules.Provider.Domain.Entities;
 using DTP.Shared.Application;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace DTP.Modules.Provider.Application.Services
 {
@@ -20,7 +17,7 @@ namespace DTP.Modules.Provider.Application.Services
         private readonly IProviderProductMappingRepository _mappingRepository;
         private readonly IProviderApiLogRepository _apiLogRepository;
         private readonly IProviderUnitOfWork _unitOfWork;
-        private readonly IEsimProviderClient _esimProviderClient;
+        private readonly IPeacomProviderClient _peacomProviderClient;
         private readonly ICatalogProductProvisioningService _catalogProvisioningService;
 
         public ProviderPackageSyncService(
@@ -29,7 +26,7 @@ namespace DTP.Modules.Provider.Application.Services
             IProviderProductMappingRepository mappingRepository,
             IProviderApiLogRepository apiLogRepository,
             IProviderUnitOfWork unitOfWork,
-            IEsimProviderClient esimProviderClient,
+            IPeacomProviderClient peacomProviderClient,
             ICatalogProductProvisioningService catalogProvisioningService)
         {
             _providerRepository = providerRepository;
@@ -37,7 +34,7 @@ namespace DTP.Modules.Provider.Application.Services
             _mappingRepository = mappingRepository;
             _apiLogRepository = apiLogRepository;
             _unitOfWork = unitOfWork;
-            _esimProviderClient = esimProviderClient;
+            _peacomProviderClient = peacomProviderClient;
             _catalogProvisioningService = catalogProvisioningService;
         }
 
@@ -67,7 +64,7 @@ namespace DTP.Modules.Provider.Application.Services
 
             try
             {
-                remotePackages = await _esimProviderClient.GetPackageProductsAsync(
+                remotePackages = await _peacomProviderClient.GetPackageProductsAsync(
                     provider,
                     cancellationToken);
 
@@ -138,7 +135,7 @@ namespace DTP.Modules.Provider.Application.Services
                     if (package is null)
                         continue;
 
-                    var detail = await _esimProviderClient.GetProductEsimAsync(
+                    var detail = await _peacomProviderClient.GetProductEsimAsync(
                         provider,
                         remotePackage.Sku,
                         cancellationToken);
@@ -150,16 +147,16 @@ namespace DTP.Modules.Provider.Application.Services
                         package,
                         detail);
 
-                    var provisionResult = await _catalogProvisioningService
-                        .ProvisionProviderEsimProductAsync(
-                            provisionRequest,
-                            cancellationToken);
+                    //var provisionResult = await _catalogProvisioningService
+                    //    .ProvisionProviderEsimProductAsync(
+                    //        provisionRequest,
+                    //        cancellationToken);
 
-                    await UpsertMappingAsync(
-                        provider,
-                        package,
-                        provisionResult,
-                        cancellationToken);
+                    //await UpsertMappingAsync(
+                    //    provider,
+                    //    package,
+                    //    provisionResult,
+                       // cancellationToken);
 
                     package.MarkProvisioned();
 
@@ -278,7 +275,7 @@ namespace DTP.Modules.Provider.Application.Services
                 : $"{detail.DataAmount}{detail.DataUnit}";
 
             var variantName = $"{dataText} - {detail.ValidityDays} ngày";
-
+            
             return new ProvisionProviderEsimProductRequest
             {
                 ProviderId = provider.Id,
@@ -306,8 +303,8 @@ namespace DTP.Modules.Provider.Application.Services
                 Countries = detail.Countries
                     .Select(x => new ProvisionCountryDto
                     {
-                        CountryCode = x.CountryCode,
-                        CountryName = x.CountryName
+                        CountryCode = x.Code,
+                        CountryName = x.Name
                     })
                     .ToList(),
 

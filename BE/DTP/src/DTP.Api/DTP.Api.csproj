@@ -32,6 +32,7 @@
     <ProjectReference Include="..\Modules\DTP.Modules.Content\DTP.Modules.Content.csproj" />
     <ProjectReference Include="..\Modules\DTP.Modules.Ordering\DTP.Modules.Ordering.csproj" />
     <ProjectReference Include="..\Modules\DTP.Modules.Payment\DTP.Modules.Payment.csproj" />
+    <ProjectReference Include="..\Modules\DTP.Modules.Provider\DTP.Modules.Provider.csproj" />
     <ProjectReference Include="..\Modules\DTP.Modules.Report\DTP.Modules.Report.csproj" />
   </ItemGroup>
 
