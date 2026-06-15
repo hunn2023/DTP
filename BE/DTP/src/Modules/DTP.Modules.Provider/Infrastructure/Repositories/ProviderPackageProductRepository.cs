@@ -3,11 +3,7 @@ using DTP.Modules.Provider.Domain.Entities;
 using DTP.Modules.Provider.Infrastructure.Persistence;
 using DTP.Shared.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace DTP.Modules.Provider.Infrastructure.Repositories
 {

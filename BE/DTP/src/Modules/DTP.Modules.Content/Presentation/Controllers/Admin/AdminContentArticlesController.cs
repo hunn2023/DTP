@@ -3,6 +3,7 @@ using DTP.Modules.Content.Application.Queries.Articles;
 using DTP.Modules.Content.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 namespace DTP.Modules.Content.Presentation.Controllers.Admin
 {
@@ -62,6 +63,27 @@ namespace DTP.Modules.Content.Presentation.Controllers.Admin
             CancellationToken cancellationToken = default)
         {
             var result = await _mediator.Send(command, cancellationToken);
+
+            return Ok(result);
+        }
+
+        [HttpPost("{articleId:guid}/thumbnail")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadThumbnail(
+           Guid articleId,
+           IFormFile file,
+           CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new UploadContentArticleThumbnailCommand
+                {
+                    ArticleId = articleId,
+                    File = file
+                },
+                cancellationToken);
+
+            if (!result.IsSuccess)
+                return BadRequest(result);
 
             return Ok(result);
         }

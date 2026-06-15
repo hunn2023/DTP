@@ -1,16 +1,13 @@
-﻿using Amazon.Runtime.Internal.Util;
+﻿
 using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.CacheKeys;
 using DTP.Modules.Catalog.Application.Commands.Products;
 using DTP.Modules.Catalog.Application.DTOs;
-using DTP.Modules.Catalog.Infrastructure.Repositories;
 using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using DTP.Shared.Caching;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Distributed;
-using System.Text.Json;
+
 
 namespace DTP.Modules.Catalog.Infrastructure.Services
 {

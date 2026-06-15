@@ -161,7 +161,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             var validationResult = await ValidateCreateAsync(command, cancellationToken);
 
             if (!validationResult.IsSuccess)
-                return Result<Guid>.Failure(validationResult.Error);
+                return Result<Guid>.Failure(validationResult.Error ?? "Đã xảy ra lỗi.");
 
             var slug = command.Slug.Trim().ToLower();
 
