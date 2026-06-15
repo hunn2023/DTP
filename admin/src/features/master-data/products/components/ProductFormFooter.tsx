@@ -10,7 +10,7 @@ type ProductFormFooterProps = {
 }
 
 const ProductFormFooter = ({ activeTab, isSaving, onContinue }: ProductFormFooterProps) => {
-  const isLastStep = activeTab === 'attributes'
+  const isLastStep = activeTab === 'contents'
   const continueLabel = isLastStep ? 'Hoàn tất' : 'Tiếp tục →'
 
   return (

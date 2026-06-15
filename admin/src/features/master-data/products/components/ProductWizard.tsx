@@ -1,20 +1,22 @@
 import { useEffect, type ReactNode } from 'react'
 import clsx from 'clsx'
 import { ProgressBar } from 'react-bootstrap'
-import { TbBox, TbListDetails, TbPhoto } from 'react-icons/tb'
+import { TbBox, TbFileText, TbHelp, TbListDetails, TbPhoto } from 'react-icons/tb'
 import { useWizard, Wizard } from 'react-use-wizard'
 
 import ComponentCard from '@/components/cards/ComponentCard'
+import { getProductTabTitle, PRODUCT_TAB_LABELS } from '@/features/master-data/products/productFormSteps'
 import type { ProductFormTab } from '@/features/master-data/products/types'
 
 type ProductWizardProps = {
-  title: string
   activeTab: ProductFormTab
   canAccessSubTabs: boolean
   onStepChange: (tab: ProductFormTab) => void
   productStep: ReactNode
   imagesStep: ReactNode
   attributesStep: ReactNode
+  faqsStep: ReactNode
+  contentsStep: ReactNode
 }
 
 type ProductWizardHeaderProps = {
@@ -25,14 +27,24 @@ type ProductWizardHeaderProps = {
   withProgress?: boolean
 }
 
-const PRODUCT_WIZARD_TABS: ProductFormTab[] = ['product', 'images', 'attributes']
+const PRODUCT_WIZARD_TABS: ProductFormTab[] = ['product', 'images', 'attributes', 'faqs', 'contents']
+
+const WIZARD_NAV_ITEMS: {
+  key: ProductFormTab
+  icon: typeof TbBox
+  title: string
+}[] = [
+  { key: 'product', icon: TbBox, title: PRODUCT_TAB_LABELS.product },
+  { key: 'images', icon: TbPhoto, title: PRODUCT_TAB_LABELS.images },
+  { key: 'attributes', icon: TbListDetails, title: PRODUCT_TAB_LABELS.attributes },
+  { key: 'faqs', icon: TbHelp, title: PRODUCT_TAB_LABELS.faqs },
+  { key: 'contents', icon: TbFileText, title: PRODUCT_TAB_LABELS.contents },
+]
 
 const getTabIndex = (tab: ProductFormTab) => {
   const index = PRODUCT_WIZARD_TABS.indexOf(tab)
   return index >= 0 ? index : 0
 }
-
-
 
 const ProductWizardHeader = ({
   activeTab,
@@ -61,106 +73,75 @@ const ProductWizardHeader = ({
     <>
       {withProgress && <ProgressBar now={(activeStep + 1) * (100 / stepCount)} className="mb-3" style={{ height: '6px' }} />}
 
-      <ul className={clsx('nav nav-tabs wizard-tabs mb-3', className)}>
-        <li className="nav-item">
-          <button
-            type="button"
-            className={clsx(
-              'nav-link d-flex w-100 text-start border-0',
-              activeStep === 0 && 'active',
-              activeStep > 0 && 'wizard-item-done',
-            )}
-            onClick={() => handleGoToStep('product')}>
-            <span className="d-flex align-items-center">
-              <TbBox className="fs-32" />
+      <ul className={clsx('nav nav-tabs wizard-tabs product-wizard-nav mb-3', className)}>
+        {WIZARD_NAV_ITEMS.map((item, index) => {
+          const Icon = item.icon
+          const disabled = item.key !== 'product' && !canAccessSubTabs
 
-              <span className="flex-grow-1 ms-2 text-truncate">
-                <span className="mb-0 lh-base d-block fw-semibold text-body fs-base">Thông tin Product</span>
-                <span className="fs-xxs mb-0">Tên, mã, danh mục</span>
-              </span>
-            </span>
-          </button>
-        </li>
+          return (
+            <li key={item.key} className="nav-item">
+              <button
+                type="button"
+                disabled={disabled}
+                className={clsx(
+                  'nav-link d-flex w-100 text-start border-0',
+                  activeStep === index && 'active',
+                  activeStep > index && 'wizard-item-done',
+                  disabled && 'disabled opacity-50',
+                )}
+                onClick={() => handleGoToStep(item.key)}>
+                <span className="d-flex align-items-center">
+                  <Icon className="fs-32" />
 
-        <li className="nav-item">
-          <button
-            type="button"
-            disabled={!canAccessSubTabs}
-            className={clsx(
-              'nav-link d-flex w-100 text-start border-0',
-              activeStep === 1 && 'active',
-              activeStep > 1 && 'wizard-item-done',
-              !canAccessSubTabs && 'disabled opacity-50',
-            )}
-            onClick={() => handleGoToStep('images')}>
-            <span className="d-flex align-items-center">
-              <TbPhoto className="fs-32" />
-
-              <span className="flex-grow-1 ms-2 text-truncate">
-                <span className="mb-0 lh-base d-block fw-semibold text-body fs-base">Hình ảnh</span>
-                <span className="fs-xxs mb-0">Ảnh sản phẩm, thumbnail</span>
-              </span>
-            </span>
-          </button>
-        </li>
-
-        <li className="nav-item">
-          <button
-            type="button"
-            disabled={!canAccessSubTabs}
-            className={clsx(
-              'nav-link d-flex w-100 text-start border-0',
-              activeStep === 2 && 'active',
-              activeStep > 2 && 'wizard-item-done',
-              !canAccessSubTabs && 'disabled opacity-50',
-            )}
-            onClick={() => handleGoToStep('attributes')}>
-            <span className="d-flex align-items-center">
-              <TbListDetails className="fs-32" />
-
-              <span className="flex-grow-1 ms-2 text-truncate">
-                <span className="mb-0 lh-base d-block fw-semibold text-body fs-base">Thuộc tính</span>
-                <span className="fs-xxs mb-0">Thông số hiển thị</span>
-              </span>
-            </span>
-          </button>
-        </li>
+                  <span className="flex-grow-1 ms-2 text-truncate">
+                    <span className="product-wizard-nav__title mb-0 d-block fw-semibold text-body fs-base">
+                      {item.title}
+                    </span>
+                  </span>
+                </span>
+              </button>
+            </li>
+          )
+        })}
       </ul>
     </>
   )
 }
 
 const ProductWizardStep = ({ children }: { children: ReactNode }) => {
-  return <div className="col-md-8 border border-dashed rounded p-4">{children}</div>
+  return <div className="col-12 product-wizard-content-col border border-dashed rounded p-4">{children}</div>
 }
 
 const ProductWizard = ({
-  title,
   activeTab,
   canAccessSubTabs,
   onStepChange,
   productStep,
   imagesStep,
   attributesStep,
+  faqsStep,
+  contentsStep,
 }: ProductWizardProps) => {
   return (
-    <ComponentCard title={title}>
-      <div className="row">
+    <ComponentCard title={getProductTabTitle(activeTab)}>
+      <div className="row product-wizard-layout">
         <Wizard
           startIndex={getTabIndex(activeTab)}
           header={
-            <div className="col-md-4">
+            <div className="col-12 product-wizard-nav-col">
               <ProductWizardHeader
                 activeTab={activeTab}
                 canAccessSubTabs={canAccessSubTabs}
                 onStepChange={onStepChange}
-                className="flex-column wizard-bordered wizard-tabs nav-pills"
+                className="flex-column wizard-bordered nav-pills"
               />
             </div>
           }>
           <ProductWizardStep>{productStep}</ProductWizardStep>
           <ProductWizardStep>{imagesStep}</ProductWizardStep>
           <ProductWizardStep>{attributesStep}</ProductWizardStep>
+          <ProductWizardStep>{faqsStep}</ProductWizardStep>
+          <ProductWizardStep>{contentsStep}</ProductWizardStep>
         </Wizard>
       </div>
     </ComponentCard>
