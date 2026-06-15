@@ -25,7 +25,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         {
             return await _context.Countries
                 .AsNoTracking()
-                .Where(x => x.IsActive)
+                .Where(x => x.IsActive && !x.IsDeleted)
                 .OrderBy(x => x.SortOrder)
                 .ThenBy(x => x.Name)
                 .ToListAsync(cancellationToken);
@@ -44,6 +44,14 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             return await query.AnyAsync(
                 x => x.Code == code,
                 cancellationToken);
+        }
+
+
+        public async Task<Country?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
+        {
+            return await _context.Countries
+             .AsNoTracking()
+             .FirstOrDefaultAsync(x => x.Code == code, cancellationToken);
         }
 
         public async Task<bool> ExistsBySlugAsync(

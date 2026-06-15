@@ -1,4 +1,5 @@
-﻿using DTP.Modules.Provider.Domain.Enums;
+﻿using Azure.Core;
+using DTP.Modules.Provider.Domain.Enums;
 using DTP.Shared.Domain;
 using System;
 using System.Collections.Generic;
@@ -14,57 +15,82 @@ namespace DTP.Modules.Provider.Domain.Entities
         {
         }
 
+        public Guid ProviderId { get; private set; }
+
+        public string ProviderSku { get; private set; } = default!;
+        public string? ProviderProductId { get; private set; }
+
+        public Guid ProductId { get; private set; }
+        public Guid ProductVariantId { get; private set; }
+        public Guid? ProductPriceId { get; private set; }
+        public Guid EsimPackageId { get; private set; }
+
+        public string MappingStatus { get; private set; } = default!;
+        // Inactive, Active, Failed
+
+
+
         public ProviderProductMapping(
             Guid providerId,
-            ProviderProductType productType,
+            string providerSku,
+            string? providerProductId,
             Guid productId,
             Guid productVariantId,
-            string providerProductCode,
-            string? providerProductName,
-            bool isActive)
+            Guid? productPriceId,
+            Guid esimPackageId)
         {
             Id = Guid.NewGuid();
             ProviderId = providerId;
-            ProductType = productType;
+            ProviderSku = providerSku.Trim();
+            ProviderProductId = providerProductId;
             ProductId = productId;
             ProductVariantId = productVariantId;
-            ProviderProductCode = providerProductCode.Trim();
-            ProviderProductName = providerProductName?.Trim();
-            IsActive = isActive;
+            ProductPriceId = productPriceId;
+            EsimPackageId = esimPackageId;
+            MappingStatus = "Inactive";
+            CreatedAt = DateTime.UtcNow;
         }
 
-        public Guid ProviderId { get; private set; }
-
-        public ExternalProvider Provider { get; private set; } = default!;
-
-        public ProviderProductType ProductType { get; private set; }
-
-        public Guid ProductId { get; private set; }
-
-        public Guid ProductVariantId { get; private set; }
-
-        public string ProviderProductCode { get; private set; } = default!;
-
-        public string? ProviderProductName { get; private set; }
-
-        public decimal? ProviderCostPrice { get; private set; }
-
-        public string? CurrencyCode { get; private set; }
-
-        public bool IsActive { get; private set; }
-
-        public void Update(
-            string providerProductCode,
-            string? providerProductName,
-            decimal? providerCostPrice,
-            string? currencyCode,
-            bool isActive)
+        public void UpdateCatalogMapping(
+            Guid productId,
+            Guid productVariantId,
+            Guid? productPriceId,
+            Guid esimPackageId)
         {
-            ProviderProductCode = providerProductCode.Trim();
-            ProviderProductName = providerProductName?.Trim();
-            ProviderCostPrice = providerCostPrice;
-            CurrencyCode = currencyCode?.Trim();
-            IsActive = isActive;
+            ProductId = productId;
+            ProductVariantId = productVariantId;
+            ProductPriceId = productPriceId;
+            EsimPackageId = esimPackageId;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+
+        public void Update(string ProviderProductCode,string ProviderProductName,decimal? ProviderCostPrice,string? CurrencyCode,bool IsActive)
+        {
+
+            //mapping.Update(
+            //    request.ProviderProductCode,
+            //    request.ProviderProductName,
+            //    request.ProviderCostPrice,
+            //    request.CurrencyCode,
+            //    request.IsActive);
+        }
+
+        public void Activate()
+        {
+            MappingStatus = "Active";
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void Deactivate()
+        {
+            MappingStatus = "Inactive";
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void MarkFailed()
+        {
+            MappingStatus = "Failed";
             UpdatedAt = DateTime.UtcNow;
         }
     }

@@ -15,27 +15,27 @@ namespace DTP.Modules.Provider.Domain.Entities
         }
 
         public ProviderApiLog(
-            Guid providerId,
-            ProviderApiLogType logType,
-            string endpoint,
-            string method,
-            string? requestBody)
+           Guid providerId,
+           string endpoint,
+           string method,
+           string? requestBody,
+           string? responseBody,
+           int? statusCode,
+           bool isSuccess,
+           string? errorMessage)
         {
-            Id = Guid.NewGuid();
             ProviderId = providerId;
-            LogType = logType;
-            Endpoint = endpoint.Trim();
-            Method = method.Trim().ToUpperInvariant();
+            Endpoint = endpoint;
+            Method = method;
             RequestBody = requestBody;
-            RequestedAt = DateTime.UtcNow;
-            IsSuccess = false;
+            ResponseBody = responseBody;
+            StatusCode = statusCode;
+            IsSuccess = isSuccess;
+            ErrorMessage = errorMessage;
         }
 
+
         public Guid ProviderId { get; private set; }
-
-        public ExternalProvider Provider { get; private set; } = default!;
-
-        public ProviderApiLogType LogType { get; private set; }
 
         public string Endpoint { get; private set; } = default!;
 
@@ -51,26 +51,5 @@ namespace DTP.Modules.Provider.Domain.Entities
 
         public string? ErrorMessage { get; private set; }
 
-        public DateTime RequestedAt { get; private set; }
-
-        public DateTime? RespondedAt { get; private set; }
-
-        public long? DurationMs { get; private set; }
-
-        public void SetResponse(
-            int? statusCode,
-            string? responseBody,
-            bool isSuccess,
-            string? errorMessage,
-            long? durationMs)
-        {
-            StatusCode = statusCode;
-            ResponseBody = responseBody;
-            IsSuccess = isSuccess;
-            ErrorMessage = errorMessage;
-            DurationMs = durationMs;
-            RespondedAt = DateTime.UtcNow;
-            UpdatedAt = DateTime.UtcNow;
-        }
     }
 }

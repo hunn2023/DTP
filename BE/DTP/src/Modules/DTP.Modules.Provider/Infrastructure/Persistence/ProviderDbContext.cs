@@ -15,20 +15,15 @@ namespace DTP.Modules.Provider.Infrastructure.Persistence
         {
         }
 
-        public DbSet<ExternalProvider> ExternalProviders => Set<ExternalProvider>();
-
-        public DbSet<ProviderCredential> ProviderCredentials => Set<ProviderCredential>();
-
+        public DbSet<Domain.Entities.Provider> Providers => Set<Domain.Entities.Provider>();
+        public DbSet<ProviderPackageProduct> ProviderPackageProducts => Set<ProviderPackageProduct>();
         public DbSet<ProviderProductMapping> ProviderProductMappings => Set<ProviderProductMapping>();
+        public DbSet<ProviderApiLog> ProviderApiLogs => Set<ProviderApiLog>();
+        public DbSet<ProviderFulfillmentLog> ProviderFulfillmentLogs => Set<ProviderFulfillmentLog>();
 
         public DbSet<ProviderOrder> ProviderOrders => Set<ProviderOrder>();
-
         public DbSet<ProviderOrderItem> ProviderOrderItems => Set<ProviderOrderItem>();
-
-        public DbSet<ProviderApiLog> ProviderApiLogs => Set<ProviderApiLog>();
-
-        public DbSet<ProviderWebhookLog> ProviderWebhookLogs => Set<ProviderWebhookLog>();
-
+        public DbSet<ProviderRedeem> ProviderRedeems => Set<ProviderRedeem>();
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProviderDbContext).Assembly);

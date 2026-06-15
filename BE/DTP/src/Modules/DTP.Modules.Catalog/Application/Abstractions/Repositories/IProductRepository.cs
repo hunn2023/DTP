@@ -13,6 +13,8 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
            Guid id,
            CancellationToken cancellationToken = default);
 
+        Task<Product?> GetByCodeAsync(string code, CancellationToken cancellationToken = default);
+
         Task<PagedResultDto<ProductDto>> GetPublicPagedAsync(
              string? keyword,
              Guid? categoryId,

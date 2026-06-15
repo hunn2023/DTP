@@ -13,30 +13,39 @@ namespace DTP.Modules.Provider.Infrastructure.Configurations
     {
         public void Configure(EntityTypeBuilder<ProviderOrder> builder)
         {
-            builder.ToTable("Provider_Orders");
+            builder.ToTable("ProviderOrders");
 
             builder.HasKey(x => x.Id);
 
-            builder.Property(x => x.OrderCode)
+            builder.Property(x => x.ProviderOrderPublicId)
                 .HasMaxLength(100)
                 .IsRequired();
 
-            builder.Property(x => x.ProviderOrderCode)
-                .HasMaxLength(255);
+            builder.Property(x => x.Amount)
+                .HasPrecision(18, 2);
 
-            builder.Property(x => x.ErrorCode)
-                .HasMaxLength(100);
+            builder.Property(x => x.Status)
+                .HasMaxLength(50)
+                .IsRequired();
+
+            builder.Property(x => x.RawCreateResponseJson)
+                .HasColumnType("nvarchar(max)");
+
+            builder.Property(x => x.RawConfirmResponseJson)
+                .HasColumnType("nvarchar(max)");
 
             builder.Property(x => x.ErrorMessage)
                 .HasMaxLength(2000);
 
-            builder.HasIndex(x => x.OrderId)
+            builder.HasIndex(x => x.DtpOrderId);
+
+            builder.HasIndex(x => x.ProviderOrderPublicId)
                 .IsUnique();
 
             builder.HasMany(x => x.Items)
                 .WithOne(x => x.ProviderOrder)
                 .HasForeignKey(x => x.ProviderOrderId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

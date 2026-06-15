@@ -18,5 +18,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
             string sku,
             Guid? excludeId = null,
             CancellationToken cancellationToken = default);
+
+        Task<ProductVariant?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default);
     }
 }

@@ -1,9 +1,7 @@
 ﻿using DTP.Modules.Provider.Application.Abstractions.Repositories;
-using DTP.Modules.Provider.Application.DTOs;
 using DTP.Modules.Provider.Domain.Entities;
-using DTP.Modules.Provider.Domain.Enums;
 using DTP.Modules.Provider.Infrastructure.Persistence;
-using DTP.Shared.Application.Pagination;
+using DTP.Shared.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -13,151 +11,35 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Provider.Infrastructure.Repositories
 {
-    public class ProviderProductMappingRepository : IProviderProductMappingRepository
+    public class ProviderProductMappingRepository : RepositoryBase<ProviderProductMapping>, IProviderProductMappingRepository
     {
-        private readonly ProviderDbContext _context;
+        private readonly ProviderDbContext _dbContext;
 
-        public ProviderProductMappingRepository(ProviderDbContext context)
+        public ProviderProductMappingRepository(ProviderDbContext dbContext) : base(dbContext)
         {
-            _context = context;
+            _dbContext = dbContext;
         }
 
-        public async Task<ProviderProductMapping?> GetByIdAsync(
-            Guid id,
-            CancellationToken cancellationToken = default)
-        {
-            return await _context.ProviderProductMappings
-                .Include(x => x.Provider)
-                .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
-        }
-
-        public async Task<ProviderProductMapping?> GetActiveMappingAsync(
-            ProviderProductType productType,
-            Guid productId,
-            Guid productVariantId,
-            CancellationToken cancellationToken = default)
-        {
-            return await _context.ProviderProductMappings
-                .Include(x => x.Provider)
-                .FirstOrDefaultAsync(x =>
-                    !x.IsDeleted &&
-                    x.IsActive &&
-                    x.ProductType == productType &&
-                    x.ProductId == productId &&
-                    x.ProductVariantId == productVariantId,
-                    cancellationToken);
-        }
-
-        public async Task<bool> ExistsMappingAsync(
+        public Task<ProviderProductMapping?> GetByProviderSkuAsync(
             Guid providerId,
-            Guid productVariantId,
-            Guid? excludeId = null,
+            string providerSku,
             CancellationToken cancellationToken = default)
         {
-            return await _context.ProviderProductMappings
-                .AnyAsync(x =>
-                    !x.IsDeleted &&
-                    x.ProviderId == providerId &&
-                    x.ProductVariantId == productVariantId &&
-                    (!excludeId.HasValue || x.Id != excludeId.Value),
+            return _dbContext.ProviderProductMappings
+                .FirstOrDefaultAsync(
+                    x => x.ProviderId == providerId && x.ProviderSku == providerSku,
                     cancellationToken);
         }
 
-        public async Task AddAsync(
-            ProviderProductMapping mapping,
+        public Task<ProviderProductMapping?> GetByEsimPackageIdAsync(
+            Guid esimPackageId,
             CancellationToken cancellationToken = default)
         {
-            await _context.ProviderProductMappings.AddAsync(mapping, cancellationToken);
+            return _dbContext.ProviderProductMappings
+                .FirstOrDefaultAsync(
+                    x => x.EsimPackageId == esimPackageId,
+                    cancellationToken);
         }
 
-        public void Update(ProviderProductMapping mapping)
-        {
-            _context.ProviderProductMappings.Update(mapping);
-        }
-
-        public void Remove(ProviderProductMapping mapping)
-        {
-            mapping.Delete();
-            _context.ProviderProductMappings.Update(mapping);
-        }
-
-
-        public async Task<PagedResultDto<ProviderProductMappingDto>> GetPagedAsync(
-    Guid? providerId,
-    ProviderProductType? productType,
-    Guid? productId,
-    Guid? productVariantId,
-    bool? isActive,
-    int pageIndex,
-    int pageSize,
-    CancellationToken cancellationToken = default)
-        {
-            if (pageIndex <= 0)
-                pageIndex = 1;
-
-            if (pageSize <= 0)
-                pageSize = 20;
-
-            var query = _context.ProviderProductMappings
-                .AsNoTracking()
-                .Include(x => x.Provider)
-                .Where(x => !x.IsDeleted)
-                .AsQueryable();
-
-            if (providerId.HasValue && providerId.Value != Guid.Empty)
-            {
-                query = query.Where(x => x.ProviderId == providerId.Value);
-            }
-
-            if (productType.HasValue)
-            {
-                query = query.Where(x => x.ProductType == productType.Value);
-            }
-
-            if (productId.HasValue && productId.Value != Guid.Empty)
-            {
-                query = query.Where(x => x.ProductId == productId.Value);
-            }
-
-            if (productVariantId.HasValue && productVariantId.Value != Guid.Empty)
-            {
-                query = query.Where(x => x.ProductVariantId == productVariantId.Value);
-            }
-
-            if (isActive.HasValue)
-            {
-                query = query.Where(x => x.IsActive == isActive.Value);
-            }
-
-            var totalItems = await query.CountAsync(cancellationToken);
-
-            var items = await query
-                .OrderByDescending(x => x.CreatedAt)
-                .Skip((pageIndex - 1) * pageSize)
-                .Take(pageSize)
-                .Select(x => new ProviderProductMappingDto
-                {
-                    Id = x.Id,
-                    ProviderId = x.ProviderId,
-                    ProviderName = x.Provider.Name,
-                    ProductType = x.ProductType,
-                    ProductId = x.ProductId,
-                    ProductVariantId = x.ProductVariantId,
-                    ProviderProductCode = x.ProviderProductCode,
-                    ProviderProductName = x.ProviderProductName,
-                    ProviderCostPrice = x.ProviderCostPrice,
-                    CurrencyCode = x.CurrencyCode,
-                    IsActive = x.IsActive
-                })
-                .ToListAsync(cancellationToken);
-
-            return new PagedResultDto<ProviderProductMappingDto>
-            {
-                Items = items,
-                PageIndex = pageIndex,
-                PageSize = pageSize,
-                TotalCount = totalItems
-            };
-        }
     }
 }

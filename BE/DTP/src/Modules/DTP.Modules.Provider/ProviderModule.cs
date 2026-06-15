@@ -1,16 +1,17 @@
 ﻿using DTP.Modules.Provider.Application.Abstractions;
-using DTP.Modules.Provider.Application.Abstractions.Gateways;
+using DTP.Modules.Provider.Application.Abstractions.Clients;
 using DTP.Modules.Provider.Application.Abstractions.Repositories;
 using DTP.Modules.Provider.Application.Abstractions.Services;
 using DTP.Modules.Provider.Application.Services;
 using DTP.Modules.Provider.Infrastructure;
-using DTP.Modules.Provider.Infrastructure.Gateways;
+using DTP.Modules.Provider.Infrastructure.Clients;
 using DTP.Modules.Provider.Infrastructure.Persistence;
 using DTP.Modules.Provider.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.SqlServer; 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore.SqlServer; // Add this using directive
+using Microsoft.Extensions.Http;
 
 namespace DTP.Modules.Provider
 {
@@ -25,20 +26,18 @@ namespace DTP.Modules.Provider
                 options.UseSqlServer(
                     configuration.GetConnectionString("DefaultConnection"));
             });
-
             services.AddScoped<IProviderUnitOfWork, ProviderUnitOfWork>();
 
-            services.AddScoped<IExternalProviderRepository, ExternalProviderRepository>();
-            services.AddScoped<IProviderCredentialRepository, ProviderCredentialRepository>();
+            services.AddScoped<IProviderRepository, ProviderRepository>();
+            services.AddScoped<IProviderPackageProductRepository, ProviderPackageProductRepository>();
             services.AddScoped<IProviderProductMappingRepository, ProviderProductMappingRepository>();
-            services.AddScoped<IProviderOrderRepository, ProviderOrderRepository>();
             services.AddScoped<IProviderApiLogRepository, ProviderApiLogRepository>();
-            services.AddScoped<IProviderWebhookLogRepository, ProviderWebhookLogRepository>();
+            services.AddScoped<IProviderFulfillmentLogRepository, ProviderFulfillmentLogRepository>();
 
-            services.AddScoped<IProviderGatewayFactory, ProviderGatewayFactory>();
-            services.AddScoped<FakeProviderGateway>();
+            services.AddScoped<IProviderPackageSyncService, ProviderPackageSyncService>();
+            services.AddScoped<IProviderFulfillmentService, ProviderFulfillmentService>();
 
-            services.AddScoped<IProviderProvisioningService, ProviderProvisioningService>();
+            services.AddHttpClient<IEsimProviderClient, PeacomProviderClient>();
 
             services.AddMediatR(cfg =>
             {

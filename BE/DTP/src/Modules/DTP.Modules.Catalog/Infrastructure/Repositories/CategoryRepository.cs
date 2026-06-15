@@ -110,14 +110,14 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 pageSize = 100;
 
             var query = _context.Categories
-                .Where(x =>  !x.IsDeleted)
+                .Where(x => !x.IsDeleted)
                 .AsNoTracking();
 
 
             var totalItems = await query.CountAsync(cancellationToken);
 
             var items = await query
-                .Where(x =>  !x.IsDeleted)
+                .Where(x => !x.IsDeleted)
                 .OrderBy(x => x.SortOrder)
                 .ThenBy(x => x.Name)
                 .Skip((pageIndex - 1) * pageSize)
@@ -140,6 +140,16 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 PageIndex = pageIndex,
                 PageSize = pageSize
             };
+        }
+
+
+        public async Task<Category?> GetByCodeAsync(
+            string code,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Categories
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Code == code && !x.IsDeleted, cancellationToken);
         }
     }
 }

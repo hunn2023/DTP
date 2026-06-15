@@ -36,6 +36,14 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         }
 
+
+        public async Task<Product?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
+        {
+            return await _context.Products
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Code == code, cancellationToken);
+        }
+
         public async Task<PagedResultDto<ProductDto>> GetPublicPagedAsync(
              string? keyword,
              Guid? categoryId,

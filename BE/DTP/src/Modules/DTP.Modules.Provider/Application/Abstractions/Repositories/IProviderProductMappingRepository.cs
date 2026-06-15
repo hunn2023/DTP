@@ -1,7 +1,5 @@
-﻿using DTP.Modules.Provider.Application.DTOs;
-using DTP.Modules.Provider.Domain.Entities;
-using DTP.Modules.Provider.Domain.Enums;
-using DTP.Shared.Application.Pagination;
+﻿using DTP.Modules.Provider.Domain.Entities;
+using DTP.Shared.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,40 +8,15 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Provider.Application.Abstractions.Repositories
 {
-    public interface IProviderProductMappingRepository
+    public interface IProviderProductMappingRepository : IRepositoryBase<ProviderProductMapping>
     {
-        Task<ProviderProductMapping?> GetByIdAsync(
-            Guid id,
-            CancellationToken cancellationToken = default);
-
-        Task<ProviderProductMapping?> GetActiveMappingAsync(
-            ProviderProductType productType,
-            Guid productId,
-            Guid productVariantId,
-            CancellationToken cancellationToken = default);
-
-        Task<PagedResultDto<ProviderProductMappingDto>> GetPagedAsync(
-            Guid? providerId,
-            ProviderProductType? productType,
-            Guid? productId,
-            Guid? productVariantId,
-            bool? isActive,
-            int pageIndex,
-            int pageSize,
-            CancellationToken cancellationToken = default);
-
-        Task<bool> ExistsMappingAsync(
+        Task<ProviderProductMapping?> GetByProviderSkuAsync(
             Guid providerId,
-            Guid productVariantId,
-            Guid? excludeId = null,
+            string providerSku,
             CancellationToken cancellationToken = default);
 
-        Task AddAsync(
-            ProviderProductMapping mapping,
+        Task<ProviderProductMapping?> GetByEsimPackageIdAsync(
+            Guid esimPackageId,
             CancellationToken cancellationToken = default);
-
-        void Update(ProviderProductMapping mapping);
-
-        void Remove(ProviderProductMapping mapping);
     }
 }

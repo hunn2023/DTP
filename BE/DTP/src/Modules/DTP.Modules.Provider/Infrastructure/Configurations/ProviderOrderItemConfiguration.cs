@@ -13,36 +13,36 @@ namespace DTP.Modules.Provider.Infrastructure.Configurations
     {
         public void Configure(EntityTypeBuilder<ProviderOrderItem> builder)
         {
-            builder.ToTable("Provider_OrderItems");
+            builder.ToTable("ProviderOrderItems");
 
             builder.HasKey(x => x.Id);
 
-            builder.Property(x => x.ProviderProductCode)
-                .HasMaxLength(255)
+            builder.Property(x => x.Sku)
+                .HasMaxLength(100)
                 .IsRequired();
 
-            builder.Property(x => x.Iccid)
-                .HasMaxLength(100);
+            builder.Property(x => x.ProductName)
+                .HasMaxLength(500)
+                .IsRequired();
 
-            builder.Property(x => x.Msisdn)
-                .HasMaxLength(100);
+            builder.Property(x => x.RawSerialsJson)
+                .HasColumnType("nvarchar(max)")
+                .IsRequired();
 
-            builder.Property(x => x.QrCodeUrl)
-                .HasMaxLength(1000);
+            builder.HasIndex(x => x.ProviderOrderId);
 
-            builder.Property(x => x.QrCodeText)
-                .HasMaxLength(4000);
+            builder.HasIndex(x => x.DtpOrderItemId);
 
-            builder.Property(x => x.ActivationCode)
-                .HasMaxLength(1000);
+            builder.HasIndex(x => new
+            {
+                x.ProviderOrderId,
+                x.Sku
+            });
 
-            builder.Property(x => x.Serial)
-                .HasMaxLength(255);
-
-            builder.Property(x => x.PinCode)
-                .HasMaxLength(255);
-
-            builder.HasIndex(x => x.OrderItemId);
+            builder.HasMany(x => x.Redeems)
+                .WithOne(x => x.ProviderOrderItem)
+                .HasForeignKey(x => x.ProviderOrderItemId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

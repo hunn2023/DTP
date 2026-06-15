@@ -403,5 +403,16 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 .OrderBy(x => x.SortOrder)
                 .ToListAsync(cancellationToken);
         }
+
+
+        public async Task<EsimPackage?> GetByProviderPackageCodeAsync̣(
+            string providerPackageCode,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.EsimPackages
+                .AsNoTracking()
+                .Where(x => x.ProviderPackageCode == providerPackageCode && !x.IsDeleted)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
     }
 }

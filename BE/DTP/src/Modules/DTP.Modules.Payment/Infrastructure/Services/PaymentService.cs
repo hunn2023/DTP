@@ -21,6 +21,8 @@ namespace DTP.Modules.Payment.Infrastructure.Services
         private readonly IPaymentUnitOfWork _unitOfWork;
         private readonly IMediator _mediator;
         private readonly IPaymentRateLimitService _paymentRateLimitService;
+        private readonly IProviderReservationService _providerReservationService;
+
         public PaymentService(
             IPaymentTransactionRepository paymentRepository,
             IPaymentCallbackLogRepository callbackLogRepository,

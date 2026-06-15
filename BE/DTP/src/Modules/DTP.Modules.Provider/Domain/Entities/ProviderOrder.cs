@@ -1,5 +1,4 @@
-﻿using DTP.Modules.Provider.Domain.Enums;
-using DTP.Shared.Domain;
+﻿using DTP.Shared.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,104 +9,111 @@ namespace DTP.Modules.Provider.Domain.Entities
 {
     public class ProviderOrder : EntityBase
     {
+        public Guid ProviderId { get; private set; }
+
+        public Guid DtpOrderId { get; private set; }
+
+        public string ProviderOrderPublicId { get; private set; } = default!;
+
+        public decimal Amount { get; private set; }
+
+        public int NumOfProduct { get; private set; }
+
+        public int ProviderStatus { get; private set; }
+
+        public string Status { get; private set; } = default!;
+        // Created, Confirmed, Processing, Done, Failed, Cancelled, Expired
+
+        public DateTime ReservedUntil { get; private set; }
+
+        public string? RawCreateResponseJson { get; private set; }
+
+        public string? RawConfirmResponseJson { get; private set; }
+
+        public string? ErrorMessage { get; private set; }
+
+        public DateTime CreatedAt { get; private set; }
+
+        public DateTime? UpdatedAt { get; private set; }
+
         private readonly List<ProviderOrderItem> _items = new();
+        public IReadOnlyCollection<ProviderOrderItem> Items => _items.AsReadOnly();
 
         private ProviderOrder()
         {
         }
 
         public ProviderOrder(
-            Guid orderId,
-            string orderCode,
-            Guid providerId)
+            Guid providerId,
+            Guid dtpOrderId,
+            string providerOrderPublicId,
+            decimal amount,
+            int numOfProduct,
+            int providerStatus,
+            string? rawCreateResponseJson)
         {
             Id = Guid.NewGuid();
-            OrderId = orderId;
-            OrderCode = orderCode.Trim();
             ProviderId = providerId;
-            Status = ProviderOrderStatus.Pending;
-            RetryCount = 0;
+            DtpOrderId = dtpOrderId;
+            ProviderOrderPublicId = providerOrderPublicId;
+            Amount = amount;
+            NumOfProduct = numOfProduct;
+            ProviderStatus = providerStatus;
+            Status = "Created";
+            ReservedUntil = DateTime.UtcNow.AddMinutes(15);
+            RawCreateResponseJson = rawCreateResponseJson;
+            CreatedAt = DateTime.UtcNow;
         }
 
-        public Guid OrderId { get; private set; }
-
-        public string OrderCode { get; private set; } = default!;
-
-        public Guid ProviderId { get; private set; }
-
-        public ExternalProvider Provider { get; private set; } = default!;
-
-        public string? ProviderOrderCode { get; private set; }
-
-        public ProviderOrderStatus Status { get; private set; }
-
-        public int RetryCount { get; private set; }
-
-        public string? ErrorCode { get; private set; }
-
-        public string? ErrorMessage { get; private set; }
-
-        public DateTime? SentAt { get; private set; }
-
-        public DateTime? CompletedAt { get; private set; }
-
-        public IReadOnlyCollection<ProviderOrderItem> Items => _items.AsReadOnly();
-
-        public void AddItem(
-            Guid orderItemId,
-            Guid productId,
-            Guid productVariantId,
-            string providerProductCode,
-            int quantity)
+        public bool IsExpired()
         {
-            var item = new ProviderOrderItem(
-                Id,
-                orderItemId,
-                productId,
-                productVariantId,
-                providerProductCode,
-                quantity);
-
-            _items.Add(item);
+            return DateTime.UtcNow > ReservedUntil;
         }
 
-        public void MarkProcessing()
+        public void MarkConfirmed(
+            decimal amount,
+            int numOfProduct,
+            int providerStatus,
+            string? rawConfirmResponseJson)
         {
-            Status = ProviderOrderStatus.Processing;
-            SentAt = DateTime.UtcNow;
-            UpdatedAt = DateTime.UtcNow;
-        }
-
-        public void MarkSuccess(string providerOrderCode)
-        {
-            ProviderOrderCode = providerOrderCode;
-            Status = ProviderOrderStatus.Success;
-            CompletedAt = DateTime.UtcNow;
-            ErrorCode = null;
+            Amount = amount;
+            NumOfProduct = numOfProduct;
+            ProviderStatus = providerStatus;
+            RawConfirmResponseJson = rawConfirmResponseJson;
+            Status = MapOrderStatus(providerStatus);
             ErrorMessage = null;
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void MarkWaitingWebhook(string providerOrderCode)
+        public void MarkExpired()
         {
-            ProviderOrderCode = providerOrderCode;
-            Status = ProviderOrderStatus.WaitingWebhook;
+            Status = "Expired";
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void MarkFailed(string? errorCode, string errorMessage)
+        public void MarkFailed(string errorMessage)
         {
-            Status = ProviderOrderStatus.Failed;
-            ErrorCode = errorCode;
+            Status = "Failed";
             ErrorMessage = errorMessage;
-            RetryCount++;
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void Cancel()
+        public void AddItem(ProviderOrderItem item)
         {
-            Status = ProviderOrderStatus.Cancelled;
-            UpdatedAt = DateTime.UtcNow;
+            _items.Add(item);
+        }
+
+        private static string MapOrderStatus(int status)
+        {
+            return status switch
+            {
+                1 => "Cancelled",
+                2 => "Confirmed",
+                3 => "Processing",
+                4 => "Failed",
+                6 => "Done",
+                _ => "Processing"
+            };
         }
     }
 }

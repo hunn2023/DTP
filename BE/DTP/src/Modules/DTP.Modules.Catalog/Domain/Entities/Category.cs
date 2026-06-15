@@ -24,14 +24,15 @@ namespace DTP.Modules.Catalog.Domain.Entities
             string name,
             string slug,
             Guid? parentId,
-            int sortOrder)
+            int sortOrder,
+            bool isActive = true)
         {
             Code = code.Trim();
             Name = name.Trim();
             Slug = slug.Trim();
             ParentId = parentId;
             SortOrder = sortOrder;
-            IsActive = true;
+            IsActive = isActive;
         }
 
         public void Update(

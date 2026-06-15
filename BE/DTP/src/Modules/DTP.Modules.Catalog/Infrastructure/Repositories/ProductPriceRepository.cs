@@ -1,12 +1,15 @@
-﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
+﻿using Azure.Core;
+using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Domain.Entities;
 using DTP.Modules.Catalog.Infrastructure.Persistence;
 using DTP.Shared.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DTP.Modules.Catalog.Infrastructure.Repositories
@@ -90,5 +93,28 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 .ThenBy(x => x.SalePrice)
                 .ToListAsync(cancellationToken);
         }
+
+
+
+        public async Task<ProductPrice?> GetActiveByProductVariantAsync(
+            Guid productId,
+            Guid? productVariantId,
+            string? currency,
+            CancellationToken cancellationToken = default)
+        {
+            return  await _context.ProductPrices
+                .AsNoTracking()
+                .Where(x =>
+                    x.ProductId == productId &&
+                    x.ProductVariantId == productVariantId &&
+                    x.IsActive &&
+                    (string.IsNullOrEmpty(currency) || x.Currency == currency)
+                    && !x.IsDeleted
+                    )
+                .OrderByDescending(x => x.Priority)
+                .ThenByDescending(x => x.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
     }
 }

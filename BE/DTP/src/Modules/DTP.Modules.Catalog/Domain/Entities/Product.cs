@@ -1,4 +1,5 @@
-﻿using DTP.Shared.Domain;
+﻿using Azure.Core;
+using DTP.Shared.Domain;
 
 
 namespace DTP.Modules.Catalog.Domain.Entities
@@ -150,5 +151,16 @@ namespace DTP.Modules.Catalog.Domain.Entities
         {
             IsActive = false;
         }
+
+
+        public void UpdateBasicInfo(string name,string slug,string? description,bool isActive)
+        {
+            Name = name;
+            Slug = slug;
+            Description = description;
+            IsActive = isActive;
+        }
+
+
     }
 }

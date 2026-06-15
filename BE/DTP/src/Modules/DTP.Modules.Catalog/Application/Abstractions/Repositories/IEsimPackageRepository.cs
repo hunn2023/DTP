@@ -50,5 +50,10 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
         Task<List<EsimPackage>> GetByProductIdAsync(
             Guid productId,
             CancellationToken cancellationToken = default);
+
+
+        Task<EsimPackage?> GetByProviderPackageCodeAsync̣(
+            string providerPackageCode,
+            CancellationToken cancellationToken = default);
     }
 }

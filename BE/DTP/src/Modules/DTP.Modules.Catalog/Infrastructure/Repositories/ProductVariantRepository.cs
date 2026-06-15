@@ -62,5 +62,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
 
             return await query.AnyAsync(cancellationToken);
         }
+
+        public async Task<ProductVariant?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default)
+        {
+             return await _context.ProductVariants
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Sku == sku.Trim(), cancellationToken);
+        }
     }
 }

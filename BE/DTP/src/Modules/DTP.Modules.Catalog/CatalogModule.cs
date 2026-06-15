@@ -103,6 +103,8 @@ namespace DTP.Modules.Catalog
 
             services.AddScoped<IProductContentService, ProductContentService>();
             services.AddScoped<IProductFaqService, ProductFaqService>();
+
+            services.AddScoped<IEsimPackageCoverageRepository, EsimPackageCoverageRepository>();
             services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(CatalogModule).Assembly);

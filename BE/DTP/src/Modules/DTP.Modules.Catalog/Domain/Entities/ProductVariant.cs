@@ -68,5 +68,20 @@ namespace DTP.Modules.Catalog.Domain.Entities
         {
             IsActive = false;
         }
+
+
+        public void Update(
+          string name,
+          string? shortName,
+          string? description,
+          int sortOrder,
+          bool isActive)
+        {
+            Name = name;
+            ShortName = shortName;
+            Description = description;
+            SortOrder = sortOrder;
+            IsActive = isActive;
+        }
     }
 }

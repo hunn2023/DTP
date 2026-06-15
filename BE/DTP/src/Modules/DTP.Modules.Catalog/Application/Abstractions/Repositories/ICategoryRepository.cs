@@ -30,5 +30,10 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
            string slug,
            Guid? excludeId = null,
            CancellationToken cancellationToken = default);
+
+
+        Task<Category?> GetByCodeAsync(
+            string code,
+            CancellationToken cancellationToken = default);
     }
 }

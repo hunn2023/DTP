@@ -39,7 +39,8 @@ namespace DTP.Modules.Catalog.Domain.Entities
             decimal costPrice,
             DateTime? startDate,
             DateTime? endDate,
-            string note)
+            string note,
+            bool isActive = true)
         {
             ProductId = productId;
             ProductVariantId = productVariantId;
@@ -51,6 +52,7 @@ namespace DTP.Modules.Catalog.Domain.Entities
             EndDate = endDate;
             IsActive = true;
             Note = note;
+            IsActive = isActive;
         }
 
         public void Update(
@@ -74,6 +76,29 @@ namespace DTP.Modules.Catalog.Domain.Entities
             SetUpdated();
         }
 
+
+        public void Update(
+            decimal originalPrice,
+            decimal salePrice,
+            decimal costPrice,
+            DateTime? startDate,
+            DateTime? endDate,
+            bool isActive)
+        {
+            OriginalPrice = originalPrice;
+            SalePrice = salePrice;
+            CostPrice = costPrice;
+            StartDate = startDate;
+            EndDate = endDate;
+            IsActive = isActive;
+            SetUpdated();
+        }
+
+        public void Activate()
+        {
+            IsActive = true;
+            SetUpdated();
+        }
         public void Deactivate()
         {
             IsActive = false;

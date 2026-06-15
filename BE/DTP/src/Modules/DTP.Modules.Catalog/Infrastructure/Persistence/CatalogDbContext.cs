@@ -37,6 +37,9 @@ namespace DTP.Modules.Catalog.Infrastructure.Persistence
 
         public DbSet<ProductFaq> ProductFaqs => Set<ProductFaq>();
 
+
+        public DbSet<EsimPackageCoverage> EsimPackageCoverages => Set<EsimPackageCoverage>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(

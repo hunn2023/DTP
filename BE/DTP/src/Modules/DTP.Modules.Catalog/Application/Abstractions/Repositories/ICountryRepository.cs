@@ -8,8 +8,11 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
     public interface ICountryRepository
       : IRepositoryBase<Country>
     {
+
         Task<List<Country>> GetActiveListAsync(
             CancellationToken cancellationToken = default);
+
+        Task<Country?> GetByCodeAsync(string code, CancellationToken cancellationToken = default);
 
         Task<bool> ExistsByCodeAsync(
             string code,

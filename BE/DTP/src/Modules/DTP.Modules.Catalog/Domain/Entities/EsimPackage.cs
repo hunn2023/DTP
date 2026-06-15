@@ -114,6 +114,9 @@ namespace DTP.Modules.Catalog.Domain.Entities
 
         public IReadOnlyCollection<EsimPackageCarrier> Carriers => _carriers;
 
+        private readonly List<EsimPackageCoverage> _coverages = new();
+        public IReadOnlyCollection<EsimPackageCoverage> Coverages => _coverages.AsReadOnly();
+
         public void Update(
              Guid productId,
              Guid productVariantId,
@@ -161,6 +164,46 @@ namespace DTP.Modules.Catalog.Domain.Entities
             SortOrder = sortOrder;
             IsActive = isActive;
         }
+       
+
+        public void Update(
+            string name,
+            string slug,
+            decimal? dataAmount,
+            string dataUnit,
+            int validityDays,
+            bool isUnlimited,
+            string coverageType,
+            string? coverageDescription,
+            string activationPolicy,
+            string? speedPolicy,
+            bool hotspotSupported,
+            bool phoneNumberSupported,
+            bool smsSupported,
+            bool kycRequired,
+            string qrDeliveryType,
+            int sortOrder,
+            bool isActive)
+        {
+           
+            Name = name;
+            Slug = slug;
+            DataAmount = dataAmount;
+            DataUnit = dataUnit;
+            ValidityDays = validityDays;
+            IsUnlimited = isUnlimited;
+            CoverageType = coverageType;
+            CoverageDescription = coverageDescription;
+            ActivationPolicy = activationPolicy;
+            SpeedPolicy = speedPolicy;
+            HotspotSupported = hotspotSupported;
+            PhoneNumberSupported = phoneNumberSupported;
+            SmsSupported = smsSupported;
+            KycRequired = kycRequired;
+            QrDeliveryType = qrDeliveryType;
+            SortOrder = sortOrder;
+            IsActive = isActive;
+        }
         public void Activate()
         {
             IsActive = true;
@@ -170,5 +213,6 @@ namespace DTP.Modules.Catalog.Domain.Entities
         {
             IsActive = false;
         }
+
     }
 }

@@ -9,32 +9,31 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Provider.Infrastructure.Configurations
 {
-    public class ProviderProductMappingConfiguration : IEntityTypeConfiguration<ProviderProductMapping>
+    public class ProviderProductMappingConfiguration
+     : IEntityTypeConfiguration<ProviderProductMapping>
     {
         public void Configure(EntityTypeBuilder<ProviderProductMapping> builder)
         {
-            builder.ToTable("Provider_ProductMappings");
+            builder.ToTable("ProviderProductMappings");
 
             builder.HasKey(x => x.Id);
 
-            builder.Property(x => x.ProviderProductCode)
-                .HasMaxLength(255)
+            builder.Property(x => x.ProviderSku)
+                .HasMaxLength(100)
                 .IsRequired();
 
-            builder.Property(x => x.ProviderProductName)
-                .HasMaxLength(500);
+            builder.Property(x => x.ProviderProductId)
+                .HasMaxLength(100);
 
-            builder.Property(x => x.ProviderCostPrice)
-                .HasPrecision(18, 4);
+            builder.Property(x => x.MappingStatus)
+                .HasMaxLength(50)
+                .IsRequired();
 
-            builder.Property(x => x.CurrencyCode)
-                .HasMaxLength(10);
+            builder.HasIndex(x => new { x.ProviderId, x.ProviderSku })
+                .IsUnique();
 
-            builder.HasIndex(x => new
-            {
-                x.ProviderId,
-                x.ProductVariantId
-            }).IsUnique();
+            builder.HasIndex(x => x.EsimPackageId)
+                .IsUnique(false);
         }
     }
 }
