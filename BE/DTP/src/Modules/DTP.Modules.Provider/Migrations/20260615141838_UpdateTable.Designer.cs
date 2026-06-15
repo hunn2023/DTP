@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DTP.Modules.Provider.Migrations
 {
     [DbContext(typeof(ProviderDbContext))]
-    [Migration("20260615140448_UpdateTable")]
+    [Migration("20260615141838_UpdateTable")]
     partial class UpdateTable
     {
         /// <inheritdoc />
