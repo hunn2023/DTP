@@ -125,6 +125,45 @@
     }
 }
 
+.product-wizard-layout {
+    > .product-wizard-nav-col {
+        @media (min-width: 768px) {
+            flex: 0 0 20.833333%;
+            max-width: 20.833333%;
+        }
+    }
+
+    > .product-wizard-content-col {
+        @media (min-width: 768px) {
+            flex: 0 0 79.166667%;
+            max-width: 79.166667%;
+        }
+    }
+}
+
+.product-wizard-nav {
+    gap: 3px;
+
+    &.flex-column .nav-link {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .nav-link > .d-flex.align-items-center {
+        min-height: 0;
+    }
+
+    .fs-32 {
+        line-height: 1;
+        flex-shrink: 0;
+    }
+
+    .product-wizard-nav__title {
+        font-size: inherit;
+        line-height: 1.25;
+    }
+}
+
 [data-wizard-animation] .tab-pane {
     opacity: 0;
     transform: translateX(20px);

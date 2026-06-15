@@ -9,7 +9,7 @@ import type { CatalogProduct, ProductFormTab } from '@/features/master-data/prod
 import type { Country } from '@/features/master-data/types'
 import type { FormFieldOption } from '@/modules/crud/form/types'
 
-const TAB_KEYS: ProductFormTab[] = ['product', 'images', 'attributes']
+const TAB_KEYS: ProductFormTab[] = ['product', 'images', 'attributes', 'faqs', 'contents']
 
 function parseTab(value: string | null): ProductFormTab {
   if (value && TAB_KEYS.includes(value as ProductFormTab)) {
@@ -32,6 +32,8 @@ export function useProductFormPage() {
   const isNew = isNewProductRoute(routeProductId, location.pathname)
   const productId = isNew ? null : (routeProductId ?? null)
   const activeTab = parseTab(searchParams.get('tab'))
+  const contentId = searchParams.get('contentId')
+  const isContentFormOpen = activeTab === 'contents' && Boolean(contentId)
 
   const [product, setProduct] = useState<CatalogProduct | null>(null)
   const [isLoading, setIsLoading] = useState(!isNew && Boolean(routeProductId))
@@ -89,6 +91,17 @@ export function useProductFormPage() {
     [canAccessSubTabs, setSearchParams],
   )
 
+  const openContentForm = useCallback(
+    (id: string) => {
+      setSearchParams({ tab: 'contents', contentId: id })
+    },
+    [setSearchParams],
+  )
+
+  const closeContentForm = useCallback(() => {
+    setSearchParams({ tab: 'contents' })
+  }, [setSearchParams])
+
   const pageTitle = isNew ? 'Tạo Product' : `Chỉnh sửa: ${product?.name ?? 'Product'}`
 
   return {
@@ -106,5 +119,9 @@ export function useProductFormPage() {
     canAccessSubTabs,
     reloadProduct,
     pageTitle,
+    contentId,
+    isContentFormOpen,
+    openContentForm,
+    closeContentForm,
   }
 }
