@@ -128,7 +128,7 @@ namespace DTP.Api
             builder.Services.AddDeliveryModule(builder.Configuration);
             builder.Services.AddReportModule(builder.Configuration);
             builder.Services.AddContentModule(builder.Configuration);
-            builder.Services.AddProviderModule(builder.Configuration);
+            //builder.Services.AddProviderModule(builder.Configuration);
             builder.Services.AddEmailInfrastructure();
 
 
