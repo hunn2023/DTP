@@ -8,6 +8,9 @@ namespace DTP.Modules.Catalog.Domain.Entities
         private readonly List<ProductVariant> _variants = new();
         private readonly List<ProductImage> _images = new();
         private readonly List<ProductAttribute> _attributes = new();
+        private readonly List<ProductContent> _contents = new();
+        private readonly List<ProductFaq> _faqs = new();
+
 
         private Product()
         {
@@ -84,6 +87,10 @@ namespace DTP.Modules.Catalog.Domain.Entities
         public IReadOnlyCollection<ProductImage> Images => _images;
 
         public IReadOnlyCollection<ProductAttribute> Attributes => _attributes;
+
+        public IReadOnlyCollection<ProductContent> Contents => _contents;
+
+        public IReadOnlyCollection<ProductFaq> Faqs => _faqs;
 
         public void Update(
             string? code,
