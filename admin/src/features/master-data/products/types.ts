@@ -69,4 +69,27 @@ export type ProductPriceRow = {
   isActive: boolean
 }
 
-export type ProductFormTab = 'product' | 'images' | 'attributes'
+export type ProductFaqRow = {
+  id: string
+  productId: string
+  question: string
+  answer: string
+  sortOrder: number
+  isActive: boolean
+}
+
+export type ProductContentType = 1 | 2 | 3 | 4 | 5 | 6
+
+export type ProductContentRow = {
+  id: string
+  productId: string
+  contentType: ProductContentType
+  contentTypeName: string
+  title: string
+  summary: string
+  bodyHtml: string
+  sortOrder: number
+  isActive: boolean
+}
+
+export type ProductFormTab = 'product' | 'images' | 'attributes' | 'faqs' | 'contents'
