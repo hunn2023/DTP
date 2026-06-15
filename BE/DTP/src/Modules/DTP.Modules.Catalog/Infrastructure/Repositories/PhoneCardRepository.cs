@@ -68,7 +68,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     ProductVariantId = x.ProductVariantId,
                     ProductVariantName = x.ProductVariant.Name,
                     ProviderId = x.ProviderId,
-                    ProviderName = x.Provider.Name,
                     Name = x.Name,
                     Slug = x.Slug,
                     FaceValue = x.FaceValue,
@@ -122,7 +121,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     ProductVariantId = x.ProductVariantId,
                     ProductVariantName = x.ProductVariant.Name,
                     ProviderId = x.ProviderId,
-                    ProviderName = x.Provider.Name,
                     Name = x.Name,
                     Slug = x.Slug,
                     FaceValue = x.FaceValue,
@@ -233,8 +231,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
 
                 query = query.Where(x =>
                     x.Name.Contains(keyword) ||
-                    x.Slug.Contains(keyword) ||
-                    x.Provider.Name.Contains(keyword));
+                    x.Slug.Contains(keyword) );
             }
 
             if (productVariantId.HasValue)
@@ -290,7 +287,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     ProductVariantId = x.ProductVariantId,
                     ProductVariantName = x.ProductVariant.Name,
                     ProviderId = x.ProviderId,
-                    ProviderName = x.Provider.Name,
                     Name = x.Name,
                     Slug = x.Slug,
                     FaceValue = x.FaceValue,

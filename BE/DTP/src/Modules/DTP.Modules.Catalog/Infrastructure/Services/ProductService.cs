@@ -152,7 +152,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                         ProductVariantId = x.ProductVariantId,
 
                         ProviderId = x.ProviderId,
-                        ProviderName = x.Provider != null ? x.Provider.Name : null,
 
                         CountryId = x.CountryId,
                         CountryName = x.Country != null ? x.Country.Name : null,

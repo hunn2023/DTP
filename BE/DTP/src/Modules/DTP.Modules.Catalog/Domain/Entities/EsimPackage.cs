@@ -70,7 +70,6 @@ namespace DTP.Modules.Catalog.Domain.Entities
 
         public Guid ProviderId { get; private set; }
 
-        public Provider Provider { get; private set; } = default!;
 
         public Guid CountryId { get; private set; }
 

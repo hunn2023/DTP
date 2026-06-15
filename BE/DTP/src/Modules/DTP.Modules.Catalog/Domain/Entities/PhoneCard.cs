@@ -8,7 +8,6 @@ namespace DTP.Modules.Catalog.Domain.Entities
         public ProductVariant ProductVariant { get; private set; } = default!;
 
         public Guid ProviderId { get; private set; }
-        public Provider Provider { get; private set; } = default!;
 
         public string Name { get; private set; } = default!;
         public string Slug { get; private set; } = default!;

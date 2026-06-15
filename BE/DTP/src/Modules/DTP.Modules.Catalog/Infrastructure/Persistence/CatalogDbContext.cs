@@ -24,7 +24,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Persistence
 
         public DbSet<ProductAttribute> ProductAttributes => Set<ProductAttribute>();
 
-        public DbSet<Provider> Providers => Set<Provider>();
 
         public DbSet<ProductPrice> ProductPrices => Set<ProductPrice>();
 

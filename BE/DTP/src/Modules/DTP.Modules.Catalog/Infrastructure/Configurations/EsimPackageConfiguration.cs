@@ -95,11 +95,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Persistence.Configurations
                 .HasForeignKey(x => x.ProductVariantId)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            builder.HasOne(x => x.Provider)
-                .WithMany()
-                .HasForeignKey(x => x.ProviderId)
-                .OnDelete(DeleteBehavior.NoAction);
-
             builder.HasOne(x => x.Country)
                 .WithMany()
                 .HasForeignKey(x => x.CountryId)

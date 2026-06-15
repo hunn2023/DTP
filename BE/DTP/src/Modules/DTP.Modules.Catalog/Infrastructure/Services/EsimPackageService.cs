@@ -15,7 +15,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         private readonly IEsimPackageRepository _esimPackageRepository;
         private readonly IProductRepository _productRepository;
         private readonly IProductVariantRepository _productVariantRepository;
-        private readonly IProviderRepository _providerRepository;
         private readonly ICountryRepository _countryRepository;
         private readonly ICatalogUnitOfWork _unitOfWork;
         private readonly ICacheService _cacheService;
@@ -24,7 +23,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             IEsimPackageRepository esimPackageRepository,
             IProductRepository productRepository,
             IProductVariantRepository productVariantRepository,
-            IProviderRepository providerRepository,
             ICountryRepository countryRepository,
             ICatalogUnitOfWork unitOfWork,
             ICacheService cacheService)
@@ -32,7 +30,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             _esimPackageRepository = esimPackageRepository;
             _productRepository = productRepository;
             _productVariantRepository = productVariantRepository;
-            _providerRepository = providerRepository;
             _countryRepository = countryRepository;
             _unitOfWork = unitOfWork;
             _cacheService = cacheService;
@@ -337,12 +334,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             if (variant.ProductId != command.ProductId)
                 return Result.Failure("Biến thể sản phẩm không thuộc sản phẩm đã chọn.");
 
-            var providerExists = await _providerRepository.ExistsAsync(
-                command.ProviderId,
-                cancellationToken);
 
-            if (!providerExists)
-                return Result.Failure("Không tìm thấy provider.");
 
             var countryExists = await _countryRepository.ExistsAsync(
                 command.CountryId,
@@ -433,14 +425,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             if (variant.ProductId != command.ProductId)
                 return Result.Failure("Biến thể sản phẩm không thuộc sản phẩm đã chọn.");
 
-            var providerExists = await _providerRepository.ExistsAsync(
-                command.ProviderId,
-                cancellationToken);
 
-            if (!providerExists)
-                return Result.Failure("Không tìm thấy provider.");
-
-            var countryExists = await _countryRepository.ExistsAsync(
+           var countryExists = await _countryRepository.ExistsAsync(
                 command.CountryId,
                 cancellationToken);
 

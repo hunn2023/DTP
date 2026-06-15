@@ -73,7 +73,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     ProductVariantName = x.ProductVariant.Name,
 
                     ProviderId = x.ProviderId,
-                    ProviderName = x.Provider.Name,
 
                     CountryId = x.CountryId,
                     CountryName = x.Country.Name,
@@ -163,7 +162,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     ProductVariantName = x.ProductVariant.Name,
 
                     ProviderId = x.ProviderId,
-                    ProviderName = x.Provider.Name,
 
                     CountryId = x.CountryId,
                     CountryName = x.Country.Name,
@@ -264,7 +262,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     x.ProviderPackageCode.Contains(keyword) ||
                     x.Product.Name.Contains(keyword) ||
                     x.ProductVariant.Name.Contains(keyword) ||
-                    x.Provider.Name.Contains(keyword) ||
                     x.Country.Name.Contains(keyword) ||
                     x.Carriers.Any(c => c.Carrier.Name.Contains(keyword)));
             }
@@ -336,7 +333,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     ProductVariantName = x.ProductVariant.Name,
 
                     ProviderId = x.ProviderId,
-                    ProviderName = x.Provider.Name,
 
                     CountryId = x.CountryId,
                     CountryName = x.Country.Name,
@@ -394,7 +390,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             return await _context.EsimPackages
                 .AsNoTracking()
                 .Where(x => x.IsActive && !x.IsDeleted)
-                .Include(x => x.Provider)
                 .Include(x => x.Country)
                 .Include(x => x.ProductVariant)
                 .Include(x => x.Carriers)

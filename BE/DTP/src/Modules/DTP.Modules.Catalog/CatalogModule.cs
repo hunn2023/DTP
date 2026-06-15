@@ -72,7 +72,6 @@ namespace DTP.Modules.Catalog
             services.AddScoped<ICategoryRepository, CategoryRepository>();
             services.AddScoped<ICountryRepository, CountryRepository>();
             services.AddScoped<ICarrierRepository, CarrierRepository>();
-            services.AddScoped<IProviderRepository, ProviderRepository>();
             services.AddScoped<IProductRepository, ProductRepository>();
             services.AddScoped<IProductVariantRepository, ProductVariantRepository>();
             services.AddScoped<IProductImageRepository, ProductImageRepository>();
@@ -84,7 +83,6 @@ namespace DTP.Modules.Catalog
             services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<ICountryService, CountryService>();
             services.AddScoped<ICarrierService, CarrierService>();
-            services.AddScoped<IProviderService, ProviderService>();
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IProductVariantService, ProductVariantService>();
             services.AddScoped<IProductImageService, ProductImageService>();
