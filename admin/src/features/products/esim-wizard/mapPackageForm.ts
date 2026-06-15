@@ -3,6 +3,20 @@ import type { EsimPackagePayload } from '@/apis/esimPackagesApi'
 import type { EsimPackageForm } from '@/features/products/esim-wizard/types'
 import { slugify } from '@/modules/crud/form/slugify'
 
+function createPlaceholderGuid(): string {
+  return crypto.randomUUID()
+}
+
+function resolveWizardProviderId(value: string): string {
+  return value.trim() || createPlaceholderGuid()
+}
+
+function resolveWizardProviderPackageCode(values: EsimPackageForm): string {
+  const code = values.providerPackageCode.trim()
+  if (code) return code
+  return values.slug.trim() || slugify(values.name) || createPlaceholderGuid()
+}
+
 export function mapPackageToForm(pkg: EsimPackage): EsimPackageForm {
   return {
     id: pkg.id,
@@ -58,5 +72,14 @@ export function toPackagePayload(values: EsimPackageForm): EsimPackagePayload {
     sortOrder: values.sortOrder,
     isActive: values.isActive,
     carrierIds: values.carrierIds,
+  }
+}
+
+/** Wizard: ẩn provider — tự sinh Guid/mã khi trống để BE tạo được gói. */
+export function toWizardPackagePayload(values: EsimPackageForm): EsimPackagePayload {
+  return {
+    ...toPackagePayload(values),
+    providerId: resolveWizardProviderId(values.providerId),
+    providerPackageCode: resolveWizardProviderPackageCode(values),
   }
 }

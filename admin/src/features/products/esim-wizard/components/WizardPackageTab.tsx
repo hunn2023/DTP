@@ -2,7 +2,7 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { Alert, Card, Col, Form, Row } from 'react-bootstrap'
 
 import { createEsimPackage, updateEsimPackage } from '@/apis/esimPackagesApi'
-import { toPackagePayload } from '@/features/products/esim-wizard/mapPackageForm'
+import { toWizardPackagePayload } from '@/features/products/esim-wizard/mapPackageForm'
 import type { EsimPackageForm } from '@/features/products/esim-wizard/types'
 import { getDefaultPackageValues } from '@/features/products/esim-wizard/wizardDefaults'
 import { slugify } from '@/modules/crud/form/slugify'
@@ -12,7 +12,6 @@ type WizardPackageTabProps = {
   productId: string
   variantId: string
   defaultCountryId: string
-  providerOptions: FormFieldOption[]
   countryOptions: FormFieldOption[]
   initialValues: EsimPackageForm | null
   onSaved: (packageId: string) => void
@@ -27,7 +26,6 @@ const WizardPackageTab = ({
   productId,
   variantId,
   defaultCountryId,
-  providerOptions,
   countryOptions,
   initialValues,
   onSaved,
@@ -46,12 +44,12 @@ const WizardPackageTab = ({
     e.preventDefault()
     setError('')
 
-    if (!values.name.trim() || !values.providerId || !values.countryId || !values.providerPackageCode.trim()) {
-      setError('Vui lòng điền tên gói, nhà cung cấp, quốc gia và mã gói')
+    if (!values.name.trim() || !values.countryId) {
+      setError('Vui lòng điền tên gói và quốc gia')
       return
     }
 
-    const payload = toPackagePayload({ ...values, productId, productVariantId: variantId })
+    const payload = toWizardPackagePayload({ ...values, productId, productVariantId: variantId })
 
     onSavingChange(true)
     try {
@@ -77,7 +75,7 @@ const WizardPackageTab = ({
             <Card.Body>
               <div className="mb-3">
                 <h5 className="mb-1 fw-semibold">Thông tin gói</h5>
-                <p className="text-muted mb-0 fs-sm">Tên gói, nguồn cung cấp, vùng phủ sóng và thông số data.</p>
+                <p className="text-muted mb-0 fs-sm">Tên gói, vùng phủ sóng và thông số data.</p>
               </div>
               <Row className="g-3">
                 <Col md={6}>
@@ -101,28 +99,6 @@ const WizardPackageTab = ({
                     onChange={(e) => setValues((p) => ({ ...p, slug: e.target.value }))}
                     required
                   />
-                </Col>
-                <Col md={6}>
-                  <Form.Label className="fw-semibold">Mã gói nhà cung cấp *</Form.Label>
-                  <Form.Control
-                    value={values.providerPackageCode}
-                    onChange={(e) => setValues((p) => ({ ...p, providerPackageCode: e.target.value }))}
-                    required
-                  />
-                </Col>
-                <Col md={6}>
-                  <Form.Label className="fw-semibold">Nhà cung cấp *</Form.Label>
-                  <Form.Select
-                    value={values.providerId}
-                    onChange={(e) => setValues((p) => ({ ...p, providerId: e.target.value }))}
-                    required>
-                    <option value="">-- Chọn --</option>
-                    {providerOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </Form.Select>
                 </Col>
                 <Col md={6}>
                   <Form.Label className="fw-semibold">Quốc gia *</Form.Label>

@@ -29,13 +29,15 @@ export function applyArticleSlug(values: ContentArticle): ContentArticle {
   return values
 }
 
-export function toArticlePayload(values: ContentArticle): ContentArticlePayload {
-  return {
+export function toArticlePayload(
+  values: ContentArticle,
+  mode: 'create' | 'update',
+): ContentArticlePayload {
+  const payload: ContentArticlePayload = {
     title: values.title.trim(),
     slug: values.slug.trim(),
     summary: values.summary.trim() || undefined,
     content: values.content,
-    thumbnailUrl: values.thumbnailUrl.trim() || undefined,
     authorName: values.authorName.trim() || undefined,
     categoryCode: values.categoryCode.trim() || undefined,
     tags: values.tags.trim() || undefined,
@@ -43,6 +45,12 @@ export function toArticlePayload(values: ContentArticle): ContentArticlePayload 
     isFeatured: values.isFeatured,
     sortOrder: values.sortOrder,
   }
+
+  if (mode === 'update' && values.thumbnailUrl.trim()) {
+    payload.thumbnailUrl = values.thumbnailUrl.trim()
+  }
+
+  return payload
 }
 
 export type ArticleFormErrors = Partial<Record<keyof ContentArticle, string>>
