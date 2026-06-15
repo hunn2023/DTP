@@ -263,6 +263,12 @@ export const menuItems1: MenuItemType[] = [
         icon: TbArticle,
       },
       {
+        key: 'pages',
+        label: 'Trang tĩnh',
+        url: '/website/pages',
+        icon: TbFiles,
+      },
+      {
         key: 'seo-settings',
         label: 'Cấu hình SEO',
         url: '/website/seo',
@@ -741,6 +747,12 @@ export const menuItems: MenuItemType[] = [
         label: 'Bài viết',
         url: '/website/articles',
         icon: TbArticle,
+      },
+      {
+        key: 'pages',
+        label: 'Trang tĩnh',
+        url: '/website/pages',
+        icon: TbFiles,
       },
       {
         key: 'seo-settings',

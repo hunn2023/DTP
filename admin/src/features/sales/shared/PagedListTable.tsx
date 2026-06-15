@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { Table } from '@tanstack/react-table'
 import { Card, CardFooter, CardHeader, Spinner } from 'react-bootstrap'
 import { LuSearch } from 'react-icons/lu'
@@ -20,6 +21,7 @@ type PagedListTableProps<T extends { id: string | number }> = {
   emptyMessage: string
   loadingLabel: string
   onRowClick?: (row: T) => void
+  toolbar?: ReactNode
 }
 
 function PagedListTable<T extends { id: string | number }>({
@@ -35,19 +37,23 @@ function PagedListTable<T extends { id: string | number }>({
   emptyMessage,
   loadingLabel,
   onRowClick,
+  toolbar,
 }: PagedListTableProps<T>) {
   return (
     <Card>
       <CardHeader className="border-light">
-        <div className="app-search">
-          <input
-            type="search"
-            className="form-control"
-            placeholder={searchPlaceholder}
-            value={globalFilter}
-            onChange={(event) => setGlobalFilter(event.target.value)}
-          />
-          <LuSearch className="app-search-icon text-muted" />
+        <div className="d-flex flex-column gap-2">
+          <div className="app-search">
+            <input
+              type="search"
+              className="form-control"
+              placeholder={searchPlaceholder}
+              value={globalFilter}
+              onChange={(event) => setGlobalFilter(event.target.value)}
+            />
+            <LuSearch className="app-search-icon text-muted" />
+          </div>
+          {toolbar}
         </div>
       </CardHeader>
 

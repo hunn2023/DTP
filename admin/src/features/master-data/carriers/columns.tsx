@@ -41,7 +41,25 @@ export function buildCarrierColumns(handlers: CarrierTableHandlers) {
     helper.accessor('code', { header: 'Mã', cell: ({ getValue }) => <code>{getValue() || '—'}</code> }),
     helper.accessor('countryName', {
       header: 'Quốc gia',
-      cell: ({ getValue }) => getValue() || <span className="text-muted">—</span>,
+      cell: ({ row, getValue }) => {
+        const name = getValue()
+        if (!name) return <span className="text-muted">—</span>
+        return (
+          <div className="d-flex align-items-center gap-2">
+            {row.original.countryFlagUrl ? (
+              <img
+                src={row.original.countryFlagUrl}
+                alt=""
+                width={28}
+                height={20}
+                className="rounded border"
+                style={{ objectFit: 'cover' }}
+              />
+            ) : null}
+            <span>{name}</span>
+          </div>
+        )
+      },
     }),
     createSortOrderColumn<Carrier>(),
     createIsActiveColumn<Carrier>(),

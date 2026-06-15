@@ -72,6 +72,7 @@ function mapDto(dto: CarrierDto, countryName = ''): Carrier {
     code: dto.code,
     countryId: dto.countryId,
     countryName,
+    countryFlagUrl: '',
     logoUrl: dto.logoUrl,
     isActive: dto.isActive,
     sortOrder: dto.sortOrder,

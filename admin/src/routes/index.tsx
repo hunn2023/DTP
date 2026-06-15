@@ -2,9 +2,9 @@ import { lazy } from 'react'
 import { Navigate, type RouteObject } from 'react-router'
 import { dtpAdminRoutes } from '@/modules/crud/registry'
 import MainLayout from '@/layouts/MainLayout.tsx'
+import Dashboard from '@/views/dashboards/dashboard'
 
 // Dashboards
-const Dashboard = lazy(() => import('@/views/dashboards/dashboard'))
 const Dashboard2 = lazy(() => import('@/views/dashboards/dashboard2'))
 const Dashboard3 = lazy(() => import('@/views/dashboards/dashboard3'))
 

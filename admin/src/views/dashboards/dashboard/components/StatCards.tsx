@@ -1,59 +1,39 @@
 import { Card, CardBody, Col, Row } from 'react-bootstrap'
-import { TbExternalLink, TbPointFilled } from 'react-icons/tb'
-import { Link } from 'react-router'
+import { TbArrowDown, TbArrowUp } from 'react-icons/tb'
 
-import CountUp from 'react-countup'
 import { statCards } from '../data'
 
-const StatCards = () => {
-  return (
-    <Row className="row-cols-xxl-5 row-cols-md-3 row-cols-1 align-items-center">
-      {statCards.map((card) => {
-        const IconComponent = card.icon
-        return (
-          <Col key={card.id} lg={card.id === 5 ? true : undefined} md={card.id === 5 ? 'auto' : undefined}>
-            <Card>
-              <CardBody>
-                <Link to="" className="text-muted float-end mt-n1 fs-xl">
-                  <TbExternalLink />
-                </Link>
-                <h5 title={card.title}>{card.title}</h5>
-                <div className="d-flex align-items-center gap-2 my-3">
-                  <div className="avatar-md flex-shrink-0">
-                    <span className="avatar-title text-bg-light rounded-circle fs-22">
-                      <IconComponent />
-                    </span>
-                  </div>
-                  <h3 className="mb-0">
-                    <CountUp
-                      end={typeof card.value === 'number' ? card.value : 0}
-                      prefix={card.prefix}
-                      suffix={card.suffix}
-                      enableScrollSpy
-                      scrollSpyOnce
-                    />
-                  </h3>
-                  <span
-                    className={`badge ${card.badgeVariant === 'light' ? 'text-bg-light' : `badge-soft-${card.badgeVariant}`} fw-medium ms-2 fs-xs ms-auto`}>
-                    {card.badgeText}
+const StatCards = () => (
+  <Row className="row-cols-xxl-5 row-cols-md-3 row-cols-1 g-3 mb-3">
+    {statCards.map((card) => {
+      const Icon = card.icon
+      const TrendIcon = card.trendUp ? TbArrowUp : TbArrowDown
+      return (
+        <Col key={card.id}>
+          <Card className="h-100">
+            <CardBody>
+              <p className="text-muted mb-2 mb-xxl-3">{card.title}</p>
+              <div className="d-flex align-items-center gap-3">
+                <div className="avatar-md flex-shrink-0">
+                  <span className={`avatar-title text-bg-${card.iconBg}-subtle text-${card.iconBg} rounded-circle fs-22`}>
+                    <Icon />
                   </span>
                 </div>
-                <p className="mb-0">
-                  <span className={`text-${card.pointColor}`}>
-                    <TbPointFilled />
+                <div className="flex-grow-1 min-w-0">
+                  <h3 className="mb-1 fs-4 text-truncate">{card.value}</h3>
+                  <span className={`fs-xs d-inline-flex align-items-center gap-1 ${card.trendUp ? 'text-success' : 'text-danger'}`}>
+                    <TrendIcon size={14} />
+                    {card.trendUp ? '+' : '-'}
+                    {card.trend.toLocaleString('vi-VN')}% so với hôm qua
                   </span>
-                  <span className="text-nowrap text-muted">{card.description}</span>
-                  <span className="float-end">
-                    <b>{card.total}</b>
-                  </span>
-                </p>
-              </CardBody>
-            </Card>
-          </Col>
-        )
-      })}
-    </Row>
-  )
-}
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        </Col>
+      )
+    })}
+  </Row>
+)
 
 export default StatCards

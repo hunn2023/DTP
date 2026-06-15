@@ -1,54 +1,45 @@
-import { createColumnHelper, type ColumnDef } from '@tanstack/react-table'
+import { type ColumnDef } from '@tanstack/react-table'
+import { Dropdown } from 'react-bootstrap'
+import { TbCheck, TbDotsVertical, TbEye, TbCreditCard, TbX } from 'react-icons/tb'
 
-import {
-  enumLabel,
-  formatCurrency,
-  formatDateTime,
-  ORDER_PAYMENT_STATUS_LABELS,
-  ORDER_STATUS_LABELS,
-} from '@/features/sales/shared/format'
 import type { OrderRow } from '@/apis/ordersApi'
+import { buildOrderListColumns } from '@/features/sales/shared/orderListColumns'
 
-const helper = createColumnHelper<OrderRow>()
+export type OrderTableHandlers = {
+  onView: (row: OrderRow) => void
+  onMarkPaid: (row: OrderRow) => void
+  onComplete: (row: OrderRow) => void
+  onCancel: (row: OrderRow) => void
+}
 
-export function buildOrderColumns() {
+export function buildOrderColumns(handlers: OrderTableHandlers): ColumnDef<OrderRow>[] {
   return [
-    helper.accessor('orderCode', {
-      header: 'Mã đơn',
-      cell: ({ getValue }) => <code>{getValue()}</code>,
-    }),
-    helper.accessor('customerName', {
-      header: 'Khách hàng',
-      cell: ({ row }) => (
-        <div>
-          <div className="fw-semibold">{row.original.customerName || '—'}</div>
-          <div className="text-muted fs-xxs">{row.original.customerEmail || row.original.customerPhone}</div>
-        </div>
+    ...buildOrderListColumns(),
+    {
+      id: 'actions',
+      header: 'Thao tác',
+      enableSorting: false,
+      cell: ({ row }: { row: { original: OrderRow } }) => (
+        <Dropdown align="end" onClick={(e) => e.stopPropagation()}>
+          <Dropdown.Toggle variant="light" size="sm" className="btn-icon">
+            <TbDotsVertical />
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            <Dropdown.Item onClick={() => handlers.onView(row.original)}>
+              <TbEye className="me-2" /> Chi tiết
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => handlers.onMarkPaid(row.original)}>
+              <TbCreditCard className="me-2" /> Đánh dấu đã thanh toán
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => handlers.onComplete(row.original)}>
+              <TbCheck className="me-2" /> Hoàn thành đơn
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => handlers.onCancel(row.original)}>
+              <TbX className="me-2" /> Hủy đơn
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
       ),
-    }),
-    helper.accessor('totalAmount', {
-      header: 'Tổng tiền',
-      cell: ({ row }) => formatCurrency(row.original.totalAmount, row.original.currency),
-    }),
-    helper.accessor('paymentStatus', {
-      header: 'TT thanh toán',
-      cell: ({ getValue }) => enumLabel(getValue(), ORDER_PAYMENT_STATUS_LABELS),
-    }),
-    helper.accessor('status', {
-      header: 'Trạng thái đơn',
-      cell: ({ getValue }) => enumLabel(getValue(), ORDER_STATUS_LABELS),
-    }),
-    helper.accessor('paymentMethod', {
-      header: 'Phương thức TT',
-      cell: ({ getValue }) => getValue() || '—',
-    }),
-    helper.accessor('createdAt', {
-      header: 'Ngày tạo',
-      cell: ({ getValue }) => formatDateTime(getValue()),
-    }),
-    helper.accessor('paidAt', {
-      header: 'Thanh toán lúc',
-      cell: ({ getValue }) => formatDateTime(getValue()),
-    }),
-  ] as ColumnDef<OrderRow>[]
+    },
+  ]
 }

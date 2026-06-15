@@ -1,22 +1,13 @@
-import { useUsersPage } from '@/features/system/users/useUsersPage'
-import PagedListTable from '@/features/sales/shared/PagedListTable'
+import UsersCrudTable from '@/features/system/users/components/UsersCrudTable'
 import EntityPageLayout from '@/modules/crud/components/EntityPageLayout'
 
-const UsersPage = () => {
-  const list = useUsersPage()
-
-  return (
-    <EntityPageLayout
-      title="Tài khoản quản trị"
-      subtitle="Hệ thống"
-      description="Danh sách user từ API admin/users.">
-      <PagedListTable
-        searchPlaceholder="Tìm email, tên, SĐT..."
-        loadingLabel="Đang tải tài khoản..."
-        {...list}
-      />
-    </EntityPageLayout>
-  )
-}
+const UsersPage = () => (
+  <EntityPageLayout
+    title="Tài khoản quản trị"
+    subtitle="Hệ thống"
+    description="Quản lý user, khóa/mở khóa và gán vai trò.">
+    <UsersCrudTable />
+  </EntityPageLayout>
+)
 
 export default UsersPage

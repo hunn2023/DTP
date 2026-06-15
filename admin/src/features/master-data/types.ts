@@ -6,7 +6,6 @@ export type Category = {
   name: string
   slug: string
   code: string
-  description: string
   sortOrder: number
 }
 
@@ -50,6 +49,7 @@ export type Carrier = {
   code: string
   countryId: string
   countryName: string
+  countryFlagUrl: string
   logoUrl: string
   sortOrder: number
 }

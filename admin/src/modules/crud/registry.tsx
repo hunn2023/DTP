@@ -1,5 +1,14 @@
 import { Navigate, type RouteObject } from 'react-router'
 
+import ArticlesPage from '@/features/content/articles/ArticlesPage'
+import ArticleFormPage from '@/features/content/articles/ArticleFormPage'
+import BannersPage from '@/features/content/banners/BannersPage'
+import BannerFormPage from '@/features/content/banners/BannerFormPage'
+import FaqsPage from '@/features/content/faqs/FaqsPage'
+import PagesPage from '@/features/content/pages/PagesPage'
+import PageFormPage from '@/features/content/pages/PageFormPage'
+import SeoPage from '@/features/content/seo/SeoPage'
+import SeoFormPage from '@/features/content/seo/SeoFormPage'
 import CarriersPage from '@/features/master-data/carriers/CarriersPage'
 import CategoriesPage from '@/features/master-data/categories/CategoriesPage'
 import CountriesPage from '@/features/master-data/countries/CountriesPage'
@@ -33,6 +42,22 @@ import { settingsEntities } from '@/modules/crud/entities/settings.entities'
 import { websiteEntities } from '@/modules/crud/entities/website.entities'
 import type { ResolvedAdminEntity } from '@/modules/crud/schema/defineEntity'
 import type { CrudEntityBase } from '@/modules/crud/types'
+
+const API_BACKED_WEBSITE_PATHS = new Set([
+  '/website/banners',
+  '/website/faqs',
+  '/website/articles',
+  '/website/pages',
+  '/website/seo',
+  '/website/content/banners',
+  '/website/content/faqs',
+  '/website/content/posts',
+  '/website/content/pages',
+  '/website/seo/homepage',
+  '/website/seo/categories',
+  '/website/seo/countries',
+  '/website/seo/products',
+])
 
 const reportKpiMap: Record<string, { label: string; value: string; hint?: string }[]> = {
   '/reports/revenue': [
@@ -79,7 +104,14 @@ const redirectRoutes: RouteObject[] = [
   { path: '/deliveries', element: <Navigate to="/deliveries/list" replace /> },
   { path: '/customers', element: <Navigate to="/customers/list" replace /> },
   { path: '/website/content', element: <Navigate to="/website/content/posts" replace /> },
-  { path: '/website/seo', element: <Navigate to="/website/seo/homepage" replace /> },
+  { path: '/website/content/banners', element: <Navigate to="/website/banners" replace /> },
+  { path: '/website/content/faqs', element: <Navigate to="/website/faqs" replace /> },
+  { path: '/website/content/posts', element: <Navigate to="/website/articles" replace /> },
+  { path: '/website/content/pages', element: <Navigate to="/website/pages" replace /> },
+  { path: '/website/seo/homepage', element: <Navigate to="/website/seo" replace /> },
+  { path: '/website/seo/categories', element: <Navigate to="/website/seo" replace /> },
+  { path: '/website/seo/countries', element: <Navigate to="/website/seo" replace /> },
+  { path: '/website/seo/products', element: <Navigate to="/website/seo" replace /> },
   { path: '/marketing', element: <Navigate to="/marketing/promotions" replace /> },
   { path: '/reports', element: <Navigate to="/reports/revenue" replace /> },
   { path: '/system', element: <Navigate to="/system/admin-users" replace /> },
@@ -150,6 +182,22 @@ const systemApiRoutes: RouteObject[] = [
   },
 ]
 
+const contentApiRoutes: RouteObject[] = [
+  { path: '/website/banners/new', element: <BannerFormPage /> },
+  { path: '/website/banners/:bannerId', element: <BannerFormPage /> },
+  { path: '/website/banners', element: <BannersPage /> },
+  { path: '/website/faqs', element: <FaqsPage /> },
+  { path: '/website/articles/new', element: <ArticleFormPage /> },
+  { path: '/website/articles/:articleId', element: <ArticleFormPage /> },
+  { path: '/website/articles', element: <ArticlesPage /> },
+  { path: '/website/pages/new', element: <PageFormPage /> },
+  { path: '/website/pages/:pageId', element: <PageFormPage /> },
+  { path: '/website/pages', element: <PagesPage /> },
+  { path: '/website/seo/new', element: <SeoFormPage /> },
+  { path: '/website/seo/:seoId', element: <SeoFormPage /> },
+  { path: '/website/seo', element: <SeoPage /> },
+]
+
 const salesApiRoutes: RouteObject[] = [
   ...ORDER_PAGE_CONFIGS.map((config) => ({
     path: config.path,
@@ -185,6 +233,7 @@ export const dtpAdminRoutes: RouteObject[] = [
   ...redirectRoutes,
   ...systemApiRoutes,
   ...salesApiRoutes,
+  ...contentApiRoutes,
   categoriesRoute,
   countriesRoute,
   carriersRoute,
@@ -197,5 +246,5 @@ export const dtpAdminRoutes: RouteObject[] = [
   providersListRoute,
   { path: '/products/esim/prices', element: <Navigate to="/settings/product-prices" replace /> },
   { path: '/products/cards-data/prices', element: <Navigate to="/settings/product-prices" replace /> },
-  ...allAdminEntities.map(entityRoute),
+  ...allAdminEntities.filter((entity) => !API_BACKED_WEBSITE_PATHS.has(entity.path)).map(entityRoute),
 ]

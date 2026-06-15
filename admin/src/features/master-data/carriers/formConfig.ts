@@ -9,6 +9,7 @@ export function getDefaultCarrierValues(): Carrier {
     code: '',
     countryId: '',
     countryName: '',
+    countryFlagUrl: '',
     logoUrl: '',
     sortOrder: 1,
     isActive: true,

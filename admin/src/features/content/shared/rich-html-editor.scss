@@ -1,0 +1,87 @@
+.rich-html-editor {
+  &__tabs .nav-link {
+    cursor: pointer;
+    font-size: 0.9375rem;
+    padding: 0.5rem 1rem;
+  }
+
+  &__html-input {
+    min-height: 420px;
+    font-size: 0.875rem;
+  }
+
+  &__preview {
+    min-height: 420px;
+    padding: 1.25rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.5rem;
+    background: var(--bs-body-bg);
+    overflow: auto;
+
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+  }
+
+  .ql-toolbar.ql-snow {
+    padding: 0.75rem 1rem;
+    gap: 0.5rem;
+
+    .ql-formats {
+      margin-right: 0.5rem;
+      padding: 0.15rem;
+    }
+
+    button,
+    .ql-picker-label {
+      height: 2.25rem;
+      min-width: 2.25rem;
+      padding: 0.35rem 0.5rem;
+    }
+
+    .ql-picker {
+      font-size: 0.9375rem;
+    }
+
+    .ql-picker-label {
+      display: inline-flex;
+      align-items: center;
+      padding-inline: 0.65rem;
+    }
+
+    button svg,
+    .ql-picker-label svg {
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+  }
+
+  .ql-container {
+    min-height: 420px;
+    font-size: 1rem;
+  }
+
+  .ql-editor {
+    min-height: 400px;
+    font-size: 1rem;
+    line-height: 1.65;
+    padding: 1.25rem 1.5rem;
+
+    img {
+      max-width: 100%;
+      height: auto;
+      content-visibility: auto;
+    }
+  }
+
+  &__quill-loading {
+    min-height: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0 0 0.375rem 0.375rem;
+    background: var(--bs-body-bg);
+  }
+}
