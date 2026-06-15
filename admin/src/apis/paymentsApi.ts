@@ -14,10 +14,19 @@ export type PaymentRow = {
   provider: string
   method: string
   status: string
+  requestId: string
   providerTransactionId: string
+  qrCode: string
+  qrImageUrl: string
+  paymentUrl: string
   paidAt: string
   createdAt: string
   expiredAt: string
+}
+
+export type PaymentDetailResult = {
+  byId: PaymentRow | null
+  byOrder: PaymentRow | null
 }
 
 function normalizePayment(raw: Raw): PaymentRow {
@@ -31,7 +40,11 @@ function normalizePayment(raw: Raw): PaymentRow {
     provider: readString(raw, 'provider', 'Provider'),
     method: readString(raw, 'method', 'Method'),
     status: readString(raw, 'status', 'Status'),
+    requestId: readString(raw, 'requestId', 'RequestId'),
     providerTransactionId: readString(raw, 'providerTransactionId', 'ProviderTransactionId'),
+    qrCode: readString(raw, 'qrCode', 'QrCode'),
+    qrImageUrl: readString(raw, 'qrImageUrl', 'QrImageUrl'),
+    paymentUrl: readString(raw, 'paymentUrl', 'PaymentUrl'),
     paidAt: readString(raw, 'paidAt', 'PaidAt'),
     createdAt: readString(raw, 'createdAt', 'CreatedAt'),
     expiredAt: readString(raw, 'expiredAt', 'ExpiredAt'),
@@ -46,4 +59,30 @@ export async function fetchPaymentById(id: string): Promise<PaymentRow> {
 export async function fetchPaymentByOrderId(orderId: string): Promise<PaymentRow> {
   const raw = await httpGet<Raw>(`${API_PATHS.adminPayments}/orders/${orderId}`)
   return normalizePayment(raw)
+}
+
+export async function fetchPaymentDetailByOrderId(orderId: string): Promise<PaymentDetailResult> {
+  const byOrder = await fetchPaymentByOrderId(orderId)
+  let byId: PaymentRow | null = null
+  if (byOrder.id) {
+    try {
+      byId = await fetchPaymentById(byOrder.id)
+    } catch {
+      byId = null
+    }
+  }
+  return { byOrder, byId }
+}
+
+export async function fetchPaymentDetailById(id: string): Promise<PaymentDetailResult> {
+  const byId = await fetchPaymentById(id)
+  let byOrder: PaymentRow | null = null
+  if (byId.orderId) {
+    try {
+      byOrder = await fetchPaymentByOrderId(byId.orderId)
+    } catch {
+      byOrder = null
+    }
+  }
+  return { byId, byOrder }
 }

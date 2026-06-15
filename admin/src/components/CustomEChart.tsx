@@ -1,8 +1,9 @@
 import { type EChartsOption } from 'echarts'
 import { type EChartsReactProps } from 'echarts-for-react'
 import * as echarts from 'echarts/core'
-import { lazy, useMemo } from 'react'
+import { lazy, Suspense, useMemo } from 'react'
 
+import Loader from '@/components/Loader'
 import { useLayoutContext } from '@/context/useLayoutContext'
 
 const ReactECharts = lazy(() => import('echarts-for-react'))
@@ -24,7 +25,13 @@ const CustomEChart = ({ getOptions, extensions, ...props }: EChartClientProps) =
 
   const options = useMemo(() => getOptions(), [getOptions, skin, theme])
 
-  return <ReactECharts echarts={echarts} {...props} option={options} />
+  const chartHeight = props.style?.height != null ? String(props.style.height) : '200px'
+
+  return (
+    <Suspense fallback={<Loader height={chartHeight} />}>
+      <ReactECharts echarts={echarts} {...props} option={options} />
+    </Suspense>
+  )
 }
 
 export default CustomEChart

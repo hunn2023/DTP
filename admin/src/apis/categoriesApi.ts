@@ -17,16 +17,14 @@ export type CategoryDto = {
   name: string
   slug: string
   code: string
-  description: string
   isActive: boolean
   sortOrder: number
 }
 
 export type CategoryPayload = {
   name: string
-  code?: string
+  code: string
   slug: string
-  description?: string
   isActive: boolean
   sortOrder: number
 }
@@ -46,7 +44,6 @@ function normalizeDto(raw: Raw): CategoryDto {
     name: readString(raw, 'name', 'Name'),
     slug: readString(raw, 'slug', 'Slug'),
     code: readString(raw, 'code', 'Code'),
-    description: readString(raw, 'description', 'Description'),
     isActive: readBool(raw, 'isActive', 'IsActive'),
     sortOrder: readNumber(raw, 'sortOrder', 'SortOrder'),
   }
@@ -58,7 +55,6 @@ function mapDto(dto: CategoryDto): Category {
     name: dto.name,
     slug: dto.slug,
     code: dto.code,
-    description: dto.description,
     isActive: dto.isActive,
     sortOrder: dto.sortOrder,
   }
@@ -138,19 +134,85 @@ export async function fetchCategoryOptions(): Promise<FormFieldOption[]> {
   return inflightCategoryOptions
 }
 
+let cachedCategoryCodeOptions: FormFieldOption[] | null = null
+let inflightCategoryCodeOptions: Promise<FormFieldOption[]> | null = null
+
+export function invalidateCategoryCodeOptionsCache(): void {
+  cachedCategoryCodeOptions = null
+  inflightCategoryCodeOptions = null
+}
+
+/** Dropdown mã danh mục (code) — dùng cho FAQ categoryCode */
+export async function fetchCategoryCodeOptions(
+  pageIndex = 1,
+  pageSize = 100,
+): Promise<FormFieldOption[]> {
+  if (cachedCategoryCodeOptions) return cachedCategoryCodeOptions
+  if (inflightCategoryCodeOptions) return inflightCategoryCodeOptions
+
+  inflightCategoryCodeOptions = fetchCategoriesPage(pageIndex, pageSize)
+    .then((paged) => {
+      cachedCategoryCodeOptions = buildCategoryCodeLookup(paged.items).options
+      return cachedCategoryCodeOptions
+    })
+    .finally(() => {
+      inflightCategoryCodeOptions = null
+    })
+
+  return inflightCategoryCodeOptions
+}
+
+export type CategoryCodeLookup = {
+  options: FormFieldOption[]
+  nameByCode: Map<string, string>
+}
+
+function resolveCategoryCode(category: Category): string {
+  const code = category.code.trim()
+  if (code) return code
+  return category.slug.trim()
+}
+
+function toCategoryCodeOption(category: Category): FormFieldOption {
+  const value = resolveCategoryCode(category)
+  const displayCode = category.code.trim() || category.slug.trim()
+  return {
+    value,
+    label: `${displayCode} — ${category.name}`,
+  }
+}
+
+function buildCategoryCodeLookup(items: Category[]): CategoryCodeLookup {
+  const eligible = items.filter((item) => resolveCategoryCode(item))
+  const nameByCode = new Map(eligible.map((item) => [resolveCategoryCode(item), item.name]))
+  const options = eligible.map(toCategoryCodeOption)
+  return { options, nameByCode }
+}
+
+export async function fetchCategoryCodeLookup(
+  pageIndex = 1,
+  pageSize = 100,
+): Promise<CategoryCodeLookup> {
+  const paged = await fetchCategoriesPage(pageIndex, pageSize)
+  return buildCategoryCodeLookup(paged.items)
+}
+
 export async function createCategory(payload: CategoryPayload): Promise<Category> {
   const dto = await httpPost<Raw>(API_PATHS.adminCategories, payload)
   invalidateCategoriesCache()
+  invalidateCategoryCodeOptionsCache()
   return mapDto(normalizeDto(dto))
 }
 
 export async function updateCategory(id: string, payload: CategoryUpdatePayload): Promise<Category> {
   const dto = await httpPut<Raw>(`${API_PATHS.adminCategories}/${id}`, payload)
   invalidateCategoriesCache()
+  invalidateCategoryCodeOptionsCache()
   return mapDto(normalizeDto(dto))
 }
 
 export async function deleteCategory(id: string): Promise<void> {
   await httpDelete(`${API_PATHS.adminCategories}/${id}`)
   invalidateCategoriesCache()
+  invalidateCategoryCodeOptionsCache()
 }

@@ -1,6 +1,6 @@
 import { API_PATHS } from '@/shared/config/api'
 import { readNumber, readString, normalizePaged } from '@/shared/lib/dtoNormalize'
-import { httpGet } from '@/shared/lib/http'
+import { httpGet, httpPost } from '@/shared/lib/http'
 
 type Raw = Record<string, unknown>
 
@@ -20,6 +20,14 @@ export type DeliveryRow = {
   lastError: string
   sentAt: string
   createdAt: string
+}
+
+export type MarkDeliveryDeliveredPayload = {
+  note?: string
+}
+
+export type MarkDeliveryFailedPayload = {
+  error: string
 }
 
 function readEnum(raw: Raw, camel: string, pascal: string): number {
@@ -67,4 +75,35 @@ export async function fetchDeliveriesPage(
 export async function fetchDeliveryById(id: string): Promise<DeliveryRow> {
   const raw = await httpGet<Raw>(`${API_PATHS.adminDeliveries}/${id}`)
   return normalizeDelivery(raw)
+}
+
+export async function fetchDeliveriesByOrderId(orderId: string): Promise<DeliveryRow[]> {
+  const raw = await httpGet<unknown>(`${API_PATHS.adminDeliveries}/by-order/${orderId}`)
+  if (Array.isArray(raw)) {
+    return raw.map((item) => normalizeDelivery(item as Raw))
+  }
+  return [normalizeDelivery(raw as Raw)]
+}
+
+export async function processDelivery(id: string): Promise<void> {
+  await httpPost<unknown>(`${API_PATHS.adminDeliveries}/${id}/process`, {})
+}
+
+export async function markDeliveryDelivered(
+  id: string,
+  payload: MarkDeliveryDeliveredPayload = {},
+): Promise<void> {
+  await httpPost<unknown>(`${API_PATHS.adminDeliveries}/${id}/mark-delivered`, {
+    note: payload.note?.trim() || null,
+  })
+}
+
+export async function markDeliveryFailed(id: string, payload: MarkDeliveryFailedPayload): Promise<void> {
+  await httpPost<unknown>(`${API_PATHS.adminDeliveries}/${id}/mark-failed`, {
+    error: payload.error.trim(),
+  })
+}
+
+export async function resendDeliveryEsimEmail(id: string): Promise<void> {
+  await httpPost<unknown>(`${API_PATHS.adminDeliveries}/${id}/resend-esim-email`, {})
 }

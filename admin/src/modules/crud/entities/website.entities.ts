@@ -177,7 +177,7 @@ export const pagesEntity = defineAdminEntity<StaticPage>({
 })
 
 export const websiteFaqsEntity = defineAdminEntity<WebsiteFaq>({
-  path: '/website/content/faqs',
+  path: '/website/faqs',
   title: 'FAQ',
   breadcrumbSubtitle: contentSub,
   description: 'FAQ chung website.',
@@ -205,7 +205,7 @@ export const websiteFaqsEntity = defineAdminEntity<WebsiteFaq>({
 })
 
 export const bannersEntity = defineAdminEntity<Banner>({
-  path: '/website/content/banners',
+  path: '/website/banners',
   title: 'Banner',
   breadcrumbSubtitle: contentSub,
   description: 'Homepage / landing.',

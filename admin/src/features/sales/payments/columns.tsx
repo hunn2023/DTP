@@ -1,34 +1,33 @@
-import { createColumnHelper, type ColumnDef } from '@tanstack/react-table'
+import { type ColumnDef } from '@tanstack/react-table'
+import { Dropdown } from 'react-bootstrap'
+import { TbDotsVertical, TbEye } from 'react-icons/tb'
 
-import { formatCurrency, formatDateTime } from '@/features/sales/shared/format'
-import type { PaymentRow } from '@/apis/paymentsApi'
+import type { OrderRow } from '@/apis/ordersApi'
+import { buildOrderListColumns } from '@/features/sales/shared/orderListColumns'
 
-const helper = createColumnHelper<PaymentRow>()
+export type PaymentTableHandlers = {
+  onView: (row: OrderRow) => void
+}
 
-export function buildPaymentColumns() {
+export function buildPaymentOrderColumns(handlers: PaymentTableHandlers): ColumnDef<OrderRow>[] {
   return [
-    helper.accessor('orderCode', {
-      header: 'Mã đơn',
-      cell: ({ getValue }) => <code>{getValue()}</code>,
-    }),
-    helper.accessor('providerTransactionId', {
-      header: 'Mã giao dịch',
-      cell: ({ getValue }) => <code>{getValue() || '—'}</code>,
-    }),
-    helper.accessor('provider', { header: 'Cổng thanh toán' }),
-    helper.accessor('method', { header: 'Phương thức' }),
-    helper.accessor('amount', {
-      header: 'Số tiền',
-      cell: ({ row }) => formatCurrency(row.original.amount, row.original.currency),
-    }),
-    helper.accessor('status', { header: 'Trạng thái' }),
-    helper.accessor('paidAt', {
-      header: 'Thanh toán lúc',
-      cell: ({ getValue }) => formatDateTime(getValue()),
-    }),
-    helper.accessor('createdAt', {
-      header: 'Tạo lúc',
-      cell: ({ getValue }) => formatDateTime(getValue()),
-    }),
-  ] as ColumnDef<PaymentRow>[]
+    ...buildOrderListColumns(),
+    {
+      id: 'actions',
+      header: 'Thao tác',
+      enableSorting: false,
+      cell: ({ row }: { row: { original: OrderRow } }) => (
+        <Dropdown align="end" onClick={(e) => e.stopPropagation()}>
+          <Dropdown.Toggle variant="light" size="sm" className="btn-icon">
+            <TbDotsVertical />
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            <Dropdown.Item onClick={() => handlers.onView(row.original)}>
+              <TbEye className="me-2" /> Chi tiết thanh toán
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+      ),
+    },
+  ]
 }

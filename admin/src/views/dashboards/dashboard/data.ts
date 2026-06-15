@@ -1,560 +1,354 @@
 import type { EChartsOption } from 'echarts'
+import type { IconType } from 'react-icons'
 import {
-  TbCalendarEvent,
-  TbChecklist,
-  TbCreditCard,
-  TbDatabase,
-  TbFileCheck,
-  TbMessageCircle,
-  TbPalette,
-  TbRocket,
-  TbShieldCheck,
-  TbUserPlus,
-  TbUsers,
+  TbChartBar,
+  TbPercentage,
+  TbSend,
+  TbShoppingCart,
+  TbWallet,
 } from 'react-icons/tb'
 
 import { getColor } from '@/helpers/color'
-import { generateRandomEChartData } from '@/helpers/generators'
 
-import user1 from '@/assets/images/users/user-1.jpg'
-import user10 from '@/assets/images/users/user-10.jpg'
-import user4 from '@/assets/images/users/user-4.jpg'
-import user6 from '@/assets/images/users/user-6.jpg'
-import user7 from '@/assets/images/users/user-7.jpg'
-import user8 from '@/assets/images/users/user-8.jpg'
-import user9 from '@/assets/images/users/user-9.jpg'
-import type { IconType } from 'react-icons'
+import idFlag from '@/assets/images/flags/id.svg'
+import jpFlag from '@/assets/images/flags/jp.svg'
+import krFlag from '@/assets/images/flags/kr.svg'
+import sgFlag from '@/assets/images/flags/sg.svg'
+import thFlag from '@/assets/images/flags/th.svg'
+import usFlag from '@/assets/images/flags/us.svg'
 
-type StatCard = {
+export type DashboardStatCard = {
   id: number
   title: string
-  value: number | string
-  suffix?: string
-  prefix?: string
-  badgeText: string
-  badgeVariant: 'primary' | 'secondary' | 'light'
+  value: string
+  trend: number
+  trendUp: boolean
   icon: IconType
-  iconBg?: string
-  pointColor: string
-  description: string
-  total: string
+  iconBg: string
 }
 
-type QuarterlyReport = {
+export type RecentOrderRow = {
+  id: string
+  customer: string
+  packageName: string
+  country: string
+  flag: string
+  payment: string
+  status: string
+  statusVariant: 'success' | 'warning' | 'danger'
+  amount: string
+}
+
+export type BestSellingPackage = {
   id: number
-  quarter: string
-  period: string
-  revenue: string
-  expense: string
-  margin: string
+  name: string
+  sold: number
+  percent: number
 }
 
-type ProjectStat = {
+export type RegionShare = {
   id: number
-  title: string
-  count: string
-  percentage: number
-  variant: 'secondary' | 'info' | 'primary' | 'success' | 'warning' | 'danger' | 'light' | 'dark'
-  showPercentage: boolean
+  name: string
+  percent: number
 }
 
-type TimelineEvent = {
-  id: number
-  icon: IconType
-  iconColor: string
-  title: string
-  time: string
-  description: string
-  tag: string
-  tagVariant: string
-  userName: string
-  userImage: any
-  userLink: string
-  hasDivider: boolean
-}
+export const dashboardHeader = {
+  title: 'Tổng quan hệ thống',
+  subtitle: 'Theo dõi hiệu suất kinh doanh eSIM hôm nay',
+} as const
 
-type DiscussionMessage = {
-  id: number
-  userName: string
-  userImage?: any
-  userInitials?: string
-  userInitialsColor?: string
-  timeAgo: string
-  message: string
-  hasAvatar: boolean
-}
-
-type ActivityItem = {
-  id: number
-  text: string
-  time: string
-  badgeVariant: 'primary' | 'info' | 'secondary' | 'light' | 'warning' | 'danger' | 'success' | 'dark'
-  badgeText?: 'dark' | 'light'
-}
-
-export const statCards: StatCard[] = [
+export const statCards: DashboardStatCard[] = [
   {
     id: 1,
-    title: 'My Tasks',
-    value: 124,
-    badgeText: '+3 New',
-    badgeVariant: 'primary',
-    icon: TbChecklist,
-    pointColor: 'primary',
-    description: 'Total Tasks',
-    total: '12,450',
+    title: 'Doanh thu hôm nay',
+    value: '128.500.000 đ',
+    trend: 18.6,
+    trendUp: true,
+    icon: TbChartBar,
+    iconBg: 'primary',
   },
   {
     id: 2,
-    title: 'Messages',
-    value: 69.5,
-    suffix: 'k',
-    badgeText: '+5 New',
-    badgeVariant: 'secondary',
-    icon: TbMessageCircle,
-    pointColor: 'secondary',
-    description: 'Total Messages',
-    total: '32.1M',
+    title: 'Đơn hàng mới',
+    value: '248',
+    trend: 15.3,
+    trendUp: true,
+    icon: TbShoppingCart,
+    iconBg: 'success',
   },
   {
     id: 3,
-    title: 'Approvals',
-    value: 32,
-    badgeText: '+2 New',
-    badgeVariant: 'light',
-    icon: TbFileCheck,
-    pointColor: 'primary',
-    description: 'Total Approvals',
-    total: '1,024',
+    title: 'Đơn chờ thanh toán',
+    value: '36',
+    trend: 5.3,
+    trendUp: false,
+    icon: TbWallet,
+    iconBg: 'warning',
   },
   {
     id: 4,
-    title: 'Clients',
-    value: 184,
-    badgeText: '+4 New',
-    badgeVariant: 'secondary',
-    icon: TbUsers,
-    pointColor: 'secondary',
-    description: 'Total Clients',
-    total: '9,835',
+    title: 'eSIM đã giao',
+    value: '1.842',
+    trend: 21.7,
+    trendUp: true,
+    icon: TbSend,
+    iconBg: 'info',
   },
   {
     id: 5,
-    title: 'Revenue',
-    value: 125.5,
-    prefix: '$',
-    suffix: 'k',
-    badgeText: '+1.5%',
-    badgeVariant: 'primary',
-    icon: TbCreditCard,
-    pointColor: 'primary',
-    description: 'Total Revenue',
-    total: '$12.5M',
+    title: 'Tỷ lệ thanh toán thành công',
+    value: '94,8%',
+    trend: 2.1,
+    trendUp: true,
+    icon: TbPercentage,
+    iconBg: 'secondary',
   },
 ]
 
-export const quarterlyReports: QuarterlyReport[] = [
+export const recentOrders: RecentOrderRow[] = [
   {
-    id: 1,
-    quarter: 'Quarter 1',
-    period: 'January - March 2024',
-    revenue: '$210k',
-    expense: '$165k',
-    margin: '$45k',
+    id: '#DTP2505180012',
+    customer: 'Nguyễn Minh Anh',
+    packageName: 'Japan 10GB / 7 ngày',
+    country: 'Nhật Bản',
+    flag: jpFlag,
+    payment: 'VNPT ePay',
+    status: 'Đã thanh toán',
+    statusVariant: 'success',
+    amount: '380.000 đ',
   },
   {
-    id: 2,
-    quarter: 'Quarter 2',
-    period: 'April - June 2024',
-    revenue: '$225k',
-    expense: '$175k',
-    margin: '$50k',
+    id: '#DTP2505180011',
+    customer: 'Trần Hoàng Nam',
+    packageName: 'Thailand Unlimited / 15 ngày',
+    country: 'Thái Lan',
+    flag: thFlag,
+    payment: 'QR MoMo',
+    status: 'Chờ thanh toán',
+    statusVariant: 'warning',
+    amount: '420.000 đ',
   },
   {
-    id: 3,
-    quarter: 'Quarter 3',
-    period: 'July - September 2024',
-    revenue: '$240k',
-    expense: '$190k',
-    margin: '$50k',
+    id: '#DTP2505180010',
+    customer: 'Lê Thu Hà',
+    packageName: 'Singapore 5GB / 5 ngày',
+    country: 'Singapore',
+    flag: sgFlag,
+    payment: 'Thẻ Visa',
+    status: 'Đã thanh toán',
+    statusVariant: 'success',
+    amount: '290.000 đ',
   },
   {
-    id: 4,
-    quarter: 'Quarter 4',
-    period: 'October - December 2024',
-    revenue: '$260k',
-    expense: '$210k',
-    margin: '$50k',
-  },
-]
-
-export const projectStats: ProjectStat[] = [
-  {
-    id: 1,
-    title: 'Completed Projects',
-    count: '+ 180',
-    percentage: 54.2,
-    variant: 'secondary',
-    showPercentage: true,
+    id: '#DTP2505170009',
+    customer: 'Phạm Quốc Bảo',
+    packageName: 'Korea 5GB / 7 ngày',
+    country: 'Hàn Quốc',
+    flag: krFlag,
+    payment: 'VNPT ePay',
+    status: 'Hoàn tiền',
+    statusVariant: 'danger',
+    amount: '350.000 đ',
   },
   {
-    id: 2,
-    title: 'Ongoing Projects',
-    count: '+ 120',
-    percentage: 36.15,
-    variant: 'info',
-    showPercentage: true,
+    id: '#DTP2505170008',
+    customer: 'Võ Thị Mai',
+    packageName: 'USA 10GB / 10 ngày',
+    country: 'Mỹ',
+    flag: usFlag,
+    payment: 'QR ZaloPay',
+    status: 'Đã thanh toán',
+    statusVariant: 'success',
+    amount: '520.000 đ',
   },
   {
-    id: 3,
-    title: 'Pending Approvals',
-    count: '+ 32',
-    percentage: 9.65,
-    variant: 'secondary',
-    showPercentage: true,
-  },
-]
-
-export const timelineEvents: TimelineEvent[] = [
-  {
-    id: 1,
-    icon: TbRocket,
-    iconColor: 'primary',
-    title: 'New Feature Released',
-    time: 'Today at 3:45 PM',
-    description: 'Launched the real-time chat feature across all user accounts.',
-    tag: 'Deploy',
-    tagVariant: 'info',
-    userName: 'Natalie Brooks',
-    userImage: user6,
-    userLink: '/pages/profile',
-    hasDivider: true,
-  },
-  {
-    id: 2,
-    icon: TbCalendarEvent,
-    iconColor: 'warning',
-    title: 'Team Sync-Up',
-    time: 'Today at 2:00 PM',
-    description: 'Reviewed sprint progress and discussed remaining tasks with the dev team.',
-    tag: 'Meeting',
-    tagVariant: 'secondary',
-    userName: 'Oliver Grant',
-    userImage: user4,
-    userLink: '/pages/profile',
-    hasDivider: true,
-  },
-  {
-    id: 3,
-    icon: TbPalette,
-    iconColor: 'success',
-    title: 'UI Design Review',
-    time: 'Today at 1:15 PM',
-    description: 'Updated component spacing and colors for improved accessibility.',
-    tag: 'Design',
-    tagVariant: 'success',
-    userName: 'Clara Jensen',
-    userImage: user9,
-    userLink: '/pages/profile',
-    hasDivider: true,
-  },
-  {
-    id: 4,
-    icon: TbDatabase,
-    iconColor: 'danger',
-    title: 'Database Optimization',
-    time: 'Today at 12:30 PM',
-    description: 'Improved DB query performance, reducing load time by 35%.',
-    tag: 'Backend',
-    tagVariant: 'danger',
-    userName: 'Leo Armstrong',
-    userImage: user10,
-    userLink: '/pages/profile',
-    hasDivider: true,
-  },
-  {
-    id: 5,
-    icon: TbShieldCheck,
-    iconColor: 'info',
-    title: 'Security Audit Completed',
-    time: 'Today at 11:00 AM',
-    description: 'Completed internal security audit with no critical issues found.',
-    tag: 'Audit',
-    tagVariant: 'warning',
-    userName: 'Liam Carter',
-    userImage: user8,
-    userLink: '/pages/profile',
-    hasDivider: true,
-  },
-  {
-    id: 6,
-    icon: TbUserPlus,
-    iconColor: 'success',
-    title: 'New Team Member Joined',
-    time: 'Today at 10:15 AM',
-    description: 'Michael Lee has joined the development team as a Frontend Engineer.',
-    tag: 'Onboarding',
-    tagVariant: 'primary',
-    userName: 'Emma Davis',
-    userImage: user7,
-    userLink: '/pages/profile',
-    hasDivider: false,
+    id: '#DTP2505170007',
+    customer: 'Đặng Văn Tú',
+    packageName: 'Indonesia 8GB / 7 ngày',
+    country: 'Indonesia',
+    flag: idFlag,
+    payment: 'Chuyển khoản',
+    status: 'Chờ thanh toán',
+    statusVariant: 'warning',
+    amount: '310.000 đ',
   },
 ]
 
-export const discussionMessages: DiscussionMessage[] = [
-  {
-    id: 1,
-    userName: 'Alex Johnson',
-    userImage: user8,
-    timeAgo: '10m ago',
-    message: 'Excited to share our latest project update with everyone!',
-    hasAvatar: true,
-  },
-  {
-    id: 2,
-    userName: 'Den Nowdya',
-    userInitials: 'DN',
-    userInitialsColor: 'purple',
-    timeAgo: '1h ago',
-    message: 'Looking forward to the upcoming team meeting.',
-    hasAvatar: false,
-  },
-  {
-    id: 3,
-    userName: 'Michael Brown',
-    userImage: user10,
-    timeAgo: '16h ago',
-    message: "Great insights shared in today's brainstorming session!",
-    hasAvatar: true,
-  },
-  {
-    id: 4,
-    userName: 'Emily Watson',
-    userImage: user1,
-    timeAgo: '20h ago',
-    message: 'Wrapping up an amazing design concept for the client.',
-    hasAvatar: true,
-  },
-  {
-    id: 5,
-    userName: 'Monica Smith',
-    userImage: user6,
-    timeAgo: '2 days ago',
-    message: 'Testing some new UI enhancements—excited for feedback!',
-    hasAvatar: true,
-  },
+export const bestSellingPackages: BestSellingPackage[] = [
+  { id: 1, name: 'Japan 10GB / 7 ngày', sold: 652, percent: 30 },
+  { id: 2, name: 'Thailand Unlimited / 15 ngày', sold: 541, percent: 25 },
+  { id: 3, name: 'Singapore 5GB / 5 ngày', sold: 398, percent: 18 },
+  { id: 4, name: 'Korea 5GB / 7 ngày', sold: 312, percent: 14 },
+  { id: 5, name: 'USA 10GB / 10 ngày', sold: 245, percent: 11 },
 ]
 
-export const activityItems: ActivityItem[] = [
-  {
-    id: 1,
-    text: 'Reviewed project proposal',
-    time: '09:30 AM',
-    badgeVariant: 'primary',
-  },
-  {
-    id: 2,
-    text: 'Team stand-up meeting',
-    time: '11:00 AM',
-    badgeVariant: 'info',
-  },
-  {
-    id: 3,
-    text: 'Sent client invoice',
-    time: '01:15 PM',
-    badgeVariant: 'secondary',
-  },
-  {
-    id: 4,
-    text: 'Responded to support tickets',
-    time: '03:40 PM',
-    badgeVariant: 'light',
-    badgeText: 'dark',
-  },
-  {
-    id: 5,
-    text: 'Finalized design mockups',
-    time: '05:10 PM',
-    badgeVariant: 'warning',
-    badgeText: 'light',
-  },
+export const regionShares: RegionShare[] = [
+  { id: 1, name: 'Châu Á', percent: 78.6 },
+  { id: 2, name: 'Bắc Mỹ', percent: 9.8 },
+  { id: 3, name: 'Châu Âu', percent: 6.1 },
+  { id: 4, name: 'Khác', percent: 5.5 },
 ]
 
-export const getPieEchartOptions = (): EChartsOption => {
-  const charityData = generateRandomEChartData(['Charity A', 'Charity B', 'Charity C'])
-  return {
-    tooltip: { show: false },
-    series: [
-      {
-        type: 'pie',
-        radius: ['60%', '100%'],
-        // @ts-expect-error hoverAnimation is a valid property
-        hoverAnimation: false,
-        label: { show: false },
-        labelLine: { show: false },
-        data: charityData.map((item, index) => ({
-          value: item.value,
-          itemStyle: {
-            color: index === 0 ? getColor('primary') : index === 1 ? getColor('secondary') : '#bbcae14d',
-          },
-        })),
-      },
-    ],
-  }
-}
+const chartFont = () => getComputedStyle(document.body).fontFamily
 
-export const getRevenueChartOptions = (): EChartsOption => {
-  const xLabels = Array.from({ length: 15 }, (_, i) => `Day ${i + 1}`)
-
-  return {
-    textStyle: { fontFamily: getComputedStyle(document.body).fontFamily },
-    tooltip: {
-      trigger: 'axis',
-      padding: [5, 0],
-      backgroundColor: getColor('secondary-bg'),
-      borderColor: getColor('border-color'),
-      textStyle: { color: getColor('light-text-emphasis') },
-      borderWidth: 1,
-      transitionDuration: 0.125,
-      axisPointer: { type: 'none' },
-      shadowBlur: 2,
-      shadowColor: 'rgba(76, 76, 92, 0.15)',
-      shadowOffsetX: 0,
-      shadowOffsetY: 1,
+export const getRevenueSevenDaysOptions = (): EChartsOption => ({
+  textStyle: { fontFamily: chartFont() },
+  tooltip: {
+    trigger: 'axis',
+    valueFormatter: (value) => `${Number(value).toLocaleString('vi-VN')} đ`,
+  },
+  grid: { left: 8, right: 16, top: 16, bottom: 8, containLabel: true },
+  xAxis: {
+    type: 'category',
+    data: ['12/05', '13/05', '14/05', '15/05', '16/05', '17/05', '18/05'],
+    axisLine: { show: false },
+    axisTick: { show: false },
+  },
+  yAxis: {
+    type: 'value',
+    max: 160,
+    axisLabel: { formatter: (v) => `${v}M` },
+    splitLine: { lineStyle: { type: 'dashed', color: '#676b891f' } },
+  },
+  series: [
+    {
+      type: 'line',
+      smooth: true,
+      data: [72, 84, 91, 98, 112, 125, 128.5],
+      itemStyle: { color: getColor('primary') },
+      areaStyle: { opacity: 0.12, color: getColor('primary') },
+      symbolSize: 6,
     },
-    xAxis: {
-      type: 'category',
-      data: xLabels,
-      boundaryGap: false,
-      axisLine: { show: false },
-      axisTick: { show: false },
-      axisLabel: { color: getColor('secondary-color'), margin: 15 },
-      splitLine: { show: false },
-    },
-    yAxis: {
-      max: 1800,
-      type: 'value',
-      splitLine: { lineStyle: { color: '#676b891f', type: 'dashed' } },
-      boundaryGap: [0, '100%'],
-      axisLabel: {
+  ],
+})
+
+export const getOrderStatusOptions = (): EChartsOption => ({
+  tooltip: { trigger: 'item', formatter: '{b}: {d}%' },
+  legend: {
+    orient: 'vertical',
+    right: 0,
+    top: 'middle',
+    textStyle: { fontSize: 11 },
+  },
+  series: [
+    {
+      type: 'pie',
+      radius: ['58%', '78%'],
+      center: ['38%', '50%'],
+      label: {
         show: true,
-        color: getColor('secondary-color'),
-        margin: 15,
-        formatter: function (value) {
-          return '$' + value
-        },
+        position: 'center',
+        formatter: 'Tổng số\n2.126',
+        fontSize: 14,
+        fontWeight: 600,
+        lineHeight: 20,
       },
-      axisTick: { show: false },
-      axisLine: { show: false },
+      data: [
+        { value: 71.1, name: 'Đã thanh toán', itemStyle: { color: getColor('primary') } },
+        { value: 1.6, name: 'Chờ thanh toán', itemStyle: { color: getColor('warning') } },
+        { value: 22.6, name: 'Đã giao eSIM', itemStyle: { color: getColor('success') } },
+        { value: 4.6, name: 'Hoàn tiền', itemStyle: { color: getColor('danger') } },
+      ],
     },
-    series: [
-      {
-        name: 'Total Revenue',
-        type: 'line',
-        smooth: true,
-        symbolSize: 2,
-        itemStyle: {
-          color: getColor('primary'),
-          borderColor: getColor('primary'),
-          borderWidth: 2,
-        },
-        areaStyle: {
-          opacity: 0.2,
-          color: getColor('primary'),
-        },
-        lineStyle: {
-          color: getColor('primary'),
-        },
-        symbol: 'circle',
-        stack: 'data',
-        data: [45, 88, 120, 160, 210, 240, 350, 420, 380, 500, 640, 710, 890, 1150, 1200],
-      },
-      {
-        name: 'Orders',
-        type: 'line',
-        smooth: true,
-        symbolSize: 2,
-        itemStyle: {
-          color: getColor('secondary'),
-          borderColor: getColor('secondary'),
-          borderWidth: 2,
-        },
-        areaStyle: {
-          opacity: 0.2,
-          color: getColor('secondary'),
-        },
-        lineStyle: {
-          color: getColor('secondary'),
-        },
-        symbol: 'circle',
-        stack: 'data',
-        data: [15, 30, 35, 50, 55, 75, 95, 120, 135, 160, 180, 210, 250, 390, 450],
-      },
-    ],
-    grid: {
-      right: 20,
-      left: 5,
-      bottom: 5,
-      top: 8,
-      containLabel: true,
-    },
-  }
-}
+  ],
+})
 
-export const getProgressChartOptions = (): EChartsOption => {
-  return {
-    tooltip: {
-      trigger: 'item',
-      padding: [8, 15],
-      backgroundColor: getColor('secondary-bg'),
-      borderColor: getColor('border-color'),
-      textStyle: { color: getColor('light-text-emphasis') },
-      borderWidth: 1,
-      transitionDuration: 0.125,
-      axisPointer: { type: 'none' },
-      shadowBlur: 2,
-      shadowColor: 'rgba(76, 76, 92, 0.15)',
-      shadowOffsetX: 0,
-      shadowOffsetY: 1,
-    },
-    textStyle: {
-      fontFamily: getComputedStyle(document.body).fontFamily,
-    },
-    series: [
-      {
-        name: 'Project Progress',
-        type: 'pie',
-        radius: [60, 100],
-        center: ['50%', '50%'],
-        roseType: 'area',
-        itemStyle: {
-          borderRadius: 8,
-        },
-        label: {
-          color: getColor('secondary-color'),
-        },
-        data: [
-          { value: 85, name: 'Website Redesign', itemStyle: { color: getColor('primary') } },
-          {
-            value: 70,
-            name: 'Mobile App',
-            itemStyle: { color: getColor('secondary') },
-          },
-          { value: 55, name: 'CRM Integration', itemStyle: { color: getColor('info') } },
-          {
-            value: 60,
-            name: 'Product Launch',
-            itemStyle: { color: getColor('success') },
-          },
-          { value: 75, name: 'Backend Refactor', itemStyle: { color: getColor('light') } },
-          {
-            value: 50,
-            name: 'Client Dashboard',
-            itemStyle: { color: getColor('warning') },
-          },
-        ],
+export const getTopCountriesBarOptions = (): EChartsOption => ({
+  textStyle: { fontFamily: chartFont() },
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: { type: 'shadow' },
+    valueFormatter: (value) => `${Number(value).toLocaleString('vi-VN')}M`,
+  },
+  grid: { left: 8, right: 8, top: 16, bottom: 8, containLabel: true },
+  xAxis: {
+    type: 'category',
+    data: ['Thái Lan', 'Nhật Bản', 'Hàn Quốc', 'Singapore', 'Mỹ', 'Indonesia'],
+    axisTick: { show: false },
+  },
+  yAxis: {
+    type: 'value',
+    max: 120,
+    axisLabel: { formatter: (v) => `${v}M` },
+    splitLine: { lineStyle: { type: 'dashed', color: '#676b891f' } },
+  },
+  series: [
+    {
+      type: 'bar',
+      barWidth: 18,
+      data: [104.2, 86.7, 71.5, 58.6, 42.1, 33.8],
+      itemStyle: {
+        borderRadius: [4, 4, 0, 0],
+        color: getColor('primary'),
       },
-    ],
-  }
-}
+    },
+  ],
+})
+
+export const getPaymentMethodsOptions = (): EChartsOption => ({
+  tooltip: { trigger: 'item', formatter: '{b}: {d}%' },
+  legend: {
+    orient: 'vertical',
+    right: 0,
+    top: 'middle',
+    textStyle: { fontSize: 11 },
+  },
+  series: [
+    {
+      type: 'pie',
+      radius: ['58%', '78%'],
+      center: ['38%', '50%'],
+      label: {
+        show: true,
+        position: 'center',
+        formatter: 'Tổng giao dịch\n2.126',
+        fontSize: 13,
+        fontWeight: 600,
+        lineHeight: 18,
+      },
+      data: [
+        { value: 58.4, name: 'QR (MoMo, ZaloPay)', itemStyle: { color: getColor('primary') } },
+        { value: 32.7, name: 'VNPT ePay', itemStyle: { color: getColor('info') } },
+        { value: 6.1, name: 'Thẻ quốc tế', itemStyle: { color: getColor('warning') } },
+        { value: 2.8, name: 'Chuyển khoản', itemStyle: { color: getColor('secondary') } },
+      ],
+    },
+  ],
+})
+
+export const getTopRegionsMapOptions = () => ({
+  type: 'world',
+  zoomOnScroll: false,
+  zoomButtons: false,
+  markersSelectable: false,
+  regionStyle: {
+    initial: { fill: '#e9ecef', stroke: '#ced4da', strokeWidth: 0.4, fillOpacity: 1 },
+  },
+  markerStyle: {
+    initial: { fill: getColor('primary'), stroke: getColor('primary'), fillOpacity: 0.35, r: 6 },
+  },
+  markers: [
+    { name: 'Asia', coords: [15, 105] },
+    { name: 'North America', coords: [45, -100] },
+    { name: 'Europe', coords: [50, 10] },
+  ],
+  labels: { markers: { render: () => '' } },
+})
+
+/** Giữ cho trang Metrics (template cũ). */
+export const getPieEchartOptions = (): EChartsOption => ({
+  tooltip: { show: false },
+  series: [
+    {
+      type: 'pie',
+      radius: ['60%', '100%'],
+      label: { show: false },
+      labelLine: { show: false },
+      data: [
+        { value: 45, itemStyle: { color: getColor('primary') } },
+        { value: 30, itemStyle: { color: getColor('secondary') } },
+        { value: 25, itemStyle: { color: '#bbcae14d' } },
+      ],
+    },
+  ],
+})

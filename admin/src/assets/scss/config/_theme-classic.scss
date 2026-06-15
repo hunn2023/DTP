@@ -44,7 +44,7 @@
 
     // Gradient Menu
     html[data-menu-color="gradient"] {
-        --#{$prefix}sidenav-bg:                       #{linear-gradient(135deg, #1a455f, #262549)};
+        --#{$prefix}sidenav-bg:                       #{linear-gradient(135deg, #1a5f48, #254932)};
         --#{$prefix}sidenav-border-color:             null;
         --#{$prefix}sidenav-item-color:             #799cb7;
         --#{$prefix}sidenav-item-hover-color:       #bccee4;
@@ -106,7 +106,7 @@
 
     // Gradient Topbar
     html[data-topbar-color="gradient"] {
-        --#{$prefix}topbar-bg:                        #{linear-gradient(to bottom, #1a455f, #262549)};
+        --#{$prefix}topbar-bg:                        #{linear-gradient(to bottom, #1a5f48, #254932)};
         --#{$prefix}topbar-item-color:              rgba(255, 255, 255, 0.7);
         --#{$prefix}topbar-item-hover-color:        #ffffff;
         --#{$prefix}topbar-search-bg:               rgba(255, 255, 255, 0.1);
