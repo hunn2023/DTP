@@ -25,5 +25,10 @@ namespace DTP.Modules.Payment.Application.Abstractions.Repositories
             CancellationToken cancellationToken = default);
 
         Task<bool> HasPaidPaymentByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default);
+
+        Task<PaymentTransaction?> GetPendingVnptEpayByMapIdAndAmountAsync(
+                string mapId,
+                decimal amount,
+                CancellationToken cancellationToken = default);
     }
 }

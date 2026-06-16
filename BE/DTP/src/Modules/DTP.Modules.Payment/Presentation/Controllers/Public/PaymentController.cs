@@ -23,7 +23,7 @@ namespace DTP.Modules.Payment.Presentation.Controllers
         }
 
         [EnableRateLimiting("payment-create-qr")]
-        [Authorize]
+        //[Authorize]
         [HttpPost("qr")]
         public async Task<IActionResult> CreateQr(
             [FromBody] CreatePaymentQrRequestDto request,
@@ -71,10 +71,7 @@ namespace DTP.Modules.Payment.Presentation.Controllers
             [FromBody] VnptEpayCallbackDto callback,
             CancellationToken cancellationToken)
         {
-            /*
-             * Nếu VNPT yêu cầu đọc raw body chuẩn tuyệt đối để verify signature,
-             * nên dùng EnableBuffering middleware hoặc custom action filter.
-             */
+
             var rawBody = JsonSerializer.Serialize(callback);
             var ip = GetIpAddress();
 
@@ -87,24 +84,9 @@ namespace DTP.Modules.Payment.Presentation.Controllers
                 },
                 cancellationToken);
 
-            /*
-             * Với callback provider, thường vẫn return 200 để tránh provider retry quá nhiều.
-             * Body trả về nên đổi theo format VNPT yêu cầu.
-             */
-            if (!result.IsSuccess)
-            {
-                return Ok(new
-                {
-                    code = "01",
-                    message = result.Error
-                });
-            }
-
-            return Ok(new
-            {
-                code = "00",
-                message = "Success"
-            });
+            
+            return Ok(result);
+           
         }
 
         private string GetIpAddress()

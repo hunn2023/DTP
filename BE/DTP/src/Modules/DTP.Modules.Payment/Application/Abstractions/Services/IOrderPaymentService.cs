@@ -30,6 +30,12 @@ namespace DTP.Modules.Payment.Application.Abstractions.Services
 
         public Guid? CustomerId { get; set; }
 
+        public string CustomerName { get; set; }
+
+        public string CustomerEmail { get; set; }
+
+        public string CustomerPhone { get; set; }
+
         public decimal TotalAmount { get; set; }
 
         public string Currency { get; set; } = "VND";

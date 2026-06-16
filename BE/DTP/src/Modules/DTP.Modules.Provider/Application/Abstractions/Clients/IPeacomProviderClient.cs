@@ -22,8 +22,9 @@ namespace DTP.Modules.Provider.Application.Abstractions.Clients
 
 
         Task<PeacomCreateOrderResponse> CreateOrderAsync(
-          PeacomCreateOrderRequest request,
-          CancellationToken cancellationToken = default);
+              Domain.Entities.Provider provider,
+              PeacomCreateOrderRequest request,
+              CancellationToken cancellationToken = default);
 
         Task<PeacomConfirmOrderResponse> ConfirmOrderAsync(
             string publicId,

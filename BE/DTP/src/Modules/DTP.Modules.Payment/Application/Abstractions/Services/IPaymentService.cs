@@ -1,4 +1,5 @@
 ﻿using DTP.Modules.Payment.Application.DTOs;
+using DTP.Modules.Provider.Application.DTOs;
 using DTP.Shared.Application;
 
 namespace DTP.Modules.Payment.Application.Abstractions.Services
@@ -10,8 +11,8 @@ namespace DTP.Modules.Payment.Application.Abstractions.Services
             string ipAddress,
             CancellationToken cancellationToken = default);
 
-        Task<Result> HandleVnptEpayCallbackAsync(
-            VnptEpayCallbackDto callback,
+        Task<EPayResponse> HandleVnptEpayCallbackAsync(
+            Application.DTOs.VnptEpayCallbackDto callback,
             string rawBody,
             string? ipAddress,
             CancellationToken cancellationToken = default);

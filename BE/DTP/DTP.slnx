@@ -4,7 +4,7 @@
     <Project Path="src/DTP.BuildingBlocks/DTP.BuildingBlocks.csproj" />
     <Project Path="src/DTP.Infrastructure/DTP.Infrastructure.csproj" />
     <Project Path="src/DTP.Shared/DTP.Shared.csproj" />
-    <Project Path="src/DTP.Worker/DTP.Worker.csproj" />
+    <Project Path="src/DTP.WorkerService/DTP.WorkerService.csproj" Id="9e764f89-5ec9-4baa-a0c6-059db54ea08a" />
   </Folder>
   <Folder Name="/src/Modules/">
     <Project Path="src/Modules/DTP.Modules.Audit/DTP.Modules.Audit.csproj" Id="87eaa5f1-d2d2-4b2c-ab29-28a2f865c56d" />

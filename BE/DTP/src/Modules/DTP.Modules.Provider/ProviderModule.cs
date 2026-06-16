@@ -49,6 +49,9 @@ namespace DTP.Modules.Provider
                 client.Timeout = TimeSpan.FromSeconds(30);
             });
 
+            services.AddScoped<IProviderRedeemPollingService, ProviderRedeemPollingService>();
+            services.AddScoped<IProviderRedeemRepository, ProviderRedeemRepository>();
+
 
             services.AddScoped<IProviderOrderReader, ProviderOrderReader>();
             services.AddScoped<IProviderRedeemRepository, ProviderRedeemRepository>();

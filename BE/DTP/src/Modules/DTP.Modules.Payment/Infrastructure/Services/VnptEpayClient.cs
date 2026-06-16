@@ -1,14 +1,17 @@
 ﻿using DTP.Modules.Payment.Application.Abstractions.Services;
 using DTP.Modules.Payment.Application.DTOs;
 using DTP.Modules.Payment.Infrastructure.Clients;
+using DTP.Modules.Provider.Infrastructure;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
+using System.Globalization;
 
 namespace DTP.Modules.Payment.Infrastructure.Services
 {
@@ -16,6 +19,12 @@ namespace DTP.Modules.Payment.Infrastructure.Services
     {
         private readonly HttpClient _httpClient;
         private readonly VnptEpayOptions _options;
+
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNamingPolicy = null,
+            PropertyNameCaseInsensitive = true
+        };
 
         public VnptEpayClient(
             HttpClient httpClient,
@@ -25,154 +34,262 @@ namespace DTP.Modules.Payment.Infrastructure.Services
             _options = options.Value;
         }
 
-        public async Task<VnptEpayCreateQrResponse> CreateQrAsync(
-            VnptEpayCreateQrRequest request,
+        public async Task<VnptEpayRegisterVaResponse> RegisterVaAsync(
+            VnptEpayRegisterVaRequest request,
             CancellationToken cancellationToken = default)
         {
-            request.MerchantCode = _options.MerchantCode;
-            request.ReturnUrl = _options.ReturnUrl;
-            request.CallbackUrl = _options.CallbackUrl;
-            request.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            request.Signature = SignCreateQr(request);
+            ValidateRegisterVaRequest(request);
 
-            var rawRequest = JsonSerializer.Serialize(request);
+            var now = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7));
 
-            using var content = new StringContent(
-                rawRequest,
+            var customerNameNoSign = ToUpperNoSign(request.CustomerName);
+            var mapId = GenerateMapId(now);
+            var requestId = GenerateRequestId(now);
+
+            var startDate = $"{now:yyyyMMdd}000000";
+            var endDate = $"{now.AddDays(_options.VaExpireDays):yyyyMMdd}235959";
+
+            var extend = new
+            {
+                phone = request.Phone,
+                email = request.Email,
+                address = request.Address,
+                id = request.ReferenceId,
+                contentQR = request.ContentQr
+            };
+
+            var dataObj = new
+            {
+                map_id = mapId,
+                amount = request.Amount,
+                start_date = startDate,
+                end_date = endDate,
+                condition = _options.Condition,
+                customer_name = customerNameNoSign,
+                request_id = requestId,
+                bank_code = _options.BankCode,
+                extend
+            };
+
+            var dataJson = JsonSerializer.Serialize(dataObj, JsonOptions);
+
+            // Giữ nguyên TripDESUtil hiện tại của bạn.
+            var encryptedData = TripDESUtil.Encrypt(dataJson, _options.EncryptionKey);
+
+            var epayRequest = new
+            {
+                pcode = _options.PCodeRegister,
+                merchant_code = _options.MerchantCode,
+                data = encryptedData
+            };
+
+            var json = JsonSerializer.Serialize(epayRequest, JsonOptions);
+
+            using var httpRequest = new HttpRequestMessage(
+                HttpMethod.Post,
+                _options.RegisterVaUrl);
+
+            httpRequest.Content = new StringContent(
+                json,
                 Encoding.UTF8,
                 "application/json");
 
-            var httpResponse = await _httpClient.PostAsync(
-                _options.CreateQrEndpoint,
-                content,
+            httpRequest.Headers.Accept.Add(
+                new MediaTypeWithQualityHeaderValue("application/json"));
+
+            using var httpResponse = await _httpClient.SendAsync(
+                httpRequest,
                 cancellationToken);
 
             var rawResponse = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
 
             if (!httpResponse.IsSuccessStatusCode)
             {
-                return new VnptEpayCreateQrResponse
+                return new VnptEpayRegisterVaResponse
                 {
-                    IsSuccess = false,
-                    ResponseCode = ((int)httpResponse.StatusCode).ToString(),
-                    Message = "VNPT ePay create QR failed.",
-                    RawRequest = rawRequest,
-                    RawResponse = rawResponse
+                    ResponseCode = "-1",
+                    Message = $"Lỗi HTTP khi gọi VNPT ePay. StatusCode: {(int)httpResponse.StatusCode}. Response: {rawResponse}"
                 };
             }
 
-            /*
-             * TODO:
-             * Mapping response theo tài liệu VNPT ePay thật.
-             * Phần dưới đang là mapping mẫu.
-             */
-            using var document = JsonDocument.Parse(rawResponse);
-            var root = document.RootElement;
-
-            var responseCode = GetString(root, "responseCode");
-            var message = GetString(root, "message");
-
-            var isSuccess = responseCode == "00" || responseCode == "SUCCESS";
-
-            return new VnptEpayCreateQrResponse
+            try
             {
-                IsSuccess = isSuccess,
-                ResponseCode = responseCode,
-                Message = message,
-                RequestId = GetString(root, "requestId"),
-                ProviderTransactionId = GetString(root, "transactionId"),
-                ProviderPaymentCode = GetString(root, "paymentCode"),
-                QrCode = GetString(root, "qrCode"),
-                QrImageUrl = GetString(root, "qrImageUrl"),
-                PaymentUrl = GetString(root, "paymentUrl"),
-                BankCode = GetString(root, "bankCode"),
-                BankAccountNo = GetString(root, "bankAccountNo"),
-                BankAccountName = GetString(root, "bankAccountName"),
-                TransferContent = GetString(root, "transferContent"),
-                ExpiredAt = DateTime.UtcNow.AddMinutes(_options.QrExpiredMinutes),
-                RawRequest = rawRequest,
-                RawResponse = rawResponse
-            };
+                var response = JsonSerializer.Deserialize<VnptEpayRegisterVaResponse>(
+                    rawResponse,
+                    JsonOptions);
+
+                if (response == null)
+                {
+                    return new VnptEpayRegisterVaResponse
+                    {
+                        ResponseCode = "-1",
+                        Message = "Không parse được phản hồi từ VNPT ePay"
+                    };
+                }
+
+                return response;
+            }
+            catch
+            {
+                return new VnptEpayRegisterVaResponse
+                {
+                    ResponseCode = "-1",
+                    Message = "Lỗi phản hồi từ cổng thanh toán VNPT ePay"
+                };
+            }
         }
 
-        public bool VerifyCallbackSignature(VnptEpayCallbackDto callback)
+        public bool VerifyDepositNotificationSignature(Application.DTOs.VnptEpayCallbackDto callback)
         {
-            if (string.IsNullOrWhiteSpace(callback.Signature))
+            var rawString = string.Join("|",
+                callback.RequestId,
+                callback.ReferenceId,
+                callback.RequestTime,
+                callback.Amount.ToString("0.##", CultureInfo.InvariantCulture),
+                callback.Fee.ToString("0.##", CultureInfo.InvariantCulture),
+                callback.VaAcc,
+                callback.MapId);
+
+            return Verify(rawString, callback.Signature!, _options.EpayPublicKeyPem);
+        }
+
+
+        public bool Verify(
+            string rawString,
+            string signatureHex,
+            string epayPublicKeyPem)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(rawString))
+                    return false;
+
+                if (string.IsNullOrWhiteSpace(signatureHex))
+                    return false;
+
+                if (string.IsNullOrWhiteSpace(epayPublicKeyPem))
+                    return false;
+
+                var dataBytes = Encoding.UTF8.GetBytes(rawString);
+                var signatureBytes = HexStringToBytes(signatureHex);
+
+                using var rsa = RSA.Create();
+                rsa.ImportFromPem(epayPublicKeyPem);
+
+                return rsa.VerifyData(
+                    dataBytes,
+                    signatureBytes,
+                    HashAlgorithmName.SHA256,
+                    RSASignaturePadding.Pkcs1);
+            }
+            catch
+            {
                 return false;
+            }
+        }
 
-            var raw = string.Join("|", new[]
+        private void ValidateRegisterVaRequest(VnptEpayRegisterVaRequest request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            if (request.Amount <= 0)
+                throw new ArgumentException("Amount phải lớn hơn 0", nameof(request.Amount));
+
+            if (string.IsNullOrWhiteSpace(request.CustomerName))
+                throw new ArgumentException("CustomerName không được để trống", nameof(request.CustomerName));
+
+            if (string.IsNullOrWhiteSpace(request.ReferenceId))
+                throw new ArgumentException("ReferenceId không được để trống", nameof(request.ReferenceId));
+
+            if (string.IsNullOrWhiteSpace(request.ContentQr))
+                throw new ArgumentException("ContentQr không được để trống", nameof(request.ContentQr));
+
+            if (string.IsNullOrWhiteSpace(_options.PCodeRegister))
+                throw new InvalidOperationException("VnptEpay:PCodeRegister chưa được cấu hình");
+
+            if (string.IsNullOrWhiteSpace(_options.MerchantCode))
+                throw new InvalidOperationException("VnptEpay:MerchantCode chưa được cấu hình");
+
+            if (string.IsNullOrWhiteSpace(_options.EncryptionKey))
+                throw new InvalidOperationException("VnptEpay:EncryptionKey chưa được cấu hình");
+
+            if (string.IsNullOrWhiteSpace(_options.RegisterVaUrl))
+                throw new InvalidOperationException("VnptEpay:RegisterVaUrl chưa được cấu hình");
+
+            if (string.IsNullOrWhiteSpace(_options.BankCode))
+                throw new InvalidOperationException("VnptEpay:BankCode chưa được cấu hình");
+        }
+
+        private string GenerateRequestId(DateTimeOffset now)
+        {
+            return $"{_options.MerchantCode}{now:ddMMyyyyHHmmss}_{GenerateRandomString(5)}";
+        }
+
+        private string GenerateMapId(DateTimeOffset now)
+        {
+            var number = RandomNumberGenerator.GetInt32(100, 999);
+            return $"{_options.MerchantCode}-{now:yyyyMMdd}_{number}";
+        }
+
+        private static string GenerateRandomString(int length)
+        {
+            const string chars = "0123456789abcdefghijklmnopqrstuvwxyz";
+
+            var result = new StringBuilder(length);
+
+            for (var i = 0; i < length; i++)
             {
-            callback.MerchantCode,
-            callback.RequestId,
-            callback.OrderCode,
-            callback.ProviderTransactionId,
-            callback.Amount.ToString("0"),
-            callback.Currency,
-            callback.Status,
-            callback.ResponseCode,
-            callback.Timestamp.ToString()
-        });
+                var index = RandomNumberGenerator.GetInt32(chars.Length);
+                result.Append(chars[index]);
+            }
 
-            var expected = HmacSha256(raw, _options.SecretKey);
-
-            return FixedTimeEquals(expected, callback.Signature);
+            return result.ToString();
         }
 
-        private string SignCreateQr(VnptEpayCreateQrRequest request)
+        private static string ToUpperNoSign(string input)
         {
-            /*
-             * TODO:
-             * Thứ tự field ký cần đổi đúng theo tài liệu VNPT ePay.
-             */
-            var raw = string.Join("|", new[]
+            if (string.IsNullOrWhiteSpace(input))
+                return string.Empty;
+
+            var normalized = input.Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder();
+
+            foreach (var c in normalized)
             {
-            request.MerchantCode,
-            request.RequestId,
-            request.OrderCode,
-            request.Amount.ToString("0"),
-            request.Currency,
-            request.Description,
-            request.ReturnUrl,
-            request.CallbackUrl,
-            request.Timestamp.ToString()
-        });
+                var unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
 
-            return HmacSha256(raw, _options.SecretKey);
+                if (unicodeCategory != UnicodeCategory.NonSpacingMark)
+                {
+                    sb.Append(c);
+                }
+            }
+
+            var noSign = sb
+                .ToString()
+                .Normalize(NormalizationForm.FormC)
+                .Replace('Đ', 'D')
+                .Replace('đ', 'd');
+
+            return noSign.ToUpperInvariant();
         }
 
-        private static string HmacSha256(string data, string secret)
+        private static byte[] HexStringToBytes(string hex)
         {
-            var keyBytes = Encoding.UTF8.GetBytes(secret);
-            var dataBytes = Encoding.UTF8.GetBytes(data);
+            if (string.IsNullOrWhiteSpace(hex))
+                return Array.Empty<byte>();
 
-            using var hmac = new HMACSHA256(keyBytes);
-            var hashBytes = hmac.ComputeHash(dataBytes);
+            if (hex.Length % 2 != 0)
+                throw new ArgumentException("Signature hex không hợp lệ", nameof(hex));
 
-            return Convert.ToHexString(hashBytes).ToLowerInvariant();
-        }
+            var data = new byte[hex.Length / 2];
 
-        private static bool FixedTimeEquals(string left, string right)
-        {
-            var leftBytes = Encoding.UTF8.GetBytes(left);
-            var rightBytes = Encoding.UTF8.GetBytes(right);
-
-            return leftBytes.Length == rightBytes.Length &&
-                   CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
-        }
-
-        private static string? GetString(JsonElement element, string propertyName)
-        {
-            if (!element.TryGetProperty(propertyName, out var property))
-                return null;
-
-            return property.ValueKind switch
+            for (var i = 0; i < hex.Length; i += 2)
             {
-                JsonValueKind.String => property.GetString(),
-                JsonValueKind.Number => property.GetRawText(),
-                JsonValueKind.True => "true",
-                JsonValueKind.False => "false",
-                _ => property.GetRawText()
-            };
+                data[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+            }
+
+            return data;
         }
     }
 }

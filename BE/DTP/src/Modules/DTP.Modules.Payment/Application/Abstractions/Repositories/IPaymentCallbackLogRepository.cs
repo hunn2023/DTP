@@ -1,4 +1,5 @@
 ﻿using DTP.Modules.Payment.Domain.Entities;
+using DTP.Modules.Payment.Domain.Enums;
 using DTP.Shared.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;
@@ -14,5 +15,10 @@ namespace DTP.Modules.Payment.Application.Abstractions.Repositories
             string? requestId,
             string? providerTransactionId,
             CancellationToken cancellationToken = default);
+
+        Task<bool> ExistsProcessedByProviderTransactionIdAsync(
+                PaymentProvider provider,
+                string providerTransactionId,
+                CancellationToken cancellationToken = default);
     }
 }

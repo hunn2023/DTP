@@ -213,37 +213,84 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
 
 
         public async Task<PeacomCreateOrderResponse> CreateOrderAsync(
-            PeacomCreateOrderRequest request,
-            CancellationToken cancellationToken = default)
+             Domain.Entities.Provider provider,
+             PeacomCreateOrderRequest request,
+             CancellationToken cancellationToken = default)
         {
             EnsureHttpClientConfigured();
 
-            var response = await _httpClient.PostAsJsonAsync(
-                "/eip/partner/v2/order",
+            if (provider is null)
+                throw new ArgumentNullException(nameof(provider));
+
+            if (request is null)
+                throw new ArgumentNullException(nameof(request));
+
+            if (string.IsNullOrWhiteSpace(provider.ApiKey))
+                throw new InvalidOperationException("Provider chưa cấu hình ApiKey.");
+
+            var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            using var httpRequest = new HttpRequestMessage(
+                HttpMethod.Post,
+                "eip/partner/v2/order");
+
+            httpRequest.Headers.Add("apikey", provider.ApiKey);
+
+            httpRequest.Content = JsonContent.Create(
                 request,
+                options: jsonOptions);
+
+            using var response = await _httpClient.SendAsync(
+                httpRequest,
                 cancellationToken);
 
             var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException(
+                    $"Gọi Peacom CREATE ORDER thất bại. " +
+                    $"HttpStatus={(int)response.StatusCode} {response.ReasonPhrase}. " +
+                    $"Response={rawJson}");
+            }
 
-            var result = JsonSerializer.Deserialize<PeacomCreateOrderResponse>(
-                rawJson,
-                new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+            PeacomCreateOrderResponse? result;
+
+            try
+            {
+                result = JsonSerializer.Deserialize<PeacomCreateOrderResponse>(
+                    rawJson,
+                    jsonOptions);
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException(
+                    $"Không parse được response CREATE ORDER Peacom. Response={rawJson}",
+                    ex);
+            }
 
             if (result is null)
-                throw new InvalidOperationException("Không parse được response CREATE ORDER Peacom.");
+            {
+                throw new InvalidOperationException(
+                    $"Không parse được response CREATE ORDER Peacom. Response={rawJson}");
+            }
 
             result.RawJson = rawJson;
 
-            if (!result.Success)
-                throw new InvalidOperationException("Peacom CREATE ORDER thất bại.");
+            if (!result.Success && 1 == 10)
+            {
+                throw new InvalidOperationException(
+                    $"Peacom CREATE ORDER thất bại. Response={rawJson}");
+            }
 
             if (string.IsNullOrWhiteSpace(result.OrderPublicId))
-                throw new InvalidOperationException("Peacom không trả orderPublicId.");
+            {
+                throw new InvalidOperationException(
+                    $"Peacom CREATE ORDER thành công nhưng không trả orderPublicId. Response={rawJson}");
+            }
 
             return result;
         }

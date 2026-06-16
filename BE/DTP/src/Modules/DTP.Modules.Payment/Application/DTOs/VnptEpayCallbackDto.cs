@@ -9,26 +9,19 @@ namespace DTP.Modules.Payment.Application.DTOs
 
     public class VnptEpayCallbackDto
     {
-        public string? MerchantCode { get; set; }
-
-        public string? RequestId { get; set; }
-
-        public string? OrderCode { get; set; }
-
-        public string? ProviderTransactionId { get; set; }
-
-        public decimal Amount { get; set; }
-
-        public string? Currency { get; set; }
-
-        public string? Status { get; set; }
-
-        public string? ResponseCode { get; set; }
-
-        public string? Message { get; set; }
-
-        public long Timestamp { get; set; }
-
-        public string? Signature { get; set; }
+        public string RequestId { get; set; }
+        public string RequestTime { get; set; }
+        public string BankTranTime { get; set; }
+        public string ReferenceId { get; set; }
+        public string MapId { get; set; }
+        public long Amount { get; set; }
+        public string Signature { get; set; }
+        public string MerchantCode { get; set; }
+        public long Fee { get; set; }
+        public string VaName { get; set; }
+        public string VaAcc { get; set; }
+        public string BankCode { get; set; }
+        public string BankName { get; set; }
+        public string Remark { get; set; }
     }
 }

@@ -2,6 +2,7 @@
 using DTP.Modules.Provider.Application.Abstractions.Clients;
 using DTP.Modules.Provider.Application.Abstractions.Repositories;
 using DTP.Modules.Provider.Application.Abstractions.Services;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,72 +17,105 @@ namespace DTP.Modules.Provider.Application.Services
         private readonly IPeacomProviderClient _peacomClient;
         private readonly IProviderDeliveryEmailService _emailService;
         private readonly IProviderUnitOfWork _unitOfWork;
+        private readonly ILogger<ProviderRedeemPollingService> _logger;
 
         public ProviderRedeemPollingService(
             IProviderRedeemRepository redeemRepository,
             IPeacomProviderClient peacomClient,
             IProviderDeliveryEmailService emailService,
-            IProviderUnitOfWork unitOfWork)
+            IProviderUnitOfWork unitOfWork,
+            ILogger<ProviderRedeemPollingService> logger)
         {
             _redeemRepository = redeemRepository;
             _peacomClient = peacomClient;
             _emailService = emailService;
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task PollPendingRedeemsAsync(
             int take,
             CancellationToken cancellationToken = default)
         {
+            if (take <= 0)
+                take = 20;
+
             var redeems = await _redeemRepository.GetPendingAsync(
                 take,
                 cancellationToken);
+
+            if (redeems.Count == 0)
+            {
+                _logger.LogDebug("No pending provider redeems found.");
+                return;
+            }
 
             foreach (var redeem in redeems)
             {
                 try
                 {
+                    _logger.LogInformation(
+                        "Polling redeem info. Serial={Serial}, Status={Status}",
+                        redeem.Serial,
+                        redeem.Status);
+
                     var info = await _peacomClient.GetRedeemInfoAsync(
                         redeem.Serial,
                         cancellationToken);
 
                     redeem.MarkRedeemInfo(
-                        info.Status,
-                        info.ProductType,
-                        info.PackageName,
-                        info.Model,
-                        info.RawJson);
+                        redeemStatus: info.Status,
+                        productType: info.ProductType,
+                        packageName: info.PackageName,
+                        model: info.Model,
+                        rawInfoJson: info.RawJson);
 
-                    var data = info.Data.FirstOrDefault();
-
-                    if (data is not null && info.Status == 2)
+                    if (info.Status == 2)
                     {
-                        if (info.ProductType == 1)
+                        var data = info.Data.FirstOrDefault();
+
+                        if (data is null)
+                        {
+                            redeem.MarkFailed("Peacom redeem DONE nhưng không có data.");
+                        }
+                        else if (info.ProductType == 1 || data.ProductType == 1)
                         {
                             redeem.SetEsimResult(
-                                data.Iccid,
-                                data.Imsi,
-                                data.Ac,
-                                data.QrCodeUrl,
-                                data.ShortUrlApple,
-                                data.ShortUrlAndroid,
-                                data.Apn);
+                                iccid: data.Iccid,
+                                imsi: data.Imsi,
+                                activationCode: data.Ac,
+                                qrCodeUrl: data.QrCodeUrl,
+                                shortUrlApple: data.ShortUrlApple,
+                                shortUrlAndroid: data.ShortUrlAndroid,
+                                apn: data.Apn);
                         }
                         else
                         {
                             redeem.SetInsuranceResult(
-                                data.PolicyNumber,
-                                data.UrlResp,
-                                data.PolicyGCN);
+                                policyNumber: data.PolicyNumber,
+                                policyUrl: data.UrlResp,
+                                policyCertificate: data.PolicyGCN);
                         }
+                    }
+                    else if (info.Status == 3)
+                    {
+                        redeem.MarkFailed("Peacom redeem status = FAIL.");
                     }
 
                     await _unitOfWork.SaveChangesAsync(cancellationToken);
                 }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
                 catch (Exception ex)
                 {
-                    redeem.MarkFailed(ex.Message);
-                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                    // Không mark Failed ngay vì có thể chỉ là lỗi mạng tạm thời.
+                    // Worker lần sau sẽ thử lại.
+                    _logger.LogWarning(
+                        ex,
+                        "Poll redeem info failed. Serial={Serial}",
+                        redeem.Serial);
                 }
             }
         }
@@ -90,22 +124,56 @@ namespace DTP.Modules.Provider.Application.Services
             int take,
             CancellationToken cancellationToken = default)
         {
+            if (take <= 0)
+                take = 20;
+
             var redeems = await _redeemRepository.GetDoneNotEmailSentAsync(
                 take,
                 cancellationToken);
+
+            if (redeems.Count == 0)
+            {
+                _logger.LogDebug("No done provider redeems waiting for email.");
+                return;
+            }
 
             foreach (var redeem in redeems)
             {
                 try
                 {
+                    _logger.LogInformation(
+                        "Sending provider redeem email. Serial={Serial}, ProductType={ProductType}",
+                        redeem.Serial,
+                        redeem.ProductType);
+
                     if (redeem.ProductType == 1)
                     {
+                        if (string.IsNullOrWhiteSpace(redeem.QrCodeUrl) &&
+                            string.IsNullOrWhiteSpace(redeem.ActivationCode))
+                        {
+                            _logger.LogWarning(
+                                "Redeem is DONE but missing eSIM QR/ActivationCode. Serial={Serial}",
+                                redeem.Serial);
+
+                            continue;
+                        }
+
                         await _emailService.SendEsimEmailAsync(
                             redeem,
                             cancellationToken);
                     }
                     else
                     {
+                        if (string.IsNullOrWhiteSpace(redeem.PolicyUrl) &&
+                            string.IsNullOrWhiteSpace(redeem.PolicyNumber))
+                        {
+                            _logger.LogWarning(
+                                "Redeem is DONE but missing insurance policy info. Serial={Serial}",
+                                redeem.Serial);
+
+                            continue;
+                        }
+
                         await _emailService.SendInsuranceEmailAsync(
                             redeem,
                             cancellationToken);
@@ -114,11 +182,22 @@ namespace DTP.Modules.Provider.Application.Services
                     redeem.MarkEmailSent();
 
                     await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                    _logger.LogInformation(
+                        "Provider redeem email sent. Serial={Serial}",
+                        redeem.Serial);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
-                    redeem.MarkFailed($"Gửi email thất bại: {ex.Message}");
-                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                    // Không MarkFailed để lần sau gửi email lại.
+                    _logger.LogError(
+                        ex,
+                        "Send provider redeem email failed. Serial={Serial}",
+                        redeem.Serial);
                 }
             }
         }

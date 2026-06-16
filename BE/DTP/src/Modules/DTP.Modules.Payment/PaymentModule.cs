@@ -27,7 +27,7 @@ namespace DTP.Modules.Payment
             });
 
             services.Configure<VnptEpayOptions>(
-         configuration.GetSection("Payment:VnptEpay"));
+                 configuration.GetSection("Payment:VnptEpay"));
 
 
             services.AddHttpClient<IVnptEpayClient, VnptEpayClient>((sp, client) =>
@@ -36,8 +36,8 @@ namespace DTP.Modules.Payment
                     .GetSection("Payment:VnptEpay")
                     .Get<VnptEpayOptions>()!;
 
-                client.BaseAddress = new Uri(options.BaseUrl);
-                client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+                client.BaseAddress = new Uri("1212121");
+                client.Timeout = TimeSpan.FromSeconds(10);
             });
 
 

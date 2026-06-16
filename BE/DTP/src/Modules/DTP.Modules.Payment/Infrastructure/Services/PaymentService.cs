@@ -6,7 +6,7 @@ using DTP.Modules.Payment.Application.DTOs;
 using DTP.Modules.Payment.Domain.Entities;
 using DTP.Modules.Payment.Domain.Enums;
 using DTP.Modules.Provider.Application.Abstractions.Services;
-
+using DTP.Modules.Provider.Application.DTOs;
 using DTP.Shared.Application;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -381,22 +381,23 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 },
                 cancellationToken: cancellationToken);
 
-            var vnptRequest = new VnptEpayCreateQrRequest
-            {
-                RequestId = payment.RequestId,
-                OrderCode = payment.OrderCode,
-                Amount = payment.Amount,
-                Currency = payment.Currency,
-                Description = $"Thanh toan don hang {payment.OrderCode}"
-            };
 
-            VnptEpayCreateQrResponse vnptResponse;
+
+            var epay = new VnptEpayRegisterVaRequest
+            {
+                Amount = (long)order.TotalAmount,
+                CustomerName = order.CustomerName ?? "KHACH HANG",
+                Phone = order.CustomerPhone,
+                Email = order.CustomerEmail,
+                Address = "",
+                ReferenceId = payment.OrderId.ToString(),
+                ContentQr = order.OrderCode
+            };
+            VnptEpayRegisterVaResponse epayResponse;
 
             try
             {
-                vnptResponse = await _vnptEpayClient.CreateQrAsync(
-                    vnptRequest,
-                    cancellationToken);
+                epayResponse = await _vnptEpayClient.RegisterVaAsync(epay, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -431,12 +432,12 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                     "Không thể kết nối VNPT ePay để tạo mã QR.");
             }
 
-            if (!vnptResponse.IsSuccess)
+            if (!epayResponse.IsSuccess)
             {
                 payment.MarkCreateQrFailed(
-                    providerResponseCode: vnptResponse.ResponseCode,
-                    providerResponseMessage: vnptResponse.Message,
-                    rawProviderResponse: vnptResponse.RawResponse);
+                    providerResponseCode: epayResponse.ResponseCode,
+                    providerResponseMessage: epayResponse.Message,
+                    rawProviderResponse: epayResponse.Message);
 
                 _paymentRepository.Update(payment);
 
@@ -455,17 +456,17 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                         payment.Amount,
                         payment.Currency,
                         payment.RequestId,
-                        vnptResponse.ResponseCode,
-                        vnptResponse.Message,
+                        epayResponse.ResponseCode,
+                        epayResponse.Message,
                         IpAddress = ipAddress
                     },
                     cancellationToken: cancellationToken);
 
                 return Result<PaymentQrResponseDto>.Failure(
-                    vnptResponse.Message ?? "Không tạo được mã QR thanh toán.");
+                    epayResponse.Message ?? "Không tạo được mã QR thanh toán.");
             }
 
-            var expiredAt = vnptResponse.ExpiredAt;
+            var expiredAt = payment.ExpiredAt;
             var providerSafeExpiredAt = providerReservation.ReservedUntil.AddSeconds(-30);
 
             if (!expiredAt.HasValue || expiredAt.Value <= DateTime.UtcNow)
@@ -479,20 +480,20 @@ namespace DTP.Modules.Payment.Infrastructure.Services
 
 
             payment.MarkQrCreated(
-                providerTransactionId: vnptResponse.ProviderTransactionId,
-                providerPaymentCode: vnptResponse.ProviderPaymentCode,
-                qrCode: vnptResponse.QrCode,
-                qrImageUrl: vnptResponse.QrImageUrl,
-                paymentUrl: vnptResponse.PaymentUrl,
+                providerTransactionId: epayResponse.MapId,
+                providerPaymentCode: epayResponse.ResponseCode,
+                qrCode: epayResponse.QrCode,
+                qrImageUrl: epayResponse.QrUrl,
+                paymentUrl: epayResponse.QrUrl,
                 expiredAt: expiredAt,
-                bankCode: vnptResponse.BankCode,
-                bankAccountNo: vnptResponse.BankAccountNo,
-                bankAccountName: vnptResponse.BankAccountName,
-                transferContent: vnptResponse.TransferContent,
-                providerResponseCode: vnptResponse.ResponseCode,
-                providerResponseMessage: vnptResponse.Message,
-                rawProviderRequest: vnptResponse.RawRequest,
-                rawProviderResponse: vnptResponse.RawResponse);
+                bankCode: epayResponse.BankCode,
+                bankAccountNo: epayResponse.AccountNo,
+                bankAccountName: epayResponse.AccountName,
+                transferContent: epayResponse.MapId,
+                providerResponseCode: epayResponse.ResponseCode,
+                providerResponseMessage: epayResponse.Message,
+                rawProviderRequest: epayResponse.QrDataRaw,
+                rawProviderResponse: epayResponse.QrDataRaw);
 
             _paymentRepository.Update(payment);
 
@@ -535,14 +536,20 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                    !string.IsNullOrWhiteSpace(payment.PaymentUrl);
         }
 
-        public async Task<Result> HandleVnptEpayCallbackAsync(
-                VnptEpayCallbackDto callback,
-                string rawBody,
-                string? ipAddress,
-                CancellationToken cancellationToken = default)
+        public async Task<EPayResponse> HandleVnptEpayCallbackAsync(
+           Application.DTOs.VnptEpayCallbackDto callback,
+           string rawBody,
+           string? ipAddress,
+           CancellationToken cancellationToken = default)
         {
-            if (callback == null)
-                return Result.Failure("Callback không hợp lệ.");
+            const string MerchantCode = "THE365";
+
+            EPayResponse Response(string code, string message)
+                => new EPayResponse
+                {
+                    ResponseCode = code,
+                    ResponseMessage = message
+                };
 
             ipAddress = string.IsNullOrWhiteSpace(ipAddress)
                 ? "unknown"
@@ -550,387 +557,375 @@ namespace DTP.Modules.Payment.Infrastructure.Services
 
             rawBody ??= string.Empty;
 
-            var callbackBlocked = await _paymentRateLimitService.IsCallbackBlockedAsync(
-                callback.ProviderTransactionId ?? callback.RequestId,
-                ipAddress,
-                cancellationToken);
+            PaymentCallbackLog? callbackLog = null;
 
-            if (callbackBlocked)
+            try
             {
-                await WritePaymentAuditSafeAsync(
-                    action: "Payment Callback Blocked",
-                    status: "Failed",
-                    entityId: null,
-                    description: "VNPT ePay callback was blocked by rate limit.",
-                    newValues: new
-                    {
-                        callback.RequestId,
-                        callback.OrderCode,
-                        callback.ProviderTransactionId,
-                        IpAddress = ipAddress,
-                        Reason = "Callback rate limit exceeded"
-                    },
-                    cancellationToken: cancellationToken);
+                if (callback == null)
+                {
+                    await WritePaymentAuditSafeAsync(
+                        action: "VNPT ePay Callback Invalid",
+                        status: "Failed",
+                        entityId: null,
+                        description: "Callback body is null.",
+                        newValues: new
+                        {
+                            IpAddress = ipAddress
+                        },
+                        cancellationToken: cancellationToken);
 
-                return Result.Failure("Callback quá nhiều lần.");
-            }
+                    return Response("124", "Callback không hợp lệ");
+                }
 
-            await _paymentRateLimitService.RegisterCallbackAttemptAsync(
-                callback.ProviderTransactionId ?? callback.RequestId,
-                ipAddress,
-                cancellationToken);
+                var requestId = callback.RequestId?.Trim();
+                var requestTime = callback.RequestTime?.Trim();
+                var referenceId = callback.ReferenceId?.Trim();
+                var mapId = callback.MapId?.Trim();
+                var signature = callback.Signature?.Trim();
+                var merchantCode = callback.MerchantCode?.Trim();
+                var vaAcc = callback.VaAcc?.Trim();
+                var vaName = callback.VaName?.Trim();
 
-            var callbackLog = new PaymentCallbackLog(
-                provider: PaymentProvider.VnptEpay,
-                requestId: callback.RequestId,
-                providerTransactionId: callback.ProviderTransactionId,
-                rawBody: rawBody,
-                signature: callback.Signature,
-                ipAddress: ipAddress,
-                status: PaymentCallbackStatus.Received);
+                callbackLog = new PaymentCallbackLog(
+                    provider: PaymentProvider.VnptEpay,
+                    requestId: requestId ?? string.Empty,
+                    providerTransactionId: referenceId,
+                    rawBody: rawBody,
+                    signature: signature,
+                    ipAddress: ipAddress,
+                    status: PaymentCallbackStatus.Received);
 
-            await _callbackLogRepository.AddAsync(callbackLog, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            var isValidSignature = _vnptEpayClient.VerifyCallbackSignature(callback);
-
-            if (!isValidSignature)
-            {
-                callbackLog.MarkInvalidSignature("VNPT ePay callback signature is invalid.");
-
-                _callbackLogRepository.Update(callbackLog);
-
+                await _callbackLogRepository.AddAsync(callbackLog, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-                await WritePaymentAuditSafeAsync(
-                    action: "Payment Callback Invalid Signature",
-                    status: "Failed",
-                    entityId: callbackLog.Id,
-                    description: "VNPT ePay callback signature validation failed.",
-                    newValues: new
-                    {
-                        callback.RequestId,
-                        callback.OrderCode,
-                        callback.ProviderTransactionId,
-                        callback.Amount,
-                        callback.Currency,
-                        callback.Status,
-                        callback.ResponseCode,
-                        callback.Message,
-                        IpAddress = ipAddress
-                    },
-                    cancellationToken: cancellationToken);
+                // 1. Validate 
+                if (string.IsNullOrWhiteSpace(requestId) ||
+                    string.IsNullOrWhiteSpace(requestTime) ||
+                    string.IsNullOrWhiteSpace(referenceId) ||
+                    string.IsNullOrWhiteSpace(mapId) ||
+                    string.IsNullOrWhiteSpace(signature) ||
+                    string.IsNullOrWhiteSpace(merchantCode) ||
+                    string.IsNullOrWhiteSpace(vaAcc) ||
+                    string.IsNullOrWhiteSpace(vaName))
+                {
+                    callbackLog.MarkFailed("Thiếu trường bắt buộc.");
+                    _callbackLogRepository.Update(callbackLog);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-                return Result.Failure("Invalid signature.");
-            }
+                    await WritePaymentAuditSafeAsync(
+                        action: "VNPT ePay Callback Missing Required Fields",
+                        status: "Failed",
+                        entityId: callbackLog.Id,
+                        description: "VNPT ePay callback missing required fields.",
+                        newValues: new
+                        {
+                            callback.RequestId,
+                            callback.RequestTime,
+                            callback.ReferenceId,
+                            callback.MapId,
+                            callback.MerchantCode,
+                            callback.VaAcc,
+                            callback.VaName,
+                            IpAddress = ipAddress
+                        },
+                        cancellationToken: cancellationToken);
 
-            callbackLog.MarkVerified();
+                    return Response("124", "Thiếu trường bắt buộc");
+                }
 
-            var alreadyProcessed = await _callbackLogRepository.ExistsProcessedAsync(
-                callback.RequestId,
-                callback.ProviderTransactionId,
-                cancellationToken);
+                // 2. Check MerchantCode
+                if (!string.Equals(merchantCode, MerchantCode, StringComparison.Ordinal))
+                {
+                    callbackLog.MarkFailed("Sai MerchantCode.");
+                    _callbackLogRepository.Update(callbackLog);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            if (alreadyProcessed)
-            {
-                callbackLog.MarkDuplicated("Callback already processed.");
+                    await WritePaymentAuditSafeAsync(
+                        action: "VNPT ePay Callback Invalid MerchantCode",
+                        status: "Failed",
+                        entityId: callbackLog.Id,
+                        description: "VNPT ePay callback merchant code is invalid.",
+                        newValues: new
+                        {
+                            callback.RequestId,
+                            callback.ReferenceId,
+                            callback.MapId,
+                            CallbackMerchantCode = callback.MerchantCode,
+                            ExpectedMerchantCode = MerchantCode,
+                            IpAddress = ipAddress
+                        },
+                        cancellationToken: cancellationToken);
 
-                _callbackLogRepository.Update(callbackLog);
+                    return Response("110", "Sai MerchantCode");
+                }
 
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                // 3. Check Amount
+                if (callback.Amount <= 0)
+                {
+                    callbackLog.MarkFailed("Sai số tiền.");
+                    _callbackLogRepository.Update(callbackLog);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-                await WritePaymentAuditSafeAsync(
-                    action: "Payment Callback Duplicated",
-                    status: "Success",
-                    entityId: callbackLog.Id,
-                    description: "Duplicated VNPT ePay callback ignored.",
-                    newValues: new
-                    {
-                        callback.RequestId,
-                        callback.OrderCode,
-                        callback.ProviderTransactionId,
-                        IpAddress = ipAddress
-                    },
-                    cancellationToken: cancellationToken);
+                    await WritePaymentAuditSafeAsync(
+                        action: "VNPT ePay Callback Invalid Amount",
+                        status: "Failed",
+                        entityId: callbackLog.Id,
+                        description: "VNPT ePay callback amount is invalid.",
+                        newValues: new
+                        {
+                            callback.RequestId,
+                            callback.ReferenceId,
+                            callback.MapId,
+                            callback.Amount,
+                            IpAddress = ipAddress
+                        },
+                        cancellationToken: cancellationToken);
 
-                return Result.Success();
-            }
+                    return Response("125", "Sai số tiền");
+                }
 
-            PaymentTransaction? payment = null;
+                // 4. Verify chữ ký
+                var isValidSignature = _vnptEpayClient.VerifyDepositNotificationSignature(callback);
 
-            if (!string.IsNullOrWhiteSpace(callback.RequestId))
-            {
-                payment = await _paymentRepository.GetByRequestIdAsync(
-                    callback.RequestId,
-                    cancellationToken);
-            }
+                if (!isValidSignature)
+                {
+                    callbackLog.MarkInvalidSignature("Sai chữ ký.");
+                    _callbackLogRepository.Update(callbackLog);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            if (payment == null &&
-                !string.IsNullOrWhiteSpace(callback.ProviderTransactionId))
-            {
-                payment = await _paymentRepository.GetByProviderTransactionIdAsync(
+                    await WritePaymentAuditSafeAsync(
+                        action: "VNPT ePay Callback Invalid Signature",
+                        status: "Failed",
+                        entityId: callbackLog.Id,
+                        description: "VNPT ePay callback signature validation failed.",
+                        newValues: new
+                        {
+                            callback.RequestId,
+                            callback.ReferenceId,
+                            callback.RequestTime,
+                            callback.Amount,
+                            callback.Fee,
+                            callback.VaAcc,
+                            callback.MapId,
+                            IpAddress = ipAddress
+                        },
+                        cancellationToken: cancellationToken);
+
+                    return Response("103", "Sai chữ ký");
+                }
+
+                callbackLog.MarkVerified();
+
+                // 5. Chống trùng ReferenceId
+                // ReferenceId tương đương mã giao dịch nạp tiền của VNPT.
+                var isDuplicate = await _callbackLogRepository.ExistsProcessedByProviderTransactionIdAsync(
                     PaymentProvider.VnptEpay,
-                    callback.ProviderTransactionId,
+                    referenceId,
                     cancellationToken);
-            }
 
-            if (payment == null)
-            {
-                callbackLog.MarkFailed("Payment transaction not found.");
+                if (isDuplicate)
+                {
+                    callbackLog.MarkDuplicated("Trùng ReferenceId.");
+                    _callbackLogRepository.Update(callbackLog);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-                _callbackLogRepository.Update(callbackLog);
+                    await WritePaymentAuditSafeAsync(
+                        action: "VNPT ePay Callback Duplicated",
+                        status: "Success",
+                        entityId: callbackLog.Id,
+                        description: "Duplicated VNPT ePay ReferenceId ignored.",
+                        newValues: new
+                        {
+                            callback.RequestId,
+                            callback.ReferenceId,
+                            callback.MapId,
+                            IpAddress = ipAddress
+                        },
+                        cancellationToken: cancellationToken);
 
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                    return Response("102", "Trùng ReferenceId");
+                }
 
-                await WritePaymentAuditSafeAsync(
-                    action: "Payment Callback Payment Not Found",
-                    status: "Failed",
-                    entityId: callbackLog.Id,
-                    description: "Cannot find payment transaction for VNPT ePay callback.",
-                    newValues: new
-                    {
-                        callback.RequestId,
-                        callback.OrderCode,
-                        callback.ProviderTransactionId,
-                        callback.Amount,
-                        callback.Currency,
-                        callback.Status,
-                        callback.ResponseCode,
-                        callback.Message,
-                        IpAddress = ipAddress
-                    },
-                    cancellationToken: cancellationToken);
+                // 6. Tìm payment/order theo MapId + Amount + trạng thái chờ thanh toán
+                var payment = await _paymentRepository.GetPendingVnptEpayByMapIdAndAmountAsync(
+                    mapId,
+                    callback.Amount,
+                    cancellationToken);
 
-                return Result.Failure("Payment transaction not found.");
-            }
+                if (payment == null)
+                {
+                    callbackLog.MarkFailed("Không tìm thấy đơn hàng phù hợp.");
+                    _callbackLogRepository.Update(callbackLog);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            callbackLog.AttachPayment(payment.Id);
+                    await WritePaymentAuditSafeAsync(
+                        action: "VNPT ePay Callback Payment Not Found",
+                        status: "Failed",
+                        entityId: callbackLog.Id,
+                        description: "Cannot find pending payment by MapId and Amount.",
+                        newValues: new
+                        {
+                            callback.RequestId,
+                            callback.ReferenceId,
+                            callback.MapId,
+                            callback.Amount,
+                            IpAddress = ipAddress
+                        },
+                        cancellationToken: cancellationToken);
 
-            if (payment.IsPaid())
-            {
-                callbackLog.MarkDuplicated("Payment already paid.");
+                    return Response("101", "Không tìm thấy đơn hàng phù hợp");
+                }
 
-                _callbackLogRepository.Update(callbackLog);
+                callbackLog.AttachPayment(payment.Id);
 
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                // 7. Nếu payment đã Paid nhưng callback chưa processed,
+                // vẫn gọi MarkOrderPaidAsync lại để tự hồi phục nếu lần trước lỗi giữa chừng.
+                if (!payment.IsPaid())
+                {
+                    payment.MarkPaid(
+                        providerTransactionId: referenceId,
+                         "200",
+                        "Nạp tiền thành công",
+                         rawBody);
 
-                await WritePaymentAuditSafeAsync(
-                    action: "Payment Callback Idempotent",
-                    status: "Success",
-                    entityId: payment.Id,
-                    description: "Payment callback ignored because payment was already paid.",
-                    newValues: new
-                    {
-                        payment.Id,
-                        payment.OrderId,
-                        payment.OrderCode,
-                        payment.ProviderTransactionId,
-                        payment.PaidAt,
-                        callback.RequestId,
-                        CallbackProviderTransactionId = callback.ProviderTransactionId,
-                        IpAddress = ipAddress
-                    },
-                    cancellationToken: cancellationToken);
+                    _paymentRepository.Update(payment);
+                }
 
-                return Result.Success();
-            }
+                var markOrderPaidResult = await _orderPaymentService.MarkOrderPaidAsync(
+                    payment.OrderId,
+                    payment.Id,
+                    referenceId,
+                    payment.PaidAt ?? DateTime.UtcNow,
+                    cancellationToken);
 
-            if (payment.Amount != callback.Amount)
-            {
-                payment.MarkFailed(
-                    callback.ResponseCode,
-                    "Callback amount does not match payment amount.",
-                    rawBody);
+                if (!markOrderPaidResult.IsSuccess)
+                {
+                    callbackLog.MarkFailed("Xử lý đơn hàng thất bại.");
+                    _callbackLogRepository.Update(callbackLog);
 
-                callbackLog.MarkFailed("Callback amount does not match payment amount.");
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-                _paymentRepository.Update(payment);
-                _callbackLogRepository.Update(callbackLog);
+                    await WritePaymentAuditSafeAsync(
+                        action: "VNPT ePay Callback Mark Order Paid Failed",
+                        status: "Failed",
+                        entityId: payment.Id,
+                        description: "Payment was paid but marking order paid failed.",
+                        newValues: new
+                        {
+                            payment.Id,
+                            payment.OrderId,
+                            payment.OrderCode,
+                            callback.ReferenceId,
+                            callback.MapId,
+                            callback.Amount,
+                            Error = markOrderPaidResult.Error,
+                            IpAddress = ipAddress
+                        },
+                        cancellationToken: cancellationToken);
 
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-                await WritePaymentAuditSafeAsync(
-                    action: "Payment Callback Amount Mismatch",
-                    status: "Failed",
-                    entityId: payment.Id,
-                    description: "VNPT ePay callback amount does not match payment amount.",
-                    newValues: new
-                    {
-                        payment.Id,
-                        payment.OrderId,
-                        payment.OrderCode,
-                        PaymentAmount = payment.Amount,
-                        CallbackAmount = callback.Amount,
-                        callback.RequestId,
-                        callback.ProviderTransactionId,
-                        IpAddress = ipAddress
-                    },
-                    cancellationToken: cancellationToken);
-
-                return Result.Failure("Amount mismatch.");
-            }
-
-            var isPaidCallback =
-                string.Equals(callback.Status, "PAID", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(callback.Status, "SUCCESS", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(callback.ResponseCode, "00", StringComparison.OrdinalIgnoreCase);
-
-            if (!isPaidCallback)
-            {
-                payment.MarkFailed(
-                    callback.ResponseCode,
-                    callback.Message,
-                    rawBody);
+                    return Response("199", "Xử lý đơn hàng thất bại");
+                }
 
                 callbackLog.MarkProcessed();
 
-                _paymentRepository.Update(payment);
                 _callbackLogRepository.Update(callbackLog);
+                _paymentRepository.Update(payment);
 
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+                // 8. Sau khi đơn đã paid, gọi fulfillment provider.
+                // Lưu ý: Fulfillment lỗi thì KHÔNG nên trả lỗi cho VNPT,
+                // vì tiền đã nhận thành công. Chỉ mark fulfillment failed để worker/admin xử lý lại.
+                try
+                {
+                    await _providerFulfillmentService.ConfirmAndRedeemAsync(
+                        payment.OrderId,
+                        cancellationToken);
+
+                    await WritePaymentAuditSafeAsync(
+                        action: "Provider Fulfillment Started",
+                        status: "Success",
+                        entityId: payment.OrderId,
+                        description: "Provider fulfillment confirm and redeem started successfully.",
+                        newValues: new
+                        {
+                            OrderId = payment.OrderId,
+                            payment.OrderCode,
+                            PaymentId = payment.Id,
+                            Provider = "PEACOM"
+                        },
+                        cancellationToken: cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    await _orderPaymentService.MarkFulfillmentFailedAsync(
+                        payment.OrderId,
+                        ex.Message,
+                        cancellationToken);
+
+                    await WritePaymentAuditSafeAsync(
+                        action: "Provider Fulfillment Failed",
+                        status: "Failed",
+                        entityId: payment.OrderId,
+                        description: "Payment was successful but provider fulfillment failed.",
+                        newValues: new
+                        {
+                            OrderId = payment.OrderId,
+                            payment.OrderCode,
+                            PaymentId = payment.Id,
+                            Provider = "PEACOM",
+                            Error = ex.Message
+                        },
+                        cancellationToken: cancellationToken);
+                }
+
                 await WritePaymentAuditSafeAsync(
-                    action: "Payment Callback Failed",
-                    status: "Failed",
+                    action: "VNPT ePay Callback Success",
+                    status: "Success",
                     entityId: payment.Id,
-                    description: "VNPT ePay callback returned failed payment status.",
+                    description: "Payment marked as paid from VNPT ePay deposit notification.",
                     newValues: new
                     {
                         payment.Id,
                         payment.OrderId,
                         payment.OrderCode,
                         payment.Amount,
-                        callback.RequestId,
-                        callback.ProviderTransactionId,
-                        callback.Status,
-                        callback.ResponseCode,
-                        callback.Message,
-                        IpAddress = ipAddress
-                    },
-                    cancellationToken: cancellationToken);
-
-                return Result.Success();
-            }
-
-            payment.MarkPaid(
-                callback.ProviderTransactionId,
-                callback.ResponseCode,
-                callback.Message,
-                rawBody);
-
-            callbackLog.MarkProcessed();
-
-            _paymentRepository.Update(payment);
-            _callbackLogRepository.Update(callbackLog);
-
-            var markOrderPaidResult = await _orderPaymentService.MarkOrderPaidAsync(
-                payment.OrderId,
-                payment.Id,
-                payment.ProviderTransactionId,
-                payment.PaidAt ?? DateTime.UtcNow,
-                cancellationToken);
-
-            if (!markOrderPaidResult.IsSuccess)
-            {
-                callbackLog.MarkFailed("Payment paid but mark order paid failed.");
-
-                _callbackLogRepository.Update(callbackLog);
-
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-                await WritePaymentAuditSafeAsync(
-                    action: "Payment Callback Mark Order Paid Failed",
-                    status: "Failed",
-                    entityId: payment.Id,
-                    description: "Payment was paid but marking order paid failed.",
-                    newValues: new
-                    {
-                        payment.Id,
-                        payment.OrderId,
-                        payment.OrderCode,
-                        payment.ProviderTransactionId,
+                        payment.Currency,
+                        payment.RequestId,
+                        ProviderTransactionId = referenceId,
                         payment.PaidAt,
-                        Error = markOrderPaidResult.Error,
+                        callback.MapId,
+                        callback.VaAcc,
+                        callback.VaName,
                         IpAddress = ipAddress
                     },
                     cancellationToken: cancellationToken);
 
-                return markOrderPaidResult;
-            }
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-
-            try
-            {
-                await _providerFulfillmentService.ConfirmAndRedeemAsync(
-                    payment.OrderId,
-                    cancellationToken);
-
-                await WritePaymentAuditSafeAsync(
-                    action: "Provider Fulfillment Started",
-                    status: "Success",
-                    entityId: payment.OrderId,
-                    description: "Provider fulfillment confirm and redeem started successfully.",
-                    newValues: new
-                    {
-                        OrderId = payment.OrderId,
-                        payment.OrderCode,
-                        PaymentId = payment.Id,
-                        Provider = "PEACOM"
-                    },
-                    cancellationToken: cancellationToken);
+                return Response("200", "Đẩy thông báo thành công");
             }
             catch (Exception ex)
             {
-                await _orderPaymentService.MarkFulfillmentFailedAsync(
-                    payment.OrderId,
-                    ex.Message,
-                    cancellationToken);
+                if (callbackLog != null)
+                {
+                    callbackLog.MarkFailed(ex.Message);
+                    _callbackLogRepository.Update(callbackLog);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                }
 
                 await WritePaymentAuditSafeAsync(
-                    action: "Provider Fulfillment Failed",
+                    action: "VNPT ePay Callback System Error",
                     status: "Failed",
-                    entityId: payment.OrderId,
-                    description: "Payment was successful but provider fulfillment failed.",
+                    entityId: callbackLog?.Id,
+                    description: "System error while handling VNPT ePay callback.",
                     newValues: new
                     {
-                        OrderId = payment.OrderId,
-                        payment.OrderCode,
-                        PaymentId = payment.Id,
-                        Provider = "PEACOM",
-                        Error = ex.Message
+                        Error = ex.Message,
+                        IpAddress = ipAddress
                     },
                     cancellationToken: cancellationToken);
+
+                return Response("500", "Lỗi hệ thống");
             }
-
-            await WritePaymentAuditSafeAsync(
-                action: "Payment Callback Success",
-                status: "Success",
-                entityId: payment.Id,
-                description: "Payment marked as paid from VNPT ePay callback.",
-                newValues: new
-                {
-                    payment.Id,
-                    payment.OrderId,
-                    payment.OrderCode,
-                    payment.Amount,
-                    payment.Currency,
-                    payment.RequestId,
-                    payment.ProviderTransactionId,
-                    payment.PaidAt,
-                    callback.ResponseCode,
-                    callback.Message,
-                    IpAddress = ipAddress
-                },
-                cancellationToken: cancellationToken);
-
-            //await CreateAndProcessDeliverySafeAsync(
-            //    payment,
-            //    ipAddress,
-            //    cancellationToken);
-
-            return Result.Success();
         }
 
         public async Task<Result<PaymentTransactionDto>> GetByOrderIdAsync(

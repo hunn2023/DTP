@@ -10,16 +10,15 @@ namespace DTP.Modules.Provider.Application.DTOs.Peacoms
     {
         public List<PeacomCreateOrderProductDto> Products { get; set; } = new();
 
-        public string? Description { get; set; }
+        public string RequestId { get; set; }
     }
 
     public class PeacomCreateOrderProductDto
     {
-        public int ProductId { get; set; }
 
         public string Sku { get; set; } = default!;
 
-        public int Qty { get; set; }
+        public int Quantity { get; set; }
     }
 
     public class PeacomCreateOrderResponse

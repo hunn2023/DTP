@@ -69,5 +69,20 @@ namespace DTP.Modules.Payment.Infrastructure.Repositories
                          x.Status == PaymentStatus.Paid,
                     cancellationToken);
         }
+
+
+        public async Task<PaymentTransaction?> GetPendingVnptEpayByMapIdAndAmountAsync(
+                string mapId,
+                decimal amount,
+                CancellationToken cancellationToken = default)
+        {
+            return await _context.PaymentTransactions
+                .FirstOrDefaultAsync(x =>
+                    x.Provider == PaymentProvider.VnptEpay &&
+                    x.RequestId == mapId &&
+                    x.Amount == amount &&
+                    x.Status == PaymentStatus.Pending,
+                    cancellationToken);
+        }
     }
 }

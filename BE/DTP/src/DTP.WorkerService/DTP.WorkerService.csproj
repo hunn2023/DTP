@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>dotnet-DTP.Worker-fe5a3b31-67f5-46fc-9207-3aab23fbc67f</UserSecretsId>
+    <UserSecretsId>dotnet-DTP.WorkerService-579bb6c9-8e98-4e6b-bafe-2a80dab72f1f</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

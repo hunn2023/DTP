@@ -32,5 +32,25 @@ namespace DTP.Modules.Payment.Infrastructure.Repositories
                     ),
                 cancellationToken);
         }
+
+
+        public async Task<bool> ExistsProcessedByProviderTransactionIdAsync(
+                PaymentProvider provider,
+                string providerTransactionId,
+                CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(providerTransactionId))
+                return false;
+
+            providerTransactionId = providerTransactionId.Trim();
+
+            return await _context.PaymentCallbackLogs
+                .AsNoTracking()
+                .AnyAsync(x =>
+                    x.Provider == provider &&
+                    x.ProviderTransactionId == providerTransactionId &&
+                    x.Status == PaymentCallbackStatus.Processed,
+                    cancellationToken);
+        }
     }
 }

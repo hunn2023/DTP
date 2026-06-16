@@ -62,7 +62,7 @@ namespace DTP.Modules.Provider.Application.Services
             }
 
             var provider = await _providerRepository.GetByCodeAsync(
-                "PEACOM",
+                "Bluecom",
                 cancellationToken);
 
             if (provider is null)
@@ -83,7 +83,7 @@ namespace DTP.Modules.Provider.Application.Services
 
             var createOrderRequest = new PeacomCreateOrderRequest
             {
-                Description = $"DTP Order {dtpOrder.OrderCode}"
+                RequestId = Guid.NewGuid().ToString()
             };
 
             foreach (var item in dtpOrder.Items)
@@ -100,13 +100,14 @@ namespace DTP.Modules.Provider.Application.Services
 
                 createOrderRequest.Products.Add(new PeacomCreateOrderProductDto
                 {
-                    ProductId = providerProductId,
+                    //ProductId = providerProductId,
                     Sku = mapping.ProviderSku,
-                    Qty = item.Quantity <= 0 ? 1 : item.Quantity
+                    Quantity = item.Quantity <= 0 ? 1 : item.Quantity
                 });
             }
 
             var response = await _peacomClient.CreateOrderAsync(
+                provider,
                 createOrderRequest,
                 cancellationToken);
 

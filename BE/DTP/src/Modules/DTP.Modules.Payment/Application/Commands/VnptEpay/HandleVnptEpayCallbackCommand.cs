@@ -1,5 +1,6 @@
 ﻿using DTP.Modules.Payment.Application.Abstractions.Services;
 using DTP.Modules.Payment.Application.DTOs;
+using DTP.Modules.Provider.Application.DTOs;
 using DTP.Shared.Application;
 using MediatR;
 using System;
@@ -10,9 +11,9 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Payment.Application.Commands.VnptEpay
 {
-    public class HandleVnptEpayCallbackCommand : IRequest<Result>
+    public class HandleVnptEpayCallbackCommand : IRequest<EPayResponse>
     {
-        public VnptEpayCallbackDto Callback { get; set; } = default!;
+        public DTOs.VnptEpayCallbackDto Callback { get; set; } = default!;
 
         public string RawBody { get; set; } = default!;
 
@@ -20,7 +21,7 @@ namespace DTP.Modules.Payment.Application.Commands.VnptEpay
     }
 
     public class HandleVnptEpayCallbackCommandHandler
-    : IRequestHandler<HandleVnptEpayCallbackCommand, Result>
+    : IRequestHandler<HandleVnptEpayCallbackCommand, EPayResponse>
     {
         private readonly IPaymentService _paymentService;
 
@@ -29,7 +30,7 @@ namespace DTP.Modules.Payment.Application.Commands.VnptEpay
             _paymentService = paymentService;
         }
 
-        public Task<Result> Handle(
+        public Task<EPayResponse> Handle(
             HandleVnptEpayCallbackCommand request,
             CancellationToken cancellationToken)
         {
