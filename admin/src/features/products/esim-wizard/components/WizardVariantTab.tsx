@@ -1,8 +1,11 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Alert, Card, Col, Form, Row } from 'react-bootstrap'
 
 import { createProductVariant, updateProductVariant } from '@/apis/productVariantsApi'
 import type { ProductVariant } from '@/features/master-data/products/types'
+import { useTabDirty } from '@/features/products/esim-wizard/hooks/useTabDirty'
+import RequiredMark from '@/components/form/RequiredMark'
+import NumberFormControl from '@/components/form/NumberFormControl'
 import { getDefaultVariantValues } from '@/features/products/esim-wizard/wizardDefaults'
 import { slugify } from '@/modules/crud/form/slugify'
 import type { FormFieldOption } from '@/modules/crud/form/types'
@@ -15,6 +18,8 @@ type WizardVariantTabProps = {
   initialValues: ProductVariant | null
   onSaved: (variantId: string, productId: string) => void
   onSavingChange: (saving: boolean) => void
+  onDirtyChange?: (dirty: boolean) => void
+  onRegisterSave?: (fn: () => Promise<boolean>) => void
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -27,6 +32,8 @@ const WizardVariantTab = ({
   initialValues,
   onSaved,
   onSavingChange,
+  onDirtyChange,
+  onRegisterSave,
 }: WizardVariantTabProps) => {
   const [values, setValues] = useState<ProductVariant>(initialValues ?? getDefaultVariantValues())
   const [error, setError] = useState('')
@@ -35,13 +42,14 @@ const WizardVariantTab = ({
     if (initialValues) setValues(initialValues)
   }, [initialValues])
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  useTabDirty(values, initialValues, onDirtyChange)
+
+  const saveVariant = useCallback(async (): Promise<boolean> => {
     setError('')
 
     if (!values.productId.trim() || !values.name.trim()) {
       setError('Vui lòng chọn sản phẩm và nhập tên biến thể')
-      return
+      return false
     }
 
     const payload = {
@@ -63,15 +71,26 @@ const WizardVariantTab = ({
         await updateProductVariant(values.id, payload)
         onSaved(values.id, payload.productId)
       }
+      return true
     } catch (err) {
       setError(getErrorMessage(err, 'Không lưu được biến thể'))
+      return false
     } finally {
       onSavingChange(false)
     }
+  }, [values, isNew, onSaved, onSavingChange])
+
+  useEffect(() => {
+    onRegisterSave?.(saveVariant)
+  }, [onRegisterSave, saveVariant])
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    void saveVariant()
   }
 
   return (
-    <Form id="esim-wizard-variant-form" onSubmit={(e) => void handleSubmit(e)}>
+    <Form id="esim-wizard-variant-form" onSubmit={handleSubmit}>
       <Row className="g-3">
         <Col lg={8}>
           <Card className="border shadow-none h-100">
@@ -82,7 +101,7 @@ const WizardVariantTab = ({
               </div>
               <Row className="g-3">
                 <Col xs={12}>
-                  <Form.Label className="fw-semibold">Sản phẩm *</Form.Label>
+                  <Form.Label className="fw-semibold">Sản phẩm <RequiredMark /></Form.Label>
                   <Form.Select
                     value={values.productId}
                     disabled={!isNew && Boolean(values.id)}
@@ -97,7 +116,7 @@ const WizardVariantTab = ({
                   </Form.Select>
                 </Col>
                 <Col md={6}>
-                  <Form.Label className="fw-semibold">Tên biến thể *</Form.Label>
+                  <Form.Label className="fw-semibold">Tên biến thể <RequiredMark /></Form.Label>
                   <Form.Control
                     value={values.name}
                     placeholder="VD: 1GB / 1 ngày"
@@ -146,11 +165,11 @@ const WizardVariantTab = ({
               <h5 className="mb-3 fw-semibold">Cài đặt hiển thị</h5>
               <div className="mb-3">
                 <Form.Label className="fw-semibold">Thứ tự sắp xếp</Form.Label>
-                <Form.Control
-                  type="number"
+                <NumberFormControl
                   min={0}
                   value={values.sortOrder}
-                  onChange={(e) => setValues((p) => ({ ...p, sortOrder: Number(e.target.value) }))}
+                  emptyWhenZero={false}
+                  onChange={(sortOrder) => setValues((p) => ({ ...p, sortOrder }))}
                 />
               </div>
               <div>

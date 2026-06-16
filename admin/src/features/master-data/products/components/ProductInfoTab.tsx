@@ -7,6 +7,7 @@ import type { CatalogProduct } from '@/features/master-data/products/types'
 import type { Country } from '@/features/master-data/types'
 import type { FormFieldOption } from '@/modules/crud/form/types'
 import { slugify } from '@/modules/crud/form/slugify'
+import RequiredMark from '@/components/form/RequiredMark'
 
 const SHORT_DESC_MAX = 255
 const DETAIL_DESC_MAX = 2000
@@ -99,7 +100,7 @@ const ProductInfoTab = ({
               <h5 className="mb-3 fw-semibold">Thông tin cơ bản</h5>
               <Row className="g-3">
                 <Col xs={12}>
-                  <Form.Label className="fw-semibold">Tên sản phẩm *</Form.Label>
+                  <Form.Label className="fw-semibold">Tên sản phẩm <RequiredMark /></Form.Label>
                   <Form.Control
                     value={values.name}
                     placeholder="VD: eSIM Nhật Bản"
@@ -115,7 +116,7 @@ const ProductInfoTab = ({
                   />
                 </Col>
                 <Col xs={12}>
-                  <Form.Label className="fw-semibold">Slug *</Form.Label>
+                  <Form.Label className="fw-semibold">Slug <RequiredMark /></Form.Label>
                   <Form.Control
                     value={values.slug}
                     placeholder="esim-nhat-ban"
@@ -124,7 +125,7 @@ const ProductInfoTab = ({
                   />
                 </Col>
                 <Col md={6}>
-                  <Form.Label className="fw-semibold">Danh mục *</Form.Label>
+                  <Form.Label className="fw-semibold">Danh mục <RequiredMark /></Form.Label>
                   <Form.Select
                     value={values.categoryId}
                     onChange={(e) => setValues((p) => ({ ...p, categoryId: e.target.value }))}

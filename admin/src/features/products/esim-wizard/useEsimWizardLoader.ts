@@ -4,7 +4,6 @@ import { fetchProductPrices } from '@/apis/productPricesApi'
 import { fetchProductDetail, fetchProductsPage } from '@/apis/productsApi'
 import { fetchProductVariants } from '@/apis/productVariantsApi'
 import type { ProductPriceRow, ProductVariant } from '@/features/master-data/products/types'
-import { fetchCountries } from '@/apis/countriesApi'
 import { fetchEsimPackageDetail, fetchEsimPackagesPage } from '@/apis/esimPackagesApi'
 import { fetchVariantFeatures } from '@/apis/productVariantFeaturesApi'
 import type { EsimPackage } from '@/features/products/esim-packages/types'
@@ -97,15 +96,6 @@ function mapProductOptions(items: { id: string; name: string }[]): FormFieldOpti
   return items.map((p) => ({ value: p.id, label: p.name }))
 }
 
-function mapCountryOptions(
-  countries: Awaited<ReturnType<typeof fetchCountries>>,
-): FormFieldOption[] {
-  return countries.map((c) => ({
-    value: c.id,
-    label: c.isoCode ? `${c.isoCode} — ${c.name}` : c.name,
-  }))
-}
-
 function variantFromPackage(pkg: EsimPackage, variantId: string): ProductVariant {
   return {
     id: variantId,
@@ -130,7 +120,6 @@ export function useEsimWizardLoader({
   const [isLoading, setIsLoading] = useState(!isNew)
   const [bootstrapReady, setBootstrapReady] = useState(isNew)
   const [productOptions, setProductOptions] = useState<FormFieldOption[]>([])
-  const [countryOptions, setCountryOptions] = useState<FormFieldOption[]>([])
 
   const [productId, setProductId] = useState('')
   const [variant, setVariant] = useState<ProductVariant | null>(null)
@@ -212,19 +201,21 @@ export function useEsimWizardLoader({
   const applyBootstrapSnapshot = useCallback((snapshot: WizardBootstrapSnapshot) => {
     setProductId(snapshot.productId)
     setVariant(snapshot.variant)
-    setProductName(snapshot.productName)
-    setPrice(snapshot.price)
-    setEsimPackage(snapshot.esimPackage)
-    setPackageForm(snapshot.packageForm)
-    setSelectedCarrierIds(snapshot.selectedCarrierIds)
-    setProviderName(snapshot.providerName)
-    setDefaultCountryId(snapshot.defaultCountryId)
-    setFeatureCount(snapshot.featureCount)
+    if (snapshot.productName) setProductName(snapshot.productName)
+    setPrice((prev) => snapshot.price ?? prev)
+    setEsimPackage((prev) => snapshot.esimPackage ?? prev)
+    setPackageForm((prev) => snapshot.packageForm ?? prev)
+    if (snapshot.selectedCarrierIds.length > 0) setSelectedCarrierIds(snapshot.selectedCarrierIds)
+    if (snapshot.providerName) setProviderName(snapshot.providerName)
+    if (snapshot.defaultCountryId) setDefaultCountryId(snapshot.defaultCountryId)
+    if (snapshot.featureCount > 0) setFeatureCount(snapshot.featureCount)
 
-    const tabs = getWizardLoadedTabs(variantId ?? '')
-    tabs.clear()
-    snapshot.loadedTabs.forEach((tab) => tabs.add(tab))
-    loadedTabsRef.current = tabs
+    if (snapshot.loadedTabs.length > 0) {
+      const tabs = getWizardLoadedTabs(variantId ?? '')
+      tabs.clear()
+      snapshot.loadedTabs.forEach((tab) => tabs.add(tab))
+      loadedTabsRef.current = tabs
+    }
   }, [variantId])
 
   const fetchReviewBootstrapSnapshot = useCallback(
@@ -298,14 +289,20 @@ export function useEsimWizardLoader({
       }
       if (!pId) return emptySnapshot()
 
-      const variants = await fetchProductVariants(pId)
+      const [variants, prices] = await Promise.all([
+        fetchProductVariants(pId),
+        fetchProductPrices({ productVariantId: vId }),
+      ])
       const found = variants.find((v) => v.id === vId) ?? null
       if (!found) return emptySnapshot()
 
+      const price = prices[0] ?? null
       return {
         ...emptySnapshot(),
         productId: pId,
         variant: found,
+        price,
+        loadedTabs: price ? (['prices'] as EsimWizardTab[]) : [],
       }
     },
     [productIdParam],
@@ -321,14 +318,6 @@ export function useEsimWizardLoader({
   const loadPackageTab = useCallback(async () => {
     const vId = variantId
     const pId = productIdRef.current
-
-    try {
-      const countries = await fetchCountries()
-      setCountryOptions(mapCountryOptions(countries))
-    } catch {
-      setCountryOptions([])
-    }
-
     if (!vId || !pId) return
 
     const pkg = await loadPackageDetail()
@@ -407,6 +396,8 @@ export function useEsimWizardLoader({
     if (variantId) clearBootstrapCacheForVariant(variantId)
   }, [variantId])
 
+  const bootstrapMode: 'review' | 'core' = activeTab === 'review' ? 'review' : 'core'
+
   useEffect(() => {
     if (isNew) {
       let active = true
@@ -426,11 +417,10 @@ export function useEsimWizardLoader({
     let active = true
     const isActive = () => active
 
-    const mode = activeTab === 'review' ? 'review' : 'core'
-    const cacheKey = buildBootstrapKey(variantId, productIdParam, packageIdParam, mode)
+    const cacheKey = buildBootstrapKey(variantId, productIdParam, packageIdParam, bootstrapMode)
 
     const fetchSnapshot = () =>
-      mode === 'review'
+      bootstrapMode === 'review'
         ? fetchReviewBootstrapSnapshot(variantId)
         : fetchVariantBootstrapSnapshot(variantId)
 
@@ -464,7 +454,7 @@ export function useEsimWizardLoader({
     variantId,
     productIdParam,
     packageIdParam,
-    activeTab,
+    bootstrapMode,
     loadProductOptions,
     applyBootstrapSnapshot,
     fetchReviewBootstrapSnapshot,
@@ -479,9 +469,9 @@ export function useEsimWizardLoader({
   return {
     isLoading,
     productOptions,
-    countryOptions,
     productId,
     variant,
+    setVariant,
     price,
     setPrice,
     packageForm,

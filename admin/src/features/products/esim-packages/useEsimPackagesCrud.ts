@@ -14,11 +14,6 @@ import type { EsimPackageTableHandlers } from '@/features/products/esim-packages
 import * as esimPackagesApi from '@/apis/esimPackagesApi'
 import { fetchProductPrices } from '@/apis/productPricesApi'
 import type { ProductPriceRow } from '@/features/master-data/products/types'
-import {
-  fetchEsimFilterOptions,
-  fetchEsimPackageLookups,
-  type EsimPackageLookups,
-} from '@/apis/esimPackageLookupsApi'
 import type { EsimPackage } from '@/features/products/esim-packages/types'
 import {
   mapPackageToForm,
@@ -28,7 +23,6 @@ import {
   activeFilterToBool,
   type ActiveFilterValue,
 } from '@/modules/crud/components/ActiveFilterSelect'
-import type { FormFieldOption } from '@/modules/crud/form/types'
 
 type UseEsimPackagesCrudParams = {
   buildColumns: (handlers: EsimPackageTableHandlers) => ColumnDef<EsimPackage>[]
@@ -46,12 +40,6 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
   const [priceByVariantId, setPriceByVariantId] = useState<Map<string, ProductPriceRow>>(new Map())
   const [totalCount, setTotalCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
-  const [filterOptions, setFilterOptions] = useState<Pick<EsimPackageLookups, 'countryOptions' | 'carrierOptions'>>({
-    countryOptions: [],
-    carrierOptions: [],
-  })
-  const [variantFilterOptions, setVariantFilterOptions] = useState<FormFieldOption[]>([])
-  const [filtersReady, setFiltersReady] = useState(false)
   const [countryFilter, setCountryFilter] = useState('')
   const [carrierFilter, setCarrierFilter] = useState('')
   const [variantFilter, setVariantFilter] = useState('')
@@ -82,15 +70,6 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
   notifyErrorRef.current = notifyError
 
   const loadSeqRef = useRef(0)
-
-  useEffect(() => {
-    void fetchEsimFilterOptions()
-      .then(setFilterOptions)
-      .catch((e) => {
-        notifyErrorRef.current(getErrorMessage(e, 'Không tải được bộ lọc'))
-      })
-      .finally(() => setFiltersReady(true))
-  }, [])
 
   const listFilters = useMemo(
     () => ({
@@ -183,13 +162,13 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
   }, [])
 
   const openCreate = useCallback(() => {
-    navigate('/products/esim/wizard/new')
+    navigate('/products/esim/wizard/new?setup=1')
   }, [navigate])
 
   const openEdit = useCallback(
     (row: EsimPackage) => {
       navigate(
-        `/products/esim/wizard/${row.productVariantId}?productId=${row.productId}&packageId=${row.id}`,
+        `/products/esim/wizard/${row.productVariantId}?tab=packages&productId=${row.productId}&packageId=${row.id}`,
       )
     },
     [navigate],
@@ -260,16 +239,6 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
     setPagination((p) => ({ ...p, pageIndex: 0 }))
   }, [])
 
-  const loadVariantFilterOptions = useCallback(async () => {
-    if (variantFilterOptions.length > 0) return
-    try {
-      const loaded = await fetchEsimPackageLookups()
-      setVariantFilterOptions(loaded.productVariantOptions)
-    } catch (e) {
-      notifyError(getErrorMessage(e, 'Không tải được biến thể'))
-    }
-  }, [variantFilterOptions.length, notifyError])
-
   const paginationInfo = useMemo(() => {
     const { pageIndex, pageSize: size } = pagination
     if (totalCount === 0) return { start: 0, end: 0, total: 0 }
@@ -336,9 +305,6 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
     openCreate,
     openView,
     isLoading,
-    filtersReady,
-    filterOptions,
-    variantFilterOptions,
     countryFilter,
     setCountryFilter: setCountryFilterAndReset,
     carrierFilter,
@@ -347,7 +313,6 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
     setVariantFilter: setVariantFilterAndReset,
     activeFilter,
     setActiveFilter: setActiveFilterAndReset,
-    loadVariantFilterOptions,
     reload,
   }
 }

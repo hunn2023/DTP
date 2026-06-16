@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Button, Col, Form, Modal, ModalBody, ModalFooter, ModalHeader, ModalTitle, Row } from 'react-bootstrap'
 
+import RequiredMark from '@/components/form/RequiredMark'
 import { getFieldLabel } from '@/modules/crud/entities/fieldLabels'
 import type { FormFieldConfig, FormModalMode } from '@/modules/crud/form/types'
 function resolveLabel<T>(field: FormFieldConfig<T>): string {
@@ -217,7 +218,7 @@ const EntityFormModal = <T extends { isActive: boolean }>({
                 {field.type !== 'checkbox' && (
                   <Form.Label className="fw-semibold">
                     {resolveLabel(field)}
-                    {field.required && <span className="text-danger ms-1">*</span>}
+                    {field.required && <RequiredMark />}
                   </Form.Label>
                 )}
                 <FormFieldInput

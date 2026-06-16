@@ -17,19 +17,14 @@ const STEP_ICONS = [TbPackage, TbCurrencyDollar, TbDeviceMobile, TbRadio, TbList
 
 type EsimWizardStepperProps = {
   activeTab: EsimWizardTab
-  canAccessSubTabs: boolean
+  canAccessTab: (tab: EsimWizardTab) => boolean
   onStepChange: (tab: EsimWizardTab) => void
   className?: string
 }
 
-function isStepDisabled(key: EsimWizardTab, canAccessSubTabs: boolean): boolean {
-  if (key === 'variants') return false
-  return !canAccessSubTabs
-}
-
 const EsimWizardStepper = ({
   activeTab,
-  canAccessSubTabs,
+  canAccessTab,
   onStepChange,
   className,
 }: EsimWizardStepperProps) => {
@@ -43,7 +38,7 @@ const EsimWizardStepper = ({
   }, [activeTab, activeIndex, activeStep, goToStep])
 
   const handleGoToStep = (key: EsimWizardTab) => {
-    if (isStepDisabled(key, canAccessSubTabs)) return
+    if (!canAccessTab(key)) return
     onStepChange(key)
   }
 
@@ -51,7 +46,7 @@ const EsimWizardStepper = ({
     <ul className={clsx('nav nav-tabs wizard-tabs mb-3', className)}>
       {ESIM_WIZARD_STEPS.map((step, index) => {
         const Icon = STEP_ICONS[index]
-        const disabled = isStepDisabled(step.key, canAccessSubTabs)
+        const disabled = !canAccessTab(step.key)
 
         return (
           <li key={step.key} className="nav-item">

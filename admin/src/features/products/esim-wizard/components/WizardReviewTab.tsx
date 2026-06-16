@@ -5,14 +5,14 @@ import type { EsimWizardSummary } from '@/features/products/esim-wizard/types'
 
 type WizardReviewTabProps = {
   summary: EsimWizardSummary
-  isNew: boolean
+  isSetupFlow: boolean
 }
 
 function formatPrice(value: number, currency: string): string {
   return `${value.toLocaleString('vi-VN')} ${currency}`
 }
 
-const WizardReviewTab = ({ summary, isNew }: WizardReviewTabProps) => {
+const WizardReviewTab = ({ summary, isSetupFlow }: WizardReviewTabProps) => {
   const items = [
     ['Sản phẩm', summary.productName || '-'],
     ['Biến thể', summary.variantName || '-'],
@@ -24,7 +24,7 @@ const WizardReviewTab = ({ summary, isNew }: WizardReviewTabProps) => {
 
   return (
     <div>
-      {isNew && (
+      {isSetupFlow && (
         <Alert variant="primary" className="mb-3">
           Đã tạo gói eSIM thành công. Bạn có thể kiểm tra lại thông tin hoặc quay về danh sách.
         </Alert>

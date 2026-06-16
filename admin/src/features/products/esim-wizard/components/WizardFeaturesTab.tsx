@@ -15,7 +15,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert, Button, Card, Form, Spinner } from 'react-bootstrap'
 import { LuGripVertical, LuPlus, LuX } from 'react-icons/lu'
 
@@ -37,6 +37,7 @@ type WizardFeaturesTabProps = {
   variantId: string
   onRegisterSave: (fn: () => Promise<boolean>) => void
   onSavingChange: (saving: boolean) => void
+  onDirtyChange?: (dirty: boolean) => void
 }
 
 function createClientId(): string {
@@ -94,13 +95,37 @@ function SortableFeatureRow({ item, canRemove, onTextChange, onRemove }: Sortabl
   )
 }
 
-const WizardFeaturesTab = ({ variantId, onRegisterSave, onSavingChange }: WizardFeaturesTabProps) => {
+const WizardFeaturesTab = ({
+  variantId,
+  onRegisterSave,
+  onSavingChange,
+  onDirtyChange,
+}: WizardFeaturesTabProps) => {
   const [items, setItems] = useState<FeatureDraft[]>([
     { clientId: createClientId(), text: '', sortOrder: 1 },
   ])
   const [removedIds, setRemovedIds] = useState<string[]>([])
+  const [savedSnapshot, setSavedSnapshot] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const serializeItems = (rows: FeatureDraft[]) =>
+    JSON.stringify(
+      rows.map((item) => ({
+        id: item.id ?? '',
+        text: item.text.trim(),
+        sortOrder: item.sortOrder,
+      })),
+    )
+
+  const onDirtyChangeRef = useRef(onDirtyChange)
+  onDirtyChangeRef.current = onDirtyChange
+
+  useEffect(() => {
+    const dirty =
+      removedIds.length > 0 || (savedSnapshot !== '' && serializeItems(items) !== savedSnapshot)
+    onDirtyChangeRef.current?.(dirty)
+  }, [items, removedIds, savedSnapshot])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -124,6 +149,14 @@ const WizardFeaturesTab = ({ variantId, onRegisterSave, onSavingChange }: Wizard
               sortOrder: f.sortOrder,
             })),
         )
+        setSavedSnapshot(
+          JSON.stringify(
+            features
+              .sort((a, b) => a.sortOrder - b.sortOrder)
+              .map((f) => ({ id: f.id, text: f.text.trim(), sortOrder: f.sortOrder })),
+          ),
+        )
+        setRemovedIds([])
       })
       .finally(() => {
         if (active) setIsLoading(false)
@@ -184,6 +217,22 @@ const WizardFeaturesTab = ({ variantId, onRegisterSave, onSavingChange }: Wizard
           })
         }
       }
+
+      const features = await fetchVariantFeatures(variantId)
+      const rows =
+        features.length > 0
+          ? features
+              .sort((a, b) => a.sortOrder - b.sortOrder)
+              .map((f) => ({
+                clientId: f.id,
+                id: f.id,
+                text: f.text,
+                sortOrder: f.sortOrder,
+              }))
+          : [{ clientId: createClientId(), text: '', sortOrder: 1 }]
+      setItems(rows)
+      setRemovedIds([])
+      setSavedSnapshot(serializeItems(rows))
       return true
     } catch (err) {
       setError(getErrorMessage(err, 'Không lưu được tính năng'))

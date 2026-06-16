@@ -8,6 +8,7 @@ import { usePageFormPage } from '@/features/content/pages/usePageFormPage'
 import RichHtmlEditor from '@/features/content/shared/RichHtmlEditor'
 import { CONTENT_STATUS_OPTIONS } from '@/features/content/shared/contentStatus'
 import { APP_NAME } from '@/shared/config/brand'
+import RequiredMark from '@/components/form/RequiredMark'
 
 const PageFormPage = () => {
   const form = usePageFormPage()
@@ -62,7 +63,7 @@ const PageFormPage = () => {
             <Row className="g-3 align-items-end">
               {form.isNew ? (
                 <Col md={3}>
-                  <Form.Label className="fw-semibold">Mã trang *</Form.Label>
+                  <Form.Label className="fw-semibold">Mã trang <RequiredMark /></Form.Label>
                   <Form.Control
                     value={form.values.code}
                     onChange={(e) => form.updateField('code', e.target.value)}
@@ -70,7 +71,7 @@ const PageFormPage = () => {
                 </Col>
               ) : null}
               <Col md={form.isNew ? 6 : 9}>
-                <Form.Label className="fw-semibold">Tiêu đề *</Form.Label>
+                <Form.Label className="fw-semibold">Tiêu đề <RequiredMark /></Form.Label>
                 <Form.Control
                   value={form.values.title}
                   onChange={(e) => form.updateField('title', e.target.value)}
@@ -98,7 +99,7 @@ const PageFormPage = () => {
 
             <Row className="g-3 mt-1">
               <Col md={6}>
-                <Form.Label className="fw-semibold">Slug *</Form.Label>
+                <Form.Label className="fw-semibold">Slug <RequiredMark /></Form.Label>
                 <Form.Control
                   value={form.values.slug}
                   onChange={(e) => form.updateField('slug', e.target.value)}

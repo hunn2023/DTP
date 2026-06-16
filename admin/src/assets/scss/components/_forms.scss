@@ -10,6 +10,11 @@
     }
 }
 
+.form-label .required-mark,
+.form-label .text-danger {
+    color: $danger !important;
+}
+
 // Form Control Small
 .form-control-sm {
     line-height: normal;

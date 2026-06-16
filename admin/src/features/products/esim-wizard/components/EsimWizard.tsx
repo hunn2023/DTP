@@ -9,7 +9,7 @@ import type { EsimWizardTab } from '@/features/products/esim-wizard/types'
 type EsimWizardProps = {
   title: string
   activeTab: EsimWizardTab
-  canAccessSubTabs: boolean
+  canAccessTab: (tab: EsimWizardTab) => boolean
   onStepChange: (tab: EsimWizardTab) => void
   variantStep: ReactNode
   priceStep: ReactNode
@@ -26,7 +26,7 @@ const EsimWizardStep = ({ children }: { children: ReactNode }) => {
 const EsimWizard = ({
   title,
   activeTab,
-  canAccessSubTabs,
+  canAccessTab,
   onStepChange,
   variantStep,
   priceStep,
@@ -44,7 +44,7 @@ const EsimWizard = ({
             <div className="col-md-4">
               <EsimWizardStepper
                 activeTab={activeTab}
-                canAccessSubTabs={canAccessSubTabs}
+                canAccessTab={canAccessTab}
                 onStepChange={onStepChange}
                 className="flex-column wizard-bordered wizard-tabs nav-pills"
               />

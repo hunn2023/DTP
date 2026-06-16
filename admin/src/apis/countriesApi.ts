@@ -126,6 +126,16 @@ export async function fetchAdminCountries(
   return normalizePaged(data, normalizeDto)
 }
 
+export async function fetchCountryById(id: string): Promise<Country | null> {
+  if (!id) return null
+  try {
+    const data = await httpGet<Raw>(`${API_PATHS.adminCountries}/${id}`)
+    return mapDto(normalizeDto(data))
+  } catch {
+    return null
+  }
+}
+
 export async function createCountry(payload: CountryCreatePayload): Promise<string> {
   const id = await httpPost<unknown>(API_PATHS.adminCountries, payload)
   invalidateCountriesCache()
