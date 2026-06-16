@@ -50,7 +50,7 @@ namespace DTP.Modules.Provider.Infrastructure.Configurations
                 .IsRequired();
 
             builder.Property(x => x.ErrorMessage)
-                .HasMaxLength(2000);
+    .HasColumnType("nvarchar(max)");
 
             builder.Property(x => x.RawPackageJson)
                 .HasColumnType("nvarchar(max)")

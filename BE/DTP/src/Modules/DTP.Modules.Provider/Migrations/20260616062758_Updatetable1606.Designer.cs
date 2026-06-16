@@ -4,6 +4,7 @@ using DTP.Modules.Provider.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DTP.Modules.Provider.Migrations
 {
     [DbContext(typeof(ProviderDbContext))]
-    partial class ProviderDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260616062758_Updatetable1606")]
+    partial class Updatetable1606
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
