@@ -2,6 +2,9 @@
 using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Domain.Entities;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using System.Text;
 
 namespace DTP.Modules.Catalog.Infrastructure.Services
 {
@@ -37,14 +40,16 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         }
 
         public async Task<ProvisionProviderEsimProductResult> ProvisionProviderEsimProductAsync(
-     ProvisionProviderEsimProductRequest request,
-     CancellationToken cancellationToken = default)
+    ProvisionProviderEsimProductRequest request,
+    CancellationToken cancellationToken = default)
         {
             try
             {
                 ValidateRequest(request);
 
-                var mainCountry = await EnsureMainCountryAsync(request, cancellationToken);
+                var mainCountry = await EnsureMainCountryAsync(
+                    request,
+                    cancellationToken);
 
                 var product = await EnsureProductAsync(
                     request,
@@ -91,10 +96,74 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             catch (Exception ex)
             {
                 throw new InvalidOperationException(
-                    $"Provision sản phẩm eSIM từ provider thất bại. ProviderCode: {request?.ProviderCode}, SKU: {request?.ProviderSku}. Chi tiết: {ex.Message}",
+                    BuildProvisionExceptionMessage(request, ex),
                     ex);
             }
         }
+
+
+        private static string BuildProvisionExceptionMessage(
+            ProvisionProviderEsimProductRequest request,
+            Exception ex)
+        {
+            var sb = new StringBuilder();
+
+            sb.AppendLine("Provision sản phẩm eSIM từ provider thất bại.");
+            sb.AppendLine($"ProviderCode: {request?.ProviderCode}");
+            sb.AppendLine($"SKU: {request?.ProviderSku}");
+            sb.AppendLine($"ProductName: {request?.ProductName}");
+            sb.AppendLine($"ExceptionType: {ex.GetType().FullName}");
+            sb.AppendLine($"Message: {ex.Message}");
+
+            if (ex is DbUpdateException dbEx)
+            {
+                sb.AppendLine("DbUpdateException:");
+
+                foreach (var entry in dbEx.Entries)
+                {
+                    sb.AppendLine($"- Entity: {entry.Entity.GetType().Name}");
+                    sb.AppendLine($"  State: {entry.State}");
+                }
+            }
+
+            var inner = ex.InnerException;
+            var level = 1;
+
+            while (inner != null)
+            {
+                sb.AppendLine($"InnerException Level {level}:");
+                sb.AppendLine($"Type: {inner.GetType().FullName}");
+                sb.AppendLine($"Message: {inner.Message}");
+
+                if (inner is SqlException sqlEx)
+                {
+                    sb.AppendLine("SqlException Details:");
+                    sb.AppendLine($"Number: {sqlEx.Number}");
+                    sb.AppendLine($"State: {sqlEx.State}");
+                    sb.AppendLine($"Class: {sqlEx.Class}");
+                    sb.AppendLine($"Server: {sqlEx.Server}");
+                    sb.AppendLine($"Procedure: {sqlEx.Procedure}");
+                    sb.AppendLine($"LineNumber: {sqlEx.LineNumber}");
+
+                    foreach (SqlError error in sqlEx.Errors)
+                    {
+                        sb.AppendLine($"SQL Error:");
+                        sb.AppendLine($"  Number: {error.Number}");
+                        sb.AppendLine($"  State: {error.State}");
+                        sb.AppendLine($"  Class: {error.Class}");
+                        sb.AppendLine($"  Message: {error.Message}");
+                        sb.AppendLine($"  Procedure: {error.Procedure}");
+                        sb.AppendLine($"  LineNumber: {error.LineNumber}");
+                    }
+                }
+
+                inner = inner.InnerException;
+                level++;
+            }
+
+            return sb.ToString();
+        }
+
 
         public async Task ActivateProviderProvisionedProductAsync(
             Guid productId,
