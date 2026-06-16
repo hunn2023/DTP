@@ -425,7 +425,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             {
                 existing.Update(
                     name: request.VariantName,
-                    slug: GenerateSlug($"{request.ProductName}-{request.VariantName}"),
+                    slug: GenerateSlug($"{request.ProviderCode}-{request.ProviderSku}"),
                     dataAmount: request.DataAmount,
                     dataUnit: request.DataUnit ?? "GB",
                     validityDays: request.ValidityDays,
@@ -451,7 +451,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 providerId: request.ProviderId,
                 countryId: countryId,
                 name: request.VariantName,
-                slug: GenerateSlug($"{request.ProductName}-{request.VariantName}"),
+                slug: GenerateSlug($"{request.ProviderCode}-{request.ProviderSku}"),
                 providerPackageCode: providerPackageCode,
                 dataAmount: request.DataAmount,
                 dataUnit: request.DataUnit ?? "GB",
