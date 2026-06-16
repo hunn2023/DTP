@@ -28,4 +28,24 @@ namespace DTP.Modules.Catalog.Application.DTOs
 
         public bool IsFeatured { get; set; }
     }
+
+    public class HomeEsimCountryProductDto
+    {
+        public Guid CountryId { get; set; }
+        public string CountryName { get; set; } = default!;
+        public string CountrySlug { get; set; } = default!;
+        public string? FlagUrl { get; set; }
+
+        public Guid ProductId { get; set; }
+        public string ProductName { get; set; } = default!;
+        public string ProductSlug { get; set; } = default!;
+        public string? LocationText { get; set; }
+        public string? ThumbnailUrl { get; set; }
+
+        public decimal PriceFrom { get; set; }
+        public string Currency { get; set; } = "VND";
+
+        public bool IsHot { get; set; }
+        public bool IsFeatured { get; set; }
+    }
 }

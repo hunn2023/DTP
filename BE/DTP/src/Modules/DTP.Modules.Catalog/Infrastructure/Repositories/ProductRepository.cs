@@ -576,62 +576,139 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             };
         }
 
-
-
-        public async Task<List<HomeEsimProductDto>> GetHomeEsimProductsAsync(
-         CancellationToken cancellationToken = default)
+        public async Task<List<HomeEsimCountryProductDto>> GetHomeEsimProductsAsync(
+                CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
 
-            var items = await _context.Products
-                .AsNoTracking()
-                .Where(x => x.IsActive && !x.IsDeleted)
-                .Where(x => x.IsFeatured || x.IsHot)
-                .OrderByDescending(x => x.IsHot)
-                .ThenBy(x => x.SortOrder)
-                .ThenBy(x => x.Name)
-                .Select(x => new HomeEsimProductDto
+            var query =
+                from product in _context.Products.AsNoTracking()
+                where product.IsActive
+                      && !product.IsDeleted
+                      && product.CountryId != null
+                      && (product.IsFeatured || product.IsHot)
+
+                from price in _context.ProductPrices.AsNoTracking()
+                    .Where(p =>
+                        p.ProductId == product.Id &&
+                        p.IsActive &&
+                        p.SalePrice > 0 &&
+                        (p.StartDate == null || p.StartDate <= now) &&
+                        (p.EndDate == null || p.EndDate >= now))
+
+                select new
                 {
-                    Id = x.Id,
-                    Name = x.Name,
-                    Slug = x.Slug,
+                    CountryId = product.Country!.Id,
+                    CountryName = product.Country.Name,
+                    CountrySlug = product.Country.Slug,
+                    FlagUrl = product.Country.FlagUrl,
+
+                    ProductId = product.Id,
+                    ProductName = product.Name,
+                    ProductSlug = product.Slug,
+                    product.LocationText,
+                    product.ThumbnailUrl,
+                    product.IsHot,
+                    product.IsFeatured,
+                    product.SortOrder,
+
+                    PriceFrom = price.SalePrice,
+                    Currency = price.Currency
+                };
+
+            var items = await query
+                .GroupBy(x => new
+                {
+                    x.CountryId,
+                    x.CountryName,
+                    x.CountrySlug,
+                    x.FlagUrl
+                })
+                .Select(g => g
+                    .OrderBy(x => x.PriceFrom)
+                    .ThenByDescending(x => x.IsHot)
+                    .ThenBy(x => x.SortOrder)
+                    .ThenBy(x => x.ProductName)
+                    .First())
+                .OrderBy(x => x.CountryName)
+                .Take(10)
+                .Select(x => new HomeEsimCountryProductDto
+                {
+                    CountryId = x.CountryId,
+                    CountryName = x.CountryName,
+                    CountrySlug = x.CountrySlug,
+                    FlagUrl = x.FlagUrl,
+
+                    ProductId = x.ProductId,
+                    ProductName = x.ProductName,
+                    ProductSlug = x.ProductSlug,
                     LocationText = x.LocationText,
                     ThumbnailUrl = x.ThumbnailUrl,
 
-                    FlagUrl = x.Country != null
-                        ? x.Country.FlagUrl
-                        : null,
+                    PriceFrom = x.PriceFrom,
+                    Currency = x.Currency ?? "VND",
 
                     IsHot = x.IsHot,
-                    IsFeatured = x.IsFeatured,
-
-                    PriceFrom = _context.ProductPrices
-                        .Where(p =>
-                            p.ProductId == x.Id &&
-                            p.IsActive &&
-                            p.SalePrice > 0 &&
-                            (p.StartDate == null || p.StartDate <= now) &&
-                            (p.EndDate == null || p.EndDate >= now))
-                        .OrderBy(p => p.SalePrice)
-                        .Select(p => p.SalePrice)
-                        .FirstOrDefault(),
-
-                    Currency = _context.ProductPrices
-                        .Where(p =>
-                            p.ProductId == x.Id &&
-                            p.IsActive &&
-                            p.SalePrice > 0 &&
-                            (p.StartDate == null || p.StartDate <= now) &&
-                            (p.EndDate == null || p.EndDate >= now))
-                        .OrderBy(p => p.SalePrice)
-                        .Select(p => p.Currency)
-                        .FirstOrDefault() ?? "VND"
+                    IsFeatured = x.IsFeatured
                 })
-                .Where(x => x.PriceFrom > 0)
-                .Take(10)
                 .ToListAsync(cancellationToken);
 
             return items;
         }
+        //public async Task<List<HomeEsimProductDto>> GetHomeEsimProductsAsync(
+        // CancellationToken cancellationToken = default)
+        //{
+        //    var now = DateTime.UtcNow;
+
+        //    var items = await _context.Products
+        //        .AsNoTracking()
+        //        .Where(x => x.IsActive && !x.IsDeleted)
+        //        .Where(x => x.IsFeatured || x.IsHot)
+        //        .OrderByDescending(x => x.IsHot)
+        //        .ThenBy(x => x.SortOrder)
+        //        .ThenBy(x => x.Name)
+        //        .Select(x => new HomeEsimProductDto
+        //        {
+        //            Id = x.Id,
+        //            Name = x.Name,
+        //            Slug = x.Slug,
+        //            LocationText = x.LocationText,
+        //            ThumbnailUrl = x.ThumbnailUrl,
+
+        //            FlagUrl = x.Country != null
+        //                ? x.Country.FlagUrl
+        //                : null,
+
+        //            IsHot = x.IsHot,
+        //            IsFeatured = x.IsFeatured,
+
+        //            PriceFrom = _context.ProductPrices
+        //                .Where(p =>
+        //                    p.ProductId == x.Id &&
+        //                    p.IsActive &&
+        //                    p.SalePrice > 0 &&
+        //                    (p.StartDate == null || p.StartDate <= now) &&
+        //                    (p.EndDate == null || p.EndDate >= now))
+        //                .OrderBy(p => p.SalePrice)
+        //                .Select(p => p.SalePrice)
+        //                .FirstOrDefault(),
+
+        //            Currency = _context.ProductPrices
+        //                .Where(p =>
+        //                    p.ProductId == x.Id &&
+        //                    p.IsActive &&
+        //                    p.SalePrice > 0 &&
+        //                    (p.StartDate == null || p.StartDate <= now) &&
+        //                    (p.EndDate == null || p.EndDate >= now))
+        //                .OrderBy(p => p.SalePrice)
+        //                .Select(p => p.Currency)
+        //                .FirstOrDefault() ?? "VND"
+        //        })
+        //        .Where(x => x.PriceFrom > 0)
+        //        .Take(10)
+        //        .ToListAsync(cancellationToken);
+
+        //    return items;
+        //}
     }
 }
