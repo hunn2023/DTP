@@ -37,16 +37,14 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         }
 
         public async Task<ProvisionProviderEsimProductResult> ProvisionProviderEsimProductAsync(
-                ProvisionProviderEsimProductRequest request,
-                CancellationToken cancellationToken = default)
+     ProvisionProviderEsimProductRequest request,
+     CancellationToken cancellationToken = default)
         {
             try
             {
                 ValidateRequest(request);
 
-                var mainCountry = await EnsureMainCountryAsync(
-                    request,
-                    cancellationToken);
+                var mainCountry = await EnsureMainCountryAsync(request, cancellationToken);
 
                 var product = await EnsureProductAsync(
                     request,
@@ -90,14 +88,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             {
                 throw;
             }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 throw new InvalidOperationException(
-                    $"Provision sản phẩm eSIM từ provider thất bại. ProviderCode: {request.ProviderCode}, SKU: {request.ProviderSku}",
+                    $"Provision sản phẩm eSIM từ provider thất bại. ProviderCode: {request?.ProviderCode}, SKU: {request?.ProviderSku}. Chi tiết: {ex.Message}",
                     ex);
             }
         }

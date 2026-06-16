@@ -20,7 +20,6 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
         public PeacomProviderClient(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            Console.WriteLine($"[PeacomProviderClient] BaseAddress = {_httpClient.BaseAddress}");
         }
 
        
@@ -91,6 +90,7 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
             if (string.IsNullOrWhiteSpace(provider.ApiKey))
                 throw new InvalidOperationException("Provider chưa cấu hình ApiKey.");
 
+            sku = "BLC-01-CN-chinacom-7days-1gb";
             var request = new HttpRequestMessage(
                   HttpMethod.Get,
                   $"/eip/partner/v2/product/esim?sku={Uri.EscapeDataString(sku)}");
