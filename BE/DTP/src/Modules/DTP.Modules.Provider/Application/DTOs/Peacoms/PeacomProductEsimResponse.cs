@@ -8,6 +8,15 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Provider.Application.DTOs.Peacoms
 {
+
+    public class PeacomProductEsimListResponse
+    {
+        public int Total { get; set; }
+
+        public List<PeacomProductEsimResponse> Items { get; set; } = new();
+    }
+
+
     public class PeacomProductEsimResponse
     {
         [JsonPropertyName("id")]

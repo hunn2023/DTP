@@ -1,4 +1,5 @@
-﻿using DTP.Modules.Provider.Application.Abstractions.Clients;
+﻿using Azure.Core;
+using DTP.Modules.Provider.Application.Abstractions.Clients;
 using DTP.Modules.Provider.Application.DTOs;
 using DTP.Modules.Provider.Application.DTOs.Peacoms;
 using System;
@@ -22,16 +23,24 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
         }
 
         public async Task<IReadOnlyList<ProviderPackageProductRemoteDto>> GetPackageProductsAsync(
-            Domain.Entities.Provider provider,
-            CancellationToken cancellationToken = default)
+                Domain.Entities.Provider provider,
+                CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.GetAsync(
-                "/eip/partner/v2/package-product",
-                cancellationToken);
+            var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                "https://dev-api.peacom.co/eip/partner/v2/product?page=1&size=10");
+
+            request.Headers.Add("apikey", provider.ApiKey);
+
+            var response = await _httpClient.SendAsync(request, cancellationToken);
 
             var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException(
+                    $"Peacom GET PACKAGE PRODUCT thất bại. StatusCode={(int)response.StatusCode}, Body={rawJson}");
+            }
 
             var result = JsonSerializer.Deserialize<PeacomPackageProductResponse>(
                 rawJson,
@@ -49,11 +58,10 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
                 Sku = x.Sku,
                 Name = x.Name,
                 Price = x.Price,
-                CurrencyCode = "VND",
+                Description = x.Description,
+                AvailableQty = x.AvailableQty,
+                Type = x.Type,
                 ImageUrl = x.ImageUrl,
-                //Description = x.Description,
-                //AvailableQty = x.AvailableQty,
-                //Type = x.Type,
                 RawJson = JsonSerializer.Serialize(x)
             }).ToList();
         }
@@ -66,23 +74,43 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
             if (string.IsNullOrWhiteSpace(sku))
                 throw new ArgumentException("SKU không được để trống.", nameof(sku));
 
-            var response = await _httpClient.GetAsync(
-                $"/eip/partner/v2/product-esim/{Uri.EscapeDataString(sku)}",
-                cancellationToken);
+            if (string.IsNullOrWhiteSpace(provider.ApiKey))
+                throw new InvalidOperationException("Provider chưa cấu hình ApiKey.");
+
+            var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"https://dev-api.peacom.co/eip/partner/v2/product/esim?sku={Uri.EscapeDataString(sku)}");
+
+            request.Headers.Add("apikey", provider.ApiKey);
+
+            var response = await _httpClient.SendAsync(request, cancellationToken);
 
             var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException(
+                    $"Peacom GET PRODUCT ESIM thất bại. SKU={sku}, StatusCode={(int)response.StatusCode}, Body={rawJson}");
+            }
 
-            var result = JsonSerializer.Deserialize<PeacomProductEsimResponse>(
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            var listResult = JsonSerializer.Deserialize<PeacomProductEsimListResponse>(
                 rawJson,
-                new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                options);
+
+            var result = listResult?.Items?
+                .FirstOrDefault(x => string.Equals(x.Sku, sku, StringComparison.OrdinalIgnoreCase))
+                ?? listResult?.Items?.FirstOrDefault();
 
             if (result == null)
-                throw new InvalidOperationException($"Không parse được PRODUCT ESIM Peacom. SKU: {sku}");
+            {
+                throw new InvalidOperationException(
+                    $"Peacom PRODUCT ESIM không có dữ liệu. SKU={sku}, Body={rawJson}");
+            }
 
             var extraData = result.ExtraData;
             var operatorInfo = extraData?.Operator;
@@ -91,10 +119,11 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
             var isUnlimited = IsUnlimitedVolume(extraData?.Volume);
 
             var countries = BuildCountries(operatorInfo?.Coverages);
+
             var operators = countries
                 .SelectMany(x => x.Operators)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Distinct()
+                .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
             var coverageType =
@@ -104,42 +133,66 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
             var coverageDescription =
                 operatorInfo?.UsageRange
                 ?? result.Regional
-                ?? extraData?.CountryCode;
+                ?? extraData?.Location;
 
             return new ProviderEsimProductRemoteDto
             {
                 Sku = result.Sku,
+
                 Name = !string.IsNullOrWhiteSpace(extraData?.Title)
                     ? extraData.Title
                     : result.Name,
 
                 Price = result.Price,
+
                 CurrencyCode = string.IsNullOrWhiteSpace(result.CurrencyCode)
                     ? "VND"
                     : result.CurrencyCode,
 
                 DataAmount = dataAmount,
-                DataUnit = isUnlimited ? null : "MB",
+
+                DataUnit = isUnlimited
+                    ? null
+                    : "MB",
+
                 ValidityDays = extraData?.Duration ?? result.Validity,
+
                 IsUnlimited = isUnlimited,
 
                 CoverageType = coverageType,
+
                 CoverageDescription = coverageDescription,
 
-                ActivationPolicy = operatorInfo?.ActivationPolicy
-                    ?? extraData?.ActiveType?.ToString(),
+                ActivationPolicy =
+                    operatorInfo?.ActivationPolicy
+                    ?? MapActivationPolicy(extraData?.ActiveType),
 
                 SpeedPolicy = extraData?.Speed,
 
                 HotspotSupported = true,
+
                 PhoneNumberSupported = false,
+
                 SmsSupported = extraData?.SmsStatus == 1,
+
                 KycRequired = operatorInfo?.IsKycVerify ?? false,
 
                 Countries = countries,
+
                 Operators = operators,
 
                 RawJson = rawJson
+            };
+        }
+
+        private static string? MapActivationPolicy(int? activeType)
+        {
+            return activeType switch
+            {
+                1 => "activate_on_first_use",
+                2 => "activate_on_install",
+                3 => "activate_after_purchase",
+                _ => activeType?.ToString()
             };
         }
 
@@ -327,7 +380,7 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
         }
 
         private static List<ProviderCoverageCountryDto> BuildCountries(
-    List<PeacomCoverageResponse>? coverages)
+                List<PeacomCoverageResponse>? coverages)
         {
             if (coverages == null || coverages.Count == 0)
                 return new List<ProviderCoverageCountryDto>();

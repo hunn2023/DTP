@@ -37,52 +37,69 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         }
 
         public async Task<ProvisionProviderEsimProductResult> ProvisionProviderEsimProductAsync(
-            ProvisionProviderEsimProductRequest request,
-            CancellationToken cancellationToken = default)
+                ProvisionProviderEsimProductRequest request,
+                CancellationToken cancellationToken = default)
         {
-            ValidateRequest(request);
-
-            var mainCountry = await EnsureMainCountryAsync(
-                request,
-                cancellationToken);
-
-            var product = await EnsureProductAsync(
-                request,
-                mainCountry.Id,
-                cancellationToken);
-
-            var variant = await EnsureProductVariantAsync(
-                request,
-                product.Id,
-                cancellationToken);
-
-            var price = await EnsureProductPriceAsync(
-                request,
-                product.Id,
-                variant.Id,
-                cancellationToken);
-
-            var esimPackage = await EnsureEsimPackageAsync(
-                request,
-                product.Id,
-                variant.Id,
-                mainCountry.Id,
-                cancellationToken);
-
-            await EnsureCoveragesAsync(
-                request,
-                esimPackage.Id,
-                cancellationToken);
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return new ProvisionProviderEsimProductResult
+            try
             {
-                ProductId = product.Id,
-                ProductVariantId = variant.Id,
-                ProductPriceId = price.Id,
-                EsimPackageId = esimPackage.Id
-            };
+                ValidateRequest(request);
+
+                var mainCountry = await EnsureMainCountryAsync(
+                    request,
+                    cancellationToken);
+
+                var product = await EnsureProductAsync(
+                    request,
+                    mainCountry.Id,
+                    cancellationToken);
+
+                var variant = await EnsureProductVariantAsync(
+                    request,
+                    product.Id,
+                    cancellationToken);
+
+                var price = await EnsureProductPriceAsync(
+                    request,
+                    product.Id,
+                    variant.Id,
+                    cancellationToken);
+
+                var esimPackage = await EnsureEsimPackageAsync(
+                    request,
+                    product.Id,
+                    variant.Id,
+                    mainCountry.Id,
+                    cancellationToken);
+
+                await EnsureCoveragesAsync(
+                    request,
+                    esimPackage.Id,
+                    cancellationToken);
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                return new ProvisionProviderEsimProductResult
+                {
+                    ProductId = product.Id,
+                    ProductVariantId = variant.Id,
+                    ProductPriceId = price.Id,
+                    EsimPackageId = esimPackage.Id
+                };
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    $"Provision sản phẩm eSIM từ provider thất bại. ProviderCode: {request.ProviderCode}, SKU: {request.ProviderSku}",
+                    ex);
+            }
         }
 
         public async Task ActivateProviderProvisionedProductAsync(
@@ -186,7 +203,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 isActive: false);
 
             await _countryRepository.AddAsync(country, cancellationToken);
-
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return country;
         }
 

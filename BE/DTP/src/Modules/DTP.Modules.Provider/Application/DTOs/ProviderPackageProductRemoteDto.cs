@@ -10,16 +10,25 @@ namespace DTP.Modules.Provider.Application.DTOs
     {
         public string? Id { get; set; }
         public string Sku { get; set; } = default!;
-        public string Name { get; set; } = default!;
-        public string? Model { get; set; }
-
-        public string? Regional { get; set; }
-        public int? RegionId { get; set; }
 
         public decimal Price { get; set; }
-        public string CurrencyCode { get; set; } = "VND";
+
+        public string Name { get; set; } = default!;
+
 
         public string? ImageUrl { get; set; }
+
+        public int? Type { get; set; }
+
+        public string? Model { get; set; }
+
+        public string? Description { get; set; }
+
+        public int? AvailableQty { get; set; }
+
+        public string? Regional { get; set; }
+     
+        public string CurrencyCode { get; set; } = "VND";
 
         public string RawJson { get; set; } = default!;
     }

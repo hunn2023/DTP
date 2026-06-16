@@ -1,4 +1,5 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Provider.Application.Abstractions;
 using DTP.Modules.Provider.Application.Abstractions.Clients;
 using DTP.Modules.Provider.Application.Abstractions.Repositories;
@@ -97,7 +98,7 @@ namespace DTP.Modules.Provider.Application.Services
                     cancellationToken);
 
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
-                
+
                 return Result<ProviderPackageSyncResult>.Failure($"Lỗi khi gọi API provider: {ex.Message}");
             }
 
@@ -147,16 +148,16 @@ namespace DTP.Modules.Provider.Application.Services
                         package,
                         detail);
 
-                    //var provisionResult = await _catalogProvisioningService
-                    //    .ProvisionProviderEsimProductAsync(
-                    //        provisionRequest,
-                    //        cancellationToken);
+                    var provisionResult = await _catalogProvisioningService
+                        .ProvisionProviderEsimProductAsync(
+                            provisionRequest,
+                            cancellationToken);
 
-                    //await UpsertMappingAsync(
-                    //    provider,
-                    //    package,
-                    //    provisionResult,
-                       // cancellationToken);
+                    await UpsertMappingAsync(
+                        provider,
+                        package,
+                        provisionResult,
+                     cancellationToken);
 
                     package.MarkProvisioned();
 
@@ -206,7 +207,8 @@ namespace DTP.Modules.Provider.Application.Services
                     remotePackage.Name,
                     remotePackage.Model,
                     remotePackage.Regional,
-                    remotePackage.RegionId,
+                    null,  //remotePackage.RegionId, 
+
                     remotePackage.Price,
                     remotePackage.CurrencyCode,
                     remotePackage.ImageUrl,
@@ -221,7 +223,7 @@ namespace DTP.Modules.Provider.Application.Services
                     remotePackage.Name,
                     remotePackage.Model,
                     remotePackage.Regional,
-                    remotePackage.RegionId,
+                  null, // remotePackage.RegionId,
                     remotePackage.Price,
                     remotePackage.CurrencyCode,
                     remotePackage.ImageUrl,
@@ -233,7 +235,7 @@ namespace DTP.Modules.Provider.Application.Services
         private async Task<Result> UpsertMappingAsync(
             Domain.Entities.Provider provider,
             ProviderPackageProduct package,
-            ProvisionProviderEsimProductResult provisionResult,
+            Catalog.Application.DTOs.ProvisionProviderEsimProductResult provisionResult,
             CancellationToken cancellationToken)
         {
             var existing = await _mappingRepository.GetByProviderSkuAsync(
@@ -275,7 +277,7 @@ namespace DTP.Modules.Provider.Application.Services
                 : $"{detail.DataAmount}{detail.DataUnit}";
 
             var variantName = $"{dataText} - {detail.ValidityDays} ngày";
-            
+
             return new ProvisionProviderEsimProductRequest
             {
                 ProviderId = provider.Id,
@@ -301,7 +303,7 @@ namespace DTP.Modules.Provider.Application.Services
                 CoverageDescription = detail.CoverageDescription,
 
                 Countries = detail.Countries
-                    .Select(x => new ProvisionCountryDto
+                    .Select(x => new Catalog.Application.DTOs.ProvisionCountryDto
                     {
                         CountryCode = x.Code,
                         CountryName = x.Name
