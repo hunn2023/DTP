@@ -6,12 +6,11 @@ import { fetchProductVariants } from '@/apis/productVariantsApi'
 import type { ProductPriceRow, ProductVariant } from '@/features/master-data/products/types'
 import { fetchCountries } from '@/apis/countriesApi'
 import { fetchEsimPackageDetail, fetchEsimPackagesPage } from '@/apis/esimPackagesApi'
+import { fetchVariantFeatures } from '@/apis/productVariantFeaturesApi'
 import type { EsimPackage } from '@/features/products/esim-packages/types'
 import { mapPackageToForm } from '@/features/products/esim-wizard/mapPackageForm'
-import { fetchVariantFeatures } from '@/apis/productVariantFeaturesApi'
 import type { EsimPackageForm, EsimWizardTab } from '@/features/products/esim-wizard/types'
 import { getDefaultPackageValues } from '@/features/products/esim-wizard/wizardDefaults'
-import { fetchProviderOptions } from '@/apis/providersApi'
 import type { FormFieldOption } from '@/modules/crud/form/types'
 
 type LoaderParams = {
@@ -101,7 +100,10 @@ function mapProductOptions(items: { id: string; name: string }[]): FormFieldOpti
 function mapCountryOptions(
   countries: Awaited<ReturnType<typeof fetchCountries>>,
 ): FormFieldOption[] {
-  return countries.map((c) => ({ value: c.id, label: `${c.isoCode} ${c.name}` }))
+  return countries.map((c) => ({
+    value: c.id,
+    label: c.isoCode ? `${c.isoCode} — ${c.name}` : c.name,
+  }))
 }
 
 function variantFromPackage(pkg: EsimPackage, variantId: string): ProductVariant {
@@ -128,7 +130,6 @@ export function useEsimWizardLoader({
   const [isLoading, setIsLoading] = useState(!isNew)
   const [bootstrapReady, setBootstrapReady] = useState(isNew)
   const [productOptions, setProductOptions] = useState<FormFieldOption[]>([])
-  const [providerOptions, setProviderOptions] = useState<FormFieldOption[]>([])
   const [countryOptions, setCountryOptions] = useState<FormFieldOption[]>([])
 
   const [productId, setProductId] = useState('')
@@ -320,17 +321,17 @@ export function useEsimWizardLoader({
   const loadPackageTab = useCallback(async () => {
     const vId = variantId
     const pId = productIdRef.current
+
+    try {
+      const countries = await fetchCountries()
+      setCountryOptions(mapCountryOptions(countries))
+    } catch {
+      setCountryOptions([])
+    }
+
     if (!vId || !pId) return
 
-    const [providers, countries, pkg] = await Promise.all([
-      fetchProviderOptions(),
-      fetchCountries(),
-      loadPackageDetail(),
-    ])
-
-    setProviderOptions(providers)
-    setCountryOptions(mapCountryOptions(countries))
-
+    const pkg = await loadPackageDetail()
     if (!pkg) {
       setPackageForm(getDefaultPackageValues(pId, vId, defaultCountryId))
     }
@@ -478,7 +479,6 @@ export function useEsimWizardLoader({
   return {
     isLoading,
     productOptions,
-    providerOptions,
     countryOptions,
     productId,
     variant,
