@@ -78,9 +78,6 @@ namespace DTP.Modules.Content.Domain.Entities
 
         public string Robots { get; private set; } = "index,follow";
 
-        public DateTime CreatedAt { get; private set; }
-
-        public DateTime? UpdatedAt { get; private set; }
 
         public void Update(
             string metaTitle,

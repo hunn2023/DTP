@@ -15,13 +15,11 @@ namespace DTP.Modules.Ordering.Domain.Entities
             string? note,
             Guid? changedBy)
         {
-            Id = Guid.NewGuid();
             OrderId = orderId;
             FromStatus = fromStatus;
             ToStatus = toStatus;
             Note = note;
             ChangedBy = changedBy;
-            CreatedAt = DateTime.UtcNow;
         }
 
         public Guid OrderId { get; private set; }
@@ -35,7 +33,5 @@ namespace DTP.Modules.Ordering.Domain.Entities
         public string? Note { get; private set; }
 
         public Guid? ChangedBy { get; private set; }
-
-        public DateTime CreatedAt { get; private set; }
     }
 }

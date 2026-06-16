@@ -161,26 +161,7 @@ namespace DTP.Modules.Content.Presentation.Controllers.Admin
             return Ok(result);
         }
 
-        [HttpPost("{articleId:guid}/thumbnail")]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadThumbnail(
-            Guid articleId,
-            IFormFile file,
-            CancellationToken cancellationToken = default)
-        {
-            var result = await _mediator.Send(
-                new UploadContentArticleThumbnailCommand
-                {
-                    ArticleId = articleId,
-                    File = file
-                },
-                cancellationToken);
-
-            if (!result.IsSuccess)
-                return BadRequest(result);
-
-            return Ok(result);
-        }
+  
 
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> Delete(

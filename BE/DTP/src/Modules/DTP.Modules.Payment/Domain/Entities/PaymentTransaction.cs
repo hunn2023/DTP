@@ -25,7 +25,7 @@ namespace DTP.Modules.Payment.Domain.Entities
             string requestId,
             string ipAddress)
         {
-            Id = Guid.NewGuid();
+
             OrderId = orderId;
             OrderCode = orderCode;
             CustomerId = customerId;
@@ -36,7 +36,7 @@ namespace DTP.Modules.Payment.Domain.Entities
             RequestId = requestId;
             Status = PaymentStatus.Pending;
             IpAddress = ipAddress;
-            CreatedAt = DateTime.UtcNow;
+
         }
 
         public Guid OrderId { get; private set; }
@@ -90,10 +90,6 @@ namespace DTP.Modules.Payment.Domain.Entities
         public string? RawCallbackData { get; private set; }
 
         public string? IpAddress { get; private set; }
-
-        public DateTime CreatedAt { get; private set; }
-
-        public DateTime? UpdatedAt { get; private set; }
 
         public void MarkQrCreated(
             string? providerTransactionId,

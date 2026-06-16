@@ -9,8 +9,6 @@ namespace DTP.Modules.Catalog.Domain.Entities
 {
     public class EsimPackageCoverage : EntityBase
     {
-        public Guid Id { get; private set; }
-
         public Guid EsimPackageId { get; private set; }
         public Guid CountryId { get; private set; }
 
@@ -19,7 +17,6 @@ namespace DTP.Modules.Catalog.Domain.Entities
 
         public bool IsActive { get; private set; }
 
-        public DateTime CreatedAt { get; private set; }
 
         public EsimPackage? EsimPackage { get; private set; }
         public Country? Country { get; private set; }
@@ -35,13 +32,13 @@ namespace DTP.Modules.Catalog.Domain.Entities
             string countryName,
             bool isActive = false)
         {
-            Id = Guid.NewGuid();
+
             EsimPackageId = esimPackageId;
             CountryId = countryId;
             CountryCode = NormalizeCountryCode(countryCode);
             CountryName = countryName.Trim();
             IsActive = isActive;
-            CreatedAt = DateTime.UtcNow;
+
         }
 
         public void Activate()
