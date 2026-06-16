@@ -119,7 +119,6 @@ const EsimWizardPage = () => {
                 productId={wizard.productId}
                 variantId={variantId}
                 defaultCountryId={wizard.packageForm?.countryId ?? wizard.defaultCountryId}
-                providerOptions={wizard.providerOptions}
                 countryOptions={wizard.countryOptions}
                 initialValues={
                   wizard.packageForm ??

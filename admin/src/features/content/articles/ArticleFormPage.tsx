@@ -4,7 +4,8 @@ import { TbChevronRight, TbEye, TbEyeOff, TbInfoCircle, TbSettings, TbStar, TbSt
 import { Link } from 'react-router'
 
 import PageMetaData from '@/components/PageMetaData'
-import BannerImageUrlPreview from '@/features/content/banners/components/BannerImageUrlPreview'
+import ArticleThumbnailSection from '@/features/content/articles/components/ArticleThumbnailSection'
+import ArticleThumbnailUploadModal from '@/features/content/articles/components/ArticleThumbnailUploadModal'
 import { useArticleFormPage } from '@/features/content/articles/useArticleFormPage'
 import RichHtmlEditor from '@/features/content/shared/RichHtmlEditor'
 import {
@@ -132,16 +133,17 @@ const ArticleFormPage = () => {
               </CardBody>
             </Card>
 
-            <Card className="mb-4">
-              <CardBody>
-                <BannerImageUrlPreview
-                  label="Ảnh thumbnail"
-                  variant="desktop"
-                  value={form.values.thumbnailUrl}
-                  onChange={(value) => form.updateField('thumbnailUrl', value)}
-                />
-              </CardBody>
-            </Card>
+            {!form.isNew ? (
+              <Card className="mb-4">
+                <CardBody>
+                  <ArticleThumbnailSection
+                    thumbnailUrl={form.values.thumbnailUrl}
+                    isUploading={form.isUploadingThumbnail}
+                    onChooseClick={form.openThumbnailModal}
+                  />
+                </CardBody>
+              </Card>
+            ) : null}
 
             <Card>
               <CardBody>
@@ -302,6 +304,13 @@ const ArticleFormPage = () => {
           </Col>
         </Row>
       </Form>
+
+      <ArticleThumbnailUploadModal
+        show={form.showThumbnailModal}
+        isUploading={form.isUploadingThumbnail}
+        onHide={form.closeThumbnailModal}
+        onUpload={(file) => void form.uploadThumbnail(file)}
+      />
     </Container>
   )
 }

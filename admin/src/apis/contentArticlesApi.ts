@@ -7,7 +7,7 @@ import {
   readNumber,
   readString,
 } from '@/shared/lib/dtoNormalize'
-import { httpDelete, httpGet, httpPatch, httpPost, httpPut } from '@/shared/lib/http'
+import { httpDelete, httpGet, httpPatch, httpPost, httpPostForm, httpPut } from '@/shared/lib/http'
 
 type Raw = Record<string, unknown>
 
@@ -124,6 +124,20 @@ export async function featureContentArticle(id: string): Promise<void> {
 
 export async function unfeatureContentArticle(id: string): Promise<void> {
   await httpPatch(`${API_PATHS.adminContentArticles}/${id}/unfeatured`, {})
+}
+
+export async function uploadContentArticleThumbnail(
+  articleId: string,
+  file: File,
+): Promise<ContentArticle> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const data = await httpPostForm<Raw>(
+    `${API_PATHS.adminContentArticles}/${articleId}/thumbnail`,
+    formData,
+  )
+  return normalizeArticle(data)
 }
 
 export async function deleteContentArticle(id: string): Promise<void> {

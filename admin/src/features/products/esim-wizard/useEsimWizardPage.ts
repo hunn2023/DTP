@@ -6,7 +6,7 @@ import { fetchProductDetail } from '@/apis/productsApi'
 import { fetchVariantFeatures } from '@/apis/productVariantFeaturesApi'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import { getEsimStepByTab } from '@/features/products/esim-wizard/esimWizardSteps'
-import { mapPackageToForm, toPackagePayload } from '@/features/products/esim-wizard/mapPackageForm'
+import { mapPackageToForm, toWizardPackagePayload } from '@/features/products/esim-wizard/mapPackageForm'
 import type { EsimWizardSummary, EsimWizardTab } from '@/features/products/esim-wizard/types'
 import { useEsimWizardLoader } from '@/features/products/esim-wizard/useEsimWizardLoader'
 
@@ -159,7 +159,7 @@ export function useEsimWizardPage() {
     try {
       await updateEsimPackage(
         wizard.packageForm.id,
-        toPackagePayload({ ...wizard.packageForm, carrierIds: wizard.selectedCarrierIds }),
+        toWizardPackagePayload({ ...wizard.packageForm, carrierIds: wizard.selectedCarrierIds }),
       )
       wizard.setPackageForm((p) => (p ? { ...p, carrierIds: wizard.selectedCarrierIds } : p))
       const refreshed = await fetchEsimPackageDetail(wizard.packageForm.id)
