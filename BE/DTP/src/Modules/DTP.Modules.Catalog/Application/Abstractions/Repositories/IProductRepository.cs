@@ -62,7 +62,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
                CancellationToken cancellationToken = default);
 
 
-        Task<List<HomeEsimProductDto>> GetHomeEsimProductsAsync(
-         CancellationToken cancellationToken = default);
+        Task<List<HomeEsimCountryProductDto>> GetHomeEsimProductsAsync(
+                  CancellationToken cancellationToken = default);
     }
 }
