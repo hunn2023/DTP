@@ -32,7 +32,7 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
 
             var request = new HttpRequestMessage(
                 HttpMethod.Get,
-                "/eip/partner/v2/product?page=1&size=100");
+                "/eip/partner/v2/product?page=1&size=100&type=1");
 
             request.Headers.Add("apikey", provider.ApiKey);
 
