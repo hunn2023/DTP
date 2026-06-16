@@ -99,7 +99,7 @@ namespace DTP.Modules.Provider.Application.Services
 
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-                return Result<ProviderPackageSyncResult>.Failure($"Lỗi khi gọi API provider: {ex.Message}");
+                return Result<ProviderPackageSyncResult>.Failure($"Lỗi khi gọi API GetPackageProductsAsync : {ex.Message}");
             }
 
             result.Total = remotePackages.Count;

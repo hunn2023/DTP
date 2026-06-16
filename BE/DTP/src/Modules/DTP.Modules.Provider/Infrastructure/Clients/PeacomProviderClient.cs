@@ -23,6 +23,8 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
             Console.WriteLine($"[PeacomProviderClient] BaseAddress = {_httpClient.BaseAddress}");
         }
 
+       
+
         public async Task<IReadOnlyList<ProviderPackageProductRemoteDto>> GetPackageProductsAsync(
                 Domain.Entities.Provider provider,
                 CancellationToken cancellationToken = default)
