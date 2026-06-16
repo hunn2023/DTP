@@ -28,7 +28,7 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
         {
             var request = new HttpRequestMessage(
                 HttpMethod.Get,
-                "https://dev-api.peacom.co/eip/partner/v2/product?page=1&size=10");
+                "/eip/partner/v2/product?page=1&size=100");
 
             request.Headers.Add("apikey", provider.ApiKey);
 
@@ -78,9 +78,10 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
                 throw new InvalidOperationException("Provider chưa cấu hình ApiKey.");
 
             var request = new HttpRequestMessage(
-                HttpMethod.Get,
-                $"https://dev-api.peacom.co/eip/partner/v2/product/esim?sku={Uri.EscapeDataString(sku)}");
+                  HttpMethod.Get,
+                  $"/eip/partner/v2/product/esim?sku={Uri.EscapeDataString(sku)}");
 
+         
             request.Headers.Add("apikey", provider.ApiKey);
 
             var response = await _httpClient.SendAsync(request, cancellationToken);

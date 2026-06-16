@@ -26,6 +26,13 @@ namespace DTP.Modules.Provider
                 options.UseSqlServer(
                     configuration.GetConnectionString("DefaultConnection"));
             });
+
+            services.AddHttpClient<IPeacomProviderClient, PeacomProviderClient>(client =>
+            {
+                client.BaseAddress = new Uri("https://dev-api.peacom.co");
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+
             services.AddScoped<IProviderUnitOfWork, ProviderUnitOfWork>();
 
             services.AddScoped<IProviderRepository, ProviderRepository>();
