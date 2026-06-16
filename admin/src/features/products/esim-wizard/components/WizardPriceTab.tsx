@@ -121,6 +121,7 @@ const WizardPriceTab = ({
               <Form.Label className="fw-semibold">Giá gốc</Form.Label>
               <NumberFormControl
                 min={0}
+                decimalScale={values.currency === 'USD' ? 2 : 0}
                 value={values.originalPrice}
                 onChange={(originalPrice) => setValues((p) => ({ ...p, originalPrice }))}
               />
@@ -129,6 +130,7 @@ const WizardPriceTab = ({
               <Form.Label className="fw-semibold">Giá bán <RequiredMark /></Form.Label>
               <NumberFormControl
                 min={0}
+                decimalScale={values.currency === 'USD' ? 2 : 0}
                 value={values.salePrice}
                 onChange={(salePrice) => setValues((p) => ({ ...p, salePrice }))}
                 required
@@ -138,6 +140,7 @@ const WizardPriceTab = ({
               <Form.Label className="fw-semibold">Giá vốn</Form.Label>
               <NumberFormControl
                 min={0}
+                decimalScale={values.currency === 'USD' ? 2 : 0}
                 value={values.costPrice}
                 onChange={(costPrice) => setValues((p) => ({ ...p, costPrice }))}
               />
