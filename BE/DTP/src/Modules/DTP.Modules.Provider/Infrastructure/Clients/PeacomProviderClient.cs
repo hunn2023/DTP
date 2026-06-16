@@ -20,12 +20,15 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
         public PeacomProviderClient(HttpClient httpClient)
         {
             _httpClient = httpClient;
+            Console.WriteLine($"[PeacomProviderClient] BaseAddress = {_httpClient.BaseAddress}");
         }
 
         public async Task<IReadOnlyList<ProviderPackageProductRemoteDto>> GetPackageProductsAsync(
                 Domain.Entities.Provider provider,
                 CancellationToken cancellationToken = default)
         {
+            EnsureHttpClientConfigured();
+
             var request = new HttpRequestMessage(
                 HttpMethod.Get,
                 "/eip/partner/v2/product?page=1&size=100");
@@ -64,6 +67,15 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
                 ImageUrl = x.ImageUrl,
                 RawJson = JsonSerializer.Serialize(x)
             }).ToList();
+        }
+
+        private void EnsureHttpClientConfigured()
+        {
+            if (_httpClient.BaseAddress == null)
+            {
+                throw new InvalidOperationException(
+                    "PeacomProviderClient BaseAddress đang NULL. Kiểm tra AddHttpClient<IPeacomProviderClient, PeacomProviderClient>.");
+            }
         }
 
         public async Task<ProviderEsimProductRemoteDto> GetProductEsimAsync(
@@ -202,6 +214,8 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
             PeacomCreateOrderRequest request,
             CancellationToken cancellationToken = default)
         {
+            EnsureHttpClientConfigured();
+
             var response = await _httpClient.PostAsJsonAsync(
                 "/eip/partner/v2/order",
                 request,
