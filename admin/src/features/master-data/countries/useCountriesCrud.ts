@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useNotificationContext } from '@/context/useNotificationContext'
 import type { CountryTableHandlers } from '@/features/master-data/countries/columns'
+import type { CountrySaveChangesInput } from '@/features/master-data/countries/countryFormUtils'
 import * as countriesApi from '@/apis/countriesApi'
 import type { Country } from '@/features/master-data/types'
 import { slugify } from '@/modules/crud/form/slugify'
@@ -32,8 +33,8 @@ function applySlugFromName(values: Country, formConfig: EntityFormConfig<Country
   return values
 }
 
-function toPayload(values: Country): countriesApi.CountryCreatePayload {
-  return {
+function toPayload(values: Country): countriesApi.CountryUpdatePayload {
+  const payload: countriesApi.CountryUpdatePayload = {
     name: values.name.trim(),
     slug: values.slug.trim(),
     code: values.isoCode.trim(),
@@ -42,10 +43,27 @@ function toPayload(values: Country): countriesApi.CountryCreatePayload {
     sortOrder: values.sortOrder,
     isActive: values.isActive,
   }
+  const flagUrl = values.flagUrl.trim()
+  if (flagUrl) payload.flagUrl = flagUrl
+  return payload
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback
+}
+
+function getSaveSuccessMessage(saveInfo: boolean, saveFlag: boolean): string {
+  if (saveInfo && saveFlag) return 'Đã cập nhật quốc gia và tải lên cờ'
+  if (saveInfo) return 'Đã cập nhật quốc gia thành công'
+  return 'Đã tải lên cờ quốc gia thành công'
+}
+
+function prepareEditValues(values: Country, formConfig: EntityFormConfig<Country>): Country {
+  let next = applySlugFromName(values, formConfig)
+  if (formConfig.onBeforeSave) {
+    next = formConfig.onBeforeSave(next, 'edit')
+  }
+  return next
 }
 
 export function useCountriesCrud({ buildColumns, formConfig, pageSize = 10 }: UseCountriesCrudParams) {
@@ -189,39 +207,52 @@ export function useCountriesCrud({ buildColumns, formConfig, pageSize = 10 }: Us
     [formConfig, notifySuccess, notifyError],
   )
 
-  const saveCountryInfo = useCallback(
-    async (rawValues: Country) => {
-      let values = applySlugFromName(rawValues, formConfig)
-      if (formConfig.onBeforeSave) {
-        values = formConfig.onBeforeSave(values, 'edit')
+  const saveCountryChanges = useCallback(
+    async ({ values: rawValues, flagFile, saveInfo, saveFlag }: CountrySaveChangesInput) => {
+      if (!saveInfo && !saveFlag) return
+
+      const countryId = rawValues.id
+      if (!countryId) {
+        notifyError('Không xác định được quốc gia để lưu')
+        return
       }
 
       setIsSaving(true)
       try {
-        await countriesApi.updateCountry(values.id, toPayload(values))
-        setFormValues(values)
-        notifySuccess('Đã cập nhật quốc gia thành công')
+        let values = rawValues
+        if (saveInfo) {
+          values = prepareEditValues(rawValues, formConfig)
+          await countriesApi.updateCountry(values.id, toPayload(values))
+          setFormValues(values)
+        }
+
+        if (saveFlag && flagFile) {
+          const uploaded = await countriesApi.uploadCountryFlag(countryId, flagFile)
+          setFormValues((prev) => (prev ? { ...prev, flagUrl: uploaded.flagUrl } : prev))
+        }
+
+        notifySuccess(getSaveSuccessMessage(saveInfo, Boolean(saveFlag && flagFile)))
         reload()
+        if (saveFlag && flagFile) closeFormModal()
       } catch (e) {
-        notifyError(getErrorMessage(e, 'Không cập nhật được quốc gia'))
+        notifyError(getErrorMessage(e, 'Không lưu được thay đổi quốc gia'))
       } finally {
         setIsSaving(false)
       }
     },
-    [formConfig, reload, notifySuccess, notifyError],
+    [formConfig, reload, closeFormModal, notifySuccess, notifyError],
   )
 
-  const saveCountryFlag = useCallback(
+  const saveCreateFlag = useCallback(
     async (file: File) => {
-      const countryId = formMode === 'create' ? createdCountryId : formValues?.id
-      if (!countryId) {
+      if (!createdCountryId) {
         notifyError('Không xác định được quốc gia để tải cờ')
         return
       }
 
       setIsSaving(true)
       try {
-        await countriesApi.uploadCountryFlag(countryId, file)
+        await countriesApi.uploadCountryFlag(createdCountryId, file)
         notifySuccess('Đã tải lên cờ quốc gia thành công')
         if (pagination.pageIndex === 0) {
           reload()
@@ -235,7 +266,7 @@ export function useCountriesCrud({ buildColumns, formConfig, pageSize = 10 }: Us
         setIsSaving(false)
       }
     },
-    [formMode, createdCountryId, formValues?.id, pagination.pageIndex, reload, closeFormModal, notifySuccess, notifyError],
+    [createdCountryId, pagination.pageIndex, reload, closeFormModal, notifySuccess, notifyError],
   )
 
   const handlers = useMemo(
@@ -343,8 +374,8 @@ export function useCountriesCrud({ buildColumns, formConfig, pageSize = 10 }: Us
     closeFormModal,
     setFormTab,
     continueCreate,
-    saveCountryInfo,
-    saveCountryFlag,
+    saveCountryChanges,
+    saveCreateFlag,
     isLoading,
     isSaving,
     reload,

@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import PageBreadcrumb from '@/components/PageBreadcrumb'
 import EsimWizard from '@/features/products/esim-wizard/components/EsimWizard'
 import EsimWizardFooter from '@/features/products/esim-wizard/components/EsimWizardFooter'
+import EsimWizardUnsavedModal from '@/features/products/esim-wizard/components/EsimWizardUnsavedModal'
 import WizardCarriersTab from '@/features/products/esim-wizard/components/WizardCarriersTab'
 import WizardFeaturesTab from '@/features/products/esim-wizard/components/WizardFeaturesTab'
 import WizardPackageTab from '@/features/products/esim-wizard/components/WizardPackageTab'
@@ -11,22 +12,23 @@ import WizardPriceTab from '@/features/products/esim-wizard/components/WizardPri
 import WizardReviewTab from '@/features/products/esim-wizard/components/WizardReviewTab'
 import WizardVariantTab from '@/features/products/esim-wizard/components/WizardVariantTab'
 import { getEsimWizardFormId, useEsimWizardPage } from '@/features/products/esim-wizard/useEsimWizardPage'
-import {
-  getDefaultPackageValues,
-  getDefaultPriceValues,
-} from '@/features/products/esim-wizard/wizardDefaults'
+import type { EsimWizardTab } from '@/features/products/esim-wizard/types'
 
 const renderFooter = (
-  activeTab: Parameters<typeof EsimWizardFooter>[0]['activeTab'],
+  isSetupFlow: boolean,
+  activeTab: EsimWizardTab,
   isSaving: boolean,
   onContinue: () => void,
+  onSave: () => void,
 ) => (
   <div className="border-top mt-4 pt-3">
     <EsimWizardFooter
+      isSetupFlow={isSetupFlow}
       activeTab={activeTab}
       isSaving={isSaving}
       formId={getEsimWizardFormId(activeTab)}
       onContinue={onContinue}
+      onSave={onSave}
     />
   </div>
 )
@@ -34,23 +36,38 @@ const renderFooter = (
 const EsimWizardPage = () => {
   const {
     isNew,
+    isSetupFlow,
     variantId,
     activeTab,
     isSaving,
     setIsSaving,
-    featuresSaveRef,
     wizard,
-    canAccessSubTabs,
+    canAccessTab,
     hasPackage,
-    setActiveTab,
+    requestTabChange,
     handleVariantSaved,
     handlePriceSaved,
     handlePackageSaved,
     handleContinue,
+    handleSaveCurrentTab,
+    setVariantsDirty,
+    setPricesDirty,
+    setPackagesDirty,
+    setCarriersDirty,
+    setFeaturesDirty,
+    registerVariantSave,
+    registerPriceSave,
+    registerPackageSave,
+    registerFeaturesSave,
     summary,
     pageTitle,
+    cardTitle,
     showLoading,
     showNotFound,
+    showUnsavedModal,
+    closeUnsavedModal,
+    discardPendingTabChange,
+    confirmUnsavedSave,
   } = useEsimWizardPage()
 
   if (showLoading) {
@@ -74,26 +91,31 @@ const EsimWizardPage = () => {
   }
 
   const onContinue = () => void handleContinue()
+  const onSave = () => void handleSaveCurrentTab()
+  const renderStepFooter = (tab: EsimWizardTab) =>
+    renderFooter(isSetupFlow, tab, isSaving, onContinue, onSave)
 
   return (
     <Container fluid>
       <PageBreadcrumb title={pageTitle} subtitle="eSIM du lịch" />
 
       <EsimWizard
-        title={pageTitle}
+        title={cardTitle}
         activeTab={activeTab}
-        canAccessSubTabs={canAccessSubTabs}
-        onStepChange={setActiveTab}
+        canAccessTab={canAccessTab}
+        onStepChange={requestTabChange}
         variantStep={
           <>
             <WizardVariantTab
               isNew={isNew}
               productOptions={wizard.productOptions}
               initialValues={wizard.variant}
-              onSaved={handleVariantSaved}
+              onSaved={(id, pId) => void handleVariantSaved(id, pId)}
               onSavingChange={setIsSaving}
+              onDirtyChange={setVariantsDirty}
+              onRegisterSave={registerVariantSave}
             />
-            {renderFooter('variants', isSaving, onContinue)}
+            {renderStepFooter('variants')}
           </>
         }
         priceStep={
@@ -102,14 +124,16 @@ const EsimWizardPage = () => {
               <WizardPriceTab
                 productId={wizard.productId}
                 variantId={variantId}
-                initialValues={wizard.price ?? getDefaultPriceValues(wizard.productId, variantId)}
-                onSaved={() => void handlePriceSaved()}
+                initialValues={wizard.price}
+                onSaved={(priceId) => void handlePriceSaved(priceId)}
                 onSavingChange={setIsSaving}
+                onDirtyChange={setPricesDirty}
+                onRegisterSave={registerPriceSave}
               />
             ) : (
               <p className="text-muted mb-0">Lưu biến thể trước khi thiết lập giá.</p>
             )}
-            {renderFooter('prices', isSaving, onContinue)}
+            {renderStepFooter('prices')}
           </>
         }
         packageStep={
@@ -119,18 +143,16 @@ const EsimWizardPage = () => {
                 productId={wizard.productId}
                 variantId={variantId}
                 defaultCountryId={wizard.packageForm?.countryId ?? wizard.defaultCountryId}
-                countryOptions={wizard.countryOptions}
-                initialValues={
-                  wizard.packageForm ??
-                  getDefaultPackageValues(wizard.productId, variantId, wizard.defaultCountryId)
-                }
+                initialValues={wizard.packageForm}
                 onSaved={(id) => void handlePackageSaved(id)}
                 onSavingChange={setIsSaving}
+                onDirtyChange={setPackagesDirty}
+                onRegisterSave={registerPackageSave}
               />
             ) : (
               <p className="text-muted mb-0">Lưu biến thể trước khi tạo gói eSIM.</p>
             )}
-            {renderFooter('packages', isSaving, onContinue)}
+            {renderStepFooter('packages')}
           </>
         }
         carrierStep={
@@ -142,10 +164,12 @@ const EsimWizardPage = () => {
             )}
             <WizardCarriersTab
               selectedCarrierIds={wizard.selectedCarrierIds}
+              savedCarrierIds={wizard.packageForm?.carrierIds ?? []}
               countryId={wizard.packageForm?.countryId ?? wizard.defaultCountryId}
               onChange={wizard.setSelectedCarrierIds}
+              onDirtyChange={setCarriersDirty}
             />
-            {renderFooter('carriers', isSaving, onContinue)}
+            {renderStepFooter('carriers')}
           </>
         }
         featureStep={
@@ -153,23 +177,29 @@ const EsimWizardPage = () => {
             {variantId ? (
               <WizardFeaturesTab
                 variantId={variantId}
-                onRegisterSave={(fn) => {
-                  featuresSaveRef.current = fn
-                }}
+                onRegisterSave={registerFeaturesSave}
                 onSavingChange={setIsSaving}
+                onDirtyChange={setFeaturesDirty}
               />
             ) : (
               <p className="text-muted mb-0">Lưu biến thể trước khi thêm tính năng.</p>
             )}
-            {renderFooter('features', isSaving, onContinue)}
+            {renderStepFooter('features')}
           </>
         }
         reviewStep={
           <>
-            <WizardReviewTab summary={summary} isNew={isNew} />
-            {renderFooter('review', isSaving, onContinue)}
+            <WizardReviewTab summary={summary} isSetupFlow={isSetupFlow} />
           </>
         }
+      />
+
+      <EsimWizardUnsavedModal
+        show={showUnsavedModal}
+        isSaving={isSaving}
+        onHide={closeUnsavedModal}
+        onDiscard={discardPendingTabChange}
+        onSave={() => void confirmUnsavedSave()}
       />
     </Container>
   )

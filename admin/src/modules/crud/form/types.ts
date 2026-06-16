@@ -8,6 +8,7 @@ export type FormFieldType =
   | 'date'
   | 'select'
   | 'multiselect'
+  | 'countrySearch'
   | 'password'
 
 export type FormFieldOption = {

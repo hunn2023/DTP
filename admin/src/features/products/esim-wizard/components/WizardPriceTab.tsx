@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Alert, Card, Col, Form, Row } from 'react-bootstrap'
 
 import {
@@ -6,6 +6,10 @@ import {
   updateProductPrice,
 } from '@/apis/productPricesApi'
 import type { ProductPriceRow } from '@/features/master-data/products/types'
+import { useTabDirty } from '@/features/products/esim-wizard/hooks/useTabDirty'
+import { useWizardTabForm } from '@/features/products/esim-wizard/hooks/useWizardTabForm'
+import RequiredMark from '@/components/form/RequiredMark'
+import NumberFormControl from '@/components/form/NumberFormControl'
 import { getDefaultPriceValues } from '@/features/products/esim-wizard/wizardDefaults'
 
 const NOTE_MAX = 500
@@ -16,6 +20,8 @@ type WizardPriceTabProps = {
   initialValues: ProductPriceRow | null
   onSaved: (priceId: string) => void
   onSavingChange: (saving: boolean) => void
+  onDirtyChange?: (dirty: boolean) => void
+  onRegisterSave?: (fn: () => Promise<boolean>) => void
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -28,23 +34,23 @@ const WizardPriceTab = ({
   initialValues,
   onSaved,
   onSavingChange,
+  onDirtyChange,
+  onRegisterSave,
 }: WizardPriceTabProps) => {
-  const [values, setValues] = useState<ProductPriceRow>(
-    initialValues ?? getDefaultPriceValues(productId, variantId),
+  const [values, setValues] = useWizardTabForm(
+    initialValues,
+    () => getDefaultPriceValues(productId, variantId),
   )
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    if (initialValues) setValues(initialValues)
-  }, [initialValues])
+  useTabDirty(values, initialValues, onDirtyChange)
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const savePrice = useCallback(async (): Promise<boolean> => {
     setError('')
 
     if (values.salePrice <= 0) {
       setError('Vui lòng nhập giá bán')
-      return
+      return false
     }
 
     onSavingChange(true)
@@ -75,15 +81,26 @@ const WizardPriceTab = ({
         })
         onSaved(values.id)
       }
+      return true
     } catch (err) {
       setError(getErrorMessage(err, 'Không lưu được giá'))
+      return false
     } finally {
       onSavingChange(false)
     }
+  }, [values, productId, variantId, onSaved, onSavingChange])
+
+  useEffect(() => {
+    onRegisterSave?.(savePrice)
+  }, [onRegisterSave, savePrice])
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    void savePrice()
   }
 
   return (
-    <Form id="esim-wizard-price-form" onSubmit={(e) => void handleSubmit(e)}>
+    <Form id="esim-wizard-price-form" onSubmit={handleSubmit}>
       <Card className="border shadow-none">
         <Card.Body>
           <div className="mb-3">
@@ -92,7 +109,7 @@ const WizardPriceTab = ({
           </div>
           <Row className="g-3">
             <Col md={4}>
-              <Form.Label className="fw-semibold">Đơn vị tiền tệ *</Form.Label>
+              <Form.Label className="fw-semibold">Đơn vị tiền tệ <RequiredMark /></Form.Label>
               <Form.Select
                 value={values.currency}
                 onChange={(e) => setValues((p) => ({ ...p, currency: e.target.value }))}>
@@ -102,30 +119,30 @@ const WizardPriceTab = ({
             </Col>
             <Col md={4}>
               <Form.Label className="fw-semibold">Giá gốc</Form.Label>
-              <Form.Control
-                type="number"
+              <NumberFormControl
                 min={0}
+                decimalScale={values.currency === 'USD' ? 2 : 0}
                 value={values.originalPrice}
-                onChange={(e) => setValues((p) => ({ ...p, originalPrice: Number(e.target.value) }))}
+                onChange={(originalPrice) => setValues((p) => ({ ...p, originalPrice }))}
               />
             </Col>
             <Col md={4}>
-              <Form.Label className="fw-semibold">Giá bán *</Form.Label>
-              <Form.Control
-                type="number"
+              <Form.Label className="fw-semibold">Giá bán <RequiredMark /></Form.Label>
+              <NumberFormControl
                 min={0}
+                decimalScale={values.currency === 'USD' ? 2 : 0}
                 value={values.salePrice}
-                onChange={(e) => setValues((p) => ({ ...p, salePrice: Number(e.target.value) }))}
+                onChange={(salePrice) => setValues((p) => ({ ...p, salePrice }))}
                 required
               />
             </Col>
             <Col md={4}>
               <Form.Label className="fw-semibold">Giá vốn</Form.Label>
-              <Form.Control
-                type="number"
+              <NumberFormControl
                 min={0}
+                decimalScale={values.currency === 'USD' ? 2 : 0}
                 value={values.costPrice}
-                onChange={(e) => setValues((p) => ({ ...p, costPrice: Number(e.target.value) }))}
+                onChange={(costPrice) => setValues((p) => ({ ...p, costPrice }))}
               />
             </Col>
             <Col md={4}>

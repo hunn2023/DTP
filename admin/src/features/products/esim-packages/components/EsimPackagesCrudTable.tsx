@@ -5,11 +5,23 @@ import DeleteConfirmationModal from '@/components/table/DeleteConfirmationModal'
 import TablePagination from '@/components/table/TablePagination'
 import { buildEsimPackageColumns } from '@/features/products/esim-packages/columns'
 import EsimPackageCard from '@/features/products/esim-packages/components/EsimPackageCard'
+import {
+  resolveProductVariantSelectOption,
+  searchProductVariantSelectOptions,
+} from '@/features/products/esim-packages/productVariantSearchSelect'
 import { esimPackagesLabels } from '@/features/products/esim-packages/data'
 import { ESIM_PACKAGE_PAGE_SIZE_OPTIONS } from '@/apis/esimPackagesApi'
 import { useEsimPackagesCrud } from '@/features/products/esim-packages/useEsimPackagesCrud'
+import {
+  resolveCarrierSelectOption,
+  searchCarrierSelectOptions,
+} from '@/features/master-data/carriers/carrierSearchSelect'
+import {
+  resolveCountrySelectOption,
+  searchCountrySelectOptions,
+} from '@/features/master-data/countries/countrySearchSelect'
 import ActiveFilterSelect from '@/modules/crud/components/ActiveFilterSelect'
-import ListFilterSelect from '@/modules/crud/components/ListFilterSelect'
+import ApiFilterSearchSelect from '@/modules/crud/components/ApiFilterSearchSelect'
 
 const EsimPackagesCrudTable = () => {
   const crud = useEsimPackagesCrud({
@@ -38,41 +50,39 @@ const EsimPackagesCrudTable = () => {
                 <LuSearch className="app-search-icon text-muted" />
               </div>
 
-              <ListFilterSelect
+              <ApiFilterSearchSelect
                 label="Quốc gia"
                 value={crud.countryFilter}
                 onChange={crud.setCountryFilter}
-                options={crud.filterOptions.countryOptions}
                 allLabel="Tất cả quốc gia"
-                minWidth="0"
+                loadOptions={searchCountrySelectOptions}
+                resolveValue={resolveCountrySelectOption}
+                noOptionsMessage="Không tìm thấy quốc gia"
               />
-              <ListFilterSelect
+              <ApiFilterSearchSelect
                 label="Nhà mạng"
                 value={crud.carrierFilter}
                 onChange={crud.setCarrierFilter}
-                options={crud.filterOptions.carrierOptions}
                 allLabel="Tất cả nhà mạng"
-                minWidth="0"
+                loadOptions={searchCarrierSelectOptions}
+                resolveValue={resolveCarrierSelectOption}
+                noOptionsMessage="Không tìm thấy nhà mạng"
               />
-              <ListFilterSelect
+              <ApiFilterSearchSelect
                 label="Biến thể"
                 value={crud.variantFilter}
                 onChange={crud.setVariantFilter}
-                options={crud.variantFilterOptions}
                 allLabel="Tất cả biến thể"
-                minWidth="0"
-                onFocus={() => void crud.loadVariantFilterOptions()}
+                loadOptions={searchProductVariantSelectOptions}
+                resolveValue={resolveProductVariantSelectOption}
+                noOptionsMessage="Không tìm thấy biến thể"
               />
               <div className="d-flex flex-column">
                 <label className="form-label mb-1 small text-muted">Trạng thái</label>
                 <ActiveFilterSelect value={crud.activeFilter} onChange={crud.setActiveFilter} />
               </div>
 
-              <Button
-                variant="primary"
-                className="w-100 mt-1"
-                onClick={crud.openCreate}
-                disabled={!crud.filtersReady}>
+              <Button variant="primary" className="w-100 mt-1" onClick={crud.openCreate}>
                 <LuPlus className="fs-sm me-1" />
                 {esimPackagesLabels.addButton}
               </Button>

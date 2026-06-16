@@ -1,5 +1,5 @@
 import type { Carrier } from '@/features/master-data/types'
-import type { EntityFormConfig, FormFieldOption } from '@/modules/crud/form/types'
+import type { EntityFormConfig } from '@/modules/crud/form/types'
 
 export function getDefaultCarrierValues(): Carrier {
   return {
@@ -16,26 +16,24 @@ export function getDefaultCarrierValues(): Carrier {
   }
 }
 
-export function buildCarrierFormConfig(countryOptions: FormFieldOption[]): EntityFormConfig<Carrier> {
-  return {
-    entityName: 'nhà mạng',
-    slugFromName: true,
-    getDefaultValues: getDefaultCarrierValues,
-    fields: [
-      { name: 'name', label: 'Tên nhà mạng', type: 'text', required: true },
-      { name: 'slug', label: 'Slug', type: 'text', required: true },
-      { name: 'code', label: 'Mã (Code)', type: 'text', placeholder: 'SOFTBANK', col: 6 },
-      {
-        name: 'countryId',
-        label: 'Quốc gia',
-        type: 'select',
-        required: true,
-        col: 6,
-        options: countryOptions,
-      },
-      { name: 'logoUrl', label: 'URL logo', type: 'url' },
-      { name: 'sortOrder', label: 'Thứ tự', type: 'number', required: true, col: 6 },
-      { name: 'isActive', label: 'Hiển thị', type: 'checkbox', col: 6 },
-    ],
-  }
+export const carrierFormConfig: EntityFormConfig<Carrier> = {
+  entityName: 'nhà mạng',
+  slugFromName: true,
+  getDefaultValues: getDefaultCarrierValues,
+  fields: [
+    { name: 'name', label: 'Tên nhà mạng', type: 'text', required: true },
+    { name: 'slug', label: 'Slug', type: 'text', required: true },
+    { name: 'code', label: 'Mã (Code)', type: 'text', placeholder: 'SOFTBANK', col: 6 },
+    {
+      name: 'countryId',
+      label: 'Quốc gia',
+      type: 'countrySearch',
+      required: true,
+      col: 6,
+      placeholder: 'Tìm quốc gia...',
+    },
+    { name: 'logoUrl', label: 'URL logo', type: 'url' },
+    { name: 'sortOrder', label: 'Thứ tự', type: 'number', required: true, col: 6 },
+    { name: 'isActive', label: 'Hiển thị', type: 'checkbox', col: 6 },
+  ],
 }

@@ -5,20 +5,20 @@ import type { ProductFormTab } from '@/features/master-data/products/types'
 
 type ProductFormFooterProps = {
   activeTab: ProductFormTab
+  isNew: boolean
   isSaving: boolean
-  onContinue: () => void
 }
 
-const ProductFormFooter = ({ activeTab, isSaving, onContinue }: ProductFormFooterProps) => {
-  const isLastStep = activeTab === 'contents'
-  const continueLabel = isLastStep ? 'Hoàn tất' : 'Tiếp tục →'
+const ProductFormFooter = ({ activeTab, isNew, isSaving }: ProductFormFooterProps) => {
+  const showContinue = isNew && activeTab === 'product'
+  const showSave = activeTab === 'product' && !showContinue
 
   return (
     <div className="d-flex align-items-center justify-content-between border-top pt-3 mt-4">
       <Link to="/settings/products" className="btn btn-light">
-        Hủy
+        Quay lại danh sách
       </Link>
-      {activeTab === 'product' ? (
+      {showContinue && (
         <Button type="submit" form="product-info-form" variant="primary" disabled={isSaving}>
           {isSaving ? (
             <>
@@ -26,12 +26,20 @@ const ProductFormFooter = ({ activeTab, isSaving, onContinue }: ProductFormFoote
               Đang lưu...
             </>
           ) : (
-            continueLabel
+            'Tiếp tục →'
           )}
         </Button>
-      ) : (
-        <Button type="button" variant="primary" onClick={onContinue}>
-          {continueLabel}
+      )}
+      {showSave && (
+        <Button type="submit" form="product-info-form" variant="primary" disabled={isSaving}>
+          {isSaving ? (
+            <>
+              <Spinner animation="border" size="sm" className="me-2" />
+              Đang lưu...
+            </>
+          ) : (
+            'Lưu'
+          )}
         </Button>
       )}
     </div>

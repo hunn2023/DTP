@@ -23,3 +23,7 @@ export function getEsimStepIndex(tab: EsimWizardTab): number {
 export function getEsimStepByTab(tab: EsimWizardTab): EsimWizardStep {
   return ESIM_WIZARD_STEPS[getEsimStepIndex(tab)] ?? ESIM_WIZARD_STEPS[0]
 }
+
+export function getEsimTabTitle(tab: EsimWizardTab): string {
+  return getEsimStepByTab(tab).title
+}

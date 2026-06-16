@@ -1,21 +1,26 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Alert, Card, Col, Form, Row } from 'react-bootstrap'
 
 import { createEsimPackage, updateEsimPackage } from '@/apis/esimPackagesApi'
+import CountrySearchSelect from '@/features/master-data/countries/components/CountrySearchSelect'
+import RequiredMark from '@/components/form/RequiredMark'
+import NumberFormControl from '@/components/form/NumberFormControl'
+import { useTabDirty } from '@/features/products/esim-wizard/hooks/useTabDirty'
+import { useWizardTabForm } from '@/features/products/esim-wizard/hooks/useWizardTabForm'
 import { toWizardPackagePayload } from '@/features/products/esim-wizard/mapPackageForm'
 import type { EsimPackageForm } from '@/features/products/esim-wizard/types'
 import { getDefaultPackageValues } from '@/features/products/esim-wizard/wizardDefaults'
 import { slugify } from '@/modules/crud/form/slugify'
-import type { FormFieldOption } from '@/modules/crud/form/types'
 
 type WizardPackageTabProps = {
   productId: string
   variantId: string
   defaultCountryId: string
-  countryOptions: FormFieldOption[]
   initialValues: EsimPackageForm | null
   onSaved: (packageId: string) => void
   onSavingChange: (saving: boolean) => void
+  onDirtyChange?: (dirty: boolean) => void
+  onRegisterSave?: (fn: () => Promise<boolean>) => void
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -26,27 +31,26 @@ const WizardPackageTab = ({
   productId,
   variantId,
   defaultCountryId,
-  countryOptions,
   initialValues,
   onSaved,
   onSavingChange,
+  onDirtyChange,
+  onRegisterSave,
 }: WizardPackageTabProps) => {
-  const [values, setValues] = useState<EsimPackageForm>(
-    initialValues ?? getDefaultPackageValues(productId, variantId, defaultCountryId),
+  const [values, setValues] = useWizardTabForm(
+    initialValues,
+    () => getDefaultPackageValues(productId, variantId, defaultCountryId),
   )
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    if (initialValues) setValues(initialValues)
-  }, [initialValues])
+  useTabDirty(values, initialValues, onDirtyChange)
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const savePackage = useCallback(async (): Promise<boolean> => {
     setError('')
 
     if (!values.name.trim() || !values.countryId) {
       setError('Vui lòng điền tên gói và quốc gia')
-      return
+      return false
     }
 
     const payload = toWizardPackagePayload({ ...values, productId, productVariantId: variantId })
@@ -60,15 +64,26 @@ const WizardPackageTab = ({
         await updateEsimPackage(values.id, payload)
         onSaved(values.id)
       }
+      return true
     } catch (err) {
       setError(getErrorMessage(err, 'Không lưu được gói eSIM'))
+      return false
     } finally {
       onSavingChange(false)
     }
+  }, [values, productId, variantId, onSaved, onSavingChange])
+
+  useEffect(() => {
+    onRegisterSave?.(savePackage)
+  }, [onRegisterSave, savePackage])
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    void savePackage()
   }
 
   return (
-    <Form id="esim-wizard-package-form" onSubmit={(e) => void handleSubmit(e)}>
+    <Form id="esim-wizard-package-form" onSubmit={handleSubmit}>
       <Row className="g-3">
         <Col xl={8}>
           <Card className="border shadow-none h-100">
@@ -79,7 +94,7 @@ const WizardPackageTab = ({
               </div>
               <Row className="g-3">
                 <Col md={6}>
-                  <Form.Label className="fw-semibold">Tên gói eSIM *</Form.Label>
+                  <Form.Label className="fw-semibold">Tên gói eSIM <RequiredMark /></Form.Label>
                   <Form.Control
                     value={values.name}
                     onChange={(e) =>
@@ -93,7 +108,7 @@ const WizardPackageTab = ({
                   />
                 </Col>
                 <Col md={6}>
-                  <Form.Label className="fw-semibold">Slug *</Form.Label>
+                  <Form.Label className="fw-semibold">Slug <RequiredMark /></Form.Label>
                   <Form.Control
                     value={values.slug}
                     onChange={(e) => setValues((p) => ({ ...p, slug: e.target.value }))}
@@ -101,18 +116,11 @@ const WizardPackageTab = ({
                   />
                 </Col>
                 <Col md={6}>
-                  <Form.Label className="fw-semibold">Quốc gia *</Form.Label>
-                  <Form.Select
+                  <Form.Label className="fw-semibold">Quốc gia <RequiredMark /></Form.Label>
+                  <CountrySearchSelect
                     value={values.countryId}
-                    onChange={(e) => setValues((p) => ({ ...p, countryId: e.target.value }))}
-                    required>
-                    <option value="">-- Chọn --</option>
-                    {countryOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </Form.Select>
+                    onChange={(countryId) => setValues((p) => ({ ...p, countryId }))}
+                  />
                 </Col>
                 <Col md={6}>
                   <Form.Label className="fw-semibold">Loại phủ sóng</Form.Label>
@@ -126,12 +134,12 @@ const WizardPackageTab = ({
                 </Col>
                 <Col md={4}>
                   <Form.Label className="fw-semibold">Dung lượng</Form.Label>
-                  <Form.Control
-                    type="number"
+                  <NumberFormControl
                     min={0}
                     disabled={values.isUnlimited}
                     value={values.dataAmount ?? 0}
-                    onChange={(e) => setValues((p) => ({ ...p, dataAmount: Number(e.target.value) }))}
+                    emptyWhenZero={false}
+                    onChange={(dataAmount) => setValues((p) => ({ ...p, dataAmount }))}
                   />
                 </Col>
                 <Col md={4}>
@@ -144,12 +152,12 @@ const WizardPackageTab = ({
                   </Form.Select>
                 </Col>
                 <Col md={4}>
-                  <Form.Label className="fw-semibold">Số ngày *</Form.Label>
-                  <Form.Control
-                    type="number"
+                  <Form.Label className="fw-semibold">Số ngày <RequiredMark /></Form.Label>
+                  <NumberFormControl
                     min={1}
                     value={values.validityDays}
-                    onChange={(e) => setValues((p) => ({ ...p, validityDays: Number(e.target.value) }))}
+                    emptyWhenZero={false}
+                    onChange={(validityDays) => setValues((p) => ({ ...p, validityDays }))}
                   />
                 </Col>
                 <Col xs={12}>
@@ -239,10 +247,10 @@ const WizardPackageTab = ({
                 </div>
                 <div>
                   <Form.Label className="fw-semibold">Thứ tự</Form.Label>
-                  <Form.Control
-                    type="number"
+                  <NumberFormControl
                     value={values.sortOrder}
-                    onChange={(e) => setValues((p) => ({ ...p, sortOrder: Number(e.target.value) }))}
+                    emptyWhenZero={false}
+                    onChange={(sortOrder) => setValues((p) => ({ ...p, sortOrder }))}
                   />
                 </div>
                 <div>

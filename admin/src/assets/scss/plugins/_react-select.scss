@@ -37,6 +37,8 @@
 .react-select__menu-list {
     border: $dropdown-border-width solid $dropdown-border-color !important;
     border-radius: $dropdown-border-radius !important;
+    max-height: 240px;
+    overflow-y: auto;
 }
 
 .react-select__option {

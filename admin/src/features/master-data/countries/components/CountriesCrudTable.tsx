@@ -22,8 +22,6 @@ const CountriesCrudTable = () => {
       ? `Bạn có chắc muốn xóa ${crud.pendingDeleteCount} ${countriesLabels.itemName} đã chọn?`
       : `Bạn có chắc muốn xóa ${countriesLabels.itemName} này?`
 
-  const statusColumn = crud.table.getColumn('isActive')
-
   return (
     <Card>
       <CardHeader className="border-light justify-content-between">
@@ -45,21 +43,6 @@ const CountriesCrudTable = () => {
           )}
         </div>
         <div className="card-action d-flex flex-nowrap align-items-center gap-2">
-          {statusColumn && (
-            <select
-              className="form-select form-select-sm"
-              style={{ minWidth: '9.75rem', width: 'auto' }}
-              aria-label="Lọc theo trạng thái"
-              value={String(statusColumn.getFilterValue() ?? 'all')}
-              onChange={(e) => {
-                const value = e.target.value
-                statusColumn.setFilterValue(value === 'all' ? undefined : value === 'true')
-              }}>
-              <option value="all">Tất cả</option>
-              <option value="true">Hoạt động</option>
-              <option value="false">Ngưng hoạt động</option>
-            </select>
-          )}
           <Button variant="primary" size="sm" className="text-nowrap" onClick={crud.openCreate}>
             <LuPlus className="fs-sm me-1" />
             {countriesLabels.addButton}
@@ -124,8 +107,8 @@ const CountriesCrudTable = () => {
           onHide={crud.closeFormModal}
           onTabChange={crud.setFormTab}
           onContinueCreate={(values) => void crud.continueCreate(values)}
-          onSaveInfo={(values) => void crud.saveCountryInfo(values)}
-          onSaveFlag={(file) => void crud.saveCountryFlag(file)}
+          onSaveChanges={(input) => void crud.saveCountryChanges(input)}
+          onSaveCreateFlag={(file) => void crud.saveCreateFlag(file)}
         />
       )}
     </Card>

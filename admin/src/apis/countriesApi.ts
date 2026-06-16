@@ -32,7 +32,9 @@ export type CountryCreatePayload = {
   isActive: boolean
 }
 
-export type CountryUpdatePayload = CountryCreatePayload
+export type CountryUpdatePayload = CountryCreatePayload & {
+  flagUrl?: string
+}
 
 export type PagedCountriesDto = {
   items: CountryDto[]
@@ -124,6 +126,16 @@ export async function fetchAdminCountries(
     params: { pageIndex, pageSize, keyword: keyword?.trim() || undefined },
   })
   return normalizePaged(data, normalizeDto)
+}
+
+export async function fetchCountryById(id: string): Promise<Country | null> {
+  if (!id) return null
+  try {
+    const data = await httpGet<Raw>(`${API_PATHS.adminCountries}/${id}`)
+    return mapDto(normalizeDto(data))
+  } catch {
+    return null
+  }
 }
 
 export async function createCountry(payload: CountryCreatePayload): Promise<string> {

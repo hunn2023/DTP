@@ -22,8 +22,6 @@ const CategoriesCrudTable = () => {
       ? `Bạn có chắc muốn xóa ${crud.pendingDeleteCount} ${categoriesLabels.itemName} đã chọn?`
       : `Bạn có chắc muốn xóa ${categoriesLabels.itemName} này?`
 
-  const statusColumn = crud.table.getColumn('isActive')
-
   return (
     <Card>
       <CardHeader className="border-light justify-content-between">
@@ -45,21 +43,6 @@ const CategoriesCrudTable = () => {
           )}
         </div>
         <div className="card-action d-flex flex-nowrap align-items-center gap-2">
-          {statusColumn && (
-            <select
-              className="form-select form-select-sm"
-              style={{ minWidth: '9.75rem', width: 'auto' }}
-              aria-label="Lọc theo trạng thái"
-              value={String(statusColumn.getFilterValue() ?? 'all')}
-              onChange={(e) => {
-                const value = e.target.value
-                statusColumn.setFilterValue(value === 'all' ? undefined : value === 'true')
-              }}>
-              <option value="all">Tất cả</option>
-              <option value="true">Hoạt động</option>
-              <option value="false">Ngưng hoạt động</option>
-            </select>
-          )}
           <Button variant="primary" size="sm" className="text-nowrap" onClick={crud.openCreate}>
             <LuPlus className="fs-sm me-1" />
             {categoriesLabels.addButton}

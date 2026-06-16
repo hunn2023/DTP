@@ -10,8 +10,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import { useNotificationContext } from '@/context/useNotificationContext'
-import { fetchCategoryOptions } from '@/apis/categoriesApi'
-import { fetchCarrierOptions } from '@/apis/carriersApi'
 import { fetchCountries } from '@/apis/countriesApi'
 import type { Country } from '@/features/master-data/types'
 import type { ProductTableHandlers } from '@/features/master-data/products/columns'
@@ -45,10 +43,7 @@ export function useProductsCrud({ buildColumns, pageSize = 12 }: UseProductsCrud
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set())
-  const [categoryOptions, setCategoryOptions] = useState<{ value: string; label: string }[]>([])
   const [countries, setCountries] = useState<Country[]>([])
-  const [countryFilterOptions, setCountryFilterOptions] = useState<{ value: string; label: string }[]>([])
-  const [carrierFilterOptions, setCarrierFilterOptions] = useState<{ value: string; label: string }[]>([])
   const [categoryFilter, setCategoryFilter] = useState('')
   const [countryFilter, setCountryFilter] = useState('')
   const [carrierFilter, setCarrierFilter] = useState('')
@@ -73,34 +68,17 @@ export function useProductsCrud({ buildColumns, pageSize = 12 }: UseProductsCrud
   const loadSeqRef = useRef(0)
 
   useEffect(() => {
-    void Promise.all([fetchCategoryOptions(), fetchCountries(), fetchCarrierOptions()])
-      .then(([categories, countryList, carriers]) => {
-        setCategoryOptions(categories)
-        setCountries(countryList)
-        setCountryFilterOptions(
-          countryList.map((item) => ({
-            value: item.id,
-            label: `${item.isoCode} ${item.name}`,
-          })),
-        )
-        setCarrierFilterOptions(carriers)
-      })
+    void fetchCountries()
+      .then(setCountries)
       .catch((e) => {
-        notifyErrorRef.current(getErrorMessage(e, 'Không tải được bộ lọc'))
+        notifyErrorRef.current(getErrorMessage(e, 'Không tải được cờ quốc gia'))
       })
   }, [])
-
-  const categoryNameById = useMemo(
-    () => new Map(categoryOptions.map((item) => [item.value, item.label])),
-    [categoryOptions],
-  )
 
   const countryFlagById = useMemo(
     () => new Map(countries.map((item) => [item.id, item.flagUrl])),
     [countries],
   )
-  const categoryNameByIdRef = useRef(categoryNameById)
-  categoryNameByIdRef.current = categoryNameById
 
   const listFilters = useMemo(
     () => ({
@@ -119,13 +97,7 @@ export function useProductsCrud({ buildColumns, pageSize = 12 }: UseProductsCrud
       try {
         const result = await productsApi.fetchProductsPage(pageIndex + 1, size, filters)
         if (seq !== loadSeqRef.current) return
-        setData(
-          result.items.map((item) => ({
-            ...item,
-            categoryName:
-              item.categoryName || categoryNameByIdRef.current.get(item.categoryId) || '',
-          })),
-        )
+        setData(result.items)
         setTotalCount(result.totalCount)
       } catch (e) {
         if (seq !== loadSeqRef.current) return
@@ -141,16 +113,6 @@ export function useProductsCrud({ buildColumns, pageSize = 12 }: UseProductsCrud
     const seq = ++loadSeqRef.current
     void loadData(pagination.pageIndex, pagination.pageSize, listFilters, seq)
   }, [pagination.pageIndex, pagination.pageSize, listFilters, loadData])
-
-  useEffect(() => {
-    if (categoryOptions.length === 0) return
-    setData((prev) =>
-      prev.map((item) => ({
-        ...item,
-        categoryName: item.categoryName || categoryNameById.get(item.categoryId) || '',
-      })),
-    )
-  }, [categoryOptions, categoryNameById])
 
   const reload = useCallback(() => {
     const seq = ++loadSeqRef.current
@@ -318,9 +280,6 @@ export function useProductsCrud({ buildColumns, pageSize = 12 }: UseProductsCrud
     openCreate,
     openView,
     isLoading,
-    categoryFilterOptions: categoryOptions,
-    countryFilterOptions,
-    carrierFilterOptions,
     categoryFilter,
     setCategoryFilter: setCategoryFilterAndReset,
     countryFilter,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Badge, Card, Form, Placeholder, Table } from 'react-bootstrap'
 
 import { fetchCarriers } from '@/apis/carriersApi'
@@ -8,8 +8,10 @@ import type { Carrier } from '@/features/master-data/types'
 
 type WizardCarriersTabProps = {
   selectedCarrierIds: string[]
+  savedCarrierIds: string[]
   countryId?: string
   onChange: (carrierIds: string[]) => void
+  onDirtyChange?: (dirty: boolean) => void
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -18,10 +20,29 @@ function getErrorMessage(error: unknown, fallback: string): string {
 
 const LOADING_ROW_COUNT = 4
 
-const WizardCarriersTab = ({ selectedCarrierIds, countryId, onChange }: WizardCarriersTabProps) => {
+const WizardCarriersTab = ({
+  selectedCarrierIds,
+  savedCarrierIds,
+  countryId,
+  onChange,
+  onDirtyChange,
+}: WizardCarriersTabProps) => {
   const { showNotification } = useNotificationContext()
   const [carriers, setCarriers] = useState<Carrier[]>([])
   const [isLoading, setIsLoading] = useState(true)
+
+  const isDirty = useMemo(() => {
+    const current = [...selectedCarrierIds].sort().join(',')
+    const saved = [...savedCarrierIds].sort().join(',')
+    return current !== saved
+  }, [selectedCarrierIds, savedCarrierIds])
+
+  const onDirtyChangeRef = useRef(onDirtyChange)
+  onDirtyChangeRef.current = onDirtyChange
+
+  useEffect(() => {
+    onDirtyChangeRef.current?.(isDirty)
+  }, [isDirty])
 
   useEffect(() => {
     let active = true
