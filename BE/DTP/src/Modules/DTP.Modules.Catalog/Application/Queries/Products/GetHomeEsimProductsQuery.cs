@@ -11,10 +11,10 @@ using System.Threading.Tasks;
 namespace DTP.Modules.Catalog.Application.Queries.Products
 {
     public record GetHomeEsimProductsQuery()
-     : IRequest<Result<List<HomeEsimProductDto>>>;
+     : IRequest<Result<List<HomeEsimCountryProductDto>>>;
 
     public class GetHomeEsimProductsQueryHandler
-        : IRequestHandler<GetHomeEsimProductsQuery, Result<List<HomeEsimProductDto>>>
+        : IRequestHandler<GetHomeEsimProductsQuery, Result<List<HomeEsimCountryProductDto>>>
     {
         private readonly IProductService _productService;
 
@@ -23,7 +23,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Products
             _productService = productService;
         }
 
-        public async Task<Result<List<HomeEsimProductDto>>> Handle(
+        public async Task<Result<List<HomeEsimCountryProductDto>>> Handle(
             GetHomeEsimProductsQuery request,
             CancellationToken cancellationToken)
         {

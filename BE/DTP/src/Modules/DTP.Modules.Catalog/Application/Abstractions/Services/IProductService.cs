@@ -60,7 +60,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
             int pageSize,
             CancellationToken cancellationToken = default);
 
-        Task<Result<List<HomeEsimProductDto>>> GetHomeEsimProductsAsync(
+        Task<Result<List<HomeEsimCountryProductDto>>> GetHomeEsimProductsAsync(
                 CancellationToken cancellationToken = default);
     }
 }
