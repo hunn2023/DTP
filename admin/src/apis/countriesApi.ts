@@ -32,7 +32,9 @@ export type CountryCreatePayload = {
   isActive: boolean
 }
 
-export type CountryUpdatePayload = CountryCreatePayload
+export type CountryUpdatePayload = CountryCreatePayload & {
+  flagUrl?: string
+}
 
 export type PagedCountriesDto = {
   items: CountryDto[]

@@ -10,7 +10,19 @@ import { productsLabels } from '@/features/master-data/products/data'
 import { PRODUCT_PAGE_SIZE_OPTIONS } from '@/apis/productsApi'
 import { useProductsCrud } from '@/features/master-data/products/useProductsCrud'
 import ActiveFilterSelect from '@/modules/crud/components/ActiveFilterSelect'
-import ListFilterSelect from '@/modules/crud/components/ListFilterSelect'
+import ApiFilterSearchSelect from '@/modules/crud/components/ApiFilterSearchSelect'
+import {
+  resolveCarrierSelectOption,
+  searchCarrierSelectOptions,
+} from '@/features/master-data/carriers/carrierSearchSelect'
+import {
+  resolveCategorySelectOption,
+  searchCategorySelectOptions,
+} from '@/features/master-data/categories/categorySearchSelect'
+import {
+  resolveCountrySelectOption,
+  searchCountrySelectOptions,
+} from '@/features/master-data/countries/countrySearchSelect'
 
 const ProductsCrudTable = () => {
   const crud = useProductsCrud({ buildColumns: buildProductColumns })
@@ -37,29 +49,32 @@ const ProductsCrudTable = () => {
                 <LuSearch className="app-search-icon text-muted" />
               </div>
 
-              <ListFilterSelect
+              <ApiFilterSearchSelect
                 label="Danh mục"
                 value={crud.categoryFilter}
                 onChange={crud.setCategoryFilter}
-                options={crud.categoryFilterOptions}
                 allLabel="Tất cả danh mục"
-                minWidth="0"
+                loadOptions={searchCategorySelectOptions}
+                resolveValue={resolveCategorySelectOption}
+                noOptionsMessage="Không tìm thấy danh mục"
               />
-              <ListFilterSelect
+              <ApiFilterSearchSelect
                 label="Quốc gia"
                 value={crud.countryFilter}
                 onChange={crud.setCountryFilter}
-                options={crud.countryFilterOptions}
                 allLabel="Tất cả quốc gia"
-                minWidth="0"
+                loadOptions={searchCountrySelectOptions}
+                resolveValue={resolveCountrySelectOption}
+                noOptionsMessage="Không tìm thấy quốc gia"
               />
-              <ListFilterSelect
+              <ApiFilterSearchSelect
                 label="Nhà mạng"
                 value={crud.carrierFilter}
                 onChange={crud.setCarrierFilter}
-                options={crud.carrierFilterOptions}
                 allLabel="Tất cả nhà mạng"
-                minWidth="0"
+                loadOptions={searchCarrierSelectOptions}
+                resolveValue={resolveCarrierSelectOption}
+                noOptionsMessage="Không tìm thấy nhà mạng"
               />
               <div className="d-flex flex-column">
                 <label className="form-label mb-1 small text-muted">Trạng thái</label>

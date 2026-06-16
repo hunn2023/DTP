@@ -1,11 +1,12 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Card, Col, Form, Row } from 'react-bootstrap'
 
 import { getDefaultProductValues, toProductPayload } from '@/features/master-data/products/formConfig'
 import { createProduct, updateProduct } from '@/apis/productsApi'
 import type { CatalogProduct } from '@/features/master-data/products/types'
-import type { Country } from '@/features/master-data/types'
-import type { FormFieldOption } from '@/modules/crud/form/types'
+import CategorySearchSelect from '@/features/master-data/categories/components/CategorySearchSelect'
+import CountrySearchSelect from '@/features/master-data/countries/components/CountrySearchSelect'
+import { useTabDirty } from '@/features/products/esim-wizard/hooks/useTabDirty'
 import { slugify } from '@/modules/crud/form/slugify'
 import RequiredMark from '@/components/form/RequiredMark'
 
@@ -15,12 +16,13 @@ const DETAIL_DESC_MAX = 2000
 type ProductInfoTabProps = {
   productId: string | null
   initialValues?: CatalogProduct | null
-  categoryOptions: FormFieldOption[]
-  countries: Country[]
   isNew: boolean
+  resetNonce?: number
   onCreated: (id: string) => void
   onSaved: () => void
   onSavingChange: (saving: boolean) => void
+  onDirtyChange?: (dirty: boolean) => void
+  onRegisterSave?: (save: (() => Promise<boolean>) | null) => void
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -38,36 +40,33 @@ function CharCounter({ current, max }: { current: number; max: number }) {
 const ProductInfoTab = ({
   productId,
   initialValues,
-  categoryOptions,
-  countries,
   isNew,
+  resetNonce = 0,
   onCreated,
   onSaved,
   onSavingChange,
+  onDirtyChange,
+  onRegisterSave,
 }: ProductInfoTabProps) => {
   const [values, setValues] = useState<CatalogProduct>(initialValues ?? getDefaultProductValues())
   const [error, setError] = useState('')
 
   useEffect(() => {
     if (initialValues) setValues(initialValues)
-  }, [initialValues])
+  }, [initialValues, resetNonce])
 
-  const selectedCountry = useMemo(
-    () => countries.find((item) => item.id === values.countryId),
-    [countries, values.countryId],
-  )
+  useTabDirty(values, initialValues ?? null, onDirtyChange)
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const saveProduct = useCallback(async (): Promise<boolean> => {
     setError('')
 
     if (!values.name.trim() || !values.slug.trim() || !values.categoryId.trim()) {
       setError('Vui lòng điền tên, slug và danh mục')
-      return
+      return false
     }
     if (values.shortDescription.length > SHORT_DESC_MAX || values.description.length > DETAIL_DESC_MAX) {
       setError('Mô tả vượt quá giới hạn ký tự')
-      return
+      return false
     }
 
     const payloadValues = {
@@ -80,15 +79,30 @@ const ProductInfoTab = ({
       if (isNew) {
         const id = await createProduct(toProductPayload(payloadValues, true))
         onCreated(id)
-      } else if (productId) {
+        return true
+      }
+      if (productId) {
         await updateProduct(productId, toProductPayload(payloadValues, false))
         onSaved()
+        return true
       }
+      return false
     } catch (err) {
       setError(getErrorMessage(err, 'Không lưu được sản phẩm'))
+      return false
     } finally {
       onSavingChange(false)
     }
+  }, [values, isNew, productId, onCreated, onSaved, onSavingChange])
+
+  useEffect(() => {
+    onRegisterSave?.(saveProduct)
+    return () => onRegisterSave?.(null)
+  }, [saveProduct, onRegisterSave])
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    await saveProduct()
   }
 
   return (
@@ -126,41 +140,19 @@ const ProductInfoTab = ({
                 </Col>
                 <Col md={6}>
                   <Form.Label className="fw-semibold">Danh mục <RequiredMark /></Form.Label>
-                  <Form.Select
+                  <CategorySearchSelect
                     value={values.categoryId}
-                    onChange={(e) => setValues((p) => ({ ...p, categoryId: e.target.value }))}
-                    required>
-                    <option value="">-- Chọn danh mục --</option>
-                    {categoryOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </Form.Select>
+                    onChange={(categoryId) => setValues((p) => ({ ...p, categoryId }))}
+                    placeholder="Tìm danh mục..."
+                  />
                 </Col>
                 <Col md={6}>
                   <Form.Label className="fw-semibold">Quốc gia</Form.Label>
-                  <div className="position-relative">
-                    {selectedCountry?.flagUrl && (
-                      <img
-                        src={selectedCountry.flagUrl}
-                        alt=""
-                        className="position-absolute rounded"
-                        style={{ width: 20, height: 14, left: 12, top: '50%', transform: 'translateY(-50%)', objectFit: 'cover' }}
-                      />
-                    )}
-                    <Form.Select
-                      value={values.countryId}
-                      className={selectedCountry?.flagUrl ? 'ps-5' : undefined}
-                      onChange={(e) => setValues((p) => ({ ...p, countryId: e.target.value }))}>
-                      <option value="">-- Không chọn --</option>
-                      {countries.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </div>
+                  <CountrySearchSelect
+                    value={values.countryId}
+                    onChange={(countryId) => setValues((p) => ({ ...p, countryId }))}
+                    placeholder="Tìm quốc gia..."
+                  />
                 </Col>
                 <Col xs={12}>
                   <div className="d-flex justify-content-between align-items-center">

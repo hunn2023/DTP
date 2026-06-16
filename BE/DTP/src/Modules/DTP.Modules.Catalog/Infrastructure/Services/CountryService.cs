@@ -126,7 +126,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             code = code.Trim().ToUpper();
             name = name.Trim();
             slug = slug.Trim().ToLower();
-            flagUrl = string.IsNullOrWhiteSpace(flagUrl) ? null : flagUrl.Trim();
+            flagUrl = string.IsNullOrWhiteSpace(flagUrl) ? country.FlagUrl : flagUrl.Trim();
             region = string.IsNullOrWhiteSpace(region) ? null : region.Trim();
             description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
 

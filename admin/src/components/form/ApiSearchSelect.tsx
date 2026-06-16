@@ -22,6 +22,12 @@ type ApiSearchSelectProps = {
 
 const DEFAULT_MENU_HEIGHT = 240
 const DEFAULT_DEBOUNCE_MS = 300
+const MENU_PORTAL_Z_INDEX = 1060
+
+function getMenuPortalTarget(): HTMLElement | null {
+  if (typeof document === 'undefined') return null
+  return document.body
+}
 
 function useDebouncedLoader(
   loader: (keyword: string) => Promise<ApiSearchSelectOption[]>,
@@ -105,6 +111,12 @@ const ApiSearchSelect = ({
       isDisabled={isDisabled}
       isClearable={isClearable}
       maxMenuHeight={menuMaxHeight}
+      menuPortalTarget={getMenuPortalTarget()}
+      menuPosition="fixed"
+      menuShouldScrollIntoView={false}
+      styles={{
+        menuPortal: (base) => ({ ...base, zIndex: MENU_PORTAL_Z_INDEX }),
+      }}
       noOptionsMessage={() => noOptionsMessage}
       loadingMessage={() => 'Đang tải...'}
     />

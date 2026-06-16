@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { Button, Col, Form, Modal, ModalBody, ModalFooter, ModalHeader, ModalTitle, Row } from 'react-bootstrap'
 
 import RequiredMark from '@/components/form/RequiredMark'
+import CountrySearchSelect from '@/features/master-data/countries/components/CountrySearchSelect'
 import { getFieldLabel } from '@/modules/crud/entities/fieldLabels'
 import type { FormFieldConfig, FormModalMode } from '@/modules/crud/form/types'
 function resolveLabel<T>(field: FormFieldConfig<T>): string {
@@ -38,12 +39,14 @@ function FormFieldInput<T extends { isActive: boolean }>({
   value,
   selectedIds,
   readOnly,
+  values,
   onChange,
 }: {
   field: FormFieldConfig<T>
   value: string
   selectedIds: number[]
   readOnly: boolean
+  values: T
   onChange: (name: keyof T & string, value: string | boolean | number | number[]) => void
 }) {
   const common = {
@@ -96,6 +99,21 @@ function FormFieldInput<T extends { isActive: boolean }>({
         </Form.Select>
         <Form.Text className="text-muted">Giữ Ctrl (Windows) hoặc Cmd (Mac) để chọn nhiều mục.</Form.Text>
       </>
+    )
+  }
+
+  if (field.type === 'countrySearch') {
+    if (readOnly) {
+      const countryName = (values as Record<string, unknown>).countryName
+      const display = typeof countryName === 'string' && countryName ? countryName : value || '—'
+      return <Form.Control plaintext readOnly className="px-0" value={display} />
+    }
+    return (
+      <CountrySearchSelect
+        value={value}
+        onChange={(next) => onChange(field.name, next)}
+        placeholder={field.placeholder ?? 'Tìm quốc gia...'}
+      />
     )
   }
 
@@ -226,6 +244,7 @@ const EntityFormModal = <T extends { isActive: boolean }>({
                   value={getFieldValue(values, field.name)}
                   selectedIds={getMultiSelectIds(values, field.name)}
                   readOnly={readOnly}
+                  values={values}
                   onChange={handleChange}
                 />
                 {field.hint && <Form.Text className="text-muted">{field.hint}</Form.Text>}

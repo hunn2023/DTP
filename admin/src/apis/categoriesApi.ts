@@ -114,6 +114,16 @@ export async function fetchAdminCategories(
   return normalizePaged(data, normalizeDto)
 }
 
+export async function fetchCategoryById(id: string): Promise<Category | null> {
+  if (!id) return null
+  try {
+    const data = await httpGet<Raw>(`${API_PATHS.adminCategories}/${id}`)
+    return mapDto(normalizeDto(data))
+  } catch {
+    return null
+  }
+}
+
 /** Dropdown danh mục — dùng cho Products, EsimPackages... */
 export async function fetchCategoryOptions(): Promise<FormFieldOption[]> {
   if (cachedCategoryOptions) return cachedCategoryOptions

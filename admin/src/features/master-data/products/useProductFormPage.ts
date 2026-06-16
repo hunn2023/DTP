@@ -1,13 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useParams, useSearchParams } from 'react-router'
 
-import { fetchCategoryOptions } from '@/apis/categoriesApi'
-import { fetchCountries } from '@/apis/countriesApi'
 import { fetchProductDetail } from '@/apis/productsApi'
-import { useNotificationContext } from '@/context/useNotificationContext'
 import type { CatalogProduct, ProductFormTab } from '@/features/master-data/products/types'
-import type { Country } from '@/features/master-data/types'
-import type { FormFieldOption } from '@/modules/crud/form/types'
 
 const TAB_KEYS: ProductFormTab[] = ['product', 'images', 'attributes', 'faqs', 'contents']
 
@@ -27,7 +22,6 @@ export function useProductFormPage() {
   const { productId: routeProductId } = useParams()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { showNotification } = useNotificationContext()
 
   const isNew = isNewProductRoute(routeProductId, location.pathname)
   const productId = isNew ? null : (routeProductId ?? null)
@@ -38,13 +32,24 @@ export function useProductFormPage() {
   const [product, setProduct] = useState<CatalogProduct | null>(null)
   const [isLoading, setIsLoading] = useState(!isNew && Boolean(routeProductId))
   const [isSaving, setIsSaving] = useState(false)
-  const [categoryOptions, setCategoryOptions] = useState<FormFieldOption[]>([])
-  const [countries, setCountries] = useState<Country[]>([])
+  const [dirtyTabs, setDirtyTabs] = useState<Set<ProductFormTab>>(new Set())
+  const [pendingTab, setPendingTab] = useState<ProductFormTab | null>(null)
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false)
+  const [formResetNonce, setFormResetNonce] = useState(0)
 
-  const showNotificationRef = useRef(showNotification)
-  showNotificationRef.current = showNotification
+  const productSaveRef = useRef<(() => Promise<boolean>) | null>(null)
 
   const canAccessSubTabs = Boolean(productId)
+
+  const markTabDirty = useCallback((tab: ProductFormTab, dirty: boolean) => {
+    setDirtyTabs((prev) => {
+      if (prev.has(tab) === dirty) return prev
+      const next = new Set(prev)
+      if (dirty) next.add(tab)
+      else next.delete(tab)
+      return next
+    })
+  }, [])
 
   const reloadProduct = useCallback(async (id: string) => {
     setIsLoading(true)
@@ -54,22 +59,6 @@ export function useProductFormPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
-
-  useEffect(() => {
-    void Promise.all([fetchCategoryOptions(), fetchCountries()])
-      .then(([categories, countryList]) => {
-        setCategoryOptions(categories)
-        setCountries(countryList)
-      })
-      .catch(() => {
-        showNotificationRef.current({
-          title: 'Lỗi',
-          message: 'Không tải được danh mục hoặc quốc gia',
-          variant: 'danger',
-          delay: 4000,
-        })
-      })
   }, [])
 
   useEffect(() => {
@@ -91,6 +80,45 @@ export function useProductFormPage() {
     [canAccessSubTabs, setSearchParams],
   )
 
+  const requestTabChange = useCallback(
+    (tab: ProductFormTab) => {
+      if (tab === activeTab) return
+      if (tab !== 'product' && !canAccessSubTabs) return
+      if (dirtyTabs.has(activeTab)) {
+        setPendingTab(tab)
+        setShowUnsavedModal(true)
+        return
+      }
+      setActiveTab(tab)
+    },
+    [activeTab, canAccessSubTabs, dirtyTabs, setActiveTab],
+  )
+
+  const registerProductSave = useCallback((save: (() => Promise<boolean>) | null) => {
+    productSaveRef.current = save
+  }, [])
+
+  const discardPendingTabChange = useCallback(() => {
+    if (!pendingTab) return
+    setFormResetNonce((n) => n + 1)
+    markTabDirty(activeTab, false)
+    setActiveTab(pendingTab)
+    setPendingTab(null)
+    setShowUnsavedModal(false)
+  }, [pendingTab, activeTab, markTabDirty, setActiveTab])
+
+  const confirmUnsavedSave = useCallback(async () => {
+    if (activeTab === 'product') {
+      const ok = (await productSaveRef.current?.()) ?? false
+      if (!ok) return
+    }
+    if (pendingTab) {
+      setActiveTab(pendingTab)
+      setPendingTab(null)
+    }
+    setShowUnsavedModal(false)
+  }, [activeTab, pendingTab, setActiveTab])
+
   const openContentForm = useCallback(
     (id: string) => {
       setSearchParams({ tab: 'contents', contentId: id })
@@ -109,13 +137,12 @@ export function useProductFormPage() {
     productId,
     activeTab,
     setActiveTab,
+    requestTabChange,
     setSearchParams,
     product,
     isLoading,
     isSaving,
     setIsSaving,
-    categoryOptions,
-    countries,
     canAccessSubTabs,
     reloadProduct,
     pageTitle,
@@ -123,5 +150,12 @@ export function useProductFormPage() {
     isContentFormOpen,
     openContentForm,
     closeContentForm,
+    markTabDirty,
+    showUnsavedModal,
+    setShowUnsavedModal,
+    confirmUnsavedSave,
+    discardPendingTabChange,
+    registerProductSave,
+    formResetNonce,
   }
 }

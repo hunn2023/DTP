@@ -1,7 +1,9 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { Button, Col, Form, Modal, ModalBody, ModalFooter, ModalHeader, ModalTitle, Nav, Row, Tab } from 'react-bootstrap'
 
 import FileUploader from '@/components/FileUploader'
+import type { CountrySaveChangesInput } from '@/features/master-data/countries/countryFormUtils'
+import { isCountryInfoDirty } from '@/features/master-data/countries/countryFormUtils'
 import { countryFormConfig } from '@/features/master-data/countries/formConfig'
 import { getCountryRegionOptions } from '@/features/master-data/countries/regionOptions'
 import type { Country } from '@/features/master-data/types'
@@ -18,8 +20,8 @@ type CountryFormModalProps = {
   onHide: () => void
   onTabChange: (tab: 'info' | 'flag') => void
   onContinueCreate: (values: Country) => void
-  onSaveInfo: (values: Country) => void
-  onSaveFlag: (file: File) => void
+  onSaveChanges: (input: CountrySaveChangesInput) => void
+  onSaveCreateFlag: (file: File) => void
 }
 
 function getFieldValue(values: Country, name: keyof Country): string {
@@ -103,17 +105,19 @@ const CountryFormModal = ({
   onHide,
   onTabChange,
   onContinueCreate,
-  onSaveInfo,
-  onSaveFlag,
+  onSaveChanges,
+  onSaveCreateFlag,
 }: CountryFormModalProps) => {
   const [values, setValues] = useState<Country>(initialValues)
   const [errors, setErrors] = useState<Partial<Record<keyof Country, string>>>({})
   const [flagFiles, setFlagFiles] = useState<File[] | undefined>()
+  const baselineRef = useRef<Country>(initialValues)
   const readOnly = mode === 'view'
   const fields = countryFormConfig.fields
 
   useEffect(() => {
     if (show) {
+      baselineRef.current = initialValues
       setValues(initialValues)
       setErrors({})
       setFlagFiles(undefined)
@@ -154,18 +158,41 @@ const CountryFormModal = ({
       onContinueCreate(values)
       return
     }
-    onSaveInfo(values)
+    onSaveChanges({
+      values,
+      flagFile: flagFiles?.[0],
+      saveInfo: true,
+      saveFlag: Boolean(flagFiles?.[0]),
+    })
   }
 
   const handleFlagSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (readOnly) return
-    const file = flagFiles?.[0]
-    if (!file) {
-      setErrors((prev) => ({ ...prev, flagUrl: 'Vui lòng chọn ảnh cờ' }))
+
+    if (mode === 'create') {
+      const file = flagFiles?.[0]
+      if (!file) {
+        setErrors((prev) => ({ ...prev, flagUrl: 'Vui lòng chọn ảnh cờ' }))
+        return
+      }
+      onSaveCreateFlag(file)
       return
     }
-    onSaveFlag(file)
+
+    const infoDirty = isCountryInfoDirty(values, baselineRef.current)
+    const flagFile = flagFiles?.[0]
+    if (!infoDirty && !flagFile) {
+      setErrors((prev) => ({ ...prev, flagUrl: 'Không có thay đổi để lưu' }))
+      return
+    }
+    if (!validateInfo()) return
+    onSaveChanges({
+      values,
+      flagFile,
+      saveInfo: infoDirty,
+      saveFlag: Boolean(flagFile),
+    })
   }
 
   const canOpenFlagTab = mode !== 'create' || Boolean(countryIdForFlag)

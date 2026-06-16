@@ -12,11 +12,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import type { CarrierTableHandlers } from '@/features/master-data/carriers/columns'
 import * as carriersApi from '@/apis/carriersApi'
-import { buildCarrierFormConfig, getDefaultCarrierValues } from '@/features/master-data/carriers/formConfig'
-import { fetchCountries } from '@/apis/countriesApi'
+import { fetchCountries, fetchCountryById } from '@/apis/countriesApi'
+import { carrierFormConfig, getDefaultCarrierValues } from '@/features/master-data/carriers/formConfig'
 import type { Carrier } from '@/features/master-data/types'
 import { slugify } from '@/modules/crud/form/slugify'
-import type { FormFieldOption, FormModalMode } from '@/modules/crud/form/types'
+import type { FormModalMode } from '@/modules/crud/form/types'
 
 type UseCarriersCrudParams = {
   buildColumns: (handlers: CarrierTableHandlers) => ColumnDef<Carrier>[]
@@ -55,11 +55,7 @@ function buildCountryLookups(countries: Awaited<ReturnType<typeof fetchCountries
   const countryById = new Map<string, CountryLookup>(
     countries.map((c) => [c.id, { name: c.name, flagUrl: c.flagUrl }]),
   )
-  const countryOptions: FormFieldOption[] = countries.map((c) => ({
-    value: c.id,
-    label: `${c.isoCode} ${c.name}`,
-  }))
-  return { countryById, countryOptions }
+  return { countryById }
 }
 
 function toCountryNameMap(countryById: Map<string, CountryLookup>): Map<string, string> {
@@ -78,14 +74,24 @@ function enrichCarriersFromCountries(items: Carrier[], countryById: Map<string, 
   })
 }
 
+async function resolveCountryMeta(
+  countryId: string,
+  countryById: Map<string, CountryLookup>,
+): Promise<CountryLookup> {
+  const cached = countryById.get(countryId)
+  if (cached) return cached
+
+  const country = await fetchCountryById(countryId)
+  if (!country) return { name: '', flagUrl: '' }
+  return { name: country.name, flagUrl: country.flagUrl }
+}
+
 export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrudParams) {
   const { showNotification } = useNotificationContext()
   const [data, setData] = useState<Carrier[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
-  const [countryOptions, setCountryOptions] = useState<FormFieldOption[]>([])
   const [countryById, setCountryById] = useState<Map<string, CountryLookup>>(new Map())
-  const [isLoadingLookups, setIsLoadingLookups] = useState(false)
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -117,7 +123,6 @@ export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrud
   const loadSeqRef = useRef(0)
   const countryByIdRef = useRef(countryById)
   countryByIdRef.current = countryById
-  const countryOptionsRef = useRef<FormFieldOption[]>([])
 
   const loadData = useCallback(async (pageIndex: number, size: number, keyword: string, seq: number) => {
     setIsLoading(true)
@@ -150,20 +155,14 @@ export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrud
   }, [loadData, pagination.pageIndex, pagination.pageSize, globalFilter])
 
   const loadCountryLookups = useCallback(async () => {
-    setIsLoadingLookups(true)
     try {
       const countries = await fetchCountries()
       const lookups = buildCountryLookups(countries)
-      countryOptionsRef.current = lookups.countryOptions
       countryByIdRef.current = lookups.countryById
-      setCountryOptions(lookups.countryOptions)
       setCountryById(lookups.countryById)
       setData((prev) => enrichCarriersFromCountries(prev, lookups.countryById))
     } catch (e) {
       notifyErrorRef.current(getErrorMessage(e, 'Không tải được danh sách quốc gia'))
-      throw e
-    } finally {
-      setIsLoadingLookups(false)
     }
   }, [])
 
@@ -171,12 +170,15 @@ export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrud
     void loadCountryLookups()
   }, [loadCountryLookups])
 
-  const ensureCountryLookups = useCallback(async () => {
-    if (countryOptionsRef.current.length > 0) return
-    await loadCountryLookups()
-  }, [loadCountryLookups])
+  const openCreate = useCallback(() => {
+    setFormValues(getDefaultCarrierValues())
+    setFormMode('create')
+  }, [])
 
-  const formConfig = useMemo(() => buildCarrierFormConfig(countryOptions), [countryOptions])
+  const openEdit = useCallback((row: Carrier) => {
+    setFormValues({ ...row })
+    setFormMode('edit')
+  }, [])
 
   const toggleActive = useCallback(
     async (row: Carrier) => {
@@ -202,21 +204,6 @@ export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrud
     setShowDeleteModal(true)
   }, [])
 
-  const openCreate = useCallback(async () => {
-    await ensureCountryLookups()
-    setFormValues({
-      ...getDefaultCarrierValues(),
-      countryId: countryOptionsRef.current[0]?.value ?? '',
-    })
-    setFormMode('create')
-  }, [ensureCountryLookups])
-
-  const openEdit = useCallback(async (row: Carrier) => {
-    await ensureCountryLookups()
-    setFormValues({ ...row })
-    setFormMode('edit')
-  }, [ensureCountryLookups])
-
   const openView = useCallback((row: Carrier) => {
     setFormValues({ ...row })
     setFormMode('view')
@@ -232,11 +219,11 @@ export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrud
       if (!formMode || formMode === 'view') return
 
       let values = applySlugFromName(rawValues)
-      const country = countryByIdRef.current.get(values.countryId)
+      const country = await resolveCountryMeta(values.countryId, countryByIdRef.current)
       values = {
         ...values,
-        countryName: country?.name ?? '',
-        countryFlagUrl: country?.flagUrl ?? '',
+        countryName: country.name,
+        countryFlagUrl: country.flagUrl,
       }
 
       setIsSaving(true)
@@ -366,10 +353,9 @@ export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrud
     openView,
     closeFormModal,
     saveForm,
-    formConfig,
+    formConfig: carrierFormConfig,
     isLoading,
     isSaving,
-    isLoadingLookups,
     reload,
   }
 }
