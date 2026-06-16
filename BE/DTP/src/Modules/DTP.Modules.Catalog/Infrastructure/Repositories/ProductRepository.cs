@@ -86,6 +86,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 .AsNoTracking()
                 .Where(x =>
                     x.IsActive &&
+                    !x.IsDeleted &&
                     x.Slug == slug)
                 .Select(x => new ProductDto
                 {
@@ -99,7 +100,16 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     Description = x.Description,
                     ThumbnailUrl = x.ThumbnailUrl,
                     SortOrder = x.SortOrder,
-                    IsActive = x.IsActive
+                    IsActive = x.IsActive,
+                    Attributes = x.Attributes
+                                .Where(a => a.IsVisible && !x.IsDeleted)
+                                .OrderBy(a => a.SortOrder)
+                                .Select(a => new ProductAttributeDto
+                                {
+                                    Key = a.Key,
+                                    Value = a.Value,
+                                })
+                                .ToList()
                 })
                 .FirstOrDefaultAsync(cancellationToken);
         }
@@ -576,7 +586,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             };
         }
         public async Task<List<HomeEsimProductDto>> GetHomeEsimProductsAsync(
-            CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
 

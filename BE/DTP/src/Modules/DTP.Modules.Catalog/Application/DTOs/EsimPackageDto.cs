@@ -40,6 +40,11 @@
         public int SortOrder { get; set; }
         public bool IsActive { get; set; }
 
+        public decimal? SalePrice { get; set; }
+        public decimal? CostPrice { get; set; }
+
+        public List<ProductVariantFeatureDto> ProductVariantFeatures { get; set; } = new();
+
         public List<EsimPackageCarrierDto> Carriers { get; set; } = new();
     }
 

@@ -52,10 +52,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         }
 
         public async Task<EsimPackageDto?> GetPublicBySlugAsync(
-            string slug,
-            CancellationToken cancellationToken = default)
+     string slug,
+     CancellationToken cancellationToken = default)
         {
             slug = slug.Trim().ToLower();
+
+            var now = DateTime.UtcNow;
 
             return await _context.EsimPackages
                 .AsNoTracking()
@@ -99,6 +101,46 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
 
                     SortOrder = x.SortOrder,
                     IsActive = x.IsActive,
+
+                    SalePrice = _context.ProductPrices
+                        .Where(p =>
+                            p.ProductId == x.ProductId &&
+                            p.ProductVariantId == x.ProductVariantId &&
+                            p.IsActive &&
+                            !p.IsDeleted &&
+                            p.SalePrice > 0 &&
+                            (p.StartDate == null || p.StartDate <= now) &&
+                            (p.EndDate == null || p.EndDate >= now))
+                        .OrderBy(p => p.SalePrice)
+                        .Select(p => (decimal?)p.SalePrice)
+                        .FirstOrDefault(),
+
+                    CostPrice = _context.ProductPrices
+                        .Where(p =>
+                            p.ProductId == x.ProductId &&
+                            p.ProductVariantId == x.ProductVariantId &&
+                            p.IsActive &&
+                            !p.IsDeleted &&
+                            p.SalePrice > 0 &&
+                            (p.StartDate == null || p.StartDate <= now) &&
+                            (p.EndDate == null || p.EndDate >= now))
+                        .OrderBy(p => p.SalePrice)
+                        .Select(p => (decimal?)p.CostPrice)
+                        .FirstOrDefault(),
+
+                    ProductVariantFeatures = _context.ProductVariantFeatures
+                        .Where(f =>
+                            f.ProductVariantId == x.ProductVariantId &&
+                            f.IsActive && !f.IsDeleted)
+                        .OrderBy(f => f.SortOrder)
+                        .Select(f => new ProductVariantFeatureDto
+                        {
+                            Text = f.Text,
+                            Icon = f.Icon,
+                            SortOrder = f.SortOrder,
+                            IsActive = f.IsActive
+                        })
+                        .ToList(),
 
                     Carriers = x.Carriers
                         .OrderBy(c => c.Carrier.Name)

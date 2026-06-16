@@ -50,5 +50,9 @@ namespace DTP.Modules.Catalog.Application.DTOs
         public string? Currency { get; set; }
         public int VariantCount { get; set; }
 
+
+        public decimal? CostPrice { get; set; }
+
+        public List<ProductAttributeDto> Attributes { get; set; } = new();
     }
 }
