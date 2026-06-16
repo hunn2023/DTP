@@ -575,48 +575,49 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 PageSize = pageSize
             };
         }
-
-        public async Task<List<HomeEsimCountryProductDto>> GetHomeEsimProductsAsync(
-                CancellationToken cancellationToken = default)
+        public async Task<List<HomeEsimProductDto>> GetHomeEsimProductsAsync(
+            CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
 
-            var query =
-                from product in _context.Products.AsNoTracking()
-                where product.IsActive
-                      && !product.IsDeleted
-                      && product.CountryId != null
-                      && (product.IsFeatured || product.IsHot)
+            var rows = await _context.Products
+                .AsNoTracking()
+                .Where(x =>
+                    x.IsActive &&
+                    !x.IsDeleted &&
+                    x.CountryId != null &&
+                    (x.IsFeatured || x.IsHot))
+                .SelectMany(
+                    product => _context.ProductPrices
+                        .Where(price =>
+                            price.ProductId == product.Id &&
+                            price.IsActive &&
+                            price.SalePrice > 0 &&
+                            (price.StartDate == null || price.StartDate <= now) &&
+                            (price.EndDate == null || price.EndDate >= now)),
+                    (product, price) => new
+                    {
+                        CountryId = product.Country!.Id,
+                        CountryName = product.Country.Name,
+                        CountrySlug = product.Country.Slug,
+                        FlagUrl = product.Country.FlagUrl,
 
-                from price in _context.ProductPrices.AsNoTracking()
-                    .Where(p =>
-                        p.ProductId == product.Id &&
-                        p.IsActive &&
-                        p.SalePrice > 0 &&
-                        (p.StartDate == null || p.StartDate <= now) &&
-                        (p.EndDate == null || p.EndDate >= now))
+                        ProductId = product.Id,
+                        ProductName = product.Name,
+                        ProductSlug = product.Slug,
+                        LocationText = product.LocationText,
+                        ThumbnailUrl = product.ThumbnailUrl,
 
-                select new
-                {
-                    CountryId = product.Country!.Id,
-                    CountryName = product.Country.Name,
-                    CountrySlug = product.Country.Slug,
-                    FlagUrl = product.Country.FlagUrl,
+                        IsHot = product.IsHot,
+                        IsFeatured = product.IsFeatured,
+                        SortOrder = product.SortOrder,
 
-                    ProductId = product.Id,
-                    ProductName = product.Name,
-                    ProductSlug = product.Slug,
-                    product.LocationText,
-                    product.ThumbnailUrl,
-                    product.IsHot,
-                    product.IsFeatured,
-                    product.SortOrder,
+                        PriceFrom = price.SalePrice,
+                        Currency = price.Currency
+                    })
+                .ToListAsync(cancellationToken);
 
-                    PriceFrom = price.SalePrice,
-                    Currency = price.Currency
-                };
-
-            var items = await query
+            var items = rows
                 .GroupBy(x => new
                 {
                     x.CountryId,
@@ -624,37 +625,41 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     x.CountrySlug,
                     x.FlagUrl
                 })
-                .Select(g => g
-                    .OrderBy(x => x.PriceFrom)
-                    .ThenByDescending(x => x.IsHot)
-                    .ThenBy(x => x.SortOrder)
-                    .ThenBy(x => x.ProductName)
-                    .First())
-                .OrderBy(x => x.CountryName)
-                .Take(10)
-                .Select(x => new HomeEsimCountryProductDto
+                .Select(g =>
                 {
-                    CountryId = x.CountryId,
-                    CountryName = x.CountryName,
-                    CountrySlug = x.CountrySlug,
-                    FlagUrl = x.FlagUrl,
+                    var best = g
+                        .OrderBy(x => x.PriceFrom)
+                        .ThenByDescending(x => x.IsHot)
+                        .ThenBy(x => x.SortOrder)
+                        .ThenBy(x => x.ProductName)
+                        .First();
 
-                    ProductId = x.ProductId,
-                    ProductName = x.ProductName,
-                    ProductSlug = x.ProductSlug,
-                    LocationText = x.LocationText,
-                    ThumbnailUrl = x.ThumbnailUrl,
+                    return new HomeEsimProductDto
+                    {
+                        Id = best.ProductId,
+                        Name = best.ProductName,
+                        Slug = best.ProductSlug,
+                        LocationText = best.LocationText,
+                        ThumbnailUrl = best.ThumbnailUrl,
 
-                    PriceFrom = x.PriceFrom,
-                    Currency = x.Currency ?? "VND",
+                        CountryId = best.CountryId,
+                        CountryName = best.CountryName,
+                        CountrySlug = best.CountrySlug,
+                        FlagUrl = best.FlagUrl,
 
-                    IsHot = x.IsHot,
-                    IsFeatured = x.IsFeatured
+                        IsHot = best.IsHot,
+                        IsFeatured = best.IsFeatured,
+
+                        PriceFrom = best.PriceFrom,
+                        Currency = best.Currency
+                    };
                 })
-                .ToListAsync(cancellationToken);
+                .OrderBy(x => x.CountryName)
+                .ToList();
 
             return items;
         }
+
         //public async Task<List<HomeEsimProductDto>> GetHomeEsimProductsAsync(
         // CancellationToken cancellationToken = default)
         //{

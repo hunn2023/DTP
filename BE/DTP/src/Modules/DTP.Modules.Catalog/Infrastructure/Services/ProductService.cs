@@ -334,7 +334,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             var validateResult = ValidateUpdate(command);
 
             if (!validateResult.IsSuccess)
-                return Result.Failure(validateResult.Error);
+                return Result.Failure(validateResult.Error );
 
             NormalizeUpdateCommand(command);
 
@@ -559,17 +559,17 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         }
 
 
-        public async Task<Result<List<HomeEsimCountryProductDto>>> GetHomeEsimProductsAsync(
+        public async Task<Result<List<HomeEsimProductDto>>> GetHomeEsimProductsAsync(
                 CancellationToken cancellationToken = default)
         {
             var cacheKey = "catalog:home:esim-products";
 
-            var cached = await _cacheService.GetAsync<List<HomeEsimCountryProductDto>>(
+            var cached = await _cacheService.GetAsync<List<HomeEsimProductDto>>(
                 cacheKey,
                 cancellationToken);
 
             if (cached != null)
-                return Result<List<HomeEsimCountryProductDto>>.Success(cached);
+                return Result<List<HomeEsimProductDto>>.Success(cached);
 
             var now = DateTime.UtcNow;
 
@@ -581,7 +581,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 TimeSpan.FromMinutes(10),
                 cancellationToken);
 
-            return Result<List<HomeEsimCountryProductDto>>.Success(items);
+            return Result<List<HomeEsimProductDto>>.Success(items);
         }
     }
 }
