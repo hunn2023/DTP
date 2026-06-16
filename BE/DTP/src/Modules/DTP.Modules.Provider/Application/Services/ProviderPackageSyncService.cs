@@ -88,7 +88,7 @@ namespace DTP.Modules.Provider.Application.Services
                 await _apiLogRepository.AddAsync(
                     new ProviderApiLog(
                         provider.Id,
-                        "GET PACKAGE PRODUCT",
+                        "GET PACKAGE PRODUCT 111",
                         "GET",
                         null,
                         null,
