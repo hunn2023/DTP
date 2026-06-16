@@ -12,7 +12,7 @@ namespace DTP.Modules.Ordering.Presentation.Controllers.Public
 {
     [ApiController]
     [Route("api/orders")]
-    [Authorize]
+    //[Authorize]
     public class OrdersController : ControllerBase
     {
         private readonly IMediator _mediator;
