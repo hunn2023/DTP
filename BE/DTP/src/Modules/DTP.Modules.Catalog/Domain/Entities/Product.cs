@@ -40,7 +40,6 @@ namespace DTP.Modules.Catalog.Domain.Entities
             ShortDescription = shortDescription;
             Description = description;
             LocationText = locationText;
-            ThumbnailUrl = thumbnailUrl;
             IsFeatured = isFeatured;
             IsHot = isHot;
             SoldCount = 0;

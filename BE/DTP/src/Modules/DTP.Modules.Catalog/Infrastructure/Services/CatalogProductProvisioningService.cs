@@ -179,6 +179,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             if (product is null)
                 throw new InvalidOperationException("Product không tồn tại.");
 
+
             var variant = await _productVariantRepository.GetByIdAsync(
                 productVariantId,
                 cancellationToken);
@@ -204,6 +205,15 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             if (esimPackage is null)
                 throw new InvalidOperationException("EsimPackage không tồn tại.");
+
+            var country = await _countryRepository.GetByIdAsync(
+                esimPackage.CountryId,
+                cancellationToken);
+
+            if (country is not null)
+            {
+                country.Activate();
+            }
 
             product.Activate();
             variant.Activate();

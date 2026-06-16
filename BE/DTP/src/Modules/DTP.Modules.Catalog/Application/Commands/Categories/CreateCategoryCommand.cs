@@ -11,7 +11,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Category
 
         public string? Code { get; set; }
 
-        public string Slug { get; set; }
+        public string? Slug { get; set; }
 
         public bool IsActive { get; set; } = true;
 

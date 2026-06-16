@@ -405,8 +405,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             var variantQuery = _context.ProductVariants
                 .AsNoTracking()
                 .Where(v =>
-                    v.IsActive &&
-                    v.Product.IsActive);
+                    v.IsActive && !v.IsDeleted &&
+                    v.Product.IsActive && !v.Product.IsDeleted);
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {

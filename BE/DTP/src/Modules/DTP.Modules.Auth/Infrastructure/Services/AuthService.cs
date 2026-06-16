@@ -172,8 +172,8 @@ namespace DTP.Modules.Auth.Infrastructure.Services
              CancellationToken cancellationToken = default)
         {
             var email = request.Email.Trim().ToLower();
-            var ipAddress = request.IpAddress.Trim();
-            var userAgent = request.UserAgent;
+            var ipAddress = request?.IpAddress?.Trim();
+            var userAgent = request?.UserAgent?.Trim();
             ipAddress = string.IsNullOrWhiteSpace(ipAddress)
                 ? "unknown"
                 : ipAddress.Trim();
