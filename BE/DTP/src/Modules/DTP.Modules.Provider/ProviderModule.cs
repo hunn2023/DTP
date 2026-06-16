@@ -27,11 +27,8 @@ namespace DTP.Modules.Provider
                     configuration.GetConnectionString("DefaultConnection"));
             });
 
-            services.AddHttpClient<IPeacomProviderClient, PeacomProviderClient>(client =>
-            {
-                client.BaseAddress = new Uri("https://dev-api.peacom.co");
-                client.Timeout = TimeSpan.FromSeconds(30);
-            });
+         
+       
 
             services.AddScoped<IProviderUnitOfWork, ProviderUnitOfWork>();
 
@@ -46,7 +43,12 @@ namespace DTP.Modules.Provider
             services.AddScoped<IProviderOrderRepository, ProviderOrderRepository>();
             services.AddScoped<IProviderOrderItemRepository, ProviderOrderItemRepository>();
 
-            services.AddHttpClient<IPeacomProviderClient, PeacomProviderClient>();
+            services.AddHttpClient<IPeacomProviderClient, PeacomProviderClient>(client =>
+            {
+                client.BaseAddress = new Uri("https://dev-api.peacom.co");
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+
 
             services.AddScoped<IProviderOrderReader, ProviderOrderReader>();
             services.AddScoped<IProviderRedeemRepository, ProviderRedeemRepository>();
