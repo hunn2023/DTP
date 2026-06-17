@@ -611,7 +611,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                         CountryName = product.Country.Name,
                         CountrySlug = product.Country.Slug,
                         FlagUrl = product.Country.FlagUrl,
-
+                        Region = product.Country.Region,
                         ProductId = product.Id,
                         ProductName = product.Name,
                         ProductSlug = product.Slug,
@@ -632,6 +632,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 {
                     x.CountryId,
                     x.CountryName,
+                    x.Region,
                     x.CountrySlug,
                     x.FlagUrl
                 })
@@ -654,6 +655,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
 
                         CountryId = best.CountryId,
                         CountryName = best.CountryName,
+                        Region = best.Region,
                         CountrySlug = best.CountrySlug,
                         FlagUrl = best.FlagUrl,
 
