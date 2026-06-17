@@ -52,8 +52,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         }
 
         public async Task<EsimPackageDto?> GetPublicBySlugAsync(
-     string slug,
-     CancellationToken cancellationToken = default)
+             string slug,
+             CancellationToken cancellationToken = default)
         {
             slug = slug.Trim().ToLower();
 
@@ -62,8 +62,20 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             return await _context.EsimPackages
                 .AsNoTracking()
                 .Where(x =>
-                    x.IsActive &&
-                    x.Slug == slug)
+                        x.IsActive &&
+                        !x.IsDeleted &&
+
+                        x.Product.IsActive &&
+                        !x.Product.IsDeleted &&
+                        x.Product.Slug == slug &&
+
+                        x.ProductVariant.IsActive &&
+                        !x.ProductVariant.IsDeleted &&
+
+                        x.Country.IsActive &&
+                        !x.Country.IsDeleted)
+                 .OrderBy(x => x.SortOrder)
+                 .ThenBy(x => x.Name)
                 .Select(x => new EsimPackageDto
                 {
                     Id = x.Id,
