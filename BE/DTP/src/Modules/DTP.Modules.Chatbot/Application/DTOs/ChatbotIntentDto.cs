@@ -42,5 +42,9 @@ namespace DTP.Modules.Chatbot.Application.DTOs
         public bool? NeedsSms { get; set; }
 
         public string? OriginalQuestion { get; set; }
+
+        public decimal? RequestedDataAmount { get; set; }
+
+        public string? RequestedDataUnit { get; set; }
     }
 }

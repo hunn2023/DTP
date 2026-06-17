@@ -63,6 +63,8 @@ Schema JSON bắt buộc:
   "countryKeyword": "string hoặc null",
   "countryCode": "string hoặc null",
   "travelDays": number hoặc null,
+  "requestedDataAmount": number hoặc null,
+  "requestedDataUnit": "GB | MB | null",
   "usageLevel": "light | normal | heavy | unlimited | null",
   "budgetType": "cheapest | balanced | premium | null",
   "needsHotspot": true hoặc false hoặc null,
@@ -70,6 +72,11 @@ Schema JSON bắt buộc:
   "needsSms": true hoặc false hoặc null,
   "originalQuestion": "string"
 }
+Quy đổi requestedDataAmount:
+- Nếu khách nói 1GB, 3GB, 5GB, 10GB thì requestedDataAmount là số tương ứng.
+- Nếu khách nói 500MB thì requestedDataAmount = 500, requestedDataUnit = "MB".
+- Nếu khách nói không giới hạn, unlimited, dung lượng không giới hạn thì usageLevel = "unlimited", requestedDataAmount = null.
+- Nếu khách không nói rõ dung lượng thì requestedDataAmount = null.
 
 Quy đổi usageLevel:
 - light: chỉ chat, bản đồ, email ít
@@ -310,24 +317,27 @@ Nguyên tắc bắt buộc:
                 intent.CountryCode = "CN";
             }
 
-            var days = ExtractFirstNumber(lower);
+            intent.TravelDays = ExtractTravelDays(lower);
 
-            if (days.HasValue)
+            var dataInfo = ExtractDataAmount(lower);
+
+            if (dataInfo.Amount.HasValue)
             {
-                intent.TravelDays = days.Value;
+                intent.RequestedDataAmount = dataInfo.Amount;
+                intent.RequestedDataUnit = dataInfo.Unit;
             }
 
-            if (lower.Contains("tiktok")
-                || lower.Contains("youtube")
-                || lower.Contains("video")
-                || lower.Contains("livestream")
-                || lower.Contains("dùng nhiều"))
-            {
-                intent.UsageLevel = "heavy";
-            }
-            else if (lower.Contains("không giới hạn") || lower.Contains("unlimited"))
+            if (lower.Contains("không giới hạn") || lower.Contains("unlimited"))
             {
                 intent.UsageLevel = "unlimited";
+            }
+            else if (lower.Contains("tiktok")
+                     || lower.Contains("youtube")
+                     || lower.Contains("video")
+                     || lower.Contains("livestream")
+                     || lower.Contains("dùng nhiều"))
+            {
+                intent.UsageLevel = "heavy";
             }
             else if (lower.Contains("ít") || lower.Contains("nhẹ"))
             {
@@ -338,7 +348,9 @@ Nguyên tắc bắt buộc:
                 intent.UsageLevel = "normal";
             }
 
-            if (lower.Contains("hotspot") || lower.Contains("phát mạng") || lower.Contains("chia sẻ mạng"))
+            if (lower.Contains("hotspot")
+                || lower.Contains("phát mạng")
+                || lower.Contains("chia sẻ mạng"))
             {
                 intent.NeedsHotspot = true;
             }
@@ -346,28 +358,48 @@ Nguyên tắc bắt buộc:
             return intent;
         }
 
-        private static int? ExtractFirstNumber(string text)
+        private static int? ExtractTravelDays(string text)
         {
-            var digits = new StringBuilder();
+            var match = System.Text.RegularExpressions.Regex.Match(
+                text,
+                @"(\d+)\s*(ngày|day|days)");
 
-            foreach (var ch in text)
-            {
-                if (char.IsDigit(ch))
-                {
-                    digits.Append(ch);
-                }
-                else if (digits.Length > 0)
-                {
-                    break;
-                }
-            }
-
-            if (digits.Length == 0)
+            if (!match.Success)
                 return null;
 
-            return int.TryParse(digits.ToString(), out var value)
-                ? value
+            return int.TryParse(match.Groups[1].Value, out var days)
+                ? days
                 : null;
+        }
+
+        private static (decimal? Amount, string? Unit) ExtractDataAmount(string text)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(
+                text,
+                @"(\d+([.,]\d+)?)\s*(gb|g|mb|m)\b",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            if (!match.Success)
+                return (null, null);
+
+            var rawAmount = match.Groups[1].Value.Replace(',', '.');
+
+            if (!decimal.TryParse(
+                    rawAmount,
+                    System.Globalization.NumberStyles.Number,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out var amount))
+            {
+                return (null, null);
+            }
+
+            var rawUnit = match.Groups[3].Value.ToLowerInvariant();
+
+            var unit = rawUnit is "gb" or "g"
+                ? "GB"
+                : "MB";
+
+            return (amount, unit);
         }
 
         private static string LocalGenerateAnswer(
@@ -387,9 +419,7 @@ Nguyên tắc bắt buộc:
             {
                 var item = suggestions[i];
 
-                var dataText = item.IsUnlimited
-                    ? "Không giới hạn"
-                    : $"{item.DataAmount} {item.DataUnit}";
+                var dataText = GetDataText(item);
 
                 builder.AppendLine();
                 builder.AppendLine($"{i + 1}. {item.PackageName}");
@@ -404,6 +434,20 @@ Nguyên tắc bắt buộc:
             builder.AppendLine("Bạn có thể chọn gói phù hợp nhất rồi bấm Mua ngay để thanh toán và nhận QR eSIM qua email.");
 
             return builder.ToString();
+        }
+
+        private static string GetDataText(ChatbotProductSuggestionDto item)
+        {
+            if (item.IsUnlimited)
+                return "Không giới hạn";
+
+            if (!item.DataAmount.HasValue)
+                return "Theo chính sách gói";
+
+            if (string.IsNullOrWhiteSpace(item.DataUnit))
+                return $"{item.DataAmount.Value:N0}";
+
+            return $"{item.DataAmount.Value:N0} {item.DataUnit}";
         }
     }
 }

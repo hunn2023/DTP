@@ -561,7 +561,7 @@ namespace DTP.Modules.Chatbot.Application.Services
         }
 
         private static string BuildFallbackAnswer(
-            IReadOnlyList<ChatbotProductSuggestionDto> suggestions)
+              IReadOnlyList<ChatbotProductSuggestionDto> suggestions)
         {
             if (suggestions.Count == 0)
             {
@@ -570,9 +570,7 @@ namespace DTP.Modules.Chatbot.Application.Services
 
             var first = suggestions.First();
 
-            var dataText = first.IsUnlimited
-                ? "không giới hạn"
-                : $"{first.DataAmount} {first.DataUnit}";
+            var dataText = GetDataText(first);
 
             return $"Tôi gợi ý bạn tham khảo gói {first.PackageName}, dung lượng {dataText}, thời hạn {first.ValidityDays} ngày, giá {first.SalePrice:N0} {first.Currency}.";
         }
@@ -583,5 +581,21 @@ namespace DTP.Modules.Chatbot.Application.Services
                 ? Guid.NewGuid().ToString("N")
                 : sessionId.Trim();
         }
+
+        private static string GetDataText(ChatbotProductSuggestionDto item)
+        {
+            if (item.IsUnlimited)
+                return "không giới hạn";
+
+            if (!item.DataAmount.HasValue)
+                return "theo chính sách gói";
+
+            if (string.IsNullOrWhiteSpace(item.DataUnit))
+                return $"{item.DataAmount.Value:N0}";
+
+            return $"{item.DataAmount.Value:N0} {item.DataUnit}";
+        }
     }
+
+
 }

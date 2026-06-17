@@ -25,14 +25,20 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
         }
 
         public async Task<IReadOnlyList<ChatbotProductSuggestionDto>> SearchEsimPackagesAsync(
-            ChatbotIntentDto intent,
-            int take = 3,
-            CancellationToken cancellationToken = default)
+    ChatbotIntentDto intent,
+    int take = 3,
+    CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
 
             var countryKeyword = intent.CountryKeyword?.Trim().ToLowerInvariant();
             var countryCode = intent.CountryCode?.Trim().ToUpperInvariant();
+
+            var usageLevel = intent.UsageLevel?.Trim().ToLowerInvariant();
+
+            var requestedDataAmountInGb = ConvertToGb(
+                intent.RequestedDataAmount,
+                intent.RequestedDataUnit);
 
             var query = _context.EsimPackages
                 .AsNoTracking()
@@ -61,6 +67,33 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
             {
                 query = query.Where(x =>
                     x.ValidityDays >= intent.TravelDays.Value);
+            }
+
+            if (usageLevel == "unlimited")
+            {
+                query = query.Where(x => x.IsUnlimited);
+            }
+
+            if (requestedDataAmountInGb.HasValue && usageLevel != "unlimited")
+            {
+                var requestedGb = requestedDataAmountInGb.Value;
+
+                query = query.Where(x =>
+                    x.IsUnlimited ||
+                    (
+                        x.DataAmount.HasValue &&
+                        (
+                            (x.DataUnit != null &&
+                             x.DataUnit.ToUpper() == "GB" &&
+                             x.DataAmount.Value >= requestedGb)
+
+                            ||
+
+                            (x.DataUnit != null &&
+                             x.DataUnit.ToUpper() == "MB" &&
+                             (x.DataAmount.Value / 1024m) >= requestedGb)
+                        )
+                    ));
             }
 
             if (intent.NeedsHotspot == true)
@@ -157,7 +190,7 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                         ProviderPackageCode = x.ProviderPackageCode,
 
                         DataAmount = x.DataAmount,
-                        DataUnit = x.DataUnit,
+                        DataUnit = NormalizeDataUnit(x.DataUnit),
                         IsUnlimited = x.IsUnlimited,
 
                         ValidityDays = x.ValidityDays,
@@ -189,6 +222,7 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                 return result
                     .OrderBy(x => x.SalePrice)
                     .ThenByDescending(x => x.Score)
+                    .ThenByDescending(x => x.IsUnlimited)
                     .Take(take)
                     .ToList();
             }
@@ -198,7 +232,7 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                 return result
                     .OrderByDescending(x => x.Score)
                     .ThenByDescending(x => x.IsUnlimited)
-                    .ThenByDescending(x => x.DataAmount ?? 0)
+                    .ThenByDescending(x => ConvertPackageDataToGb(x))
                     .ThenBy(x => x.SalePrice)
                     .Take(take)
                     .ToList();
@@ -206,6 +240,7 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
 
             return result
                 .OrderByDescending(x => x.Score)
+                .ThenByDescending(x => x.IsUnlimited)
                 .ThenBy(x => x.SalePrice)
                 .Take(take)
                 .ToList();
@@ -224,10 +259,16 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
         }
 
         private static int CalculateScore(
-            ChatbotProductSuggestionDto item,
-            ChatbotIntentDto intent)
+     ChatbotProductSuggestionDto item,
+     ChatbotIntentDto intent)
         {
             var score = 0;
+
+            var itemDataGb = ConvertPackageDataToGb(item);
+
+            var requestedDataGb = ConvertToGb(
+                intent.RequestedDataAmount,
+                intent.RequestedDataUnit);
 
             if (intent.TravelDays.HasValue)
             {
@@ -244,6 +285,30 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                     score += 10;
             }
 
+            if (requestedDataGb.HasValue)
+            {
+                var requested = requestedDataGb.Value;
+
+                if (item.IsUnlimited)
+                {
+                    score += 45;
+                }
+                else if (itemDataGb.HasValue)
+                {
+                    var data = itemDataGb.Value;
+
+                    if (data >= requested)
+                        score += 35;
+
+                    var diff = data - requested;
+
+                    if (diff >= 0 && diff <= 2)
+                        score += 20;
+                    else if (diff > 2 && diff <= 5)
+                        score += 10;
+                }
+            }
+
             var usageLevel = intent.UsageLevel?.Trim().ToLowerInvariant();
 
             if (usageLevel == "unlimited")
@@ -255,23 +320,23 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
             {
                 if (item.IsUnlimited)
                     score += 50;
-                else if ((item.DataAmount ?? 0) >= 10)
+                else if ((itemDataGb ?? 0) >= 10)
                     score += 35;
-                else if ((item.DataAmount ?? 0) >= 5)
+                else if ((itemDataGb ?? 0) >= 5)
                     score += 20;
             }
             else if (usageLevel == "normal")
             {
                 if (item.IsUnlimited)
                     score += 25;
-                else if ((item.DataAmount ?? 0) >= 5)
+                else if ((itemDataGb ?? 0) >= 5)
                     score += 30;
-                else if ((item.DataAmount ?? 0) >= 3)
+                else if ((itemDataGb ?? 0) >= 3)
                     score += 20;
             }
             else if (usageLevel == "light")
             {
-                if (!item.IsUnlimited && (item.DataAmount ?? 0) <= 5)
+                if (!item.IsUnlimited && (itemDataGb ?? 0) <= 5)
                     score += 25;
                 else if (!item.IsUnlimited)
                     score += 15;
@@ -296,6 +361,50 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                 score += 2;
 
             return score;
+        }
+
+
+        private static string? NormalizeDataUnit(string? unit)
+        {
+            if (string.IsNullOrWhiteSpace(unit))
+                return null;
+
+            var value = unit.Trim().ToUpperInvariant();
+
+            return value switch
+            {
+                "G" => "GB",
+                "GB" => "GB",
+                "M" => "MB",
+                "MB" => "MB",
+                _ => value
+            };
+        }
+
+        private static decimal? ConvertPackageDataToGb(ChatbotProductSuggestionDto item)
+        {
+            if (item.IsUnlimited)
+                return null;
+
+            return ConvertToGb(item.DataAmount, item.DataUnit);
+        }
+
+        private static decimal? ConvertToGb(decimal? amount, string? unit)
+        {
+            if (!amount.HasValue)
+                return null;
+
+            if (string.IsNullOrWhiteSpace(unit))
+                return amount.Value;
+
+            var normalizedUnit = unit.Trim().ToUpperInvariant();
+
+            return normalizedUnit switch
+            {
+                "GB" or "G" => amount.Value,
+                "MB" or "M" => amount.Value / 1024m,
+                _ => amount.Value
+            };
         }
 
         private sealed class PackageProjection
