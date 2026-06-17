@@ -15,6 +15,8 @@ namespace DTP.Modules.Report.Application.Abstractions.Persistence.ReadModels
         public Guid? ProductVariantId { get; set; }
         public Guid? ProviderId { get; set; }
 
+        public Guid? EsimPackageId { get; set; }
+
         public string ProductName { get; set; } = string.Empty;
         public string? ProductCode { get; set; }
 

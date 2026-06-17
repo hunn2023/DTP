@@ -286,18 +286,38 @@ namespace DTP.Modules.Report.Application.Services
 
         private static DateTime NormalizeFromDate(DateTime? fromDate)
         {
-            return fromDate.Value.Kind == DateTimeKind.Utc
-                ? fromDate.Value.Date
-                : DateTime.SpecifyKind(fromDate.Value.Date, DateTimeKind.Utc);
+            var sourceDate = fromDate ?? DateTime.UtcNow;
+
+            var firstDayOfMonth = new DateTime(
+                sourceDate.Year,
+                sourceDate.Month,
+                1,
+                0,
+                0,
+                0,
+                DateTimeKind.Utc);
+
+            return firstDayOfMonth;
         }
 
         private static DateTime NormalizeToDate(DateTime? toDate)
         {
-            var date = toDate.Value.Kind == DateTimeKind.Utc
-                ? toDate.Value.Date
-                : DateTime.SpecifyKind(toDate.Value.Date, DateTimeKind.Utc);
+            var sourceDate = toDate ?? DateTime.UtcNow;
 
-            return date.AddDays(1).AddTicks(-1);
+            var firstDayOfMonth = new DateTime(
+                sourceDate.Year,
+                sourceDate.Month,
+                1,
+                0,
+                0,
+                0,
+                DateTimeKind.Utc);
+
+            var lastDayOfMonth = firstDayOfMonth
+                .AddMonths(1)
+                .AddTicks(-1);
+
+            return lastDayOfMonth;
         }
 
         private static string BuildDashboardReportCacheKey(

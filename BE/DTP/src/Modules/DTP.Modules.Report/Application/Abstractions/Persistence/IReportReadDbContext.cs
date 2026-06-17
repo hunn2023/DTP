@@ -18,6 +18,16 @@ namespace DTP.Modules.Report.Application.Abstractions.Persistence
         DbSet<ReportCustomerReadModel> Customers { get; }
         DbSet<ReportProviderReadModel> Providers { get; }
 
+        DbSet<ReportUserRoleReadModel> UserRoles { get; }
+        DbSet<ReportRoleReadModel> Roles { get; }
+
+        IQueryable<ReportUserRoleReadModel> UserRoleQuery { get; }
+        IQueryable<ReportRoleReadModel> RoleQuery { get; }
+
+        DbSet<ReportEsimPackageReadModel> EsimPackages { get; }
+
+        IQueryable<ReportEsimPackageReadModel> EsimPackageQuery { get; }
+
         IQueryable<ReportOrderReadModel> OrderQuery { get; }
         IQueryable<ReportOrderItemReadModel> OrderItemQuery { get; }
         IQueryable<ReportPaymentReadModel> PaymentQuery { get; }

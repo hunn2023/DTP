@@ -20,7 +20,6 @@ namespace DTP.Modules.Report.Application.Abstractions.Persistence.ReadModels
 
         public decimal TotalAmount { get; set; }
         public decimal DiscountAmount { get; set; }
-        public decimal FinalAmount { get; set; }
 
         public string CurrencyCode { get; set; } = "VND";
         public int Status { get; set; }

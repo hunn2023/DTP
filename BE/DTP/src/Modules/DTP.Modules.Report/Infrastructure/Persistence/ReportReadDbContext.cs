@@ -25,6 +25,12 @@ namespace DTP.Modules.Report.Infrastructure.Persistence
         public DbSet<ReportCustomerReadModel> Customers => Set<ReportCustomerReadModel>();
         public DbSet<ReportProviderReadModel> Providers => Set<ReportProviderReadModel>();
 
+        public DbSet<ReportUserRoleReadModel> UserRoles => Set<ReportUserRoleReadModel>();
+        public DbSet<ReportRoleReadModel> Roles => Set<ReportRoleReadModel>();
+
+        public DbSet<ReportEsimPackageReadModel> EsimPackages
+    => Set<ReportEsimPackageReadModel>();
+
         public IQueryable<ReportOrderReadModel> OrderQuery => Orders.AsNoTracking();
         public IQueryable<ReportOrderItemReadModel> OrderItemQuery => OrderItems.AsNoTracking();
         public IQueryable<ReportPaymentReadModel> PaymentQuery => Payments.AsNoTracking();
@@ -33,49 +39,98 @@ namespace DTP.Modules.Report.Infrastructure.Persistence
         public IQueryable<ReportCustomerReadModel> CustomerQuery => Customers.AsNoTracking();
         public IQueryable<ReportProviderReadModel> ProviderQuery => Providers.AsNoTracking();
 
+        public IQueryable<ReportUserRoleReadModel> UserRoleQuery
+    => UserRoles.AsNoTracking();
+
+        public IQueryable<ReportRoleReadModel> RoleQuery
+            => Roles.AsNoTracking();
+
+        public IQueryable<ReportEsimPackageReadModel> EsimPackageQuery
+    => EsimPackages.AsNoTracking();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<ReportOrderReadModel>(builder =>
             {
-                builder.ToTable("Orders", "ordering");
+                builder.ToTable("Orders", "ordering", t => t.ExcludeFromMigrations());
                 builder.HasKey(x => x.Id);
+
+                builder.Property(x => x.TotalAmount)
+                    .HasColumnName("TotalAmount")
+                    .HasColumnType("decimal(18,2)");
             });
 
             modelBuilder.Entity<ReportOrderItemReadModel>(builder =>
             {
-                builder.ToTable("OrderItems", "ordering");
+                builder.ToTable("OrderItems", "ordering", t => t.ExcludeFromMigrations());
                 builder.HasKey(x => x.Id);
             });
 
             modelBuilder.Entity<ReportPaymentReadModel>(builder =>
             {
-                builder.ToTable("Payments", "payment");
+                builder.ToTable("PaymentTransactions", "dbo", t => t.ExcludeFromMigrations());
                 builder.HasKey(x => x.Id);
             });
 
             modelBuilder.Entity<ReportProductReadModel>(builder =>
             {
-                builder.ToTable("Products", "catalog");
+                builder.ToTable("Products", "dbo", t => t.ExcludeFromMigrations());
                 builder.HasKey(x => x.Id);
             });
 
             modelBuilder.Entity<ReportCategoryReadModel>(builder =>
             {
-                builder.ToTable("Categories", "catalog");
+                builder.ToTable("Categories", "dbo", t => t.ExcludeFromMigrations());
                 builder.HasKey(x => x.Id);
             });
 
             modelBuilder.Entity<ReportCustomerReadModel>(builder =>
             {
-                builder.ToTable("Customers", "customer");
+                builder.ToTable("Users", "dbo", t => t.ExcludeFromMigrations());
                 builder.HasKey(x => x.Id);
             });
 
+            modelBuilder.Entity<ReportEsimPackageReadModel>(builder =>
+            {
+                builder.ToTable("EsimPackages", "dbo", t => t.ExcludeFromMigrations());
+                builder.HasKey(x => x.Id);
+
+                builder.Property(x => x.ProductId)
+                    .HasColumnName("ProductId");
+
+                builder.Property(x => x.ProviderId)
+                    .HasColumnName("ProviderId");
+            });
+
+
+            modelBuilder.Entity<ReportUserRoleReadModel>(builder =>
+            {
+                builder.ToTable("UserRoles", "dbo", t => t.ExcludeFromMigrations());
+
+                builder.HasKey(x => new
+                {
+                    x.UserId,
+                    x.RoleId
+                });
+            });
+
+            modelBuilder.Entity<ReportRoleReadModel>(builder =>
+            {
+                builder.ToTable("Roles", "dbo", t => t.ExcludeFromMigrations());
+                builder.HasKey(x => x.Id);
+
+                builder.Property(x => x.Name)
+                    .HasMaxLength(100);
+            });
+
+
             modelBuilder.Entity<ReportProviderReadModel>(builder =>
             {
-                builder.ToTable("Providers", "provider");
+                builder.ToTable("Providers", "dbo", t => t.ExcludeFromMigrations());
                 builder.HasKey(x => x.Id);
             });
+
+            base.OnModelCreating(modelBuilder);
         }
     }
 }

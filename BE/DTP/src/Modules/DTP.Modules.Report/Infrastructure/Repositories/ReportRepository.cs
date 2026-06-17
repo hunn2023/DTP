@@ -177,7 +177,7 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
                     x.CreatedAt <= toDate);
 
             var totalOrders = await orders.CountAsync(cancellationToken);
-            var totalAmount = await orders.SumAsync(x => x.FinalAmount, cancellationToken);
+            var totalAmount = await orders.SumAsync(x => x.TotalAmount, cancellationToken);
 
             return new OrderReportDto
             {
@@ -201,7 +201,7 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
                         Code = g.Key.ToString(),
                         Name = GetOrderStatusName(g.Key),
                         Count = g.Count(),
-                        Value = g.Sum(x => x.FinalAmount)
+                        Value = g.Sum(x => x.TotalAmount)
                     })
                     .ToListAsync(cancellationToken)
             };
@@ -335,51 +335,59 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
         }
 
         public async Task<CustomerReportDto> GetCustomerReportAsync(
-            DateTime fromDate,
-            DateTime toDate,
-            ReportDateGroupType groupType,
-            CancellationToken cancellationToken = default)
+                DateTime fromDate,
+                DateTime toDate,
+                ReportDateGroupType groupType,
+                CancellationToken cancellationToken = default)
         {
-            var customers = _context.CustomerQuery.Where(x => !x.IsDeleted);
+            var customers =
+                from u in _context.CustomerQuery
+                join ur in _context.UserRoleQuery on u.Id equals ur.UserId
+                join r in _context.RoleQuery on ur.RoleId equals r.Id
+                where !u.IsDeleted
+                      && r.Name == "Customer"
+                select u;
 
             var newCustomers = customers
                 .Where(x => x.CreatedAt >= fromDate && x.CreatedAt <= toDate);
 
-            var customerRevenue = await (
-                from o in _context.OrderQuery
-                where !o.IsDeleted
-                      && o.CreatedAt >= fromDate
-                      && o.CreatedAt <= toDate
-                      && o.CustomerId != null
-                group o by new
+            var ordersInRange = _context.OrderQuery
+                .Where(x =>
+                    !x.IsDeleted &&
+                    x.CustomerId != null &&
+                    x.CreatedAt >= fromDate &&
+                    x.CreatedAt <= toDate);
+
+            var customerRevenue = await ordersInRange
+                .GroupBy(o => new
                 {
                     o.CustomerId,
                     o.CustomerEmail,
                     o.CustomerName,
                     o.CustomerPhone
-                }
-                into g
-                select new TopItemDto
+                })
+                .Select(g => new TopItemDto
                 {
                     Id = g.Key.CustomerId,
                     Code = g.Key.CustomerPhone ?? string.Empty,
                     Name = g.Key.CustomerName ?? g.Key.CustomerEmail ?? "Unknown",
                     Count = g.Count(),
-                    Value = g.Sum(x => x.FinalAmount)
+                    Value = g.Sum(x => x.TotalAmount)
                 })
                 .OrderByDescending(x => x.Value)
                 .Take(20)
                 .ToListAsync(cancellationToken);
 
-            var totalRevenue = customerRevenue.Sum(x => x.Value);
-            var totalCustomers = await customers.CountAsync(cancellationToken);
+            var totalRevenue = await ordersInRange
+                .SumAsync(x => x.TotalAmount, cancellationToken);
 
-            var returningCustomerCount = await _context.OrderQuery
-                .Where(x =>
-                    !x.IsDeleted &&
-                    x.CustomerId != null &&
-                    x.CreatedAt >= fromDate &&
-                    x.CreatedAt <= toDate)
+            var totalCustomers = await customers
+                .CountAsync(cancellationToken);
+
+            var newCustomerCount = await newCustomers
+                .CountAsync(cancellationToken);
+
+            var returningCustomerCount = await ordersInRange
                 .GroupBy(x => x.CustomerId)
                 .Where(g => g.Count() > 1)
                 .CountAsync(cancellationToken);
@@ -387,10 +395,12 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
             return new CustomerReportDto
             {
                 TotalCustomers = totalCustomers,
-                NewCustomers = await newCustomers.CountAsync(cancellationToken),
+                NewCustomers = newCustomerCount,
                 ReturningCustomers = returningCustomerCount,
                 TotalCustomerRevenue = totalRevenue,
-                AverageRevenuePerCustomer = totalCustomers == 0 ? 0 : totalRevenue / totalCustomers,
+                AverageRevenuePerCustomer = totalCustomers == 0
+                    ? 0
+                    : totalRevenue / totalCustomers,
                 NewCustomersByDate = await BuildCustomerTimeSeriesAsync(
                     fromDate,
                     toDate,
@@ -399,7 +409,6 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
                 TopCustomers = customerRevenue
             };
         }
-
         public async Task<ProviderReportDto> GetProviderReportAsync(
             DateTime fromDate,
             DateTime toDate,
@@ -473,7 +482,7 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
                 .Select(x => new
                 {
                     x.CreatedAt,
-                    x.FinalAmount
+                    x.TotalAmount
                 })
                 .ToListAsync(cancellationToken);
 
@@ -483,7 +492,7 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
                 {
                     Date = g.Key,
                     Label = ReportPeriodHelper.GetLabel(g.Key, groupType),
-                    Value = g.Sum(x => x.FinalAmount),
+                    Value = g.Sum(x => x.TotalAmount),
                     Count = g.Count()
                 })
                 .OrderBy(x => x.Date)
@@ -521,32 +530,33 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
         }
 
         private async Task<List<TopItemDto>> GetTopProductsAsync(
-            DateTime fromDate,
-            DateTime toDate,
-            int take,
-            CancellationToken cancellationToken)
+             DateTime fromDate,
+             DateTime toDate,
+             int take,
+             CancellationToken cancellationToken)
         {
             return await (
                 from oi in _context.OrderItemQuery
                 join o in _context.OrderQuery on oi.OrderId equals o.Id
+                join p in _context.ProductQuery on oi.ProductId equals p.Id
                 where !oi.IsDeleted
                       && !o.IsDeleted
                       && o.CreatedAt >= fromDate
                       && o.CreatedAt <= toDate
-                group oi by new
+                group new { oi, p } by new
                 {
                     oi.ProductId,
-                    oi.ProductCode,
-                    oi.ProductName
+                    ProductCode = p.Code,
+                    ProductName = p.Name
                 }
                 into g
                 select new TopItemDto
                 {
                     Id = g.Key.ProductId,
                     Code = g.Key.ProductCode ?? string.Empty,
-                    Name = g.Key.ProductName,
-                    Count = g.Sum(x => x.Quantity),
-                    Value = g.Sum(x => x.TotalPrice)
+                    Name = g.Key.ProductName ?? "Unknown",
+                    Count = g.Sum(x => x.oi.Quantity),
+                    Value = g.Sum(x => x.oi.TotalPrice)
                 })
                 .OrderByDescending(x => x.Value)
                 .Take(take)
@@ -554,18 +564,20 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
         }
 
         private async Task<List<TopItemDto>> GetTopProvidersAsync(
-            DateTime fromDate,
-            DateTime toDate,
-            int take,
-            CancellationToken cancellationToken)
+                DateTime fromDate,
+                DateTime toDate,
+                int take,
+                CancellationToken cancellationToken)
         {
             return await (
                 from oi in _context.OrderItemQuery
                 join o in _context.OrderQuery on oi.OrderId equals o.Id
-                join p in _context.ProviderQuery on oi.ProviderId equals p.Id
+                join ep in _context.EsimPackageQuery on oi.EsimPackageId equals ep.Id
+                join p in _context.ProviderQuery on ep.ProviderId equals p.Id
                 where !oi.IsDeleted
                       && !o.IsDeleted
                       && !p.IsDeleted
+                      && ep.IsActive
                       && o.CreatedAt >= fromDate
                       && o.CreatedAt <= toDate
                 group oi by new
@@ -579,7 +591,7 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
                 {
                     Id = g.Key.Id,
                     Code = g.Key.Code ?? string.Empty,
-                    Name = g.Key.Name,
+                    Name = g.Key.Name ?? "Unknown",
                     Count = g.Sum(x => x.Quantity),
                     Value = g.Sum(x => x.TotalPrice)
                 })
