@@ -1,63 +1,46 @@
+import type { EChartsOption } from 'echarts'
 import { BarChart, LineChart, PieChart } from 'echarts/charts'
 import { TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import { lazy, Suspense, useId } from 'react'
-import { useIsClient } from 'usehooks-ts'
 
-import Loader from '@/components/Loader'
 import CustomEChart from '@/components/CustomEChart.tsx'
 
-import {
-  getOrderStatusOptions,
-  getPaymentMethodsOptions,
-  getRevenueSevenDaysOptions,
-  getTopCountriesBarOptions,
-  getTopRegionsMapOptions,
-} from '../data'
+type ChartProps = {
+  getOptions: () => EChartsOption
+  height?: number
+}
 
-const BaseVectorMap = lazy(() => import('@/components/maps/BaseVectorMap.tsx'))
-
-export const RevenueSevenDaysChart = () => (
+export const RevenueSevenDaysChart = ({ getOptions, height = 280 }: ChartProps) => (
   <CustomEChart
     extensions={[LineChart, TooltipComponent, CanvasRenderer]}
-    getOptions={getRevenueSevenDaysOptions}
-    style={{ height: 280 }}
+    getOptions={getOptions}
+    style={{ height }}
   />
 )
 
-export const OrderStatusChart = () => (
+export const OrderStatusChart = ({ getOptions, height = 280 }: ChartProps) => (
   <CustomEChart
     extensions={[PieChart, TooltipComponent, CanvasRenderer]}
-    getOptions={getOrderStatusOptions}
-    style={{ height: 280 }}
+    getOptions={getOptions}
+    style={{ height }}
   />
 )
 
-export const TopCountriesBarChart = () => (
+export const TopItemsBarChart = ({ getOptions, height = 280 }: ChartProps) => (
   <CustomEChart
     extensions={[BarChart, TooltipComponent, CanvasRenderer]}
-    getOptions={getTopCountriesBarOptions}
-    style={{ height: 280 }}
+    getOptions={getOptions}
+    style={{ height }}
   />
 )
 
-export const PaymentMethodsChart = () => (
+/** @deprecated use TopItemsBarChart */
+export const TopProvidersBarChart = TopItemsBarChart
+
+export const PaymentMethodsChart = ({ getOptions, height = 220 }: ChartProps) => (
   <CustomEChart
     extensions={[PieChart, TooltipComponent, CanvasRenderer]}
-    getOptions={getPaymentMethodsOptions}
-    style={{ height: 220 }}
+    getOptions={getOptions}
+    style={{ height }}
   />
 )
-
-export const TopRegionsMap = () => {
-  const id = useId()
-  const isClient = useIsClient()
-
-  if (!isClient) return <Loader height="180px" />
-
-  return (
-    <Suspense fallback={<Loader height="180px" />}>
-      <BaseVectorMap id={id} options={getTopRegionsMapOptions()} style={{ height: 180 }} />
-    </Suspense>
-  )
-}

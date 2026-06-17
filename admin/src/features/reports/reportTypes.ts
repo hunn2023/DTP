@@ -104,6 +104,29 @@ export type PaymentsReport = {
   paymentsByMethod: ReportTopItem[]
 }
 
+export type DashboardReport = {
+  totalRevenue: number
+  todayRevenue: number
+  monthRevenue: number
+  totalOrders: number
+  todayOrders: number
+  monthOrders: number
+  completedOrders: number
+  pendingOrders: number
+  cancelledOrders: number
+  totalCustomers: number
+  newCustomersToday: number
+  newCustomersThisMonth: number
+  totalPaidAmount: number
+  totalRefundAmount: number
+  revenueChart: ReportTimeSeriesPoint[]
+  orderChart: ReportTimeSeriesPoint[]
+  topProducts: ReportTopItem[]
+  topProviders: ReportTopItem[]
+  topCountries: ReportTopItem[]
+  topRegions: ReportTopItem[]
+}
+
 export type ReportKpiVariant = 'primary' | 'success' | 'info' | 'warning' | 'danger' | 'secondary'
 
 export type ReportKpi = {

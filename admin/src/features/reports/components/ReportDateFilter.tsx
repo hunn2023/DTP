@@ -10,6 +10,7 @@ type ReportDateFilterProps = {
   onApply: () => void
   isLoading?: boolean
   showGroupType?: boolean
+  title?: string
 }
 
 const ReportDateFilter = ({
@@ -18,6 +19,7 @@ const ReportDateFilter = ({
   onApply,
   isLoading = false,
   showGroupType = true,
+  title = 'Bộ lọc báo cáo',
 }: ReportDateFilterProps) => {
   const patch = (partial: Partial<ReportFilters>) => onChange({ ...value, ...partial })
 
@@ -27,7 +29,7 @@ const ReportDateFilter = ({
         <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
           <div className="d-flex align-items-center gap-2 text-primary">
             <LuFilter size={18} />
-            <span className="fw-semibold fs-sm report-filter-card__title text-uppercase">Bộ lọc báo cáo</span>
+            <span className="fw-semibold fs-sm report-filter-card__title text-uppercase">{title}</span>
           </div>
           <div className="report-range-badges d-flex flex-wrap gap-2">
             <Badge bg="primary-subtle" text="primary" className="d-inline-flex align-items-center gap-1">

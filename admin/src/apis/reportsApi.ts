@@ -4,10 +4,12 @@ import { httpGet } from '@/shared/lib/http'
 
 import type {
   CustomersReport,
+  DashboardReport,
   OrdersReport,
   PaymentsReport,
   ProductsReport,
   ProvidersReport,
+  ReportDateRange,
   ReportFilters,
   ReportTimeSeriesPoint,
   ReportTopItem,
@@ -131,6 +133,31 @@ function normalizePaymentsReport(raw: Raw): PaymentsReport {
   }
 }
 
+function normalizeDashboardReport(raw: Raw): DashboardReport {
+  return {
+    totalRevenue: readNumber(raw, 'totalRevenue', 'TotalRevenue'),
+    todayRevenue: readNumber(raw, 'todayRevenue', 'TodayRevenue'),
+    monthRevenue: readNumber(raw, 'monthRevenue', 'MonthRevenue'),
+    totalOrders: readNumber(raw, 'totalOrders', 'TotalOrders'),
+    todayOrders: readNumber(raw, 'todayOrders', 'TodayOrders'),
+    monthOrders: readNumber(raw, 'monthOrders', 'MonthOrders'),
+    completedOrders: readNumber(raw, 'completedOrders', 'CompletedOrders'),
+    pendingOrders: readNumber(raw, 'pendingOrders', 'PendingOrders'),
+    cancelledOrders: readNumber(raw, 'cancelledOrders', 'CancelledOrders'),
+    totalCustomers: readNumber(raw, 'totalCustomers', 'TotalCustomers'),
+    newCustomersToday: readNumber(raw, 'newCustomersToday', 'NewCustomersToday'),
+    newCustomersThisMonth: readNumber(raw, 'newCustomersThisMonth', 'NewCustomersThisMonth'),
+    totalPaidAmount: readNumber(raw, 'totalPaidAmount', 'TotalPaidAmount'),
+    totalRefundAmount: readNumber(raw, 'totalRefundAmount', 'TotalRefundAmount'),
+    revenueChart: readTimeSeries(raw, 'revenueChart', 'RevenueChart'),
+    orderChart: readTimeSeries(raw, 'orderChart', 'OrderChart'),
+    topProducts: readTopItems(raw, 'topProducts', 'TopProducts'),
+    topProviders: readTopItems(raw, 'topProviders', 'TopProviders'),
+    topCountries: readTopItems(raw, 'topCountries', 'TopCountries'),
+    topRegions: readTopItems(raw, 'topRegions', 'TopRegions'),
+  }
+}
+
 async function fetchReport<T>(
   path: string,
   filters: ReportFilters,
@@ -140,8 +167,28 @@ async function fetchReport<T>(
   return normalize(raw)
 }
 
+async function fetchReportByDateRange<T>(
+  path: string,
+  range: ReportDateRange,
+  normalize: (raw: Raw) => T,
+  extraParams?: Record<string, string | number>,
+): Promise<T> {
+  const raw = await httpGet<Raw>(path, {
+    params: {
+      fromDate: range.fromDate,
+      toDate: range.toDate,
+      ...extraParams,
+    },
+  })
+  return normalize(raw)
+}
+
 export function fetchSalesReport(filters: ReportFilters): Promise<SalesReport> {
   return fetchReport(API_PATHS.adminReportsSales, filters, normalizeSalesReport)
+}
+
+export function fetchDashboardReport(range: ReportDateRange): Promise<DashboardReport> {
+  return fetchReportByDateRange(API_PATHS.adminReportsDashboard, range, normalizeDashboardReport)
 }
 
 export function fetchOrdersReport(filters: ReportFilters): Promise<OrdersReport> {

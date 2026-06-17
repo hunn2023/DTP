@@ -45,6 +45,7 @@ export const API_PATHS = {
   adminAuditLogs: '/api/admin/audit/logs',
   adminCustomers: '/api/customer/admin/customers',
   adminReportsSales: '/api/admin/reports/sales',
+  adminReportsDashboard: '/api/admin/reports/dashboard',
   adminReportsOrders: '/api/admin/reports/orders',
   adminReportsCustomers: '/api/admin/reports/customers',
   adminReportsProviders: '/api/admin/reports/providers',
