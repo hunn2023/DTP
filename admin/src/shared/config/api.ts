@@ -42,6 +42,7 @@ export const API_PATHS = {
   adminPermissions: '/api/admin/permissions',
   adminPermissionsByModule: '/api/admin/permissions/by-module',
   adminAuditLogs: '/api/admin/audit/logs',
+  adminCustomers: '/api/customer/admin/customers',
   adminContentBanners: '/api/admin/content/banners',
   adminContentFaqs: '/api/admin/content/faqs',
   adminContentArticles: '/api/admin/content/articles',

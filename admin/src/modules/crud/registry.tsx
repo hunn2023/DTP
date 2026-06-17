@@ -26,6 +26,8 @@ import AuditLogsPage from '@/features/system/audit/AuditLogsPage'
 import PermissionsPage from '@/features/system/permissions/PermissionsPage'
 import RolesPage from '@/features/system/roles/RolesPage'
 import UsersPage from '@/features/system/users/UsersPage'
+import CustomersListPage from '@/features/customers/CustomersListPage'
+import CustomersBlockedPage from '@/features/customers/CustomersBlockedPage'
 import {
   marketingEntities,
   systemSeedEntities,
@@ -42,6 +44,8 @@ import { settingsEntities } from '@/modules/crud/entities/settings.entities'
 import { websiteEntities } from '@/modules/crud/entities/website.entities'
 import type { ResolvedAdminEntity } from '@/modules/crud/schema/defineEntity'
 import type { CrudEntityBase } from '@/modules/crud/types'
+
+const API_BACKED_CUSTOMER_PATHS = new Set(['/customers/list', '/customers/blocked'])
 
 const API_BACKED_WEBSITE_PATHS = new Set([
   '/website/banners',
@@ -167,6 +171,11 @@ const productPricesRoute: RouteObject = {
   element: <ProductPricesPage />,
 }
 
+const customerApiRoutes: RouteObject[] = [
+  { path: '/customers/list', element: <CustomersListPage /> },
+  { path: '/customers/blocked', element: <CustomersBlockedPage /> },
+]
+
 const systemApiRoutes: RouteObject[] = [
   { path: '/system/admin-users', element: <UsersPage /> },
   { path: '/system/roles', element: <RolesPage /> },
@@ -232,6 +241,7 @@ const salesApiRoutes: RouteObject[] = [
 export const dtpAdminRoutes: RouteObject[] = [
   ...redirectRoutes,
   ...systemApiRoutes,
+  ...customerApiRoutes,
   ...salesApiRoutes,
   ...contentApiRoutes,
   categoriesRoute,
@@ -246,5 +256,7 @@ export const dtpAdminRoutes: RouteObject[] = [
   providersListRoute,
   { path: '/products/esim/prices', element: <Navigate to="/settings/product-prices" replace /> },
   { path: '/products/cards-data/prices', element: <Navigate to="/settings/product-prices" replace /> },
-  ...allAdminEntities.filter((entity) => !API_BACKED_WEBSITE_PATHS.has(entity.path)).map(entityRoute),
+  ...allAdminEntities
+    .filter((entity) => !API_BACKED_WEBSITE_PATHS.has(entity.path) && !API_BACKED_CUSTOMER_PATHS.has(entity.path))
+    .map(entityRoute),
 ]
