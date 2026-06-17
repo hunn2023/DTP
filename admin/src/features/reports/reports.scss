@@ -1,0 +1,183 @@
+.report-filter-card {
+  border: 0;
+  background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.06) 0%, rgba(var(--bs-info-rgb), 0.04) 100%);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+
+  .report-filter-card__title {
+    letter-spacing: 0.04em;
+  }
+}
+
+.report-range-badges {
+  .badge {
+    font-weight: 500;
+    padding: 0.4rem 0.65rem;
+  }
+}
+
+.report-kpi-card {
+  border: 0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  }
+
+  .report-kpi-card__value {
+    line-height: 1.2;
+  }
+}
+
+.report-data-card {
+  border: 0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+
+  .report-data-card__header {
+    position: relative;
+    z-index: 3;
+    border-bottom: 1px solid var(--bs-border-color);
+    padding-top: 0.9rem;
+    padding-bottom: 0.9rem;
+    background-color: var(--bs-body-bg);
+  }
+
+  .report-data-card__body {
+    position: relative;
+    z-index: 1;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .report-data-card__table-wrap {
+    --report-grid-cols: 1fr 1fr 1fr;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .report-data-card__head {
+    position: relative;
+    z-index: 2;
+    flex-shrink: 0;
+    background-color: var(--bs-body-bg);
+    border-bottom: 1px solid var(--bs-border-color);
+  }
+
+  .report-data-card__scroll {
+    max-height: 360px;
+    overflow-y: auto;
+    overflow-x: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .report-data-card__row {
+    display: grid;
+    grid-template-columns: var(--report-grid-cols);
+    align-items: center;
+    min-width: min(100%, 640px);
+  }
+
+  .report-data-card__row--head {
+    background-color: var(--bs-body-bg);
+  }
+
+  .report-data-card__row--body {
+    border-bottom: 1px solid var(--bs-border-color-translucent, var(--bs-border-color));
+    background-color: var(--bs-body-bg);
+    transition: background-color 0.12s ease;
+
+    &:hover {
+      background-color: var(--bs-tertiary-bg, rgba(var(--bs-emphasis-color-rgb, 0, 0, 0), 0.04));
+    }
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  .report-data-card__cell {
+    padding: 0.72rem 0.85rem;
+    min-width: 0;
+    word-break: break-word;
+    vertical-align: middle;
+  }
+
+  .report-data-card__cell--head {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--bs-secondary-color);
+    font-weight: 600;
+    padding-top: 0.65rem;
+    padding-bottom: 0.65rem;
+  }
+
+  .report-data-card__icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+}
+
+@each $name in primary, success, info, warning, danger, secondary {
+  .report-kpi-card--#{$name} {
+    border-left: 3px solid var(--bs-#{$name});
+  }
+
+  .report-data-card--#{$name} .report-data-card__header {
+    background-color: var(--bs-#{$name}-bg-subtle, var(--bs-body-bg));
+    border-bottom-color: rgba(var(--bs-#{$name}-rgb), 0.2);
+  }
+
+  .report-data-card--#{$name} .report-data-card__icon {
+    background: rgba(var(--bs-#{$name}-rgb), 0.14);
+    color: var(--bs-#{$name});
+  }
+}
+
+.report-page-content {
+  animation: report-fade-in 0.25s ease;
+}
+
+@keyframes report-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.report-value-money {
+  color: var(--bs-primary);
+  font-weight: 600;
+}
+
+.report-rank-badge {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: rgba(var(--bs-primary-rgb), 0.12);
+  color: var(--bs-primary);
+}
