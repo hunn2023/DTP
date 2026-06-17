@@ -1,8 +1,10 @@
 import { lazy } from 'react'
 import { Navigate, type RouteObject } from 'react-router'
+import RequireAuth from '@/components/auth/RequireAuth'
 import { dtpAdminRoutes } from '@/modules/crud/registry'
 import MainLayout from '@/layouts/MainLayout.tsx'
 import Dashboard from '@/views/dashboards/dashboard'
+import LoginPage from '@/features/auth/LoginPage'
 
 // Dashboards
 const Dashboard2 = lazy(() => import('@/views/dashboards/dashboard2'))
@@ -511,31 +513,42 @@ const mapRoutes: RouteObject[] = [
 
 const allRoutes: RouteObject[] = [
   {
-    element: <MainLayout />,
+    element: <RequireAuth />,
     children: [
       {
-        path: '/',
-        element: <Navigate to="/dashboard" replace />,
+        element: <MainLayout />,
+        children: [
+          {
+            path: '/',
+            element: <Navigate to="/dashboard" replace />,
+          },
+          ...dashboardRoutes,
+          ...dtpAdminRoutes,
+          ...ecommerceRoutes,
+          ...appsRoutes,
+          ...otherAppsRoutes,
+          ...pagesRoutes,
+          ...miscellaneousRoutes,
+          ...layoutRoutes,
+          ...uiRoutes,
+          ...componentRoutes,
+          ...graphRoutes,
+          ...formRoutes,
+          ...tableRoutes,
+          ...iconRoutes,
+          ...mapRoutes,
+        ],
       },
-      ...dashboardRoutes,
-      ...dtpAdminRoutes,
-      ...ecommerceRoutes,
-      ...appsRoutes,
-      ...otherAppsRoutes,
-      ...pagesRoutes,
-      ...miscellaneousRoutes,
-      ...layoutRoutes,
-      ...uiRoutes,
-      ...componentRoutes,
-      ...graphRoutes,
-      ...formRoutes,
-      ...tableRoutes,
-      ...iconRoutes,
-      ...mapRoutes,
     ],
   },
 ]
 
-const otherRoutes: RouteObject[] = [...authRoutes, ...errorRoutes, ...landingRoute, ...otherPagesRoutes]
+const otherRoutes: RouteObject[] = [
+  { path: '/login', element: <LoginPage /> },
+  ...authRoutes,
+  ...errorRoutes,
+  ...landingRoute,
+  ...otherPagesRoutes,
+]
 
 export const routes: RouteObject[] = [...allRoutes, ...otherRoutes]

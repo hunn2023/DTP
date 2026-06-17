@@ -6,7 +6,7 @@ const CustomersBlockedPage = () => (
     title="Khách hàng bị khóa"
     subtitle="Khách hàng"
     description="Danh sách khách hàng đã bị khóa tài khoản.">
-    <CustomersCrudTable isActiveFilter={false} searchPlaceholder="Tìm khách bị khóa..." />
+    <CustomersCrudTable fixedIsActive={false} searchPlaceholder="Tìm khách bị khóa..." />
   </EntityPageLayout>
 )
 

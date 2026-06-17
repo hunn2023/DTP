@@ -25,7 +25,7 @@ const INIT_STATE: LayoutState = {
   sidenav: {
     size: 'default',
     color: 'dark',
-    user: true,
+    user: false,
     isMobileMenuOpen: false,
   },
   topBar: {

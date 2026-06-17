@@ -7,33 +7,42 @@ import TablePagination from '@/components/table/TablePagination'
 import { buildCustomerColumns } from '@/features/customers/columns'
 import CustomerDetailModal from '@/features/customers/components/CustomerDetailModal'
 import { useCustomersCrud } from '@/features/customers/useCustomersCrud'
+import ActiveFilterSelect from '@/modules/crud/components/ActiveFilterSelect'
 
 type CustomersCrudTableProps = {
-  isActiveFilter?: boolean
+  fixedIsActive?: boolean
   searchPlaceholder?: string
 }
 
 const CustomersCrudTable = ({
-  isActiveFilter,
+  fixedIsActive,
   searchPlaceholder = 'Tìm tên, email, SĐT...',
 }: CustomersCrudTableProps) => {
   const crud = useCustomersCrud({
     buildColumns: buildCustomerColumns,
-    isActiveFilter,
+    fixedIsActive,
   })
 
   return (
     <Card>
       <CardHeader className="border-light">
-        <div className="app-search">
-          <input
-            type="search"
-            className="form-control"
-            placeholder={searchPlaceholder}
-            value={crud.globalFilter}
-            onChange={(e) => crud.setGlobalFilter(e.target.value)}
-          />
-          <LuSearch className="app-search-icon text-muted" />
+        <div className="d-flex flex-wrap align-items-end justify-content-between gap-3">
+          <div className="app-search flex-grow-1" style={{ maxWidth: 360, minWidth: 200 }}>
+            <input
+              type="search"
+              className="form-control"
+              placeholder={searchPlaceholder}
+              value={crud.globalFilter}
+              onChange={(e) => crud.setGlobalFilter(e.target.value)}
+            />
+            <LuSearch className="app-search-icon text-muted" />
+          </div>
+          {crud.showActiveFilter && (
+            <div className="d-flex flex-column">
+              <label className="form-label mb-1 small text-muted">Trạng thái</label>
+              <ActiveFilterSelect value={crud.activeFilter} onChange={crud.setActiveFilter} />
+            </div>
+          )}
         </div>
       </CardHeader>
 

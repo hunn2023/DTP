@@ -10,6 +10,7 @@ type ApiFilterSearchSelectProps = {
   resolveValue?: (value: string) => Promise<ApiSearchSelectOption | null>
   noOptionsMessage?: string
   isDisabled?: boolean
+  className?: string
 }
 
 const ApiFilterSearchSelect = ({
@@ -21,8 +22,9 @@ const ApiFilterSearchSelect = ({
   resolveValue,
   noOptionsMessage,
   isDisabled = false,
+  className = '',
 }: ApiFilterSearchSelectProps) => (
-  <div className="d-flex flex-column">
+  <div className={`d-flex flex-column ${className}`}>
     <label className="form-label mb-1 small text-muted">{label}</label>
     <ApiSearchSelect
       value={value}

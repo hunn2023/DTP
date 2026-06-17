@@ -1,9 +1,10 @@
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table'
-import { Button } from 'react-bootstrap'
+import { Badge, Button } from 'react-bootstrap'
 import { TbEye, TbLock, TbLockOpen } from 'react-icons/tb'
 
 import type { CustomerRow } from '@/apis/customersApi'
 import { formatDisplayNumber } from '@/components/form/numberFieldUtils'
+import CustomerAvatar from '@/features/customers/components/CustomerAvatar'
 
 export type CustomerTableHandlers = {
   onView: (row: CustomerRow) => void
@@ -16,48 +17,69 @@ function formatDateTime(value: string): string {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString('vi-VN')
+  return date.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 export function buildCustomerColumns(handlers: CustomerTableHandlers) {
   return [
-    helper.accessor('fullName', {
-      header: 'Họ tên',
+    helper.display({
+      id: 'customer',
+      header: 'Khách hàng',
       cell: ({ row }) => (
-        <div>
-          <div className="fw-semibold">{row.original.fullName || '—'}</div>
-          <div className="text-muted fs-xxs">{row.original.email}</div>
+        <div className="d-flex align-items-center gap-2">
+          <CustomerAvatar
+            fullName={row.original.fullName}
+            avatarUrl={row.original.avatarUrl}
+            size="sm"
+          />
+          <div className="min-w-0">
+            <div className="fw-semibold text-truncate">{row.original.fullName || '—'}</div>
+            <div className="text-muted fs-xxs text-truncate">{row.original.email}</div>
+          </div>
         </div>
       ),
     }),
     helper.accessor('phone', {
       header: 'SĐT',
-      cell: ({ getValue }) => getValue() || '—',
+      cell: ({ getValue }) => <span className="text-nowrap">{getValue() || '—'}</span>,
     }),
     helper.accessor('status', {
       header: 'Trạng thái',
       cell: ({ row }) => (
-        <span
-          className={`badge ${row.original.isActive ? 'badge-soft-primary' : 'badge-soft-secondary'} fs-xxs`}>
+        <Badge
+          bg={row.original.isActive ? 'success' : 'secondary'}
+          className="rounded-pill px-2 py-1 fw-normal fs-xxs">
           {row.original.isActive ? 'Hoạt động' : 'Đã khóa'}
-        </span>
+        </Badge>
       ),
     }),
     helper.accessor('emailConfirmed', {
-      header: 'Xác nhận email',
-      cell: ({ getValue }) => (getValue() ? 'Đã xác nhận' : 'Chưa'),
+      header: 'Email',
+      cell: ({ getValue }) => (
+        <Badge
+          bg={getValue() ? 'info' : 'warning'}
+          className="rounded-pill px-2 py-1 fw-normal fs-xxs">
+          {getValue() ? 'Đã xác nhận' : 'Chưa xác nhận'}
+        </Badge>
+      ),
     }),
     helper.accessor('totalOrders', {
       header: 'Đơn hàng',
-      cell: ({ getValue }) => formatDisplayNumber(getValue()),
+      cell: ({ getValue }) => (
+        <span className="fw-medium">{formatDisplayNumber(getValue())}</span>
+      ),
     }),
     helper.accessor('totalSpent', {
       header: 'Tổng chi tiêu',
-      cell: ({ getValue }) => `${formatDisplayNumber(getValue())} đ`,
+      cell: ({ getValue }) => (
+        <span className="fw-medium text-nowrap">{formatDisplayNumber(getValue())} đ</span>
+      ),
     }),
     helper.accessor('lastLoginAt', {
       header: 'Đăng nhập gần nhất',
-      cell: ({ getValue }) => formatDateTime(getValue()),
+      cell: ({ getValue }) => (
+        <span className="text-muted fs-sm text-nowrap">{formatDateTime(getValue())}</span>
+      ),
     }),
     {
       id: 'actions',

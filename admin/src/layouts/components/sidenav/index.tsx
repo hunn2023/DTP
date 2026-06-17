@@ -4,7 +4,6 @@ import logo from '@/assets/images/logo.png'
 import SimpleBar from 'simplebar-react'
 import { useLayoutContext } from '@/context/useLayoutContext'
 import AppMenu from '@/layouts/components/sidenav/components/AppMenu'
-import UserProfile from '@/layouts/components/sidenav/components/UserProfile'
 import { Image } from 'react-bootstrap'
 import { TbMenu4, TbX } from 'react-icons/tb'
 import { Link } from 'react-router'
@@ -53,7 +52,6 @@ const Sidenav = () => {
       </button>
 
       <SimpleBar id="sidenav" className="scrollbar">
-        {sidenav.user && <UserProfile />}
         <AppMenu />
       </SimpleBar>
     </div>

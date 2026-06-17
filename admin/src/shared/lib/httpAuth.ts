@@ -1,25 +1,26 @@
 import { API_PATHS } from '@/shared/config/api'
+import { clearAccessToken, getAccessToken, setAccessToken } from '@/shared/lib/accessTokenStore'
+import {
+  clearRefreshToken,
+  getRefreshToken,
+  setRefreshToken,
+} from '@/shared/lib/refreshTokenStore'
 import { unwrapResultEnvelope } from '@/shared/lib/result'
-
-const ACCESS_TOKEN_KEY = 'accessToken'
-const REFRESH_TOKEN_KEY = 'refreshToken'
 
 let refreshPromise: Promise<string> | null = null
 
-export function getAccessToken(): string | null {
-  return localStorage.getItem(ACCESS_TOKEN_KEY)
-}
-
-export function setAuthTokens(accessToken: string, refreshToken?: string | null): void {
-  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
-  if (refreshToken) {
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
-  }
+export {
+  getAccessToken,
+  setAccessToken,
+  clearAccessToken,
+  getRefreshToken,
+  setRefreshToken,
+  clearRefreshToken,
 }
 
 export function clearAuthTokens(): void {
-  localStorage.removeItem(ACCESS_TOKEN_KEY)
-  localStorage.removeItem(REFRESH_TOKEN_KEY)
+  clearAccessToken()
+  clearRefreshToken()
 }
 
 export function isAuthPath(path: string): boolean {
@@ -56,7 +57,7 @@ async function parseRefreshBody(res: Response): Promise<RefreshTokenResponse> {
 }
 
 export async function refreshAccessToken(apiBase: string): Promise<string> {
-  const storedRefresh = localStorage.getItem(REFRESH_TOKEN_KEY)
+  const storedRefresh = getRefreshToken()
   if (!storedRefresh) throw new Error('Missing refresh token')
 
   if (!refreshPromise) {
@@ -64,13 +65,17 @@ export async function refreshAccessToken(apiBase: string): Promise<string> {
       const url = `${apiBase}${API_PATHS.authRefresh}`
       const res = await fetch(url, {
         method: 'POST',
-        headers: buildAuthHeaders({ 'Content-Type': 'application/json', Accept: 'application/json' }, false),
+        headers: buildAuthHeaders(
+          { 'Content-Type': 'application/json', Accept: 'application/json' },
+          false,
+        ),
         body: JSON.stringify({ refreshToken: storedRefresh }),
       })
       if (!res.ok) throw new Error('Refresh token failed')
 
       const data = await parseRefreshBody(res)
-      setAuthTokens(data.accessToken, data.refreshToken)
+      setAccessToken(data.accessToken)
+      if (data.refreshToken) setRefreshToken(data.refreshToken)
       return data.accessToken
     })().finally(() => {
       refreshPromise = null

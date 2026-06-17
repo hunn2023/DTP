@@ -11,6 +11,7 @@ export const API_PATHS = {
   authLogin: '/api/auth/login',
   authRefresh: '/api/auth/refresh-token',
   authLogout: '/api/auth/logout',
+  authProfile: '/api/auth/profile',
   adminCategories: '/api/admin/catalog/categories',
   publicCategories: '/api/catalog/categories',
   adminCountries: '/api/admin/catalog/countries',

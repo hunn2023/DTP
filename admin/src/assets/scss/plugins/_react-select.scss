@@ -163,3 +163,15 @@
         }
     }
 }
+
+.customer-filter-select {
+    min-width: 280px;
+
+    .react-select__control {
+        min-height: 38px;
+    }
+
+    .react-select__menu {
+        min-width: 100%;
+    }
+}

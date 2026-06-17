@@ -14,19 +14,23 @@ import type { CustomerDetail, CustomerRow } from '@/apis/customersApi'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import type { CustomerTableHandlers } from '@/features/customers/columns'
 import { getErrorMessage } from '@/features/system/shared/getErrorMessage'
-
+import {
+  activeFilterToBool,
+  type ActiveFilterValue,
+} from '@/modules/crud/components/ActiveFilterSelect'
 type Params = {
   buildColumns: (handlers: CustomerTableHandlers) => ColumnDef<CustomerRow>[]
   pageSize?: number
-  isActiveFilter?: boolean
+  fixedIsActive?: boolean
 }
 
-export function useCustomersCrud({ buildColumns, pageSize = 20, isActiveFilter }: Params) {
+export function useCustomersCrud({ buildColumns, pageSize = 20, fixedIsActive }: Params) {
   const { showNotification } = useNotificationContext()
   const [data, setData] = useState<CustomerRow[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [globalFilter, setGlobalFilter] = useState('')
+  const [activeFilter, setActiveFilter] = useState<ActiveFilterValue>('all')
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize })
@@ -35,6 +39,9 @@ export function useCustomersCrud({ buildColumns, pageSize = 20, isActiveFilter }
   const [statusUpdating, setStatusUpdating] = useState(false)
 
   const loadSeqRef = useRef(0)
+
+  const isActiveQuery = fixedIsActive !== undefined ? fixedIsActive : activeFilterToBool(activeFilter)
+  const filterKey = `${fixedIsActive ?? activeFilter}`
 
   const notifySuccess = useCallback(
     (message: string) => {
@@ -56,7 +63,7 @@ export function useCustomersCrud({ buildColumns, pageSize = 20, isActiveFilter }
       try {
         const result = await customersApi.fetchCustomersPage(pageIndex + 1, size, {
           keyword: keyword || undefined,
-          isActive: isActiveFilter,
+          isActive: isActiveQuery,
         })
         if (seq !== loadSeqRef.current) return
         setData(result.items)
@@ -68,7 +75,7 @@ export function useCustomersCrud({ buildColumns, pageSize = 20, isActiveFilter }
         if (seq === loadSeqRef.current) setIsLoading(false)
       }
     },
-    [isActiveFilter, notifyError],
+    [isActiveQuery, notifyError],
   )
 
   const reload = useCallback(() => {
@@ -79,7 +86,7 @@ export function useCustomersCrud({ buildColumns, pageSize = 20, isActiveFilter }
   useEffect(() => {
     const seq = ++loadSeqRef.current
     void loadData(pagination.pageIndex, pagination.pageSize, globalFilter, seq)
-  }, [pagination.pageIndex, pagination.pageSize, globalFilter, loadData])
+  }, [pagination.pageIndex, pagination.pageSize, globalFilter, filterKey, loadData])
 
   const openView = useCallback(
     async (row: CustomerRow) => {
@@ -109,7 +116,9 @@ export function useCustomersCrud({ buildColumns, pageSize = 20, isActiveFilter }
         }
         reload()
         if (detail?.userId === row.userId) {
-          setDetail((prev) => (prev ? { ...prev, isActive: !row.isActive, status: row.isActive ? 'Locked' : 'Active' } : prev))
+          setDetail((prev) =>
+            prev ? { ...prev, isActive: !row.isActive, status: row.isActive ? 'Locked' : 'Active' } : prev,
+          )
         }
       } catch (error) {
         notifyError(getErrorMessage(error, 'Không cập nhật được trạng thái khách hàng'))
@@ -156,6 +165,11 @@ export function useCustomersCrud({ buildColumns, pageSize = 20, isActiveFilter }
     setPagination((prev) => ({ ...prev, pageIndex: 0 }))
   }, [])
 
+  const setActiveFilterAndReset = useCallback((value: ActiveFilterValue) => {
+    setActiveFilter(value)
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+  }, [])
+
   const paginationInfo = useMemo(() => {
     const { pageIndex, pageSize: size } = pagination
     if (totalCount === 0) return { start: 0, end: 0, total: 0 }
@@ -177,6 +191,9 @@ export function useCustomersCrud({ buildColumns, pageSize = 20, isActiveFilter }
     isLoading,
     globalFilter,
     setGlobalFilter: setGlobalFilterAndReset,
+    activeFilter,
+    setActiveFilter: setActiveFilterAndReset,
+    showActiveFilter: fixedIsActive === undefined,
     paginationInfo,
     pageCount,
     pageSize: pagination.pageSize,
