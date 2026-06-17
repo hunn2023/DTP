@@ -642,8 +642,7 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
                 into g
                 select new TopItemDto
                 {
-                    Id = g.Key.Id,
-                    Code = g.Key.Code ?? string.Empty,
+                    //Code = g.Key.Code ?? string.Empty,
                     Name = g.Key.Name,
                     Count = g.Sum(x => x.Quantity),
                     Value = g.Sum(x => x.TotalPrice)
@@ -680,8 +679,7 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
                 into g
                 select new TopItemDto
                 {
-                    Id = Guid.Empty,
-                    //Code = g.Key.RegionCode ?? string.Empty,
+                     //Code = g.Key.RegionCode ?? string.Empty,
                     Name = g.Key.Region ?? "Không xác định",
                     Count = g.Sum(x => x.Quantity),
                     Value = g.Sum(x => x.TotalPrice)
