@@ -18,7 +18,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
             int pageSize,
             CancellationToken cancellationToken = default);
 
-        Task<EsimPackageDto?> GetPublicBySlugAsync(
+        Task<List<EsimPackageDto>> GetPublicBySlugAsync(
             string slug,
             CancellationToken cancellationToken = default);
 

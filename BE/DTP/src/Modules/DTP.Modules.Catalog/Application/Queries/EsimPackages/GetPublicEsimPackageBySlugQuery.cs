@@ -7,7 +7,7 @@ using MediatR;
 namespace DTP.Modules.Catalog.Application.Queries.EsimPackages
 {
     public class GetPublicEsimPackageBySlugQuery
-        : IRequest<Result<EsimPackageDto?>>
+        : IRequest<Result<List<EsimPackageDto>>>
     {
         public string Slug { get; set; }
 
@@ -18,7 +18,7 @@ namespace DTP.Modules.Catalog.Application.Queries.EsimPackages
     }
 
     public class GetPublicEsimPackageBySlugQueryHandler
-      : IRequestHandler<GetPublicEsimPackageBySlugQuery, Result<EsimPackageDto?>>
+      : IRequestHandler<GetPublicEsimPackageBySlugQuery, Result<List<EsimPackageDto>>>
     {
         private readonly IEsimPackageService _esimPackageService;
 
@@ -28,7 +28,7 @@ namespace DTP.Modules.Catalog.Application.Queries.EsimPackages
             _esimPackageService = esimPackageService;
         }
 
-        public async Task<Result<EsimPackageDto?>> Handle(
+        public async Task<Result<List<EsimPackageDto>>> Handle(
             GetPublicEsimPackageBySlugQuery request,
             CancellationToken cancellationToken)
         {

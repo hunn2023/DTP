@@ -80,23 +80,23 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             return Result<PagedResultDto<EsimPackageDto>>.Success(result);
         }
 
-        public async Task<Result<EsimPackageDto?>> GetPublicBySlugAsync(
+        public async Task<Result<List<EsimPackageDto>>> GetPublicBySlugAsync(
             string slug,
             CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(slug))
-                return Result<EsimPackageDto?>.Failure("Slug không hợp lệ.");
+                return Result<List<EsimPackageDto>>.Failure("Slug không hợp lệ.");
 
             slug = slug.Trim().ToLower();
 
             var cacheKey = EsimPackageCacheKeys.PublicBySlug(slug);
 
-            var cachedData = await _cacheService.GetAsync<EsimPackageDto>(
+            var cachedData = await _cacheService.GetAsync<List<EsimPackageDto>>(
                 cacheKey,
                 cancellationToken);
 
             if (cachedData is not null)
-                return Result<EsimPackageDto?>.Success(cachedData);
+                return Result<List<EsimPackageDto>>.Success(cachedData);
 
             var result = await _esimPackageRepository.GetPublicBySlugAsync(
                 slug,
@@ -111,7 +111,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     cancellationToken);
             }
 
-            return Result<EsimPackageDto?>.Success(result);
+            return Result<List<EsimPackageDto>>.Success(result);
         }
 
         public async Task<Result<PagedResultDto<EsimPackageDto>>> GetPagedAsync(

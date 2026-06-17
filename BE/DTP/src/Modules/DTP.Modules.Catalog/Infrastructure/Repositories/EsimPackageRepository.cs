@@ -51,7 +51,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 cancellationToken);
         }
 
-        public async Task<EsimPackageDto?> GetPublicBySlugAsync(
+        public async Task<List<EsimPackageDto>> GetPublicBySlugAsync(
              string slug,
              CancellationToken cancellationToken = default)
         {
@@ -163,7 +163,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                         })
                         .ToList()
                 })
-                .FirstOrDefaultAsync(cancellationToken);
+                .ToListAsync(cancellationToken);
         }
 
         public async Task<PagedResultDto<EsimPackageDto>> GetPagedAsync(
