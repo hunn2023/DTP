@@ -45,5 +45,13 @@ namespace DTP.Modules.Auth.Application.Abstractions.Services
             string? ipAddress,
             string? userAgent,
             CancellationToken cancellationToken = default);
+
+
+        Task<Result<Guid>> CreateAdminUserAsync(
+          CreateAdminUserRequestDto request,
+          Guid createdByUserId,
+          string? ipAddress,
+          string? userAgent,
+          CancellationToken cancellationToken = default);
     }
 }

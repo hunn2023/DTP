@@ -1547,6 +1547,146 @@ namespace DTP.Modules.Auth.Infrastructure.Services
         }
 
 
+        public async Task<Result<Guid>> CreateAdminUserAsync(
+    CreateAdminUserRequestDto request,
+    Guid createdByUserId,
+    string? ipAddress,
+    string? userAgent,
+    CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                return Result<Guid>.Failure("Dữ liệu tạo admin không hợp lệ.");
+
+            if (string.IsNullOrWhiteSpace(request.Email))
+                return Result<Guid>.Failure("Vui lòng nhập email.");
+
+            if (string.IsNullOrWhiteSpace(request.FullName))
+                return Result<Guid>.Failure("Vui lòng nhập họ tên.");
+
+            if (string.IsNullOrWhiteSpace(request.Password))
+                return Result<Guid>.Failure("Vui lòng nhập mật khẩu.");
+
+            if (string.IsNullOrWhiteSpace(request.ConfirmPassword))
+                return Result<Guid>.Failure("Vui lòng nhập xác nhận mật khẩu.");
+
+            if (request.Password.Length < 6)
+                return Result<Guid>.Failure("Mật khẩu phải có ít nhất 6 ký tự.");
+
+            if (request.Password != request.ConfirmPassword)
+                return Result<Guid>.Failure("Xác nhận mật khẩu không khớp.");
+
+            var email = request.Email.Trim().ToLowerInvariant();
+
+            var ip = string.IsNullOrWhiteSpace(ipAddress)
+                ? "unknown"
+                : ipAddress.Trim();
+
+            var exists = await _userRepository.ExistsByEmailAsync(
+                email,
+                null,
+                cancellationToken);
+
+            if (exists)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Create Admin User Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "User",
+                    description: "Create admin user failed because email already exists.",
+                    newValues: new
+                    {
+                        Email = email,
+                        CreatedByUserId = createdByUserId,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "Email already exists",
+                        FailedAt = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result<Guid>.Failure("Email đã tồn tại.");
+            }
+
+            var adminRole = await _roleRepository.GetByCodeAsync(
+                "ADMIN",
+                cancellationToken);
+
+            if (adminRole == null)
+            {
+                await WriteAuditSafeAsync(
+                    action: "Create Admin User Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "Role",
+                    description: "Create admin user failed because ADMIN role does not exist.",
+                    newValues: new
+                    {
+                        Email = email,
+                        RoleCode = "ADMIN",
+                        CreatedByUserId = createdByUserId,
+                        IpAddress = ip,
+                        UserAgent = userAgent,
+                        Reason = "Role ADMIN not found",
+                        FailedAt = DateTime.UtcNow
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result<Guid>.Failure("Role ADMIN không tồn tại.");
+            }
+
+            var user = new User
+            {
+                Email = email,
+                Phone = string.IsNullOrWhiteSpace(request.Phone)
+                    ? null
+                    : request.Phone.Trim(),
+                FullName = request.FullName.Trim(),
+                PasswordHash = _passwordHasher.Hash(request.Password),
+                EmailConfirmed = true,
+                IsActive = true
+            };
+
+            user.UserRoles.Add(new UserRole
+            {
+                UserId = user.Id,
+                RoleId = adminRole.Id
+            });
+
+            await _userRepository.AddAsync(
+                user,
+                cancellationToken);
+
+            await _userRepository.SaveChangesAsync(
+                cancellationToken);
+
+            await WriteAuditSafeAsync(
+                action: "Create Admin User Success",
+                actionType: AuditActionType.Create,
+                status: AuditStatus.Success,
+                entityName: "User",
+                entityId: user.Id,
+                description: "Admin user was created successfully.",
+                newValues: new
+                {
+                    user.Id,
+                    user.Email,
+                    user.Phone,
+                    user.FullName,
+                    user.EmailConfirmed,
+                    user.IsActive,
+                    Role = adminRole.Code,
+                    CreatedByUserId = createdByUserId,
+                    IpAddress = ip,
+                    UserAgent = userAgent,
+                    CreatedAt = DateTime.UtcNow
+                },
+                cancellationToken: cancellationToken);
+
+            return Result<Guid>.Success(user.Id);
+        }
+
+
         private static string BuildRegisterOtpEmailBody(string otp)
         {
             return $@"

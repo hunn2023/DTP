@@ -5,6 +5,7 @@ using DTP.Modules.Auth.Application.Queries.Users;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace DTP.Modules.Auth.Presentation.Controllers
 {
@@ -113,6 +114,63 @@ namespace DTP.Modules.Auth.Presentation.Controllers
                 success = result,
                 message = "Gán role thành công."
             });
+        }
+
+
+
+        [HttpPost("admins")]
+        public async Task<IActionResult> CreateAdminUser(
+            [FromBody] CreateAdminUserRequestDto request,
+            CancellationToken cancellationToken)
+        {
+            var currentUserId = GetCurrentUserId();
+
+            if (currentUserId == Guid.Empty)
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Không xác định được user hiện tại."
+                });
+
+            var command = new CreateAdminUserCommand
+            {
+                Request = request,
+                CreatedByUserId = currentUserId,
+                IpAddress = GetClientIp(),
+                UserAgent = Request.Headers.UserAgent.ToString()
+            };
+
+            var result = await _mediator.Send(
+                command,
+                cancellationToken);
+
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+        private Guid GetCurrentUserId()
+        {
+            var userId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue("sub")
+                ?? User.FindFirstValue("userId")
+                ?? User.FindFirstValue("UserId");
+
+            return Guid.TryParse(userId, out var id)
+                ? id
+                : Guid.Empty;
+        }
+
+        private string? GetClientIp()
+        {
+            var forwardedFor = Request.Headers["X-Forwarded-For"].FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(forwardedFor))
+                return forwardedFor.Split(',')[0].Trim();
+
+            return HttpContext.Connection.RemoteIpAddress?.ToString();
         }
     }
 }
