@@ -48,6 +48,11 @@ namespace DTP.Modules.Report.Infrastructure.Persistence
         public IQueryable<ReportEsimPackageReadModel> EsimPackageQuery
     => EsimPackages.AsNoTracking();
 
+        public DbSet<ReportCountryReadModel> Countries => Set<ReportCountryReadModel>();
+
+        public IQueryable<ReportCountryReadModel> CountryQuery =>
+            Countries.AsNoTracking();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<ReportOrderReadModel>(builder =>
@@ -81,6 +86,12 @@ namespace DTP.Modules.Report.Infrastructure.Persistence
             modelBuilder.Entity<ReportCategoryReadModel>(builder =>
             {
                 builder.ToTable("Category", "dbo", t => t.ExcludeFromMigrations());
+                builder.HasKey(x => x.Id);
+            });
+
+            modelBuilder.Entity<ReportCountryReadModel>(builder =>
+            {
+                builder.ToTable("Country", "dbo", t => t.ExcludeFromMigrations());
                 builder.HasKey(x => x.Id);
             });
 

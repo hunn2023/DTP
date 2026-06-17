@@ -28,6 +28,12 @@ namespace DTP.Modules.Report.Application.Abstractions.Persistence
 
         IQueryable<ReportEsimPackageReadModel> EsimPackageQuery { get; }
 
+
+        DbSet<ReportCountryReadModel> Countries { get; }
+
+        IQueryable<ReportCountryReadModel> CountryQuery { get; }
+
+
         IQueryable<ReportOrderReadModel> OrderQuery { get; }
         IQueryable<ReportOrderItemReadModel> OrderItemQuery { get; }
         IQueryable<ReportPaymentReadModel> PaymentQuery { get; }

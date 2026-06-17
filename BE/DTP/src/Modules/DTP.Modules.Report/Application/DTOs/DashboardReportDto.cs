@@ -31,5 +31,8 @@ namespace DTP.Modules.Report.Application.DTOs
         public List<TimeSeriesPointDto> OrderChart { get; set; } = new();
         public List<TopItemDto> TopProducts { get; set; } = new();
         public List<TopItemDto> TopProviders { get; set; } = new();
+
+        public List<TopItemDto> TopCountries { get; set; } = new();
+        public List<TopItemDto> TopRegions { get; set; } = new();
     }
 }

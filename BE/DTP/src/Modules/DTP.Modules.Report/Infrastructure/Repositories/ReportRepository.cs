@@ -98,6 +98,19 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
                 5,
                 cancellationToken);
 
+
+            dto.TopCountries = await GetTopCountriesAsync(
+                fromDate,
+                toDate,
+                5,
+                cancellationToken);
+
+            dto.TopRegions = await GetTopRegionsAsync(
+                fromDate,
+                toDate,
+                5,
+                cancellationToken);
+
             return dto;
         }
 
@@ -597,6 +610,84 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
                     Value = g.Sum(x => x.TotalPrice)
                 })
                 .OrderByDescending(x => x.Value)
+                .Take(take)
+                .ToListAsync(cancellationToken);
+        }
+
+
+        private async Task<List<TopItemDto>> GetTopCountriesAsync(
+                DateTime fromDate,
+                DateTime toDate,
+                int take,
+                CancellationToken cancellationToken)
+        {
+            return await (
+                from oi in _context.OrderItemQuery
+                join o in _context.OrderQuery on oi.OrderId equals o.Id
+                join ep in _context.EsimPackageQuery on oi.EsimPackageId equals ep.Id
+                join c in _context.CountryQuery on ep.CountryId equals c.Id
+                where !oi.IsDeleted
+                      && !o.IsDeleted
+                      && ep.IsActive
+                      && c.IsActive
+                      && o.CreatedAt >= fromDate
+                      && o.CreatedAt <= toDate
+                      && o.Status == 4
+                group oi by new
+                {
+                    c.Id,
+                    c.Code,
+                    c.Name
+                }
+                into g
+                select new TopItemDto
+                {
+                    Id = g.Key.Id,
+                    Code = g.Key.Code ?? string.Empty,
+                    Name = g.Key.Name,
+                    Count = g.Sum(x => x.Quantity),
+                    Value = g.Sum(x => x.TotalPrice)
+                })
+                .OrderByDescending(x => x.Value)
+                .ThenByDescending(x => x.Count)
+                .Take(take)
+                .ToListAsync(cancellationToken);
+        }
+
+        private async Task<List<TopItemDto>> GetTopRegionsAsync(
+            DateTime fromDate,
+            DateTime toDate,
+            int take,
+            CancellationToken cancellationToken)
+        {
+            return await (
+                from oi in _context.OrderItemQuery
+                join o in _context.OrderQuery on oi.OrderId equals o.Id
+                join ep in _context.EsimPackageQuery on oi.EsimPackageId equals ep.Id
+                join c in _context.CountryQuery on ep.CountryId equals c.Id
+                where !oi.IsDeleted
+                      && !o.IsDeleted
+                      && ep.IsActive
+                      && c.IsActive
+                      && o.CreatedAt >= fromDate
+                      && o.CreatedAt <= toDate
+                      && o.Status == 4
+                group oi by new
+                {
+                    //c.RegionCode,
+                    c.Region
+                }
+                into g
+                select new TopItemDto
+                {
+                    Id = Guid.Empty,
+                    //Code = g.Key.RegionCode ?? string.Empty,
+                    Name = g.Key.Region ?? "Không xác định",
+                    Count = g.Sum(x => x.Quantity),
+                    Value = g.Sum(x => x.TotalPrice)
+                })
+                .OrderByDescending(x => x.Value)
+                .ThenByDescending(x => x.Count)
                 .Take(take)
                 .ToListAsync(cancellationToken);
         }

@@ -14,6 +14,8 @@ namespace DTP.Modules.Report.Application.Abstractions.Persistence.ReadModels
 
         public Guid ProviderId { get; set; }
 
+        public Guid CountryId { get; set; }
+
         public bool IsActive { get; set; }
     }
 }
