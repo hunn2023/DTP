@@ -196,7 +196,7 @@ namespace DTP.Modules.Chatbot.Application.Services
         private static string NormalizeKeyPart(string? value)
         {
             if (string.IsNullOrWhiteSpace(value))
-                return "unknown";
+                return Guid.NewGuid().ToString();
 
             return value
                 .Trim()
