@@ -111,7 +111,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     cancellationToken);
             }
 
-            return Result<List<EsimPackageDto>>.Success(result);
+            return Result<List<EsimPackageDto>>.Success(result ?? new List<EsimPackageDto>());
         }
 
         public async Task<Result<PagedResultDto<EsimPackageDto>>> GetPagedAsync(
@@ -214,7 +214,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             var validationResult = await ValidateUpdateAsync(command, cancellationToken);
 
             if (!validationResult.IsSuccess)
-                return Result.Failure(validationResult.Error);
+                return Result.Failure(validationResult.Error ?? "");
 
             var slug = command.Slug.Trim().ToLower();
 
@@ -426,9 +426,9 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 return Result.Failure("Biến thể sản phẩm không thuộc sản phẩm đã chọn.");
 
 
-           var countryExists = await _countryRepository.ExistsAsync(
-                command.CountryId,
-                cancellationToken);
+            var countryExists = await _countryRepository.ExistsAsync(
+                 command.CountryId,
+                 cancellationToken);
 
             if (!countryExists)
                 return Result.Failure("Không tìm thấy quốc gia.");

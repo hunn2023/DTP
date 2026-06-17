@@ -141,8 +141,8 @@ namespace DTP.Modules.Provider.Application.Services
                             InfoCustomer = new PeacomInfoCustomerDto
                             {
                                 CustomerEmail = dtpOrder.CustomerEmail,
-                                CustomerName = dtpOrder.CustomerName,
-                                CustomerPhone = dtpOrder.CustomerPhone
+                                CustomerName = dtpOrder.CustomerName ?? "",
+                                CustomerPhone = dtpOrder.CustomerPhone ?? ""
                             }
                         };
 

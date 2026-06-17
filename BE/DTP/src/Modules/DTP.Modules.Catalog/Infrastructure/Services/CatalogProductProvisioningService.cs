@@ -410,7 +410,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 costPrice: 0,
                 startDate: null,
                 endDate: null,
-                null,
+                "",
                 isActive: false);
 
             await _productPriceRepository.AddAsync(price, cancellationToken);

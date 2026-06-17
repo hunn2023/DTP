@@ -41,9 +41,9 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 Currency = order.Currency,
                 Status = order.Status.ToString(),
                 PaymentExpiredAt = order.PaymentExpiredAt,
-                CustomerEmail = order.CustomerEmail,
-                CustomerName = order.CustomerName,
-                CustomerPhone = order.CustomerPhone
+                CustomerEmail = order.CustomerEmail ?? "",
+                CustomerName = order.CustomerName ?? "",
+                CustomerPhone = order.CustomerPhone ?? ""
 
             };
         }

@@ -37,7 +37,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Category
             return await _categoryService.CreateAsync(
              request.Code,
              request.Name,
-             request.Slug,
+             request.Slug ?? "",
              request.SortOrder,
              cancellationToken);
         }

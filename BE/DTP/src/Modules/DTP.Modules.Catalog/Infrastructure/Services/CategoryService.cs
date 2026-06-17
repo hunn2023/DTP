@@ -149,7 +149,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             }
 
             var category = new Category(
-                code,
+                code ?? "",
                 name,
                 slug,
                 null,
@@ -244,7 +244,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             }
 
             category.Update(
-                code,
+                code ?? "",
                 name,
                 slug,
                 null,

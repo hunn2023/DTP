@@ -27,7 +27,7 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
                     OrderId = x.Id,
                     OrderCode = x.OrderCode,
                     UserId = x.CustomerId.Value,
-                    CustomerEmail = x.CustomerEmail,
+                    CustomerEmail = x.CustomerEmail ?? "",
                     CustomerName = x.CustomerName,
                     CustomerPhone = x.CustomerPhone,
                     TotalAmount = x.TotalAmount,
@@ -38,7 +38,7 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
                         ProductId = i.ProductId,
                         ProductVariantId = i.ProductVariantId,
                         EsimPackageId = i.EsimPackageId,
-                        Sku = i.Sku,
+                        Sku = i.Sku ?? "",
                         ProductName = i.ProductName,
                         Quantity = i.Quantity,
                         UnitPrice = i.UnitPrice

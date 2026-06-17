@@ -10,7 +10,7 @@ namespace DTP.Modules.Provider.Application.DTOs.Peacoms
     {
         public List<PeacomCreateOrderProductDto> Products { get; set; } = new();
 
-        public string RequestId { get; set; }
+        public string? RequestId { get; set; }
     }
 
     public class PeacomCreateOrderProductDto

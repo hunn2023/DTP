@@ -1092,7 +1092,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                     action: action,
                     status: status,
                     entityId: entityId,
-                    description: description,
+                    description: description ?? "",
                     oldValues: oldValues,
                     newValues: newValues,
                     cancellationToken: cancellationToken);

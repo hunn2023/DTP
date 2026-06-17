@@ -11,7 +11,6 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Globalization;
 
 namespace DTP.Modules.Payment.Infrastructure.Services
 {
@@ -150,7 +149,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 callback.VaAcc,
                 callback.MapId);
 
-            return Verify(rawString, callback.Signature!, _options.EpayPublicKeyPem);
+            return Verify(rawString, callback.Signature!, _options.EpayPublicKeyPem ?? "");
         }
 
 

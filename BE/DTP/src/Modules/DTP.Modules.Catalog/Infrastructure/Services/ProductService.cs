@@ -151,7 +151,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                         ProviderId = x.ProviderId,
 
                         CountryId = x.CountryId,
-                        CountryName = x.Country != null ? x.Country.Name : null,
+                        CountryName = x.Country != null ? x.Country.Name : "",
 
                         Name = x.Name,
                         Slug = x.Slug,
@@ -314,7 +314,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             var validateResult = ValidateCreate(command);
 
             if (!validateResult.IsSuccess)
-                return Result<Guid>.Failure(validateResult.Error);
+                return Result<Guid>.Failure(validateResult.Error ?? "");
 
             NormalizeCreateCommand(command);
 
@@ -334,7 +334,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             var validateResult = ValidateUpdate(command);
 
             if (!validateResult.IsSuccess)
-                return Result.Failure(validateResult.Error );
+                return Result.Failure(validateResult.Error  ?? "");
 
             NormalizeUpdateCommand(command);
 

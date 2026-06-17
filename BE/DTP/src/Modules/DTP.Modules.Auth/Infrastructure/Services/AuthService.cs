@@ -297,7 +297,7 @@ namespace DTP.Modules.Auth.Infrastructure.Services
             }
 
             var validOtp = _otpService.VerifyOtp(
-                request.OtpCode,
+                request?.OtpCode ?? "",
                 pending.OtpCodeHash);
 
             if (!validOtp)

@@ -94,7 +94,7 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
                 ipAddress,
                 cancellationToken);
 
-            if (customerId != null)
+            if (customerId != Guid.Empty)
             {
                 var pendingCount = await _orderRepository.CountWaitingPaymentOrdersAsync(
                     customerId,
@@ -1299,7 +1299,7 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
             };
         }
 
-        private string? GetClientIpAddress()
+        private string GetClientIpAddress()
         {
             return _httpContextAccessor.HttpContext.GetClientIp();
         }

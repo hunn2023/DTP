@@ -611,7 +611,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                         CountryName = product.Country.Name,
                         CountrySlug = product.Country.Slug,
                         FlagUrl = product.Country.FlagUrl,
-                        Region = product.Country.Region,
+                        Region = product.Country.Region ?? "Khu vực khác",
                         ProductId = product.Id,
                         ProductName = product.Name,
                         ProductSlug = product.Slug,
