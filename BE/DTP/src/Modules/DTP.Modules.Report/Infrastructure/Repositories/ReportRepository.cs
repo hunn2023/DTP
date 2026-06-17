@@ -632,7 +632,7 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
                       && c.IsActive
                       && o.CreatedAt >= fromDate
                       && o.CreatedAt <= toDate
-                      && o.Status == 4
+                      //&& o.Status == 4 comment tạm thời, sau này lấy đơn hàng đã thanh toán
                 group oi by new
                 {
                     c.Id,
@@ -671,7 +671,7 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
                       && c.IsActive
                       && o.CreatedAt >= fromDate
                       && o.CreatedAt <= toDate
-                      && o.Status == 4
+                //&& o.Status == 4 comment tạm thời, sau này lấy đơn hàng đã thanh toán
                 group oi by new
                 {
                     //c.RegionCode,
