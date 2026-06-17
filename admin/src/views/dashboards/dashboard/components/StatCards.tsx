@@ -1,39 +1,49 @@
+import { useMemo } from 'react'
 import { Card, CardBody, Col, Row } from 'react-bootstrap'
-import { TbArrowDown, TbArrowUp } from 'react-icons/tb'
 
-import { statCards } from '../data'
+import { buildStatCards } from '@/features/dashboard/dashboardStatCards'
+import { useDashboard } from '@/features/dashboard/DashboardContext'
 
-const StatCards = () => (
-  <Row className="row-cols-xxl-5 row-cols-md-3 row-cols-1 g-3 mb-3">
-    {statCards.map((card) => {
-      const Icon = card.icon
-      const TrendIcon = card.trendUp ? TbArrowUp : TbArrowDown
-      return (
-        <Col key={card.id}>
-          <Card className="h-100">
-            <CardBody>
-              <p className="text-muted mb-2 mb-xxl-3">{card.title}</p>
-              <div className="d-flex align-items-center gap-3">
-                <div className="avatar-md flex-shrink-0">
-                  <span className={`avatar-title text-bg-${card.iconBg}-subtle text-${card.iconBg} rounded-circle fs-22`}>
-                    <Icon />
-                  </span>
+const StatCards = () => {
+  const { dashboard, paymentsReport } = useDashboard()
+  const cards = useMemo(() => buildStatCards(dashboard, paymentsReport), [dashboard, paymentsReport])
+
+  return (
+    <Row className="row-cols-xxl-4 row-cols-md-2 row-cols-1 g-3 mb-3">
+      {cards.map((card) => {
+        const Icon = card.icon
+        return (
+          <Col key={card.id}>
+            <Card className="h-100 dashboard-stat-card">
+              <CardBody>
+                <div className="d-flex align-items-center gap-2 mb-3">
+                  <div className="avatar-sm flex-shrink-0">
+                    <span
+                      className={`avatar-title text-bg-${card.iconBg}-subtle text-${card.iconBg} rounded-circle fs-18 d-flex align-items-center justify-content-center`}>
+                      <Icon size={18} />
+                    </span>
+                  </div>
+                  <p className="text-muted mb-0 fw-medium">{card.title}</p>
                 </div>
-                <div className="flex-grow-1 min-w-0">
-                  <h3 className="mb-1 fs-4 text-truncate">{card.value}</h3>
-                  <span className={`fs-xs d-inline-flex align-items-center gap-1 ${card.trendUp ? 'text-success' : 'text-danger'}`}>
-                    <TrendIcon size={14} />
-                    {card.trendUp ? '+' : '-'}
-                    {card.trend.toLocaleString('vi-VN')}% so với hôm qua
-                  </span>
+                <div className="dashboard-stat-card__metrics">
+                  {card.metrics.length === 0 ? (
+                    <div className="text-muted fs-sm">—</div>
+                  ) : (
+                    card.metrics.map((metric) => (
+                      <div key={metric.label} className="dashboard-stat-card__row">
+                        <span className="text-muted fs-sm">{metric.label}</span>
+                        <span className="fw-semibold fs-sm text-end">{metric.value}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
-              </div>
-            </CardBody>
-          </Card>
-        </Col>
-      )
-    })}
-  </Row>
-)
+              </CardBody>
+            </Card>
+          </Col>
+        )
+      })}
+    </Row>
+  )
+}
 
 export default StatCards

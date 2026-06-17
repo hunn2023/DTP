@@ -12,7 +12,11 @@ import {
 export {
   clearAuthTokens,
   getAccessToken,
-  setAuthTokens,
+  setAccessToken,
+  clearAccessToken,
+  getRefreshToken,
+  setRefreshToken,
+  clearRefreshToken,
 } from '@/shared/lib/httpAuth'
 
 /**

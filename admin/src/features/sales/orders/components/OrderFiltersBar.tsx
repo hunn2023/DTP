@@ -1,8 +1,13 @@
 import { Col, Row } from 'react-bootstrap'
-import { LuBox, LuCreditCard, LuUser } from 'react-icons/lu'
+import { LuBox, LuCreditCard } from 'react-icons/lu'
 
+import {
+  resolveCustomerSelectOption,
+  searchCustomerSelectOptions,
+} from '@/features/customers/customerSearchSelect'
 import type { OrderFilterForm } from '@/features/sales/orders/orderFilterTypes'
 import { ORDER_PAYMENT_STATUS_LABELS, ORDER_STATUS_LABELS } from '@/features/sales/shared/format'
+import ApiFilterSearchSelect from '@/modules/crud/components/ApiFilterSearchSelect'
 
 type OrderFiltersBarProps = {
   value: OrderFilterForm
@@ -26,14 +31,12 @@ function FilterSelect({
   icon: Icon,
   value,
   options,
-  disabled,
   onChange,
 }: {
   label: string
-  icon: typeof LuUser
+  icon: typeof LuBox
   value: string
   options: FilterOption[]
-  disabled?: boolean
   onChange: (value: string) => void
 }) {
   return (
@@ -43,8 +46,6 @@ function FilterSelect({
         <select
           className="form-select form-control"
           value={value}
-          disabled={disabled}
-          title={disabled ? 'Sắp có — chưa có API khách hàng' : undefined}
           onChange={(event) => onChange(event.target.value)}>
           {options.map((option) => (
             <option key={option.value || 'all'} value={option.value}>
@@ -63,14 +64,18 @@ const OrderFiltersBar = ({ value, onChange }: OrderFiltersBarProps) => {
 
   return (
     <Row className="g-2 mb-3">
-      <FilterSelect
-        label="Khách hàng"
-        icon={LuUser}
-        value={value.customerId}
-        disabled
-        options={[{ value: '', label: 'Tất cả khách hàng' }]}
-        onChange={(customerId) => patch({ customerId })}
-      />
+      <Col xs={12} md={6} lg={5}>
+        <ApiFilterSearchSelect
+          label="Khách hàng"
+          value={value.customerId}
+          onChange={(customerId) => patch({ customerId })}
+          allLabel="Tất cả khách hàng"
+          loadOptions={searchCustomerSelectOptions}
+          resolveValue={resolveCustomerSelectOption}
+          noOptionsMessage="Không tìm thấy khách hàng"
+          className="customer-filter-select"
+        />
+      </Col>
       <FilterSelect
         label="Trạng thái đơn"
         icon={LuBox}

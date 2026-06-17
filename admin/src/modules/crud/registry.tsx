@@ -26,6 +26,8 @@ import AuditLogsPage from '@/features/system/audit/AuditLogsPage'
 import PermissionsPage from '@/features/system/permissions/PermissionsPage'
 import RolesPage from '@/features/system/roles/RolesPage'
 import UsersPage from '@/features/system/users/UsersPage'
+import CustomersListPage from '@/features/customers/CustomersListPage'
+import CustomersBlockedPage from '@/features/customers/CustomersBlockedPage'
 import {
   marketingEntities,
   systemSeedEntities,
@@ -37,11 +39,19 @@ import { ORDER_PAGE_CONFIGS } from '@/features/sales/orders/orderFilters'
 import OrdersPage from '@/features/sales/orders/OrdersPage'
 import DeliveriesPage from '@/features/sales/deliveries/DeliveriesPage'
 import PaymentTransactionsPage from '@/features/sales/payments/PaymentTransactionsPage'
+import RevenueReportPage from '@/features/reports/RevenueReportPage'
+import OrdersReportPage from '@/features/reports/OrdersReportPage'
+import ProductsReportPage from '@/features/reports/ProductsReportPage'
+import CustomersReportPage from '@/features/reports/CustomersReportPage'
+import ProvidersReportPage from '@/features/reports/ProvidersReportPage'
+import PaymentsReportPage from '@/features/reports/PaymentsReportPage'
 import { salesSeedEntities } from '@/modules/crud/entities/sales.entities'
 import { settingsEntities } from '@/modules/crud/entities/settings.entities'
 import { websiteEntities } from '@/modules/crud/entities/website.entities'
 import type { ResolvedAdminEntity } from '@/modules/crud/schema/defineEntity'
 import type { CrudEntityBase } from '@/modules/crud/types'
+
+const API_BACKED_CUSTOMER_PATHS = new Set(['/customers/list', '/customers/blocked'])
 
 const API_BACKED_WEBSITE_PATHS = new Set([
   '/website/banners',
@@ -59,18 +69,16 @@ const API_BACKED_WEBSITE_PATHS = new Set([
   '/website/seo/products',
 ])
 
-const reportKpiMap: Record<string, { label: string; value: string; hint?: string }[]> = {
-  '/reports/revenue': [
-    { label: 'Today', value: '10.000.000đ', hint: 'Net after refunds' },
-    { label: 'Paid orders', value: '85' },
-    { label: 'Refunds', value: '500.000đ' },
-  ],
-  '/reports/providers': [
-    { label: 'Airalo success', value: '98%' },
-    { label: 'Errors (24h)', value: '4' },
-    { label: 'Revenue', value: '5.000.000đ' },
-  ],
-}
+const API_BACKED_REPORT_PATHS = new Set([
+  '/reports/revenue',
+  '/reports/orders',
+  '/reports/products',
+  '/reports/customers',
+  '/reports/providers',
+  '/reports/payments',
+])
+
+const reportKpiMap: Record<string, { label: string; value: string; hint?: string }[]> = {}
 
 export const allAdminEntities: ResolvedAdminEntity<CrudEntityBase>[] = [
   ...settingsEntities,
@@ -167,6 +175,11 @@ const productPricesRoute: RouteObject = {
   element: <ProductPricesPage />,
 }
 
+const customerApiRoutes: RouteObject[] = [
+  { path: '/customers/list', element: <CustomersListPage /> },
+  { path: '/customers/blocked', element: <CustomersBlockedPage /> },
+]
+
 const systemApiRoutes: RouteObject[] = [
   { path: '/system/admin-users', element: <UsersPage /> },
   { path: '/system/roles', element: <RolesPage /> },
@@ -196,6 +209,15 @@ const contentApiRoutes: RouteObject[] = [
   { path: '/website/seo/new', element: <SeoFormPage /> },
   { path: '/website/seo/:seoId', element: <SeoFormPage /> },
   { path: '/website/seo', element: <SeoPage /> },
+]
+
+const reportApiRoutes: RouteObject[] = [
+  { path: '/reports/revenue', element: <RevenueReportPage /> },
+  { path: '/reports/orders', element: <OrdersReportPage /> },
+  { path: '/reports/products', element: <ProductsReportPage /> },
+  { path: '/reports/customers', element: <CustomersReportPage /> },
+  { path: '/reports/providers', element: <ProvidersReportPage /> },
+  { path: '/reports/payments', element: <PaymentsReportPage /> },
 ]
 
 const salesApiRoutes: RouteObject[] = [
@@ -232,7 +254,9 @@ const salesApiRoutes: RouteObject[] = [
 export const dtpAdminRoutes: RouteObject[] = [
   ...redirectRoutes,
   ...systemApiRoutes,
+  ...customerApiRoutes,
   ...salesApiRoutes,
+  ...reportApiRoutes,
   ...contentApiRoutes,
   categoriesRoute,
   countriesRoute,
@@ -246,5 +270,12 @@ export const dtpAdminRoutes: RouteObject[] = [
   providersListRoute,
   { path: '/products/esim/prices', element: <Navigate to="/settings/product-prices" replace /> },
   { path: '/products/cards-data/prices', element: <Navigate to="/settings/product-prices" replace /> },
-  ...allAdminEntities.filter((entity) => !API_BACKED_WEBSITE_PATHS.has(entity.path)).map(entityRoute),
+  ...allAdminEntities
+    .filter(
+      (entity) =>
+        !API_BACKED_WEBSITE_PATHS.has(entity.path) &&
+        !API_BACKED_CUSTOMER_PATHS.has(entity.path) &&
+        !API_BACKED_REPORT_PATHS.has(entity.path),
+    )
+    .map(entityRoute),
 ]

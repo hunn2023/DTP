@@ -7,7 +7,6 @@ import {
 } from '@/apis/paymentsApi'
 import * as ordersApi from '@/apis/ordersApi'
 import type { OrderRow } from '@/apis/ordersApi'
-import { useNotificationContext } from '@/context/useNotificationContext'
 import { buildPaymentOrderColumns } from '@/features/sales/payments/columns'
 import { mergePaymentDetail } from '@/features/sales/payments/paymentDetailTypes'
 import {
@@ -20,22 +19,15 @@ import { getErrorMessage } from '@/features/sales/shared/getErrorMessage'
 import { usePagedList } from '@/features/sales/shared/usePagedList'
 
 export function usePaymentsCrud() {
-  const { showNotification } = useNotificationContext()
   const [filterForm, setFilterForm] = useState<OrderFilterForm>(() => defaultOrderFilterForm())
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [detailError, setDetailError] = useState<string | null>(null)
   const [detailRaw, setDetailRaw] = useState<PaymentDetailResult | null>(null)
   const [paymentIdLookup, setPaymentIdLookup] = useState('')
 
   const queryFilters = useMemo(() => toOrdersQueryFilters(filterForm), [filterForm])
   const filterKey = useMemo(() => orderFilterFormKey(filterForm), [filterForm])
-
-  const notifyError = useCallback(
-    (message: string) => {
-      showNotification({ title: 'Lỗi', message, variant: 'danger', delay: 4000 })
-    },
-    [showNotification],
-  )
 
   const fetchPage = useCallback(
     (pageIndex: number, pageSize: number, keyword?: string) =>
@@ -47,17 +39,17 @@ export function usePaymentsCrud() {
     async (row: OrderRow) => {
       setDetailOpen(true)
       setDetailRaw(null)
+      setDetailError(null)
       setDetailLoading(true)
       try {
         setDetailRaw(await fetchPaymentDetailByOrderId(row.id))
       } catch (error) {
-        setDetailOpen(false)
-        notifyError(getErrorMessage(error, 'Không tải được giao dịch theo đơn'))
+        setDetailError(getErrorMessage(error, 'Không tải được giao dịch theo đơn'))
       } finally {
         setDetailLoading(false)
       }
     },
-    [notifyError],
+    [],
   )
 
   const loadPaymentById = useCallback(async () => {
@@ -65,16 +57,16 @@ export function usePaymentsCrud() {
     if (!id) return
     setDetailOpen(true)
     setDetailRaw(null)
+    setDetailError(null)
     setDetailLoading(true)
     try {
       setDetailRaw(await fetchPaymentDetailById(id))
     } catch (error) {
-      setDetailOpen(false)
-      notifyError(getErrorMessage(error, 'Không tải được giao dịch theo mã'))
+      setDetailError(getErrorMessage(error, 'Không tải được giao dịch theo mã'))
     } finally {
       setDetailLoading(false)
     }
-  }, [paymentIdLookup, notifyError])
+  }, [paymentIdLookup])
 
   const handlers = useMemo(
     () => ({
@@ -95,6 +87,7 @@ export function usePaymentsCrud() {
   const closeDetail = useCallback(() => {
     setDetailOpen(false)
     setDetailRaw(null)
+    setDetailError(null)
   }, [])
 
   const paymentDetail = useMemo(
@@ -108,6 +101,7 @@ export function usePaymentsCrud() {
     setFilterForm,
     detailOpen,
     detailLoading,
+    detailError,
     detailRaw,
     paymentDetail,
     paymentIdLookup,

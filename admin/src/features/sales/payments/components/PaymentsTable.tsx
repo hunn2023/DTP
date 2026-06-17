@@ -40,6 +40,7 @@ const PaymentsTable = () => {
         open={crud.detailOpen}
         payment={crud.paymentDetail}
         loading={crud.detailLoading}
+        error={crud.detailError}
         onClose={crud.closeDetail}
       />
     </>
