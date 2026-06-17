@@ -217,10 +217,10 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
 
             if (string.IsNullOrWhiteSpace(baseUrl))
             {
-                return $"/products/{productSlug}";
+                return $"/{productSlug}";
             }
 
-            return $"{baseUrl.TrimEnd('/')}/products/{productSlug}";
+            return $"{baseUrl.TrimEnd('/')}/{productSlug}";
         }
 
         private static int CalculateScore(
