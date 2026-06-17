@@ -36,7 +36,6 @@ namespace DTP.Modules.Chatbot.Application.Services
             _httpContextAccessor = httpContextAccessor;
             _logger = logger;
             _rateLimitService = rateLimitService;
-            _logger = logger;
         }
 
         public async Task<ChatResponseDto> SendMessageAsync(
@@ -191,82 +190,96 @@ namespace DTP.Modules.Chatbot.Application.Services
 
                 intent.OriginalQuestion ??= message;
 
+                if (!IsProductAdvice(intent))
+                {
+                    var unknownMessage =
+                        "Tôi có thể tư vấn gói eSIM theo quốc gia, số ngày đi và nhu cầu dùng data. " +
+                        "Ví dụ: Tôi đi Nhật 5 ngày, dùng TikTok nhiều thì nên mua gói nào?";
+
+                    await WriteAuditSafeAsync(
+                        action: "Chatbot Intent Unknown",
+                        actionType: AuditActionType.Create,
+                        status: AuditStatus.Failed,
+                        entityName: "ChatbotMessage",
+                        description: "Chatbot could not understand customer intent.",
+                        newValues: new
+                        {
+                            SessionId = sessionId,
+                            Message = message,
+                            Intent = intent,
+                            Request = GetRequestAuditInfo()
+                        },
+                        errorMessage: "Unknown chatbot intent.",
+                        cancellationToken: cancellationToken);
+
+                    return new ChatResponseDto
+                    {
+                        SessionId = sessionId,
+                        Message = unknownMessage,
+                        NeedMoreInfo = true,
+                        MissingFields = new List<string>
+                            {
+                                "country",
+                                "travelDays",
+                                "usageLevel"
+                            },
+                        Intent = intent,
+                        Suggestions = new List<ChatbotProductSuggestionDto>()
+                    };
+                }
+
+                var missingFields = GetMissingFields(intent);
+
+                if (missingFields.Count > 0)
+                {
+                    var needMoreInfoMessage = BuildNeedMoreInfoMessage(missingFields);
+
+                    await WriteAuditSafeAsync(
+                        action: "Chatbot Need More Info",
+                        actionType: AuditActionType.Create,
+                        status: AuditStatus.Failed,
+                        entityName: "ChatbotMessage",
+                        description: "Chatbot needs more information before searching products.",
+                        newValues: new
+                        {
+                            SessionId = sessionId,
+                            Message = message,
+                            Intent = intent,
+                            MissingFields = missingFields,
+                            Request = GetRequestAuditInfo()
+                        },
+                        errorMessage: needMoreInfoMessage,
+                        cancellationToken: cancellationToken);
+
+                    return new ChatResponseDto
+                    {
+                        SessionId = sessionId,
+                        Message = needMoreInfoMessage,
+                        NeedMoreInfo = true,
+                        MissingFields = missingFields,
+                        Intent = intent,
+                        Suggestions = new List<ChatbotProductSuggestionDto>()
+                    };
+                }
+
                 var suggestions = new List<ChatbotProductSuggestionDto>();
 
-                if (IsProductAdvice(intent))
+                try
                 {
-                    try
-                    {
-                        suggestions = (await _catalogReader.SearchEsimPackagesAsync(
-                                intent,
-                                take: 3,
-                                cancellationToken))
-                            .ToList();
+                    suggestions = (await _catalogReader.SearchEsimPackagesAsync(
+                            intent,
+                            take: 3,
+                            cancellationToken))
+                        .ToList();
 
-                        if (suggestions.Count == 0)
-                        {
-                            await WriteAuditSafeAsync(
-                                action: "Search Chatbot Product No Result",
-                                actionType: AuditActionType.Create,
-                                status: AuditStatus.Failed,
-                                entityName: "EsimPackage",
-                                description: "No eSIM package found for chatbot intent.",
-                                newValues: new
-                                {
-                                    SessionId = sessionId,
-                                    Message = message,
-                                    Intent = intent,
-                                    Request = GetRequestAuditInfo()
-                                },
-                                errorMessage: "Không tìm thấy gói eSIM phù hợp.",
-                                cancellationToken: cancellationToken);
-                        }
-                        else
-                        {
-                            await WriteAuditSafeAsync(
-                                action: "Search Chatbot Product Success",
-                                actionType: AuditActionType.Create,
-                                status: AuditStatus.Success,
-                                entityName: "EsimPackage",
-                                description: "Found eSIM packages for chatbot intent.",
-                                newValues: new
-                                {
-                                    SessionId = sessionId,
-                                    Message = message,
-                                    Intent = intent,
-                                    SuggestionCount = suggestions.Count,
-                                    Suggestions = suggestions.Select(x => new
-                                    {
-                                        x.ProductId,
-                                        x.ProductVariantId,
-                                        x.EsimPackageId,
-                                        x.ProductName,
-                                        x.PackageName,
-                                        x.CountryName,
-                                        x.ValidityDays,
-                                        x.DataAmount,
-                                        x.DataUnit,
-                                        x.IsUnlimited,
-                                        x.SalePrice,
-                                        x.Currency,
-                                        x.Score,
-                                        x.BuyUrl
-                                    }),
-                                    Request = GetRequestAuditInfo()
-                                },
-                                cancellationToken: cancellationToken);
-                        }
-                    }
-                    catch (Exception ex)
+                    if (suggestions.Count == 0)
                     {
-                        _logger.LogError(ex, "Search chatbot products failed.");
-
                         await WriteAuditSafeAsync(
-                            action: "Search Chatbot Product Failed",
+                            action: "Search Chatbot Product No Result",
                             actionType: AuditActionType.Create,
                             status: AuditStatus.Failed,
                             entityName: "EsimPackage",
-                            description: "Search eSIM packages for chatbot failed.",
+                            description: "No eSIM package found for chatbot intent.",
                             newValues: new
                             {
                                 SessionId = sessionId,
@@ -274,20 +287,73 @@ namespace DTP.Modules.Chatbot.Application.Services
                                 Intent = intent,
                                 Request = GetRequestAuditInfo()
                             },
-                            errorMessage: ex.Message,
+                            errorMessage: "Không tìm thấy gói eSIM phù hợp.",
                             cancellationToken: cancellationToken);
-
-                        suggestions = new List<ChatbotProductSuggestionDto>();
+                    }
+                    else
+                    {
+                        await WriteAuditSafeAsync(
+                            action: "Search Chatbot Product Success",
+                            actionType: AuditActionType.Create,
+                            status: AuditStatus.Success,
+                            entityName: "EsimPackage",
+                            description: "Found eSIM packages for chatbot intent.",
+                            newValues: new
+                            {
+                                SessionId = sessionId,
+                                Message = message,
+                                Intent = intent,
+                                SuggestionCount = suggestions.Count,
+                                Suggestions = suggestions.Select(x => new
+                                {
+                                    x.ProductId,
+                                    x.ProductVariantId,
+                                    x.EsimPackageId,
+                                    x.ProductName,
+                                    x.PackageName,
+                                    x.CountryName,
+                                    x.ValidityDays,
+                                    x.DataAmount,
+                                    x.DataUnit,
+                                    x.IsUnlimited,
+                                    x.SalePrice,
+                                    x.Currency,
+                                    x.Score,
+                                    x.BuyUrl
+                                }),
+                                Request = GetRequestAuditInfo()
+                            },
+                            cancellationToken: cancellationToken);
                     }
                 }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Search chatbot products failed.");
 
-                var missingFields = GetMissingFields(intent, suggestions);
+                    await WriteAuditSafeAsync(
+                        action: "Search Chatbot Product Failed",
+                        actionType: AuditActionType.Create,
+                        status: AuditStatus.Failed,
+                        entityName: "EsimPackage",
+                        description: "Search eSIM packages for chatbot failed.",
+                        newValues: new
+                        {
+                            SessionId = sessionId,
+                            Message = message,
+                            Intent = intent,
+                            Request = GetRequestAuditInfo()
+                        },
+                        errorMessage: ex.Message,
+                        cancellationToken: cancellationToken);
+
+                    suggestions = new List<ChatbotProductSuggestionDto>();
+                }
 
                 string answer;
 
-                if (missingFields.Count > 0 && suggestions.Count == 0 && IsProductAdvice(intent))
+                if (suggestions.Count == 0)
                 {
-                    answer = BuildNeedMoreInfoMessage(missingFields);
+                    answer = "Tôi chưa tìm thấy gói eSIM phù hợp. Bạn vui lòng kiểm tra lại quốc gia, số ngày đi hoặc nhu cầu dung lượng.";
                 }
                 else
                 {
@@ -324,12 +390,14 @@ namespace DTP.Modules.Chatbot.Application.Services
                     }
                 }
 
+             
+
                 var response = new ChatResponseDto
                 {
                     SessionId = sessionId,
                     Message = answer,
-                    NeedMoreInfo = missingFields.Count > 0 && suggestions.Count == 0,
-                    MissingFields = missingFields,
+                    NeedMoreInfo = false,
+                    MissingFields = new List<string>(),
                     Intent = intent,
                     Suggestions = suggestions
                 };
@@ -506,16 +574,57 @@ namespace DTP.Modules.Chatbot.Application.Services
 
         private static bool IsProductAdvice(ChatbotIntentDto intent)
         {
+            if (intent == null)
+                return false;
+
+            var question = intent.OriginalQuestion?
+                .Trim()
+                .ToLowerInvariant();
+
+            if (string.IsNullOrWhiteSpace(question))
+                return false;
+
+            var hasProductKeyword =
+                question.Contains("esim")
+                || question.Contains("sim")
+                || question.Contains("gói")
+                || question.Contains("mua")
+                || question.Contains("du lịch")
+                || question.Contains("tư vấn")
+                || question.Contains("data")
+                || question.Contains("gb")
+                || question.Contains("mb")
+                || question.Contains("không giới hạn")
+                || question.Contains("unlimited");
+
+            var hasCountry =
+                !string.IsNullOrWhiteSpace(intent.CountryKeyword)
+                || !string.IsNullOrWhiteSpace(intent.CountryCode);
+
+            var usageLevel = intent.UsageLevel?
+                .Trim()
+                .ToLowerInvariant();
+
+            var hasStrongUsage =
+                usageLevel == "heavy"
+                || usageLevel == "light"
+                || usageLevel == "unlimited";
+
+            var hasProductSignal =
+                hasProductKeyword
+                || hasCountry
+                || intent.TravelDays.HasValue
+                || intent.RequestedDataAmount.HasValue
+                || hasStrongUsage;
+
+            if (!hasProductSignal)
+                return false;
+
             return string.Equals(intent.IntentType, "product_advice", StringComparison.OrdinalIgnoreCase)
-                   || !string.IsNullOrWhiteSpace(intent.CountryKeyword)
-                   || !string.IsNullOrWhiteSpace(intent.CountryCode)
-                   || intent.TravelDays.HasValue
-                   || !string.IsNullOrWhiteSpace(intent.UsageLevel);
+                   || hasProductSignal;
         }
 
-        private static List<string> GetMissingFields(
-            ChatbotIntentDto intent,
-            IReadOnlyList<ChatbotProductSuggestionDto> suggestions)
+        private static List<string> GetMissingFields(ChatbotIntentDto intent)
         {
             var result = new List<string>();
 
@@ -523,18 +632,18 @@ namespace DTP.Modules.Chatbot.Application.Services
                 return result;
 
             if (string.IsNullOrWhiteSpace(intent.CountryKeyword)
-                && string.IsNullOrWhiteSpace(intent.CountryCode)
-                && suggestions.Count == 0)
+                && string.IsNullOrWhiteSpace(intent.CountryCode))
             {
                 result.Add("country");
             }
 
-            if (!intent.TravelDays.HasValue && suggestions.Count == 0)
+            if (!intent.TravelDays.HasValue)
             {
                 result.Add("travelDays");
             }
 
-            if (string.IsNullOrWhiteSpace(intent.UsageLevel) && suggestions.Count == 0)
+            if (string.IsNullOrWhiteSpace(intent.UsageLevel)
+                && !intent.RequestedDataAmount.HasValue)
             {
                 result.Add("usageLevel");
             }
