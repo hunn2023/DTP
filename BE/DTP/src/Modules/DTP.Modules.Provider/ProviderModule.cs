@@ -55,6 +55,7 @@ namespace DTP.Modules.Provider
 
             services.AddScoped<IProviderOrderReader, ProviderOrderReader>();
             services.AddScoped<IProviderRedeemRepository, ProviderRedeemRepository>();
+            services.AddScoped<IProviderDeliveryEmailService, ProviderDeliveryEmailService>();
             services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(ProviderModule).Assembly);
