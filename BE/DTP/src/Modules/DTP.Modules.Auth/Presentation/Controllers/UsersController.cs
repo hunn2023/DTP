@@ -123,19 +123,19 @@ namespace DTP.Modules.Auth.Presentation.Controllers
             [FromBody] CreateAdminUserRequestDto request,
             CancellationToken cancellationToken)
         {
-            var currentUserId = GetCurrentUserId();
+            //var currentUserId = GetCurrentUserId();
 
-            if (currentUserId == Guid.Empty)
-                return Unauthorized(new
-                {
-                    success = false,
-                    message = "Không xác định được user hiện tại."
-                });
+            //if (currentUserId == Guid.Empty)
+            //    return Unauthorized(new
+            //    {
+            //        success = false,
+            //        message = "Không xác định được user hiện tại."
+            //    });
 
             var command = new CreateAdminUserCommand
             {
                 Request = request,
-                CreatedByUserId = currentUserId,
+                CreatedByUserId = Guid.Empty, // Replace with actual user ID if needed
                 IpAddress = GetClientIp(),
                 UserAgent = Request.Headers.UserAgent.ToString()
             };

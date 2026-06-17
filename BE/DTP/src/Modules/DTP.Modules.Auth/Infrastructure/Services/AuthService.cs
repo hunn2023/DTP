@@ -1548,11 +1548,11 @@ namespace DTP.Modules.Auth.Infrastructure.Services
 
 
         public async Task<Result<Guid>> CreateAdminUserAsync(
-    CreateAdminUserRequestDto request,
-    Guid createdByUserId,
-    string? ipAddress,
-    string? userAgent,
-    CancellationToken cancellationToken = default)
+            CreateAdminUserRequestDto request,
+            Guid createdByUserId,
+            string? ipAddress,
+            string? userAgent,
+            CancellationToken cancellationToken = default)
         {
             if (request == null)
                 return Result<Guid>.Failure("Dữ liệu tạo admin không hợp lệ.");
