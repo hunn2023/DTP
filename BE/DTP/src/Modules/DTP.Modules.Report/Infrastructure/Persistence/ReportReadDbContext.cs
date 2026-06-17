@@ -80,7 +80,7 @@ namespace DTP.Modules.Report.Infrastructure.Persistence
 
             modelBuilder.Entity<ReportCategoryReadModel>(builder =>
             {
-                builder.ToTable("Categories", "dbo", t => t.ExcludeFromMigrations());
+                builder.ToTable("Category", "dbo", t => t.ExcludeFromMigrations());
                 builder.HasKey(x => x.Id);
             });
 

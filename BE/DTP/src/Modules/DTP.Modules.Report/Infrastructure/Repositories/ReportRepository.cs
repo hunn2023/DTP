@@ -240,17 +240,18 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
                     groupType,
                     cancellationToken),
 
-                PaymentsByMethod = await payments
-                    .GroupBy(x => x.PaymentMethod)
-                    .Select(g => new TopItemDto
-                    {
-                        Code = g.Key,
-                        Name = g.Key,
-                        Count = g.Count(),
-                        Value = g.Sum(x => x.Amount)
-                    })
-                    .OrderByDescending(x => x.Value)
-                    .ToListAsync(cancellationToken)
+                //PaymentsByMethod = await payments
+                //    .GroupBy(x => x.PaymentMethod)
+                //    .Select(g => new TopItemDto
+                //    {
+                //        Code = g.Key,
+                //        Name = g.Key,
+                //        Count = g.Count(),
+                //        Value = g.Sum(x => x.Amount)
+                //    })
+                //    .OrderByDescending(x => x.Value)
+                //    .ToListAsync(cancellationToken)
+
             };
         }
 
