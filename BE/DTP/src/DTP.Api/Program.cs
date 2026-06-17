@@ -15,6 +15,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;      
 using System.Threading.RateLimiting;
+using DTP.Modules.Chatbot;
 ///using DTP.Modules.Customer;
 
 namespace DTP.Api
@@ -133,7 +134,7 @@ namespace DTP.Api
             builder.Services.AddProviderModule(builder.Configuration);
             builder.Services.AddEmailInfrastructure();
             builder.Services.AddCustomerModule(builder.Configuration);
-
+            builder.Services.AddChatbotModule(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddRateLimiter(options =>
             {

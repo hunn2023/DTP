@@ -29,6 +29,7 @@
     <ProjectReference Include="..\DTP.Infrastructure\DTP.Infrastructure.csproj" />
     <ProjectReference Include="..\Modules\DTP.Modules.Auth\DTP.Modules.Auth.csproj" />
     <ProjectReference Include="..\Modules\DTP.Modules.Catalog\DTP.Modules.Catalog.csproj" />
+    <ProjectReference Include="..\Modules\DTP.Modules.Chatbot\DTP.Modules.Chatbot.csproj" />
     <ProjectReference Include="..\Modules\DTP.Modules.Content\DTP.Modules.Content.csproj" />
     <ProjectReference Include="..\Modules\DTP.Modules.Customer\DTP.Modules.Customer.csproj" />
     <ProjectReference Include="..\Modules\DTP.Modules.Ordering\DTP.Modules.Ordering.csproj" />
