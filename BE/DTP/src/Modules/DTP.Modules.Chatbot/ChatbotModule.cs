@@ -33,6 +33,7 @@ namespace DTP.Modules.Chatbot
             services.AddScoped<IChatbotService, ChatbotService>();
             services.AddScoped<IChatbotCatalogReader, ChatbotCatalogReader>();
             services.AddHttpContextAccessor();
+            services.AddScoped<IChatbotRateLimitService, RedisChatbotRateLimitService>();
             services.AddHttpClient<IChatbotAiClient, OpenAiChatbotClient>((sp, httpClient) =>
             {
                 var options = sp.GetRequiredService<IOptions<OpenAiChatbotOptions>>().Value;

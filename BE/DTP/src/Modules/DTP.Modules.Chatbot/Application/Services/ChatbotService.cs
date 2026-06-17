@@ -21,18 +21,21 @@ namespace DTP.Modules.Chatbot.Application.Services
         private readonly IAuditLogWriter _auditLogWriter;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<ChatbotService> _logger;
-
+        private readonly IChatbotRateLimitService _rateLimitService;
         public ChatbotService(
             IChatbotAiClient aiClient,
             IChatbotCatalogReader catalogReader,
             IAuditLogWriter auditLogWriter,
             IHttpContextAccessor httpContextAccessor,
-            ILogger<ChatbotService> logger)
+            ILogger<ChatbotService> logger,
+            IChatbotRateLimitService rateLimitService)
         {
             _aiClient = aiClient;
             _catalogReader = catalogReader;
             _auditLogWriter = auditLogWriter;
             _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
+            _rateLimitService = rateLimitService;
             _logger = logger;
         }
 
@@ -97,6 +100,46 @@ namespace DTP.Modules.Chatbot.Application.Services
                         MissingFields = new List<string> { "message" }
                     };
                 }
+
+                var rateLimitResult = await _rateLimitService.CheckAsync(
+                                    new ChatbotRateLimitContext
+                                    {
+                                        IpAddress = GetClientIp(),
+                                        //UserId = Guid.NewGuid(), //GetCurrentUserId(),
+                                        SessionId = sessionId,
+                                        Message = message
+                                    },
+                                    cancellationToken);
+
+                if (!rateLimitResult.Allowed)
+                {
+                    await WriteAuditSafeAsync(
+                        action: "Chatbot Rate Limit Exceeded",
+                        actionType: AuditActionType.Create,
+                        status: AuditStatus.Failed,
+                        entityName: "ChatbotMessage",
+                        description: "Chatbot request was blocked by rate limit.",
+                        newValues: new
+                        {
+                            SessionId = sessionId,
+                            Message = message,
+                            Reason = rateLimitResult.Reason,
+                            RetryAfterSeconds = rateLimitResult.RetryAfterSeconds,
+                            Request = GetRequestAuditInfo()
+                        },
+                        errorMessage: rateLimitResult.Message,
+                        cancellationToken: cancellationToken);
+
+                    return new ChatResponseDto
+                    {
+                        SessionId = sessionId,
+                        Message = rateLimitResult.Message,
+                        NeedMoreInfo = false,
+                        MissingFields = new List<string>(),
+                        Suggestions = new List<ChatbotProductSuggestionDto>()
+                    };
+                }
+
 
                 await WriteAuditSafeAsync(
                     action: "Chatbot Message Received",
@@ -446,6 +489,19 @@ namespace DTP.Modules.Chatbot.Application.Services
                 .Request
                 .Headers["User-Agent"]
                 .FirstOrDefault();
+        }
+
+
+        private string? GetCurrentUserId()
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+
+            if (user?.Identity?.IsAuthenticated != true)
+                return null;
+
+            return user.FindFirst("sub")?.Value
+                   ?? user.FindFirst("userId")?.Value
+                   ?? user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         }
 
         private static bool IsProductAdvice(ChatbotIntentDto intent)
