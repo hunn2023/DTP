@@ -11,6 +11,7 @@
     <Project Path="src/Modules/DTP.Modules.Auth/DTP.Modules.Auth.csproj" Id="589dc3ee-816a-47ef-b420-38c0180b90b5" />
     <Project Path="src/Modules/DTP.Modules.Catalog/DTP.Modules.Catalog.csproj" />
     <Project Path="src/Modules/DTP.Modules.Content/DTP.Modules.Content.csproj" Id="6ff88073-cdae-47a3-b60b-942317c40d4a" />
+    <Project Path="src/Modules/DTP.Modules.Customer/DTP.Modules.Customer.csproj" Id="32051499-deca-4fd2-b234-e8ffe2e91141" />
     <Project Path="src/Modules/DTP.Modules.Delivery/DTP.Modules.Delivery.csproj" Id="95f79e57-46e4-49d2-9157-402f6054402c" />
     <Project Path="src/Modules/DTP.Modules.Notification/DTP.Modules.Notification.csproj" Id="7b87eb32-65f2-4bb2-a97f-321cdd319f23" />
     <Project Path="src/Modules/DTP.Modules.Ordering/DTP.Modules.Ordering.csproj" Id="48db666c-d787-4961-8c4b-81b8133a61cc" />

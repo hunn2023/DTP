@@ -8,11 +8,12 @@ using DTP.Modules.Ordering;
 using DTP.Modules.Payment;
 using DTP.Modules.Provider;
 using DTP.Modules.Report;
+using DTP.Modules.Customer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Text;
+using System.Text;      
 using System.Threading.RateLimiting;
 ///using DTP.Modules.Customer;
 
@@ -131,7 +132,7 @@ namespace DTP.Api
             builder.Services.AddContentModule(builder.Configuration);
             builder.Services.AddProviderModule(builder.Configuration);
             builder.Services.AddEmailInfrastructure();
-
+            builder.Services.AddCustomerModule(builder.Configuration);
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddRateLimiter(options =>
@@ -314,7 +315,8 @@ namespace DTP.Api
                     var userId =
                         httpContext.User.FindFirst("sub")?.Value ??
                         httpContext.User.FindFirst("nameid")?.Value ??
-                        httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ??
+                        httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.
+                        Value ??
                         "anonymous";
 
                     var ip = GetClientIp(httpContext);
