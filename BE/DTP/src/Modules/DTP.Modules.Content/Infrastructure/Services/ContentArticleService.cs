@@ -4,10 +4,13 @@ using DTP.Modules.Content.Application.Abstractions.Services;
 using DTP.Modules.Content.Application.DTOs;
 using DTP.Modules.Content.Domain.Entities;
 using DTP.Modules.Content.Domain.Enums;
+using DTP.Modules.Knowledge.Application.Commands.ReindexKnowledge;
+using DTP.Modules.Knowledge.Domain.Enums;
 using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using DTP.Shared.Caching;
 using DTP.Shared.Storage;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 
 namespace DTP.Modules.Content.Infrastructure.Services
@@ -18,18 +21,21 @@ namespace DTP.Modules.Content.Infrastructure.Services
         private readonly IContentUnitOfWork _unitOfWork;
         private readonly ICacheService _cacheService;
         private readonly IFileStorageService _fileStorageService;
+        private readonly IMediator _mediator;
         public const string ContentArticleThumbnails = "content/articles/thumbnails";
         public ContentArticleService(
             IContentArticleRepository repository,
             IContentUnitOfWork unitOfWork,
             ICacheService cacheService,
-            IFileStorageService fileStorageService
+            IFileStorageService fileStorageService,
+            IMediator mediator
             )
         {
             _repository = repository;
             _unitOfWork = unitOfWork;
             _cacheService = cacheService;
             _fileStorageService = fileStorageService;
+            _mediator = mediator;
         }
 
         public async Task<Result<ContentArticleDto>> CreateAsync(
@@ -117,6 +123,13 @@ namespace DTP.Modules.Content.Infrastructure.Services
 
             await RemoveArticleCacheAsync(cancellationToken);
 
+
+            await _mediator.Send(
+                new ReindexKnowledgeSourceCommand(
+                    KnowledgeSourceType.Content,
+                    article.Id),
+                cancellationToken);
+
             return Result<ContentArticleDto>.Success(Map(article));
         }
 
@@ -190,6 +203,12 @@ namespace DTP.Modules.Content.Infrastructure.Services
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             await RemoveArticleCacheAsync(cancellationToken);
+
+            await _mediator.Send(
+               new ReindexKnowledgeSourceCommand(
+                   KnowledgeSourceType.Content,
+                   article.Id),
+               cancellationToken);
             return Result.Success();
         }
 

@@ -41,26 +41,200 @@ namespace DTP.Modules.Knowledge.Infrastructure.Services
         public async Task<ReindexKnowledgeResultDto> ReindexAllAsync(
             CancellationToken cancellationToken = default)
         {
-            var result = new ReindexKnowledgeResultDto();
-
             var chunks = new List<KnowledgeChunk>();
 
-            var productChunks = await BuildProductChunksAsync(cancellationToken);
+            var productChunks = await BuildProductChunksAsync(null, cancellationToken);
+            var productFaqChunks = await BuildProductFaqChunksAsync(null, null, cancellationToken);
+            var contentChunks = await BuildContentChunksAsync(null, cancellationToken);
+            var contentFaqChunks = await BuildContentFaqChunksAsync(null, null, cancellationToken);
+
             chunks.AddRange(productChunks.Chunks);
-            result.ProductCount = productChunks.SourceCount;
-
-            var productFaqChunks = await BuildProductFaqChunksAsync(cancellationToken);
             chunks.AddRange(productFaqChunks.Chunks);
-            result.ProductFaqCount = productFaqChunks.SourceCount;
-
-            var contentChunks = await BuildContentChunksAsync(cancellationToken);
             chunks.AddRange(contentChunks.Chunks);
-            result.ContentCount = contentChunks.SourceCount;
-
-            var contentFaqChunks = await BuildContentFaqChunksAsync(cancellationToken);
             chunks.AddRange(contentFaqChunks.Chunks);
-            result.ContentFaqCount = contentFaqChunks.SourceCount;
 
+            await CreateEmbeddingsAsync(chunks, cancellationToken);
+
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+            await _dbContext.KnowledgeChunks.ExecuteDeleteAsync(cancellationToken);
+
+            if (chunks.Count > 0)
+            {
+                await _dbContext.KnowledgeChunks.AddRangeAsync(chunks, cancellationToken);
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            return new ReindexKnowledgeResultDto
+            {
+                ProductCount = productChunks.SourceCount,
+                ProductFaqCount = productFaqChunks.SourceCount,
+                ContentCount = contentChunks.SourceCount,
+                ContentFaqCount = contentFaqChunks.SourceCount,
+                ChunkCount = chunks.Count,
+                IndexedAt = DateTime.UtcNow
+            };
+        }
+
+        public async Task<ReindexKnowledgeResultDto> ReindexSourceAsync(
+            KnowledgeSourceType sourceType,
+            Guid sourceId,
+            CancellationToken cancellationToken = default)
+        {
+            var chunks = new List<KnowledgeChunk>();
+
+            switch (sourceType)
+            {
+                case KnowledgeSourceType.Product:
+                    {
+                        var productChunks = await BuildProductChunksAsync(
+                            new List<Guid> { sourceId },
+                            cancellationToken);
+
+                        var productFaqChunks = await BuildProductFaqChunksAsync(
+                            faqIds: null,
+                            productIds: new List<Guid> { sourceId },
+                            cancellationToken);
+
+                        chunks.AddRange(productChunks.Chunks);
+                        chunks.AddRange(productFaqChunks.Chunks);
+                        break;
+                    }
+
+                case KnowledgeSourceType.ProductFaq:
+                    {
+                        var productFaqChunks = await BuildProductFaqChunksAsync(
+                            faqIds: new List<Guid> { sourceId },
+                            productIds: null,
+                            cancellationToken);
+
+                        chunks.AddRange(productFaqChunks.Chunks);
+                        break;
+                    }
+
+                case KnowledgeSourceType.Content:
+                    {
+                        var contentChunks = await BuildContentChunksAsync(
+                            new List<Guid> { sourceId },
+                            cancellationToken);
+
+                        var contentFaqChunks = await BuildContentFaqChunksAsync(
+                            faqIds: null,
+                            contentIds: new List<Guid> { sourceId },
+                            cancellationToken);
+
+                        chunks.AddRange(contentChunks.Chunks);
+                        chunks.AddRange(contentFaqChunks.Chunks);
+                        break;
+                    }
+
+                case KnowledgeSourceType.ContentFaq:
+                    {
+                        var contentFaqChunks = await BuildContentFaqChunksAsync(
+                            faqIds: new List<Guid> { sourceId },
+                            contentIds: null,
+                            cancellationToken);
+
+                        chunks.AddRange(contentFaqChunks.Chunks);
+                        break;
+                    }
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(sourceType), sourceType, null);
+            }
+
+            await CreateEmbeddingsAsync(chunks, cancellationToken);
+
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+            await DeleteOldChunksAsync(sourceType, sourceId, cancellationToken);
+
+            if (chunks.Count > 0)
+            {
+                await _dbContext.KnowledgeChunks.AddRangeAsync(chunks, cancellationToken);
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            return new ReindexKnowledgeResultDto
+            {
+                ProductCount = chunks.Count(x => x.SourceType == KnowledgeSourceType.Product),
+                ProductFaqCount = chunks.Count(x => x.SourceType == KnowledgeSourceType.ProductFaq),
+                ContentCount = chunks.Count(x => x.SourceType == KnowledgeSourceType.Content),
+                ContentFaqCount = chunks.Count(x => x.SourceType == KnowledgeSourceType.ContentFaq),
+                ChunkCount = chunks.Count,
+                IndexedAt = DateTime.UtcNow
+            };
+        }
+
+        private async Task DeleteOldChunksAsync(
+            KnowledgeSourceType sourceType,
+            Guid sourceId,
+            CancellationToken cancellationToken)
+        {
+            switch (sourceType)
+            {
+                case KnowledgeSourceType.Product:
+                    {
+                        var faqIds = await _dbContext.ProductFaqs
+                            .AsNoTracking()
+                            .Where(x => x.ProductId == sourceId)
+                            .Select(x => x.Id)
+                            .ToListAsync(cancellationToken);
+
+                        await _dbContext.KnowledgeChunks
+                            .Where(x =>
+                                (x.SourceType == KnowledgeSourceType.Product && x.SourceId == sourceId) ||
+                                (x.SourceType == KnowledgeSourceType.ProductFaq && faqIds.Contains(x.SourceId)))
+                            .ExecuteDeleteAsync(cancellationToken);
+
+                        break;
+                    }
+
+                case KnowledgeSourceType.ProductFaq:
+                    {
+                        await _dbContext.KnowledgeChunks
+                            .Where(x => x.SourceType == KnowledgeSourceType.ProductFaq && x.SourceId == sourceId)
+                            .ExecuteDeleteAsync(cancellationToken);
+
+                        break;
+                    }
+
+                case KnowledgeSourceType.Content:
+                    {
+                        var faqIds = await _dbContext.ContentFaqs
+                            .AsNoTracking()
+                            .Where(x => x.ContentId == sourceId)
+                            .Select(x => x.Id)
+                            .ToListAsync(cancellationToken);
+
+                        await _dbContext.KnowledgeChunks
+                            .Where(x =>
+                                (x.SourceType == KnowledgeSourceType.Content && x.SourceId == sourceId) ||
+                                (x.SourceType == KnowledgeSourceType.ContentFaq && faqIds.Contains(x.SourceId)))
+                            .ExecuteDeleteAsync(cancellationToken);
+
+                        break;
+                    }
+
+                case KnowledgeSourceType.ContentFaq:
+                    {
+                        await _dbContext.KnowledgeChunks
+                            .Where(x => x.SourceType == KnowledgeSourceType.ContentFaq && x.SourceId == sourceId)
+                            .ExecuteDeleteAsync(cancellationToken);
+
+                        break;
+                    }
+            }
+        }
+
+        private async Task CreateEmbeddingsAsync(
+            List<KnowledgeChunk> chunks,
+            CancellationToken cancellationToken)
+        {
             foreach (var chunk in chunks)
             {
                 var embedding = await _embeddingService.CreateEmbeddingAsync(
@@ -72,30 +246,22 @@ namespace DTP.Modules.Knowledge.Infrastructure.Services
                     _openAiOptions.EmbeddingModel,
                     embedding.Length);
             }
-
-            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-
-            await _dbContext.KnowledgeChunks.ExecuteDeleteAsync(cancellationToken);
-
-            await _dbContext.KnowledgeChunks.AddRangeAsync(chunks, cancellationToken);
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            await transaction.CommitAsync(cancellationToken);
-
-            result.ChunkCount = chunks.Count;
-            result.IndexedAt = DateTime.UtcNow;
-
-            return result;
         }
 
         private async Task<(int SourceCount, List<KnowledgeChunk> Chunks)> BuildProductChunksAsync(
+            List<Guid>? productIds,
             CancellationToken cancellationToken)
         {
-            var products = await _dbContext.Products
+            var query = _dbContext.Products
                 .AsNoTracking()
-                .Where(x => x.IsActive && !x.IsDeleted)
-                .ToListAsync(cancellationToken);
+                .Where(x => x.IsActive && !x.IsDeleted);
+
+            if (productIds is { Count: > 0 })
+            {
+                query = query.Where(x => productIds.Contains(x.Id));
+            }
+
+            var products = await query.ToListAsync(cancellationToken);
 
             var chunks = new List<KnowledgeChunk>();
 
@@ -133,34 +299,49 @@ namespace DTP.Modules.Knowledge.Infrastructure.Services
         }
 
         private async Task<(int SourceCount, List<KnowledgeChunk> Chunks)> BuildProductFaqChunksAsync(
+            List<Guid>? faqIds,
+            List<Guid>? productIds,
             CancellationToken cancellationToken)
         {
-            var faqs = await _dbContext.ProductFaqs
+            var query = _dbContext.ProductFaqs
                 .AsNoTracking()
-                .Where(x => x.IsActive && !x.IsDeleted)
+                .Where(x => x.IsActive && !x.IsDeleted);
+
+            if (faqIds is { Count: > 0 })
+            {
+                query = query.Where(x => faqIds.Contains(x.Id));
+            }
+
+            if (productIds is { Count: > 0 })
+            {
+                query = query.Where(x => productIds.Contains(x.ProductId));
+            }
+
+            var faqs = await query
                 .OrderBy(x => x.SortOrder)
                 .ToListAsync(cancellationToken);
 
-            var productIds = faqs.Select(x => x.ProductId).Distinct().ToList();
+            var parentProductIds = faqs
+                .Select(x => x.ProductId)
+                .Distinct()
+                .ToList();
 
             var products = await _dbContext.Products
                 .AsNoTracking()
-                .Where(x => productIds.Contains(x.Id))
+                .Where(x => x.IsActive && !x.IsDeleted)
+                .Where(x => parentProductIds.Contains(x.Id))
                 .ToDictionaryAsync(x => x.Id, cancellationToken);
 
             var chunks = new List<KnowledgeChunk>();
 
             foreach (var faq in faqs)
             {
-                products.TryGetValue(faq.ProductId, out var product);
-
-                var title = product?.Name ?? "FAQ sản phẩm";
-                var slug = product?.Slug;
-                var sourceUrl = slug == null ? null : BuildProductUrl(slug);
+                if (!products.TryGetValue(faq.ProductId, out var product))
+                    continue;
 
                 var text = $"""
             Loại dữ liệu: Câu hỏi thường gặp về sản phẩm eSIM
-            Sản phẩm: {title}
+            Sản phẩm: {product.Name}
             Câu hỏi: {faq.Question}
             Trả lời: {faq.Answer}
             """;
@@ -169,9 +350,9 @@ namespace DTP.Modules.Knowledge.Infrastructure.Services
                     KnowledgeSourceType.ProductFaq,
                     faq.Id,
                     0,
-                    title,
-                    slug,
-                    sourceUrl,
+                    product.Name,
+                    product.Slug,
+                    BuildProductUrl(product.Slug),
                     text));
             }
 
@@ -179,12 +360,19 @@ namespace DTP.Modules.Knowledge.Infrastructure.Services
         }
 
         private async Task<(int SourceCount, List<KnowledgeChunk> Chunks)> BuildContentChunksAsync(
+            List<Guid>? contentIds,
             CancellationToken cancellationToken)
         {
-            var contents = await _dbContext.Contents
+            var query = _dbContext.Contents
                 .AsNoTracking()
-                .Where(x => x.IsActive && !x.IsDeleted && x.IsPublished)
-                .ToListAsync(cancellationToken);
+                .Where(x => x.IsActive && !x.IsDeleted && x.IsPublished);
+
+            if (contentIds is { Count: > 0 })
+            {
+                query = query.Where(x => contentIds.Contains(x.Id));
+            }
+
+            var contents = await query.ToListAsync(cancellationToken);
 
             var chunks = new List<KnowledgeChunk>();
 
@@ -221,34 +409,49 @@ namespace DTP.Modules.Knowledge.Infrastructure.Services
         }
 
         private async Task<(int SourceCount, List<KnowledgeChunk> Chunks)> BuildContentFaqChunksAsync(
+            List<Guid>? faqIds,
+            List<Guid>? contentIds,
             CancellationToken cancellationToken)
         {
-            var faqs = await _dbContext.ContentFaqs
+            var query = _dbContext.ContentFaqs
                 .AsNoTracking()
-                .Where(x => x.IsActive && !x.IsDeleted)
+                .Where(x => x.IsActive && !x.IsDeleted);
+
+            if (faqIds is { Count: > 0 })
+            {
+                query = query.Where(x => faqIds.Contains(x.Id));
+            }
+
+            if (contentIds is { Count: > 0 })
+            {
+                query = query.Where(x => contentIds.Contains(x.ContentId));
+            }
+
+            var faqs = await query
                 .OrderBy(x => x.SortOrder)
                 .ToListAsync(cancellationToken);
 
-            var contentIds = faqs.Select(x => x.ContentId).Distinct().ToList();
+            var parentContentIds = faqs
+                .Select(x => x.ContentId)
+                .Distinct()
+                .ToList();
 
             var contents = await _dbContext.Contents
                 .AsNoTracking()
-                .Where(x => contentIds.Contains(x.Id))
+                .Where(x => x.IsActive && !x.IsDeleted && x.IsPublished)
+                .Where(x => parentContentIds.Contains(x.Id))
                 .ToDictionaryAsync(x => x.Id, cancellationToken);
 
             var chunks = new List<KnowledgeChunk>();
 
             foreach (var faq in faqs)
             {
-                contents.TryGetValue(faq.ContentId, out var content);
-
-                var title = content?.Title ?? "FAQ nội dung";
-                var slug = content?.Slug;
-                var sourceUrl = slug == null ? null : BuildContentUrl(slug);
+                if (!contents.TryGetValue(faq.ContentId, out var content))
+                    continue;
 
                 var text = $"""
             Loại dữ liệu: Câu hỏi thường gặp nội dung/hướng dẫn
-            Bài viết: {title}
+            Bài viết: {content.Title}
             Câu hỏi: {faq.Question}
             Trả lời: {faq.Answer}
             """;
@@ -257,9 +460,9 @@ namespace DTP.Modules.Knowledge.Infrastructure.Services
                     KnowledgeSourceType.ContentFaq,
                     faq.Id,
                     0,
-                    title,
-                    slug,
-                    sourceUrl,
+                    content.Title,
+                    content.Slug,
+                    BuildContentUrl(content.Slug),
                     text));
             }
 

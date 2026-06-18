@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\DTP.Infrastructure\DTP.Infrastructure.csproj" />
     <ProjectReference Include="..\..\DTP.Shared\DTP.Shared.csproj" />
+    <ProjectReference Include="..\DTP.Modules.Knowledge\DTP.Modules.Knowledge.csproj" />
   </ItemGroup>
 
   <ItemGroup>

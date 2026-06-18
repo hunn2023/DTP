@@ -3,9 +3,12 @@ using DTP.Modules.Content.Application.Abstractions.Repositories;
 using DTP.Modules.Content.Application.Abstractions.Services;
 using DTP.Modules.Content.Application.DTOs;
 using DTP.Modules.Content.Domain.Entities;
+using DTP.Modules.Knowledge.Application.Commands.ReindexKnowledge;
+using DTP.Modules.Knowledge.Domain.Enums;
 using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using DTP.Shared.Caching;
+using MediatR;
 
 namespace DTP.Modules.Content.Infrastructure.Services
 {
@@ -14,14 +17,17 @@ namespace DTP.Modules.Content.Infrastructure.Services
         private readonly IContentFaqRepository _repository;
         private readonly IContentUnitOfWork _unitOfWork;
         private readonly ICacheService _cacheService;
+        private readonly IMediator _mediator;
         public ContentFaqService(
             IContentFaqRepository repository,
             IContentUnitOfWork unitOfWork,
-            ICacheService cacheService)
+            ICacheService cacheService,
+             IMediator mediator)
         {
             _repository = repository;
             _unitOfWork = unitOfWork;
             _cacheService = cacheService;
+            _mediator = mediator;
         }
 
         public async Task<Result<ContentFaqDto>> CreateAsync(
@@ -80,6 +86,12 @@ namespace DTP.Modules.Content.Infrastructure.Services
 
             await ClearRelatedCacheAsync(cancellationToken);
 
+            await _mediator.Send(
+                 new ReindexKnowledgeSourceCommand(
+                     KnowledgeSourceType.ContentFaq,
+                     faq.Id),
+                 cancellationToken);
+
             return Result<ContentFaqDto>.Success(Map(faq));
 
         }
@@ -93,7 +105,7 @@ namespace DTP.Modules.Content.Infrastructure.Services
             if (faq == null)
                 return Result.Failure("FAQ not found.");
 
-             faq.Enable();
+            faq.Enable();
 
 
             _repository.Update(faq);
@@ -101,6 +113,11 @@ namespace DTP.Modules.Content.Infrastructure.Services
 
             await ClearRelatedCacheAsync(cancellationToken);
 
+            await _mediator.Send(
+             new ReindexKnowledgeSourceCommand(
+                 KnowledgeSourceType.ContentFaq,
+                 faq.Id),
+             cancellationToken);
             return Result.Success();
         }
 
@@ -120,6 +137,11 @@ namespace DTP.Modules.Content.Infrastructure.Services
 
             await ClearRelatedCacheAsync(cancellationToken);
 
+            await _mediator.Send(
+            new ReindexKnowledgeSourceCommand(
+                KnowledgeSourceType.ContentFaq,
+                faq.Id),
+            cancellationToken);
             return Result.Success();
         }
 
@@ -178,7 +200,7 @@ namespace DTP.Modules.Content.Infrastructure.Services
                 cacheKey,
                 cancellationToken);
 
-            if (cached != null) 
+            if (cached != null)
                 return Result<PagedResultDto<ContentFaqDto>>.Success(cached);
 
 
@@ -217,7 +239,7 @@ namespace DTP.Modules.Content.Infrastructure.Services
                 cacheKey,
                 cancellationToken);
 
-            if (cached != null)  return Result<IReadOnlyList<ContentFaqDto>>.Success(cached);
+            if (cached != null) return Result<IReadOnlyList<ContentFaqDto>>.Success(cached);
 
             var faqs = await _repository.GetActiveAsync(
                 categoryCode,

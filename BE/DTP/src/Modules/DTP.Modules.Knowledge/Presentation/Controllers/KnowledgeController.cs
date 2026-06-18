@@ -1,14 +1,15 @@
 ﻿using DTP.Modules.Knowledge.Application.Commands.ReindexKnowledge;
 using DTP.Modules.Knowledge.Application.Queries;
+using DTP.Modules.Knowledge.Domain.Enums;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 
 namespace DTP.Modules.Knowledge.Presentation.Controllers
 {
@@ -55,6 +56,34 @@ namespace DTP.Modules.Knowledge.Presentation.Controllers
                 success = true,
                 data = result
             });
+        }
+
+
+        [HttpPost("reindex-source")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ReindexSource(
+            [FromBody] ReindexKnowledgeSourceRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new ReindexKnowledgeSourceCommand(
+                    request.SourceType,
+                    request.SourceId),
+                cancellationToken);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Re-index knowledge theo bản ghi thành công.",
+                data = result
+            });
+        }
+
+        public class ReindexKnowledgeSourceRequest
+        {
+            public KnowledgeSourceType SourceType { get; set; }
+
+            public Guid SourceId { get; set; }
         }
     }
 }
