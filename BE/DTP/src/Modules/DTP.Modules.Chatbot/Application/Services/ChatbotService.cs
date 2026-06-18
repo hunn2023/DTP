@@ -202,11 +202,11 @@ namespace DTP.Modules.Chatbot.Application.Services
                         Message = unknownMessage,
                         NeedMoreInfo = true,
                         MissingFields = new List<string>
-        {
-            "country",
-            "travelDays",
-            "usageLevel"
-        },
+                            {
+                                "country",
+                                "travelDays",
+                                "usageLevel"
+                            },
                         Intent = intent,
                         Suggestions = new List<ChatbotProductSuggestionDto>()
                     };

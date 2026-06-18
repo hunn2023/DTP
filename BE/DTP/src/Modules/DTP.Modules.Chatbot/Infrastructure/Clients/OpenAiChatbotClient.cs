@@ -44,56 +44,78 @@ namespace DTP.Modules.Chatbot.Infrastructure.Clients
             }
 
             var instructions = """
-Bạn là bộ phân tích nhu cầu mua eSIM cho hệ thống DTP.
+                Bạn là bộ phân tích nhu cầu mua eSIM cho hệ thống DTP.
 
-Nhiệm vụ:
-- Chỉ trả về JSON hợp lệ.
-- Không giải thích thêm.
-- Không markdown.
-- Không bịa thông tin sản phẩm.
-- Phân loại intentType:
-  - product_advice: khách cần tư vấn/mua/chọn gói eSIM
-  - faq: khách hỏi cách dùng eSIM, cài đặt, QR, roaming, hotspot
-  - order_support: khách hỏi đơn hàng, thanh toán, nhận QR
-  - unknown: không rõ
-- Không được tự gán usageLevel = "normal" nếu khách không nói rõ nhu cầu sử dụng data.
-- Nếu khách chỉ nói quốc gia, ví dụ "Nhật Bản", thì travelDays = null và usageLevel = null.
-- Nếu khách chỉ nói số ngày, ví dụ "7 ngày", thì countryKeyword = null, countryCode = null và usageLevel = null.
+                Nhiệm vụ:
+                - Chỉ trả về JSON hợp lệ.
+                - Không giải thích thêm.
+                - Không markdown.
+                - Không bịa thông tin sản phẩm.
+                - Phân loại intentType:
+                  - product_advice: khách cần tư vấn/mua/chọn gói eSIM
+                  - faq: khách hỏi cách dùng eSIM, cài đặt, QR, roaming, hotspot
+                  - order_support: khách hỏi đơn hàng, thanh toán, nhận QR
+                  - unknown: không rõ
+                - Không được tự gán usageLevel = "normal" nếu khách không nói rõ nhu cầu sử dụng data.
+                - Nếu khách chỉ nói quốc gia, ví dụ "Nhật Bản", thì travelDays = null và usageLevel = null.
+                - Nếu khách chỉ nói số ngày, ví dụ "7 ngày", thì countryKeyword = null, countryCode = null và usageLevel = null.
 
+                Quy đổi quốc gia:
+                - countryCode phải là mã ISO 3166-1 alpha-2 viết hoa nếu xác định được quốc gia.
+                - Ví dụ:
+                  - Thái, Thai, Thailand, Thái Lan => TH
+                  - Nhật, Nhật Bản, Japan => JP
+                  - Hàn, Hàn Quốc, Korea, South Korea => KR
+                  - Singapore, Sing => SG
+                  - Trung Quốc, China => CN
+                  - Đài Loan, Taiwan => TW
+                  - Mỹ, Hoa Kỳ, USA, United States => US
+                  - Malaysia, Mã Lai => MY
+                  - Indonesia, Indo => ID
+                  - Philippines, Phi Luật Tân => PH
+                  - Campuchia, Cambodia => KH
+                  - Lào, Laos => LA
+                  - Úc, Australia => AU
+                  - Pháp, France => FR
+                  - Đức, Germany => DE
+                  - Anh, UK, United Kingdom => GB
+                - Nếu không chắc chắn quốc gia, countryCode = null và countryKeyword = từ khách đã nhập.
+                - Không được tự bịa countryCode nếu câu hỏi không có quốc gia.
 
-Schema JSON bắt buộc:
-{
-  "intentType": "product_advice | faq | order_support | unknown",
-  "countryKeyword": "string hoặc null",
-  "countryCode": "string hoặc null",
-  "travelDays": number hoặc null,
-  "requestedDataAmount": number hoặc null,
-  "requestedDataUnit": "GB | MB | null",
-  "usageLevel": "light | normal | heavy | unlimited | null",
-  "budgetType": "cheapest | balanced | premium | null",
-  "needsHotspot": true hoặc false hoặc null,
-  "needsPhoneNumber": true hoặc false hoặc null,
-  "needsSms": true hoặc false hoặc null,
-  "originalQuestion": "string"
-}
+                Schema JSON bắt buộc:
+                {
+                  "intentType": "product_advice | faq | order_support | unknown",
+                  "countryKeyword": "string hoặc null",
+                  "countryCode": "string hoặc null",
+                  "travelDays": number hoặc null,
+                  "requestedDataAmount": number hoặc null,
+                  "requestedDataUnit": "GB | MB | null",
+                  "usageLevel": "light | normal | heavy | unlimited | null",
+                  "budgetType": "cheapest | balanced | premium | null",
+                  "needsHotspot": true hoặc false hoặc null,
+                  "needsPhoneNumber": true hoặc false hoặc null,
+                  "needsSms": true hoặc false hoặc null,
+                  "originalQuestion": "string"
+                }
 
-Quy đổi requestedDataAmount:
-- Nếu khách nói 1GB, 3GB, 5GB, 10GB thì requestedDataAmount là số tương ứng.
-- Nếu khách nói 500MB thì requestedDataAmount = 500, requestedDataUnit = "MB".
-- Nếu khách nói không giới hạn, unlimited, dung lượng không giới hạn thì usageLevel = "unlimited", requestedDataAmount = null.
-- Nếu khách không nói rõ dung lượng thì requestedDataAmount = null.
+                Quy đổi requestedDataAmount:
+                - Nếu khách nói 1GB, 3GB, 5GB, 10GB thì requestedDataAmount là số tương ứng.
+                - Nếu khách nói 500MB thì requestedDataAmount = 500, requestedDataUnit = "MB".
+                - Nếu khách nói không giới hạn, unlimited, dung lượng không giới hạn thì usageLevel = "unlimited", requestedDataAmount = null.
+                - Nếu khách không nói rõ dung lượng thì requestedDataAmount = null.
 
-Quy đổi usageLevel:
-- light: chỉ chat, bản đồ, email ít
-- normal: mạng xã hội, web, bản đồ thường xuyên
-- heavy: TikTok, YouTube, video, livestream, làm việc nhiều
-- unlimited: khách nói muốn không giới hạn
+                Quy đổi usageLevel:
+                - light: khách nói dùng ít, chỉ chat, bản đồ, email
+                - normal: khách nói dùng bình thường
+                - heavy: khách nói dùng nhiều, TikTok, YouTube, video, livestream
+                - unlimited: khách nói muốn không giới hạn
+                - null: khách không nói rõ nhu cầu data
 
-Quy đổi budgetType:
-- cheapest: khách hỏi rẻ nhất, tiết kiệm
-- balanced: khách hỏi phù hợp, ổn, nên mua
-- premium: khách hỏi tốt nhất, mạnh nhất, dùng nhiều
-""";
+                Quy đổi budgetType:
+                - cheapest: khách hỏi rẻ nhất, tiết kiệm
+                - balanced: khách hỏi phù hợp, ổn, nên mua
+                - premium: khách hỏi tốt nhất, mạnh nhất, dùng nhiều
+                """;
 
             var input = $"Câu hỏi khách hàng: {message}";
 

@@ -48,29 +48,50 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                 intent.RequestedDataAmount,
                 intent.RequestedDataUnit);
 
-            var query = _context.EsimPackages
-                .AsNoTracking()
-                .Where(x =>
-                    x.IsActive &&
-                    x.Product.IsActive &&
-                    !x.Product.IsDeleted &&
-                    x.ProductVariant.IsActive &&
-                    x.Country.IsActive);
 
-            if (!string.IsNullOrWhiteSpace(countryCode))
+            var countryId = await ResolveCountryIdAsync(
+                    intent,
+                    cancellationToken);
+
+            if (!countryId.HasValue)
             {
-                query = query.Where(x =>
-                    x.Country.Code.ToUpper() == countryCode);
+                return Array.Empty<ChatbotProductSuggestionDto>();
             }
-            else if (!string.IsNullOrWhiteSpace(countryKeyword))
-            {
-                query = query.Where(x =>
-                    x.Country.Name.ToLower().Contains(countryKeyword) ||
-                    x.Country.Slug.ToLower().Contains(countryKeyword) ||
-                    x.Country.Code.ToLower().Contains(countryKeyword) ||
-                    x.Product.Name.ToLower().Contains(countryKeyword) ||
-                    x.Name.ToLower().Contains(countryKeyword));
-            }
+
+
+            var query = _context.EsimPackages
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.IsActive && !x.IsDeleted &&
+                        x.CountryId == countryId.Value &&
+                        x.Product.IsActive &&
+                        !x.Product.IsDeleted &&
+                        x.ProductVariant.IsActive &&
+                        x.Country.IsActive);
+
+            //var query = _context.EsimPackages
+            //    .AsNoTracking()
+            //    .Where(x =>
+            //        x.IsActive &&
+            //        x.Product.IsActive &&
+            //        !x.Product.IsDeleted &&
+            //        x.ProductVariant.IsActive &&
+            //        x.Country.IsActive);
+
+            //if (!string.IsNullOrWhiteSpace(countryCode))
+            //{
+            //    query = query.Where(x =>
+            //        x.Country.Code.ToUpper() == countryCode);
+            //}
+            //else if (!string.IsNullOrWhiteSpace(countryKeyword))
+            //{
+            //    query = query.Where(x =>
+            //        x.Country.Name.ToLower().Contains(countryKeyword) ||
+            //        x.Country.Slug.ToLower().Contains(countryKeyword) ||
+            //        x.Country.Code.ToLower().Contains(countryKeyword) ||
+            //        x.Product.Name.ToLower().Contains(countryKeyword) ||
+            //        x.Name.ToLower().Contains(countryKeyword));
+            //}
 
             if (intent.TravelDays.HasValue && intent.TravelDays.Value > 0)
             {
@@ -295,6 +316,51 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                 .ThenBy(x => x.SalePrice)
                 .Take(take)
                 .ToList();
+        }
+
+
+        private async Task<Guid?> ResolveCountryIdAsync(
+            ChatbotIntentDto intent,
+            CancellationToken cancellationToken)
+        {
+            var countryCode = intent.CountryCode?.Trim().ToUpperInvariant();
+            var countryKeyword = intent.CountryKeyword?.Trim().ToLowerInvariant();
+
+            if (!string.IsNullOrWhiteSpace(countryCode))
+            {
+                var countryId = await _context.Countries
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.IsActive &&
+                        !x.IsDeleted &&
+                        x.Code.ToUpper() == countryCode)
+                    .Select(x => (Guid?)x.Id)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (countryId.HasValue)
+                    return countryId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(countryKeyword))
+            {
+                var countryId = await _context.Countries
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.IsActive &&
+                        !x.IsDeleted &&
+                        (
+                            x.Name.ToLower().Contains(countryKeyword) ||
+                            x.Slug.ToLower().Contains(countryKeyword) ||
+                            x.Code.ToLower().Contains(countryKeyword)
+                        ))
+                    .Select(x => (Guid?)x.Id)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (countryId.HasValue)
+                    return countryId;
+            }
+
+            return null;
         }
 
         private string BuildBuyUrl(string productSlug)
