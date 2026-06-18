@@ -194,23 +194,7 @@ namespace DTP.Modules.Chatbot.Application.Services
                 {
                     var unknownMessage =
                         "Tôi có thể tư vấn gói eSIM theo quốc gia, số ngày đi và nhu cầu dùng data. " +
-                        "Ví dụ: Tôi đi Nhật 5 ngày, dùng TikTok nhiều thì nên mua gói nào?";
-
-                    await WriteAuditSafeAsync(
-                        action: "Chatbot Intent Unknown",
-                        actionType: AuditActionType.Create,
-                        status: AuditStatus.Failed,
-                        entityName: "ChatbotMessage",
-                        description: "Chatbot could not understand customer intent.",
-                        newValues: new
-                        {
-                            SessionId = sessionId,
-                            Message = message,
-                            Intent = intent,
-                            Request = GetRequestAuditInfo()
-                        },
-                        errorMessage: "Unknown chatbot intent.",
-                        cancellationToken: cancellationToken);
+                        "Ví dụ: Tôi đi Nhật Bản 7 ngày, dùng TikTok nhiều.";
 
                     return new ChatResponseDto
                     {
@@ -218,11 +202,11 @@ namespace DTP.Modules.Chatbot.Application.Services
                         Message = unknownMessage,
                         NeedMoreInfo = true,
                         MissingFields = new List<string>
-                            {
-                                "country",
-                                "travelDays",
-                                "usageLevel"
-                            },
+        {
+            "country",
+            "travelDays",
+            "usageLevel"
+        },
                         Intent = intent,
                         Suggestions = new List<ChatbotProductSuggestionDto>()
                     };
@@ -239,7 +223,7 @@ namespace DTP.Modules.Chatbot.Application.Services
                         actionType: AuditActionType.Create,
                         status: AuditStatus.Failed,
                         entityName: "ChatbotMessage",
-                        description: "Chatbot needs more information before searching products.",
+                        description: "Chatbot needs full information in one message before searching products.",
                         newValues: new
                         {
                             SessionId = sessionId,
@@ -601,27 +585,17 @@ namespace DTP.Modules.Chatbot.Application.Services
                 !string.IsNullOrWhiteSpace(intent.CountryKeyword)
                 || !string.IsNullOrWhiteSpace(intent.CountryCode);
 
-            var usageLevel = intent.UsageLevel?
-                .Trim()
-                .ToLowerInvariant();
-
-            var hasStrongUsage =
-                usageLevel == "heavy"
-                || usageLevel == "light"
-                || usageLevel == "unlimited";
-
-            var hasProductSignal =
+            var hasUsefulInfo =
                 hasProductKeyword
                 || hasCountry
                 || intent.TravelDays.HasValue
-                || intent.RequestedDataAmount.HasValue
-                || hasStrongUsage;
+                || intent.RequestedDataAmount.HasValue;
 
-            if (!hasProductSignal)
+            if (!hasUsefulInfo)
                 return false;
 
             return string.Equals(intent.IntentType, "product_advice", StringComparison.OrdinalIgnoreCase)
-                   || hasProductSignal;
+                   || hasUsefulInfo;
         }
 
         private static List<string> GetMissingFields(ChatbotIntentDto intent)
@@ -637,13 +611,12 @@ namespace DTP.Modules.Chatbot.Application.Services
                 result.Add("country");
             }
 
-            if (!intent.TravelDays.HasValue)
+            if (!intent.TravelDays.HasValue || intent.TravelDays.Value <= 0)
             {
                 result.Add("travelDays");
             }
 
-            if (string.IsNullOrWhiteSpace(intent.UsageLevel)
-                && !intent.RequestedDataAmount.HasValue)
+            if (!HasUsageInfo(intent))
             {
                 result.Add("usageLevel");
             }
@@ -651,23 +624,24 @@ namespace DTP.Modules.Chatbot.Application.Services
             return result;
         }
 
+        private static bool HasUsageInfo(ChatbotIntentDto intent)
+        {
+            if (intent.RequestedDataAmount.HasValue)
+                return true;
+
+            var usageLevel = intent.UsageLevel?.Trim().ToLowerInvariant();
+
+            if (string.IsNullOrWhiteSpace(usageLevel))
+                return false;
+
+            return usageLevel is "light" or "normal" or "heavy" or "unlimited";
+        }
+
         private static string BuildNeedMoreInfoMessage(IReadOnlyList<string> missingFields)
         {
-            var questions = new List<string>();
-
-            if (missingFields.Contains("country"))
-                questions.Add("bạn đi quốc gia nào");
-
-            if (missingFields.Contains("travelDays"))
-                questions.Add("bạn đi trong bao nhiêu ngày");
-
-            if (missingFields.Contains("usageLevel"))
-                questions.Add("nhu cầu dùng data của bạn là nhẹ, bình thường hay nhiều");
-
-            return "Để tư vấn gói eSIM phù hợp hơn, bạn cho tôi biết thêm: "
-                   + string.Join(", ", questions)
-                   + ".";
+            return "Để tư vấn chính xác, bạn vui lòng gửi đầy đủ trong 1 câu gồm: quốc gia muốn đi, số ngày sử dụng và nhu cầu data. Ví dụ: Tôi đi Nhật Bản 7 ngày, dùng TikTok nhiều.";
         }
+
 
         private static string BuildFallbackAnswer(
               IReadOnlyList<ChatbotProductSuggestionDto> suggestions)

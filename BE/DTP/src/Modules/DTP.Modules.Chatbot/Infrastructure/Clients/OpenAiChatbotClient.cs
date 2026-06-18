@@ -56,6 +56,10 @@ Nhiệm vụ:
   - faq: khách hỏi cách dùng eSIM, cài đặt, QR, roaming, hotspot
   - order_support: khách hỏi đơn hàng, thanh toán, nhận QR
   - unknown: không rõ
+- Không được tự gán usageLevel = "normal" nếu khách không nói rõ nhu cầu sử dụng data.
+- Nếu khách chỉ nói quốc gia, ví dụ "Nhật Bản", thì travelDays = null và usageLevel = null.
+- Nếu khách chỉ nói số ngày, ví dụ "7 ngày", thì countryKeyword = null, countryCode = null và usageLevel = null.
+
 
 Schema JSON bắt buộc:
 {
@@ -72,6 +76,7 @@ Schema JSON bắt buộc:
   "needsSms": true hoặc false hoặc null,
   "originalQuestion": "string"
 }
+
 Quy đổi requestedDataAmount:
 - Nếu khách nói 1GB, 3GB, 5GB, 10GB thì requestedDataAmount là số tương ứng.
 - Nếu khách nói 500MB thì requestedDataAmount = 500, requestedDataUnit = "MB".
