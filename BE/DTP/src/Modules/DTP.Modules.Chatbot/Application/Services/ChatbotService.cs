@@ -4,11 +4,6 @@ using DTP.Modules.Chatbot.Application.Abstractions;
 using DTP.Modules.Chatbot.Application.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DTP.Modules.Chatbot.Application.Services
 {
@@ -190,46 +185,46 @@ namespace DTP.Modules.Chatbot.Application.Services
 
                 intent.OriginalQuestion ??= message;
 
+
+                ApplySmartDefaults(intent);
+
                 if (!IsProductAdvice(intent))
                 {
                     var unknownMessage =
-                        "Tôi có thể tư vấn gói eSIM theo quốc gia, số ngày đi và nhu cầu dùng data. " +
-                        "Ví dụ: Tôi đi Nhật Bản 7 ngày, dùng TikTok nhiều.";
+                        "Tôi có thể tư vấn gói eSIM theo quốc gia bạn muốn đi. " +
+                        "Ví dụ: Tôi đi Thái Lan, nên mua gói nào?";
 
                     return new ChatResponseDto
                     {
                         SessionId = sessionId,
                         Message = unknownMessage,
                         NeedMoreInfo = true,
-                        MissingFields = new List<string>
-                            {
-                                "country",
-                                "travelDays",
-                                "usageLevel"
-                            },
+                        MissingFields = new List<string> { "country" },
                         Intent = intent,
                         Suggestions = new List<ChatbotProductSuggestionDto>()
                     };
                 }
 
-                var missingFields = GetMissingFields(intent);
+                var blockingMissingFields = GetBlockingMissingFields(intent);
 
-                if (missingFields.Count > 0)
+                if (blockingMissingFields.Count > 0)
                 {
-                    var needMoreInfoMessage = BuildNeedMoreInfoMessage(missingFields);
+                    var needMoreInfoMessage =
+                        "Bạn vui lòng cho biết quốc gia muốn đi để tôi tư vấn gói eSIM phù hợp. " +
+                        "Ví dụ: Tôi đi Thái Lan, nên mua gói nào?";
 
                     await WriteAuditSafeAsync(
                         action: "Chatbot Need More Info",
                         actionType: AuditActionType.Create,
                         status: AuditStatus.Failed,
                         entityName: "ChatbotMessage",
-                        description: "Chatbot needs full information in one message before searching products.",
+                        description: "Chatbot needs country before searching products.",
                         newValues: new
                         {
                             SessionId = sessionId,
                             Message = message,
                             Intent = intent,
-                            MissingFields = missingFields,
+                            MissingFields = blockingMissingFields,
                             Request = GetRequestAuditInfo()
                         },
                         errorMessage: needMoreInfoMessage,
@@ -240,11 +235,13 @@ namespace DTP.Modules.Chatbot.Application.Services
                         SessionId = sessionId,
                         Message = needMoreInfoMessage,
                         NeedMoreInfo = true,
-                        MissingFields = missingFields,
+                        MissingFields = blockingMissingFields,
                         Intent = intent,
                         Suggestions = new List<ChatbotProductSuggestionDto>()
                     };
                 }
+
+                var optionalMissingFields = GetOptionalMissingFields(intent);
 
                 var suggestions = new List<ChatbotProductSuggestionDto>();
 
@@ -374,14 +371,16 @@ namespace DTP.Modules.Chatbot.Application.Services
                     }
                 }
 
-             
+
 
                 var response = new ChatResponseDto
                 {
                     SessionId = sessionId,
                     Message = answer,
-                    NeedMoreInfo = false,
-                    MissingFields = new List<string>(),
+                    NeedMoreInfo = suggestions.Count == 0,
+                    MissingFields = suggestions.Count > 0
+                        ? optionalMissingFields
+                        : blockingMissingFields,
                     Intent = intent,
                     Suggestions = suggestions
                 };
@@ -504,7 +503,7 @@ namespace DTP.Modules.Chatbot.Application.Services
             return new
             {
                 IpAddress = GetClientIp(),
-                UserAgent = GetUserAgent(),
+                //UserAgent = GetUserAgent(),
                 Path = httpContext.Request.Path.Value,
                 Method = httpContext.Request.Method
             };
@@ -535,27 +534,6 @@ namespace DTP.Modules.Chatbot.Application.Services
             return httpContext.Connection.RemoteIpAddress?.ToString();
         }
 
-        private string? GetUserAgent()
-        {
-            return _httpContextAccessor.HttpContext?
-                .Request
-                .Headers["User-Agent"]
-                .FirstOrDefault();
-        }
-
-
-        private string? GetCurrentUserId()
-        {
-            var user = _httpContextAccessor.HttpContext?.User;
-
-            if (user?.Identity?.IsAuthenticated != true)
-                return null;
-
-            return user.FindFirst("sub")?.Value
-                   ?? user.FindFirst("userId")?.Value
-                   ?? user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        }
-
         private static bool IsProductAdvice(ChatbotIntentDto intent)
         {
             if (intent == null)
@@ -579,7 +557,9 @@ namespace DTP.Modules.Chatbot.Application.Services
                 || question.Contains("gb")
                 || question.Contains("mb")
                 || question.Contains("không giới hạn")
-                || question.Contains("unlimited");
+                || question.Contains("unlimited")
+                || question.Contains("nên mua")
+                || question.Contains("gói nào");
 
             var hasCountry =
                 !string.IsNullOrWhiteSpace(intent.CountryKeyword)
@@ -598,7 +578,17 @@ namespace DTP.Modules.Chatbot.Application.Services
                    || hasUsefulInfo;
         }
 
-        private static List<string> GetMissingFields(ChatbotIntentDto intent)
+        private static string BuildNeedMoreInfoMessage(IReadOnlyList<string> missingFields)
+        {
+            if (missingFields.Contains("country"))
+            {
+                return "Bạn vui lòng cho biết quốc gia muốn đi để tôi tư vấn gói eSIM phù hợp. Ví dụ: Tôi đi Thái Lan, nên mua gói nào?";
+            }
+
+            return "Bạn vui lòng cung cấp thêm thông tin để tôi tư vấn gói eSIM phù hợp hơn.";
+        }
+
+        private static List<string> GetBlockingMissingFields(ChatbotIntentDto intent)
         {
             var result = new List<string>();
 
@@ -610,6 +600,13 @@ namespace DTP.Modules.Chatbot.Application.Services
             {
                 result.Add("country");
             }
+
+            return result;
+        }
+
+        private static List<string> GetOptionalMissingFields(ChatbotIntentDto intent)
+        {
+            var result = new List<string>();
 
             if (!intent.TravelDays.HasValue || intent.TravelDays.Value <= 0)
             {
@@ -631,17 +628,31 @@ namespace DTP.Modules.Chatbot.Application.Services
 
             var usageLevel = intent.UsageLevel?.Trim().ToLowerInvariant();
 
-            if (string.IsNullOrWhiteSpace(usageLevel))
-                return false;
-
             return usageLevel is "light" or "normal" or "heavy" or "unlimited";
         }
 
-        private static string BuildNeedMoreInfoMessage(IReadOnlyList<string> missingFields)
+        private static void ApplySmartDefaults(ChatbotIntentDto intent)
         {
-            return "Để tư vấn chính xác, bạn vui lòng gửi đầy đủ trong 1 câu gồm: quốc gia muốn đi, số ngày sử dụng và nhu cầu data. Ví dụ: Tôi đi Nhật Bản 7 ngày, dùng TikTok nhiều.";
-        }
+            var hasCountry =
+                !string.IsNullOrWhiteSpace(intent.CountryKeyword)
+                || !string.IsNullOrWhiteSpace(intent.CountryCode);
 
+            var hasUsage =
+                !string.IsNullOrWhiteSpace(intent.UsageLevel)
+                || intent.RequestedDataAmount.HasValue;
+
+            // Chỉ cần có quốc gia thì vẫn tư vấn được.
+            // Nếu khách chưa nói nhu cầu data thì mặc định là normal.
+            if (hasCountry && !hasUsage)
+            {
+                intent.UsageLevel = "normal";
+            }
+
+            if (string.IsNullOrWhiteSpace(intent.BudgetType))
+            {
+                intent.BudgetType = "balanced";
+            }
+        }
 
         private static string BuildFallbackAnswer(
               IReadOnlyList<ChatbotProductSuggestionDto> suggestions)
