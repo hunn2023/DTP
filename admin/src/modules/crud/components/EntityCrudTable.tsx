@@ -163,6 +163,7 @@ const EntityCrudTable = <T extends CrudEntityBase>({
           fields={formConfig.fields}
           viewFields={formConfig.viewFields}
           initialValues={crud.formValues}
+          slugFromName={formConfig.slugFromName}
           onHide={crud.closeFormModal}
           onSubmit={crud.saveForm}
         />

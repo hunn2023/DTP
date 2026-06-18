@@ -17,6 +17,7 @@ import { mapPackageToForm, toWizardPackagePayload } from '@/features/products/es
 import { getDefaultPriceValues } from '@/features/products/esim-wizard/wizardDefaults'
 import type { EsimWizardSummary, EsimWizardTab } from '@/features/products/esim-wizard/types'
 import { useEsimWizardLoader } from '@/features/products/esim-wizard/useEsimWizardLoader'
+import { toWizardSaveOutcome, type WizardSaveFn, type WizardSaveOutcome } from '@/features/products/esim-wizard/wizardSave'
 
 const TAB_KEYS: EsimWizardTab[] = ['variants', 'prices', 'packages', 'carriers', 'features', 'review']
 
@@ -62,7 +63,7 @@ export function useEsimWizardPage() {
   const [showUnsavedModal, setShowUnsavedModal] = useState(false)
 
   const variantSaveRef = useRef<(() => Promise<boolean>) | null>(null)
-  const priceSaveRef = useRef<(() => Promise<boolean>) | null>(null)
+  const priceSaveRef = useRef<WizardSaveFn | null>(null)
   const packageSaveRef = useRef<(() => Promise<boolean>) | null>(null)
   const featuresSaveRef = useRef<(() => Promise<boolean>) | null>(null)
   const savedPackageIdRef = useRef<string | null>(null)
@@ -87,7 +88,7 @@ export function useEsimWizardPage() {
   const registerVariantSave = useCallback((fn: () => Promise<boolean>) => {
     variantSaveRef.current = fn
   }, [])
-  const registerPriceSave = useCallback((fn: () => Promise<boolean>) => {
+  const registerPriceSave = useCallback((fn: WizardSaveFn) => {
     priceSaveRef.current = fn
   }, [])
   const registerPackageSave = useCallback((fn: () => Promise<boolean>) => {
@@ -309,34 +310,37 @@ export function useEsimWizardPage() {
     }
   }, [wizard, showNotification, markTabDirty])
 
-  const saveFeatures = useCallback(async (): Promise<boolean> => {
-    const ok = (await featuresSaveRef.current?.()) ?? false
-    if (!ok) return false
-    if (variantId) {
-      const features = await fetchVariantFeatures(variantId)
-      wizard.setFeatureCount(features.length)
-    }
-    markTabDirty('features', false)
-    showNotification({ title: 'Thành công', message: 'Đã lưu tính năng', variant: 'success', delay: 2000 })
-    return true
-  }, [variantId, wizard, showNotification, markTabDirty])
-
-  const saveActiveTab = useCallback(async (): Promise<boolean> => {
+  const saveActiveTab = useCallback(async (): Promise<WizardSaveOutcome> => {
     switch (activeTab) {
-      case 'variants':
-        return (await variantSaveRef.current?.()) ?? false
+      case 'variants': {
+        const ok = (await variantSaveRef.current?.()) ?? false
+        return ok ? { ok: true } : { ok: false, message: 'Không lưu được biến thể' }
+      }
       case 'prices':
-        return (await priceSaveRef.current?.()) ?? false
-      case 'packages':
-        return (await packageSaveRef.current?.()) ?? false
-      case 'carriers':
-        return saveCarriers()
-      case 'features':
-        return saveFeatures()
+        return toWizardSaveOutcome(await priceSaveRef.current?.())
+      case 'packages': {
+        const ok = (await packageSaveRef.current?.()) ?? false
+        return ok ? { ok: true } : { ok: false, message: 'Không lưu được gói eSIM' }
+      }
+      case 'carriers': {
+        const ok = await saveCarriers()
+        return ok ? { ok: true } : { ok: false, message: 'Không lưu được nhà mạng' }
+      }
+      case 'features': {
+        const ok = (await featuresSaveRef.current?.()) ?? false
+        if (!ok) return { ok: false, message: 'Không lưu được tính năng' }
+        if (variantId) {
+          const features = await fetchVariantFeatures(variantId)
+          wizard.setFeatureCount(features.length)
+        }
+        markTabDirty('features', false)
+        showNotification({ title: 'Thành công', message: 'Đã lưu tính năng', variant: 'success', delay: 2000 })
+        return { ok: true }
+      }
       default:
-        return true
+        return { ok: true }
     }
-  }, [activeTab, saveCarriers, saveFeatures])
+  }, [activeTab, saveCarriers, variantId, wizard, markTabDirty, showNotification])
 
   const handleContinue = useCallback(async () => {
     if (activeTab === 'review') {
@@ -344,16 +348,13 @@ export function useEsimWizardPage() {
       return
     }
 
-    const ok = await saveActiveTab()
-    if (!ok) {
+    const result = await saveActiveTab()
+    if (!result.ok) {
       showNotification({
         title: 'Lỗi',
-        message:
-          activeTab === 'prices'
-            ? 'Vui lòng nhập giá bán trước khi tiếp tục'
-            : 'Không lưu được. Kiểm tra lại thông tin.',
+        message: result.message,
         variant: 'danger',
-        delay: 3500,
+        delay: 4000,
       })
       return
     }
@@ -412,8 +413,8 @@ export function useEsimWizardPage() {
   }, [pendingTab, activeTab, wizard, markTabDirty, setActiveTab])
 
   const confirmUnsavedSave = useCallback(async () => {
-    const ok = await saveActiveTab()
-    if (!ok) return
+    const result = await saveActiveTab()
+    if (!result.ok) return
     if (pendingTab) {
       setActiveTab(pendingTab)
       setPendingTab(null)

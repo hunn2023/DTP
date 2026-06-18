@@ -278,6 +278,7 @@ export function useCategoriesCrud({ buildColumns, formConfig, pageSize = 10 }: U
     formMode,
     formValues,
     openCreate,
+    openEdit,
     openView,
     closeFormModal,
     saveForm,

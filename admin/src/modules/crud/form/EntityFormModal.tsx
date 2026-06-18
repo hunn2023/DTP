@@ -4,6 +4,7 @@ import { Button, Col, Form, Modal, ModalBody, ModalFooter, ModalHeader, ModalTit
 import RequiredMark from '@/components/form/RequiredMark'
 import CountrySearchSelect from '@/features/master-data/countries/components/CountrySearchSelect'
 import { getFieldLabel } from '@/modules/crud/entities/fieldLabels'
+import { slugify } from '@/modules/crud/form/slugify'
 import type { FormFieldConfig, FormModalMode } from '@/modules/crud/form/types'
 function resolveLabel<T>(field: FormFieldConfig<T>): string {
   return field.label ?? getFieldLabel(field.name)
@@ -16,6 +17,7 @@ type EntityFormModalProps<T extends { isActive: boolean }> = {
   fields: FormFieldConfig<T>[]
   viewFields?: FormFieldConfig<T>[]
   initialValues: T
+  slugFromName?: boolean
   onHide: () => void
   onSubmit: (values: T) => void
 }
@@ -166,6 +168,7 @@ const EntityFormModal = <T extends { isActive: boolean }>({
   fields,
   viewFields,
   initialValues,
+  slugFromName = false,
   onHide,
   onSubmit,
 }: EntityFormModalProps<T>) => {
@@ -188,10 +191,17 @@ const EntityFormModal = <T extends { isActive: boolean }>({
   }
 
   const handleChange = (name: keyof T & string, raw: string | boolean | number | number[]) => {
-    setValues((prev) => ({ ...prev, [name]: raw }))
+    setValues((prev) => {
+      const next = { ...prev, [name]: raw } as T
+      if (slugFromName && name === 'name' && typeof raw === 'string' && 'slug' in prev) {
+        return { ...next, slug: slugify(raw) } as T
+      }
+      return next
+    })
     setErrors((prev) => {
       const next = { ...prev }
       delete next[name]
+      if (slugFromName && name === 'name') delete next.slug
       return next
     })
   }
