@@ -14,16 +14,17 @@ const StatCards = () => {
         const Icon = card.icon
         return (
           <Col key={card.id}>
-            <Card className="h-100 dashboard-stat-card">
+            <Card className={`h-100 dashboard-stat-card dashboard-stat-card--${card.iconBg}`}>
               <CardBody>
-                <div className="d-flex align-items-center gap-2 mb-3">
-                  <div className="avatar-sm flex-shrink-0">
-                    <span
-                      className={`avatar-title text-bg-${card.iconBg}-subtle text-${card.iconBg} rounded-circle fs-18 d-flex align-items-center justify-content-center`}>
-                      <Icon size={18} />
-                    </span>
-                  </div>
-                  <p className="text-muted mb-0 fw-medium">{card.title}</p>
+                <div className="dashboard-stat-card__header mb-2">
+                  <span className={`dashboard-stat-card__icon dashboard-stat-card__icon--${card.iconBg}`}>
+                    <Icon size={20} />
+                  </span>
+                  <p className="dashboard-stat-card__title mb-0">{card.title}</p>
+                </div>
+                <div className="dashboard-stat-card__headline mb-3">
+                  <div className="dashboard-stat-card__headline-value">{card.headline}</div>
+                  <div className="dashboard-stat-card__headline-hint">{card.headlineHint}</div>
                 </div>
                 <div className="dashboard-stat-card__metrics">
                   {card.metrics.length === 0 ? (

@@ -10,6 +10,7 @@ import { countriesLabels } from '@/features/master-data/countries/data'
 import { countryFormConfig } from '@/features/master-data/countries/formConfig'
 import CountryFormModal from './CountryFormModal'
 import { useCountriesCrud } from '@/features/master-data/countries/useCountriesCrud'
+import '../countries.scss'
 
 const CountriesCrudTable = () => {
   const crud = useCountriesCrud({
@@ -59,7 +60,7 @@ const CountriesCrudTable = () => {
         <DataTable
           table={crud.table}
           emptyMessage={countriesLabels.emptyMessage}
-          onRowClick={crud.openView}
+          onRowClick={crud.openEdit}
         />
       )}
 

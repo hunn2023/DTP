@@ -8,6 +8,7 @@ import { countryFormConfig } from '@/features/master-data/countries/formConfig'
 import { getCountryRegionOptions } from '@/features/master-data/countries/regionOptions'
 import type { Country } from '@/features/master-data/types'
 import { getFieldLabel } from '@/modules/crud/entities/fieldLabels'
+import { slugify } from '@/modules/crud/form/slugify'
 import type { FormFieldConfig, FormModalMode } from '@/modules/crud/form/types'
 
 type CountryFormModalProps = {
@@ -131,10 +132,17 @@ const CountryFormModal = ({
   }
 
   const handleChange = (name: keyof Country, raw: string | boolean | number) => {
-    setValues((prev) => ({ ...prev, [name]: raw }))
+    setValues((prev) => {
+      const next = { ...prev, [name]: raw }
+      if (countryFormConfig.slugFromName && name === 'name' && typeof raw === 'string') {
+        return { ...next, slug: slugify(raw) }
+      }
+      return next
+    })
     setErrors((prev) => {
       const next = { ...prev }
       delete next[name]
+      if (countryFormConfig.slugFromName && name === 'name') delete next.slug
       return next
     })
   }
@@ -246,30 +254,33 @@ const CountryFormModal = ({
 
             <Tab.Pane eventKey="flag">
               {readOnly ? (
-                values.flagUrl ? (
-                  <img src={values.flagUrl} alt={values.name} className="rounded border" width={120} height={80} style={{ objectFit: 'cover' }} />
-                ) : (
-                  <p className="text-muted mb-0">Chưa có ảnh cờ</p>
-                )
+                <div className="country-flag-tab country-flag-tab--readonly">
+                  {values.flagUrl ? (
+                    <img src={values.flagUrl} alt={values.name} className="country-flag-tab__image" />
+                  ) : (
+                    <p className="text-muted mb-0">Chưa có ảnh cờ</p>
+                  )}
+                </div>
               ) : (
-                <Form id="country-flag-form" onSubmit={handleFlagSubmit}>
-                  {values.flagUrl && (
-                    <div className="mb-3">
+                <Form id="country-flag-form" onSubmit={handleFlagSubmit} className="country-flag-tab">
+                  {values.flagUrl && !flagFiles?.length && (
+                    <div className="country-flag-tab__current">
                       <Form.Label className="fw-semibold">Cờ hiện tại</Form.Label>
-                      <div>
-                        <img src={values.flagUrl} alt={values.name} className="rounded border" width={80} height={56} style={{ objectFit: 'cover' }} />
-                      </div>
+                      <img src={values.flagUrl} alt={values.name} className="country-flag-tab__image" />
                     </div>
                   )}
-                  <Form.Label className="fw-semibold">Tải lên ảnh cờ</Form.Label>
-                  <FileUploader
-                    files={flagFiles}
-                    setFiles={setFlagFiles}
-                    accept={{ 'image/*': ['.png', '.jpg', '.jpeg', '.webp'] }}
-                    maxSize={10 * 1024 * 1024}
-                    maxFileCount={1}
-                  />
-                  {errors.flagUrl && <div className="text-danger fs-xs mt-1">{errors.flagUrl}</div>}
+                  <div className="country-flag-tab__upload w-100">
+                    <Form.Label className="fw-semibold">Tải lên ảnh cờ</Form.Label>
+                    <FileUploader
+                      files={flagFiles}
+                      setFiles={setFlagFiles}
+                      accept={{ 'image/*': ['.png', '.jpg', '.jpeg', '.webp'] }}
+                      maxSize={10 * 1024 * 1024}
+                      maxFileCount={1}
+                      className="country-flag-tab__dropzone"
+                    />
+                  </div>
+                  {errors.flagUrl && <div className="text-danger fs-xs mt-2">{errors.flagUrl}</div>}
                 </Form>
               )}
             </Tab.Pane>

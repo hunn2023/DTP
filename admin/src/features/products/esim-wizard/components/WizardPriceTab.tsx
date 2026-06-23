@@ -1,4 +1,4 @@
-import { type FormEvent, useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Alert, Card, Col, Form, Row } from 'react-bootstrap'
 
 import {
@@ -8,6 +8,8 @@ import {
 import type { ProductPriceRow } from '@/features/master-data/products/types'
 import { useTabDirty } from '@/features/products/esim-wizard/hooks/useTabDirty'
 import { useWizardTabForm } from '@/features/products/esim-wizard/hooks/useWizardTabForm'
+import type { WizardSaveFn } from '@/features/products/esim-wizard/wizardSave'
+import { getErrorMessage } from '@/features/system/shared/getErrorMessage'
 import RequiredMark from '@/components/form/RequiredMark'
 import NumberFormControl from '@/components/form/NumberFormControl'
 import { getDefaultPriceValues } from '@/features/products/esim-wizard/wizardDefaults'
@@ -21,11 +23,7 @@ type WizardPriceTabProps = {
   onSaved: (priceId: string) => void
   onSavingChange: (saving: boolean) => void
   onDirtyChange?: (dirty: boolean) => void
-  onRegisterSave?: (fn: () => Promise<boolean>) => void
-}
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message : fallback
+  onRegisterSave?: (fn: WizardSaveFn) => void
 }
 
 const WizardPriceTab = ({
@@ -45,12 +43,13 @@ const WizardPriceTab = ({
 
   useTabDirty(values, initialValues, onDirtyChange)
 
-  const savePrice = useCallback(async (): Promise<boolean> => {
+  const savePrice = useCallback(async (): Promise<string | null> => {
     setError('')
 
     if (values.salePrice <= 0) {
-      setError('Vui lòng nhập giá bán')
-      return false
+      const message = 'Vui lòng nhập giá bán'
+      setError(message)
+      return message
     }
 
     onSavingChange(true)
@@ -81,10 +80,11 @@ const WizardPriceTab = ({
         })
         onSaved(values.id)
       }
-      return true
+      return null
     } catch (err) {
-      setError(getErrorMessage(err, 'Không lưu được giá'))
-      return false
+      const message = getErrorMessage(err, 'Không lưu được giá')
+      setError(message)
+      return message
     } finally {
       onSavingChange(false)
     }
@@ -94,7 +94,7 @@ const WizardPriceTab = ({
     onRegisterSave?.(savePrice)
   }, [onRegisterSave, savePrice])
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     void savePrice()
   }

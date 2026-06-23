@@ -1,7 +1,7 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Card, Col, Form, Row } from 'react-bootstrap'
 
-import { getDefaultProductValues, toProductPayload } from '@/features/master-data/products/formConfig'
+import { getDefaultProductValues, getNewProductValues, toProductPayload } from '@/features/master-data/products/formConfig'
 import { createProduct, updateProduct } from '@/apis/productsApi'
 import type { CatalogProduct } from '@/features/master-data/products/types'
 import CategorySearchSelect from '@/features/master-data/categories/components/CategorySearchSelect'
@@ -48,12 +48,21 @@ const ProductInfoTab = ({
   onDirtyChange,
   onRegisterSave,
 }: ProductInfoTabProps) => {
-  const [values, setValues] = useState<CatalogProduct>(initialValues ?? getDefaultProductValues())
+  const [values, setValues] = useState<CatalogProduct>(() => {
+    if (initialValues) return initialValues
+    return isNew ? getNewProductValues() : getDefaultProductValues()
+  })
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (initialValues) setValues(initialValues)
-  }, [initialValues, resetNonce])
+    if (initialValues) {
+      setValues(initialValues)
+      return
+    }
+    if (isNew) {
+      setValues(getNewProductValues())
+    }
+  }, [initialValues, resetNonce, isNew])
 
   useTabDirty(values, initialValues ?? null, onDirtyChange)
 
@@ -229,7 +238,13 @@ const ProductInfoTab = ({
                   <Form.Control
                     value={values.code}
                     placeholder="Mã sản phẩm"
-                    onChange={(e) => setValues((p) => ({ ...p, code: e.target.value }))}
+                    maxLength={isNew ? 12 : undefined}
+                    inputMode={isNew ? 'numeric' : undefined}
+                    onChange={(e) => {
+                      const raw = e.target.value
+                      const code = isNew ? raw.replace(/\D/g, '').slice(0, 12) : raw
+                      setValues((p) => ({ ...p, code }))
+                    }}
                   />
                 </div>
                 <div>

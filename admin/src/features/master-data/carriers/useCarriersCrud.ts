@@ -350,6 +350,7 @@ export function useCarriersCrud({ buildColumns, pageSize = 10 }: UseCarriersCrud
     formMode,
     formValues,
     openCreate: () => void openCreate(),
+    openEdit,
     openView,
     closeFormModal,
     saveForm,
