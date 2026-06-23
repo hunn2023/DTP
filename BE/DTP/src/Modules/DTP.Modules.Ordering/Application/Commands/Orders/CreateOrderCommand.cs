@@ -41,7 +41,6 @@ namespace DTP.Modules.Ordering.Application.Commands.Orders
                 ProductId = x.ProductId,
                 ProductVariantId = x.ProductVariantId,
                 EsimPackageId = x.EsimPackageId,
-                PhoneCardId = x.PhoneCardId,
                 ProductName = x.ProductName,
                 VariantName = x.VariantName,
                 Sku = x.Sku,

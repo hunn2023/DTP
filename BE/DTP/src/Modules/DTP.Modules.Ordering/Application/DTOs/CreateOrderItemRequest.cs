@@ -40,7 +40,6 @@ namespace DTP.Modules.Ordering.Application.DTOs
 
         public Guid? EsimPackageId { get; set; }
 
-        public Guid? PhoneCardId { get; set; }
 
         public string ProductName { get; set; } = default!;
 
