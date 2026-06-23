@@ -6,9 +6,12 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Payment.Domain.Enums
 {
-    public enum PaymentProvider
+    public enum PaymentTransactionStatus
     {
-        VnptEpay = 1,
-        Sepay = 2
+        Pending = 1,
+        Paid = 2,
+        Failed = 3,
+        Expired = 4,
+        Cancelled = 5
     }
 }

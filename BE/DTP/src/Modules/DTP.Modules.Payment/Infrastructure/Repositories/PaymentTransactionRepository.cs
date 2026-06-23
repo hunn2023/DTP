@@ -70,6 +70,17 @@ namespace DTP.Modules.Payment.Infrastructure.Repositories
                     cancellationToken);
         }
 
+        public Task<PaymentTransaction?> GetPendingSepayByTransferContentAsync(
+            string transferContent,
+            CancellationToken cancellationToken = default)
+        {
+            return _context.PaymentTransactions
+                .FirstOrDefaultAsync(x =>
+                    x.Provider == PaymentProvider.Sepay &&
+                    x.Status == PaymentStatus.Pending &&
+                    x.TransferContent == transferContent,
+                    cancellationToken);
+        }
 
         public async Task<PaymentTransaction?> GetPendingVnptEpayByMapIdAndAmountAsync(
                 string mapId,

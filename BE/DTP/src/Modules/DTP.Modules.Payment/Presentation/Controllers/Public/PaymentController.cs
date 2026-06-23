@@ -22,29 +22,6 @@ namespace DTP.Modules.Payment.Presentation.Controllers
             _mediator = mediator;
         }
 
-        [EnableRateLimiting("payment-create-qr")]
-        //[Authorize]
-        [HttpPost("qr")]
-        public async Task<IActionResult> CreateQr(
-            [FromBody] CreatePaymentQrRequestDto request,
-            CancellationToken cancellationToken)
-        {
-            var ip = GetIpAddress();
-
-            var result = await _mediator.Send(
-                new CreatePaymentQrCommand
-                {
-                    OrderId = request.OrderId,
-                    IpAddress = ip
-                },
-                cancellationToken);
-
-            if (!result.IsSuccess)
-                return BadRequest(result);
-
-            return Ok(result);
-        }
-
         [Authorize]
         [HttpGet("orders/{orderId:guid}")]
         public async Task<IActionResult> GetByOrderId(
@@ -64,30 +41,6 @@ namespace DTP.Modules.Payment.Presentation.Controllers
             return Ok(result);
         }
 
-        [EnableRateLimiting("payment-webhook")]
-        [AllowAnonymous]
-        [HttpPost("callback/vnpt-epay")]
-        public async Task<IActionResult> VnptEpayCallback(
-            [FromBody] VnptEpayCallbackDto callback,
-            CancellationToken cancellationToken)
-        {
-
-            var rawBody = JsonSerializer.Serialize(callback);
-            var ip = GetIpAddress();
-
-            var result = await _mediator.Send(
-                new HandleVnptEpayCallbackCommand
-                {
-                    Callback = callback,
-                    RawBody = rawBody,
-                    IpAddress = ip
-                },
-                cancellationToken);
-
-            
-            return Ok(result);
-           
-        }
 
         private string GetIpAddress()
         {

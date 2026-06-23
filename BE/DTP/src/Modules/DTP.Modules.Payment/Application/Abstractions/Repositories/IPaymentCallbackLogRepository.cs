@@ -16,9 +16,11 @@ namespace DTP.Modules.Payment.Application.Abstractions.Repositories
             string? providerTransactionId,
             CancellationToken cancellationToken = default);
 
+
         Task<bool> ExistsProcessedByProviderTransactionIdAsync(
                 PaymentProvider provider,
                 string providerTransactionId,
                 CancellationToken cancellationToken = default);
+
     }
 }

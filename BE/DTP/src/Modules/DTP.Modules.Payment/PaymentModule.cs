@@ -1,5 +1,6 @@
 ﻿using DTP.Modules.Payment.Application.Abstractions.Repositories;
 using DTP.Modules.Payment.Application.Abstractions.Services;
+using DTP.Modules.Payment.Application.Options;
 using DTP.Modules.Payment.Infrastructure.Clients;
 using DTP.Modules.Payment.Infrastructure.Persistence;
 using DTP.Modules.Payment.Infrastructure.Repositories;
@@ -40,8 +41,11 @@ namespace DTP.Modules.Payment
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
 
+            services.Configure<SepayOptions>(
+    configuration.GetSection("Payment:Sepay"));
 
-
+            services.AddScoped<ISepayWebhookVerifier, SepayWebhookVerifier>();
+             
             // Repositories
             services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
             services.AddScoped<IPaymentCallbackLogRepository, PaymentCallbackLogRepository>();
@@ -56,7 +60,7 @@ namespace DTP.Modules.Payment
             services.AddScoped<IPaymentRateLimitService, PaymentRateLimitService>();
 
             services.AddScoped<IProviderReservationService, ProviderReservationService>();
-
+            services.AddScoped<ISepayPaymentService, SepayPaymentService>();
             services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(PaymentModule).Assembly);

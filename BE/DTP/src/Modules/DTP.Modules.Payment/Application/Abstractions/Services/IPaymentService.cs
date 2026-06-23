@@ -6,17 +6,6 @@ namespace DTP.Modules.Payment.Application.Abstractions.Services
 {
     public interface IPaymentService
     {
-        Task<Result<PaymentQrResponseDto>> CreateQrAsync(
-            Guid orderId,
-            string ipAddress,
-            CancellationToken cancellationToken = default);
-
-        Task<EPayResponse> HandleVnptEpayCallbackAsync(
-            Application.DTOs.VnptEpayCallbackDto callback,
-            string rawBody,
-            string? ipAddress,
-            CancellationToken cancellationToken = default);
-
         Task<Result<PaymentTransactionDto>> GetByOrderIdAsync(
             Guid orderId,
             CancellationToken cancellationToken = default);

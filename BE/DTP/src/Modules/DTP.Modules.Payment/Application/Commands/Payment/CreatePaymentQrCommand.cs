@@ -16,9 +16,9 @@ namespace DTP.Modules.Payment.Application.Commands.Payment
     public class CreatePaymentQrCommandHandler
     : IRequestHandler<CreatePaymentQrCommand, Result<PaymentQrResponseDto>>
     {
-        private readonly IPaymentService _paymentService;
+        private readonly ISepayPaymentService _paymentService;
 
-        public CreatePaymentQrCommandHandler(IPaymentService paymentService)
+        public CreatePaymentQrCommandHandler(ISepayPaymentService paymentService)
         {
             _paymentService = paymentService;
         }

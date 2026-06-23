@@ -30,5 +30,10 @@ namespace DTP.Modules.Payment.Application.Abstractions.Repositories
                 string mapId,
                 decimal amount,
                 CancellationToken cancellationToken = default);
+
+
+        Task<PaymentTransaction?> GetPendingSepayByTransferContentAsync(
+    string transferContent,
+    CancellationToken cancellationToken = default);
     }
 }
