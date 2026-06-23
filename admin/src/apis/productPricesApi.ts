@@ -1,6 +1,6 @@
 import type { ProductPriceRow } from '@/features/master-data/products/types'
 import { API_PATHS } from '@/shared/config/api'
-import { parseCreatedId } from '@/shared/lib/createdId'
+import { resolveCreateId } from '@/shared/lib/createdId'
 import { httpDelete, httpGet, httpPost, httpPut } from '@/shared/lib/http'
 import { readBool, readDateString, readNumber, readString } from '@/shared/lib/dtoNormalize'
 
@@ -84,7 +84,7 @@ export async function createProductPrice(payload: ProductPricePayload): Promise<
     note: payload.note.trim(),
   }
   const raw = await httpPost<unknown>(API_PATHS.adminProductPrices, body)
-  return parseCreatedId(raw)
+  return resolveCreateId(raw)
 }
 
 export async function updateProductPrice(

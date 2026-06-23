@@ -4,9 +4,13 @@ using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.CacheKeys;
 using DTP.Modules.Catalog.Application.Commands.Products;
 using DTP.Modules.Catalog.Application.DTOs;
+using DTP.Modules.Catalog.Domain.Entities;
+using DTP.Modules.Knowledge.Application.Commands.ReindexKnowledge;
+using DTP.Modules.Knowledge.Domain.Enums;
 using DTP.Shared.Application;
 using DTP.Shared.Application.Pagination;
 using DTP.Shared.Caching;
+using MediatR;
 
 
 namespace DTP.Modules.Catalog.Infrastructure.Services
@@ -18,18 +22,20 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         private readonly IEsimPackageRepository _esimPackageRepository;
         private readonly ICacheService _cacheService;
         private const int MaxPageSize = 100;
-
+        private readonly IMediator _mediator;
 
         public ProductService(
           IProductRepository productRepository,
           IProductPriceRepository productPriceRepository,
           IEsimPackageRepository esimPackageRepository,
-          ICacheService cacheService)
+          ICacheService cacheService,
+          IMediator mediator)
         {
             _productRepository = productRepository;
             _productPriceRepository = productPriceRepository;
             _esimPackageRepository = esimPackageRepository;
             _cacheService = cacheService;
+            _mediator = mediator;
         }
 
         public async Task<Result<ProductDetailDto?>> GetDetailAsync(
@@ -346,6 +352,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 return Result.Failure("Không tìm thấy sản phẩm để cập nhật.");
 
             await ClearProductCacheAsync(cancellationToken);
+
+            await _mediator.Send(
+                  new ReindexKnowledgeSourceCommand(
+                      KnowledgeSourceType.Product,
+                      command.Id),
+                  cancellationToken);
 
             return Result.Success();
         }

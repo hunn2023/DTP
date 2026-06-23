@@ -12,6 +12,8 @@ export type DashboardStatMetric = {
 export type DashboardStatCard = {
   id: number
   title: string
+  headline: string
+  headlineHint: string
   metrics: DashboardStatMetric[]
   icon: IconType
   iconBg: string
@@ -27,7 +29,6 @@ function moneyMetrics(dashboard: DashboardReport): DashboardStatMetric[] {
   return [
     { label: 'Hôm nay', value: formatReportMoney(dashboard.todayRevenue) },
     { label: 'Tháng này', value: formatReportMoney(dashboard.monthRevenue) },
-    { label: 'Tổng', value: formatReportMoney(dashboard.totalRevenue) },
     { label: 'Đã thanh toán', value: formatReportMoney(dashboard.totalPaidAmount) },
     { label: 'Hoàn tiền', value: formatReportMoney(dashboard.totalRefundAmount) },
   ]
@@ -37,7 +38,6 @@ function orderMetrics(dashboard: DashboardReport): DashboardStatMetric[] {
   return [
     { label: 'Hôm nay', value: formatReportCount(dashboard.todayOrders) },
     { label: 'Tháng này', value: formatReportCount(dashboard.monthOrders) },
-    { label: 'Tổng', value: formatReportCount(dashboard.totalOrders) },
     { label: 'Hoàn thành', value: formatReportCount(dashboard.completedOrders) },
     { label: 'Chờ xử lý', value: formatReportCount(dashboard.pendingOrders) },
     { label: 'Đã hủy', value: formatReportCount(dashboard.cancelledOrders) },
@@ -46,7 +46,6 @@ function orderMetrics(dashboard: DashboardReport): DashboardStatMetric[] {
 
 function customerMetrics(dashboard: DashboardReport): DashboardStatMetric[] {
   return [
-    { label: 'Tổng', value: formatReportCount(dashboard.totalCustomers) },
     { label: 'Mới hôm nay', value: formatReportCount(dashboard.newCustomersToday) },
     { label: 'Mới tháng này', value: formatReportCount(dashboard.newCustomersThisMonth) },
   ]
@@ -60,6 +59,8 @@ export function buildStatCards(
     {
       id: 1,
       title: 'Doanh thu',
+      headline: dashboard ? formatReportMoney(dashboard.totalRevenue) : '—',
+      headlineHint: 'Tổng doanh thu',
       metrics: dashboard ? moneyMetrics(dashboard) : [],
       icon: TbChartBar,
       iconBg: 'primary',
@@ -67,6 +68,8 @@ export function buildStatCards(
     {
       id: 2,
       title: 'Đơn hàng',
+      headline: dashboard ? `${formatReportCount(dashboard.totalOrders)} Đơn hàng` : '—',
+      headlineHint: 'Tổng số đơn',
       metrics: dashboard ? orderMetrics(dashboard) : [],
       icon: TbShoppingCart,
       iconBg: 'success',
@@ -74,6 +77,8 @@ export function buildStatCards(
     {
       id: 3,
       title: 'Khách hàng',
+      headline: dashboard ? `${formatReportCount(dashboard.totalCustomers)} Khách hàng` : '—',
+      headlineHint: 'Tổng số lượng',
       metrics: dashboard ? customerMetrics(dashboard) : [],
       icon: TbUsers,
       iconBg: 'info',
@@ -81,9 +86,10 @@ export function buildStatCards(
     {
       id: 4,
       title: 'Thanh toán',
+      headline: formatSuccessRate(payments),
+      headlineHint: 'Tỷ lệ thành công',
       metrics: payments
         ? [
-            { label: 'Tỷ lệ thành công', value: formatSuccessRate(payments) },
             {
               label: 'Giao dịch',
               value: `${formatReportCount(payments.successPayments)} / ${formatReportCount(payments.totalPayments)}`,

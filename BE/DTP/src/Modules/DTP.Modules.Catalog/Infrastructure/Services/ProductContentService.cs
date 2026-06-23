@@ -4,11 +4,15 @@ using DTP.Modules.Catalog.Application.CacheKeys;
 using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Domain.Entities;
 using DTP.Modules.Catalog.Domain.Enums;
+using DTP.Modules.Knowledge.Application.Commands.ReindexKnowledge;
+using DTP.Modules.Knowledge.Domain.Enums;
 using DTP.Shared.Application;
 using DTP.Shared.Caching;
+using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,6 +24,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         private readonly IProductRepository _productRepository;
         private readonly ICatalogUnitOfWork _unitOfWork;
         private readonly ICacheService _cacheService;
+        private readonly IMediator _mediator;
 
         private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(30);
 
@@ -27,12 +32,14 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             IProductContentRepository productContentRepository,
             IProductRepository productRepository,
             ICatalogUnitOfWork unitOfWork,
-            ICacheService cacheService)
+            ICacheService cacheService,
+            IMediator mediator)
         {
             _productContentRepository = productContentRepository;
             _productRepository = productRepository;
             _unitOfWork = unitOfWork;
             _cacheService = cacheService;
+            _mediator = mediator;
         }
 
         public async Task<Result<ProductContentDto>> CreateAsync(
@@ -103,6 +110,13 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await ClearProductContentCacheAsync(
                 productContent.Id,
                 productContent.ProductId,
+                cancellationToken);
+
+
+            await _mediator.Send(
+                new ReindexKnowledgeSourceCommand(
+                    KnowledgeSourceType.Content,
+                    productContent.Id),
                 cancellationToken);
 
             return Result<ProductContentDto>.Success(MapToDto(productContent));

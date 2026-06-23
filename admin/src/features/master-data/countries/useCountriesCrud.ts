@@ -370,6 +370,7 @@ export function useCountriesCrud({ buildColumns, formConfig, pageSize = 10 }: Us
     formTab,
     countryIdForFlag,
     openCreate,
+    openEdit,
     openView,
     closeFormModal,
     setFormTab,

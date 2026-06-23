@@ -59,7 +59,7 @@ const CategoriesCrudTable = () => {
         <DataTable
           table={crud.table}
           emptyMessage={categoriesLabels.emptyMessage}
-          onRowClick={crud.openView}
+          onRowClick={crud.openEdit}
         />
       )}
 
@@ -104,6 +104,7 @@ const CategoriesCrudTable = () => {
           fields={categoryFormConfig.fields}
           viewFields={categoryFormConfig.viewFields}
           initialValues={crud.formValues}
+          slugFromName={categoryFormConfig.slugFromName}
           onHide={crud.closeFormModal}
           onSubmit={(values) => void crud.saveForm(values)}
         />

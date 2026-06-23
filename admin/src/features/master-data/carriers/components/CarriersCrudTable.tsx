@@ -57,7 +57,7 @@ const CarriersCrudTable = () => {
         <DataTable
           table={crud.table}
           emptyMessage={carriersLabels.emptyMessage}
-          onRowClick={crud.openView}
+          onRowClick={crud.openEdit}
         />
       )}
 
@@ -102,6 +102,7 @@ const CarriersCrudTable = () => {
           fields={crud.formConfig.fields}
           viewFields={crud.formConfig.viewFields}
           initialValues={crud.formValues}
+          slugFromName={crud.formConfig.slugFromName}
           onHide={crud.closeFormModal}
           onSubmit={(values) => void crud.saveForm(values)}
         />

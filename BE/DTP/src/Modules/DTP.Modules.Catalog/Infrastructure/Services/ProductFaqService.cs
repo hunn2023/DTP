@@ -3,8 +3,11 @@ using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.CacheKeys;
 using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Domain.Entities;
+using DTP.Modules.Knowledge.Application.Commands.ReindexKnowledge;
+using DTP.Modules.Knowledge.Domain.Enums;
 using DTP.Shared.Application;
 using DTP.Shared.Caching;
+using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,19 +22,21 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         private readonly IProductRepository _productRepository;
         private readonly ICatalogUnitOfWork _unitOfWork;
         private readonly ICacheService _cacheService;
-
+        private readonly IMediator _mediator;
         private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(30);
 
         public ProductFaqService(
             IProductFaqRepository productFaqRepository,
             IProductRepository productRepository,
             ICatalogUnitOfWork unitOfWork,
-            ICacheService cacheService)
+            ICacheService cacheService,
+            IMediator mediator)
         {
             _productFaqRepository = productFaqRepository;
             _productRepository = productRepository;
             _unitOfWork = unitOfWork;
             _cacheService = cacheService;
+            _mediator = mediator;
         }
 
         public async Task<Result<ProductFaqDto>> CreateAsync(
@@ -97,6 +102,13 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             await ClearProductFaqCacheAsync(cancellationToken);
 
+
+            await _mediator.Send(
+                new ReindexKnowledgeSourceCommand(
+                    KnowledgeSourceType.ProductFaq,
+                    productFaq.Id),
+                cancellationToken);
+
             return Result<ProductFaqDto>.Success(MapToDto(productFaq));
         }
 
@@ -122,6 +134,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             await ClearProductFaqCacheAsync(cancellationToken);
+
+            await _mediator.Send(
+                new ReindexKnowledgeSourceCommand(
+                    KnowledgeSourceType.ProductFaq,
+                    productFaq.Id),
+                cancellationToken);
 
             return Result.Success();
         }

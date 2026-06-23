@@ -22,7 +22,7 @@ export const carrierFormConfig: EntityFormConfig<Carrier> = {
   getDefaultValues: getDefaultCarrierValues,
   fields: [
     { name: 'name', label: 'Tên nhà mạng', type: 'text', required: true },
-    { name: 'slug', label: 'Slug', type: 'text', required: true },
+    { name: 'slug', label: 'Slug', type: 'text', required: true, hint: 'Tự gợi ý từ tên khi nhập' },
     { name: 'code', label: 'Mã (Code)', type: 'text', placeholder: 'SOFTBANK', col: 6 },
     {
       name: 'countryId',

@@ -23,6 +23,20 @@ export function getDefaultProductValues(): CatalogProduct {
   }
 }
 
+/** Mã 12 chữ số theo thời gian: YYMMDDHHmmss */
+export function generateTimedProductCode(date = new Date()): string {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  const year = String(date.getFullYear()).slice(-2)
+  return `${year}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
+}
+
+export function getNewProductValues(): CatalogProduct {
+  return {
+    ...getDefaultProductValues(),
+    code: generateTimedProductCode(),
+  }
+}
+
 export type ProductFormLookups = {
   categoryOptions: FormFieldOption[]
   countryOptions: FormFieldOption[]
