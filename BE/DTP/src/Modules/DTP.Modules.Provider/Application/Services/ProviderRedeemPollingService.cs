@@ -2,6 +2,7 @@
 using DTP.Modules.Provider.Application.Abstractions.Clients;
 using DTP.Modules.Provider.Application.Abstractions.Repositories;
 using DTP.Modules.Provider.Application.Abstractions.Services;
+using DTP.Modules.Provider.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -18,19 +19,21 @@ namespace DTP.Modules.Provider.Application.Services
         private readonly IProviderDeliveryEmailService _emailService;
         private readonly IProviderUnitOfWork _unitOfWork;
         private readonly ILogger<ProviderRedeemPollingService> _logger;
-
+        private readonly IProviderRepository _providerRepository;
         public ProviderRedeemPollingService(
             IProviderRedeemRepository redeemRepository,
             IPeacomProviderClient peacomClient,
             IProviderDeliveryEmailService emailService,
             IProviderUnitOfWork unitOfWork,
-            ILogger<ProviderRedeemPollingService> logger)
+            ILogger<ProviderRedeemPollingService> logger,
+            IProviderRepository providerRepository)
         {
             _redeemRepository = redeemRepository;
             _peacomClient = peacomClient;
             _emailService = emailService;
             _unitOfWork = unitOfWork;
             _logger = logger;
+            _providerRepository = providerRepository;
         }
 
         public async Task PollPendingRedeemsAsync(
@@ -49,6 +52,16 @@ namespace DTP.Modules.Provider.Application.Services
                 _logger.LogDebug("No pending provider redeems found.");
                 return;
             }
+            var provider = await _providerRepository.GetByCodeAsync(
+             "Bluecom",
+             cancellationToken);
+
+            if (provider is null)
+                throw new InvalidOperationException("Provider PEACOM chưa được cấu hình.");
+
+            if (!provider.IsActive)
+                throw new InvalidOperationException("Provider PEACOM đang inactive.");
+
 
             foreach (var redeem in redeems)
             {
@@ -60,6 +73,7 @@ namespace DTP.Modules.Provider.Application.Services
                         redeem.Status);
 
                     var info = await _peacomClient.GetRedeemInfoAsync(
+                        provider,
                         redeem.Serial,
                         cancellationToken);
 

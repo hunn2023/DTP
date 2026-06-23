@@ -27,15 +27,18 @@ namespace DTP.Modules.Provider.Application.Abstractions.Clients
               CancellationToken cancellationToken = default);
 
         Task<PeacomConfirmOrderResponse> ConfirmOrderAsync(
+            Domain.Entities.Provider provider,
             string publicId,
             bool isConfirm,
             CancellationToken cancellationToken = default);
 
         Task<PeacomRedeemResponse> RedeemAsync(
-            PeacomRedeemRequest request,
-            CancellationToken cancellationToken = default);
+             Domain.Entities.Provider provider,
+             PeacomRedeemRequest request,
+             CancellationToken cancellationToken = default);
 
         Task<PeacomRedeemInfoResponse> GetRedeemInfoAsync(
+            Domain.Entities.Provider provider,
             string serial,
             CancellationToken cancellationToken = default);
     }

@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Modules\DTP.Modules.Catalog\DTP.Modules.Catalog.csproj" />
     <ProjectReference Include="..\Modules\DTP.Modules.Provider\DTP.Modules.Provider.csproj" />
   </ItemGroup>
 </Project>

@@ -11,17 +11,17 @@ namespace DTP.Modules.Report.Application.Abstractions.Persistence.ReadModels
         public Guid Id { get; set; }
         public Guid OrderId { get; set; }
 
-        public string PaymentCode { get; set; } = string.Empty;
-        public string PaymentMethod { get; set; } = string.Empty;
+        //public string PaymentCode { get; set; } = string.Empty;
+        //public string PaymentMethod { get; set; } = string.Empty;
 
         public decimal Amount { get; set; }
-        public string CurrencyCode { get; set; } = "VND";
+        //public string CurrencyCode { get; set; } = "VND";
 
         public int Status { get; set; }
 
         public DateTime CreatedAt { get; set; }
         public DateTime? PaidAt { get; set; }
-        public DateTime? RefundedAt { get; set; }
+        //public DateTime? RefundedAt { get; set; }
 
         public bool IsDeleted { get; set; }
     }

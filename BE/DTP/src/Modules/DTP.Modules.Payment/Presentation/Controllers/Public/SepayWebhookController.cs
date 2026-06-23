@@ -34,7 +34,7 @@ namespace DTP.Modules.Payment.Presentation.Controllers.Public
         [HttpPost]
         public async Task<IActionResult> Receive(CancellationToken cancellationToken)
         {
-            Request.EnableBuffering();
+           Request.EnableBuffering();
 
             using var reader = new StreamReader(
                 Request.Body,

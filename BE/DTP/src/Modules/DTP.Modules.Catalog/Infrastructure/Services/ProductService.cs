@@ -353,11 +353,11 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             await ClearProductCacheAsync(cancellationToken);
 
-            await _mediator.Send(
-                  new ReindexKnowledgeSourceCommand(
-                      KnowledgeSourceType.Product,
-                      command.Id),
-                  cancellationToken);
+            //await _mediator.Send(
+            //      new ReindexKnowledgeSourceCommand(
+            //          KnowledgeSourceType.Product,
+            //          command.Id),
+            //      cancellationToken);
 
             return Result.Success();
         }

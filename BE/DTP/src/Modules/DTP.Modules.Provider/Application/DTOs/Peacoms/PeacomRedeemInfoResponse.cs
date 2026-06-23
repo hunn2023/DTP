@@ -35,7 +35,7 @@ namespace DTP.Modules.Provider.Application.DTOs.Peacoms
 
         // eSIM
         public string? Slug { get; set; }
-        public string? Volume { get; set; }
+        public int Volume { get; set; }
         public int? Duration { get; set; }
         public string? DurationUnit { get; set; }
         public string? Location { get; set; }

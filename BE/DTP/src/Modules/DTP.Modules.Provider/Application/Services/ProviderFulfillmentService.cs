@@ -21,6 +21,8 @@ namespace DTP.Modules.Provider.Application.Services
         private readonly IProviderOrderReader _orderReader;
         private readonly IPeacomProviderClient _peacomClient;
         private readonly IProviderUnitOfWork _unitOfWork;
+        private readonly IProviderRepository _providerRepository;
+
 
         public ProviderFulfillmentService(
             IProviderOrderRepository providerOrderRepository,
@@ -28,7 +30,8 @@ namespace DTP.Modules.Provider.Application.Services
             IProviderRedeemRepository redeemRepository,
             IProviderOrderReader orderReader,
             IPeacomProviderClient peacomClient,
-            IProviderUnitOfWork unitOfWork)
+            IProviderUnitOfWork unitOfWork,
+            IProviderRepository providerRepository)
         {
             _providerOrderRepository = providerOrderRepository;
             _providerOrderItemRepository = providerOrderItemRepository;
@@ -36,6 +39,7 @@ namespace DTP.Modules.Provider.Application.Services
             _orderReader = orderReader;
             _peacomClient = peacomClient;
             _unitOfWork = unitOfWork;
+            _providerRepository = providerRepository;
         }
 
         public async Task ConfirmAndRedeemAsync(
@@ -69,10 +73,21 @@ namespace DTP.Modules.Provider.Application.Services
 
             try
             {
+                var provider = await _providerRepository.GetByCodeAsync(
+                  "Bluecom",
+                  cancellationToken);
+
+                if (provider is null)
+                    throw new InvalidOperationException("Provider PEACOM chưa được cấu hình.");
+
+                if (!provider.IsActive)
+                    throw new InvalidOperationException("Provider PEACOM đang inactive.");
+
                 var confirmResponse = await _peacomClient.ConfirmOrderAsync(
+                    provider,
                     providerOrder.ProviderOrderPublicId,
                     isConfirm: true,
-                    cancellationToken);
+                    CancellationToken.None);
 
                 providerOrder.MarkConfirmed(
                     confirmResponse.Amount,
@@ -149,8 +164,9 @@ namespace DTP.Modules.Provider.Application.Services
                         try
                         {
                             var redeemResponse = await _peacomClient.RedeemAsync(
+                                provider,
                                 redeemRequest,
-                                cancellationToken);
+                                CancellationToken.None);
 
                             redeem.MarkRedeemRequested(
                                 redeemResponse.Status,

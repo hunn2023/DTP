@@ -12,7 +12,7 @@ namespace DTP.Modules.Report.Application.Abstractions.Persistence
     {
         DbSet<ReportOrderReadModel> Orders { get; }
         DbSet<ReportOrderItemReadModel> OrderItems { get; }
-        DbSet<ReportPaymentReadModel> Payments { get; }
+        DbSet<ReportPaymentReadModel> PaymentTransactions { get; }
         DbSet<ReportProductReadModel> Products { get; }
         DbSet<ReportCategoryReadModel> Categories { get; }
         DbSet<ReportCustomerReadModel> Customers { get; }
@@ -36,7 +36,7 @@ namespace DTP.Modules.Report.Application.Abstractions.Persistence
 
         IQueryable<ReportOrderReadModel> OrderQuery { get; }
         IQueryable<ReportOrderItemReadModel> OrderItemQuery { get; }
-        IQueryable<ReportPaymentReadModel> PaymentQuery { get; }
+        IQueryable<ReportPaymentReadModel> PaymentTransactionQuery { get; }
         IQueryable<ReportProductReadModel> ProductQuery { get; }
         IQueryable<ReportCategoryReadModel> CategoryQuery { get; }
         IQueryable<ReportCustomerReadModel> CustomerQuery { get; }

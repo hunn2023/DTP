@@ -626,7 +626,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 var description = callback.Description?.Trim() ?? string.Empty;
                 var referenceCode = callback.ReferenceCode?.Trim();
                 var code = callback.Code?.Trim();
-
+                var vaNumber = callback.SubAccount?.Trim();
                 callbackLog = new PaymentCallbackLog(
                     provider: PaymentProvider.Sepay,
                     requestId: sepayTransactionId,
@@ -732,7 +732,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
 
                 // 4. Check đúng tài khoản nhận tiền.
                 if (!string.Equals(
-                        accountNumber,
+                        vaNumber,
                         _sepayOptions.AccountNumber,
                         StringComparison.OrdinalIgnoreCase))
                 {
@@ -905,7 +905,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                     payment.Id,
                     sepayTransactionId,
                     payment.PaidAt ?? DateTime.UtcNow,
-                    cancellationToken);
+                    CancellationToken.None);
 
                 if (!markOrderPaidResult.IsSuccess)
                 {
@@ -941,7 +941,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 _callbackLogRepository.Update(callbackLog);
                 _paymentRepository.Update(payment);
 
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.SaveChangesAsync(CancellationToken.None);
 
                 // 11. Sau khi paid, gọi Provider confirm + redeem giống VNPT ePay.
                 // Fulfillment lỗi thì không trả lỗi cho SePay, vì tiền đã nhận.
@@ -949,7 +949,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 {
                     await _providerFulfillmentService.ConfirmAndRedeemAsync(
                         payment.OrderId,
-                        cancellationToken);
+                        CancellationToken.None);
 
                     await WritePaymentAuditSafeAsync(
                         action: "Provider Fulfillment Started",

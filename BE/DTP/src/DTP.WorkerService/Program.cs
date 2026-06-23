@@ -1,4 +1,9 @@
+using DTP.Infrastructure.Email;
+using DTP.Modules.Ordering;
+using DTP.Modules.Ordering.Infrastructure;
 using DTP.Modules.Provider;
+using DTP.Modules.Provider.Infrastructure;
+using DTP.Shared.Application.Emails;
 
 namespace DTP.WorkerService
 {
@@ -10,10 +15,12 @@ namespace DTP.WorkerService
             builder.Services.AddHostedService<ProviderRedeemPollingWorker>();
 
             builder.Services.Configure<ProviderRedeemWorkerOptions>(
-    builder.Configuration.GetSection("Workers:ProviderRedeem"));
+            builder.Configuration.GetSection("Workers:ProviderRedeem"));
 
-            builder.Services.AddProviderModule(builder.Configuration);
+            builder.Services.AddOrderingWorkerModule(builder.Configuration);
+            builder.Services.AddProviderWorkerModule(builder.Configuration);
 
+            builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
             var host = builder.Build();
             host.Run();
         }

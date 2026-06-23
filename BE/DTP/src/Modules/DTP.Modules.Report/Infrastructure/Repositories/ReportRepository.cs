@@ -30,8 +30,8 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
             var ordersInRange = orders
                 .Where(x => x.CreatedAt >= fromDate && x.CreatedAt <= toDate);
 
-            var paidPayments = _context.PaymentQuery
-                .Where(x => !x.IsDeleted && x.Status == 2);
+            var paidPayments = _context.PaymentTransactionQuery
+                .Where(x => !x.IsDeleted && x.Status == 3);
 
             var paidPaymentsInRange = paidPayments
                 .Where(x => x.CreatedAt >= fromDate && x.CreatedAt <= toDate);
@@ -54,9 +54,9 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
                     .Where(x => x.CreatedAt >= monthStart)
                     .CountAsync(cancellationToken),
 
-                CompletedOrders = await orders.CountAsync(x => x.Status == 4, cancellationToken),
-                PendingOrders = await orders.CountAsync(x => x.Status == 1, cancellationToken),
-                CancelledOrders = await orders.CountAsync(x => x.Status == 5, cancellationToken),
+                CompletedOrders = await orders.CountAsync(x => x.Status == 3, cancellationToken),
+                PendingOrders = await orders.CountAsync(x => x.Status == 2, cancellationToken),
+                CancelledOrders = await orders.CountAsync(x => x.Status == 6, cancellationToken),
 
                 TotalCustomers = await _context.CustomerQuery
                     .Where(x => !x.IsDeleted)
@@ -69,7 +69,7 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
                     .CountAsync(cancellationToken),
 
                 TotalPaidAmount = await paidPayments.SumAsync(x => x.Amount, cancellationToken),
-                TotalRefundAmount = await _context.PaymentQuery
+                TotalRefundAmount = await _context.PaymentTransactionQuery
                     .Where(x => !x.IsDeleted && x.Status == 4)
                     .SumAsync(x => x.Amount, cancellationToken)
             };
@@ -120,7 +120,7 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
             ReportDateGroupType groupType,
             CancellationToken cancellationToken = default)
         {
-            var paidPayments = _context.PaymentQuery
+            var paidPayments = _context.PaymentTransactionQuery
                 .Where(x =>
                     !x.IsDeleted &&
                     x.Status == 2 &&
@@ -139,7 +139,7 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
             var cancelledOrders = await orders.CountAsync(x => x.Status == 5, cancellationToken);
             var totalDiscount = await orders.SumAsync(x => x.DiscountAmount, cancellationToken);
 
-            var totalRefund = await _context.PaymentQuery
+            var totalRefund = await _context.PaymentTransactionQuery
                 .Where(x =>
                     !x.IsDeleted &&
                     x.Status == 4 &&
@@ -226,7 +226,7 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
             ReportDateGroupType groupType,
             CancellationToken cancellationToken = default)
         {
-            var payments = _context.PaymentQuery
+            var payments = _context.PaymentTransactionQuery
                 .Where(x =>
                     !x.IsDeleted &&
                     x.CreatedAt >= fromDate &&
@@ -235,16 +235,16 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
             return new PaymentReportDto
             {
                 TotalPayments = await payments.CountAsync(cancellationToken),
-                SuccessPayments = await payments.CountAsync(x => x.Status == 2, cancellationToken),
-                PendingPayments = await payments.CountAsync(x => x.Status == 1, cancellationToken),
-                FailedPayments = await payments.CountAsync(x => x.Status == 3, cancellationToken),
-                RefundedPayments = await payments.CountAsync(x => x.Status == 4, cancellationToken),
+                SuccessPayments = await payments.CountAsync(x => x.Status == 3, cancellationToken),
+                PendingPayments = await payments.CountAsync(x => x.Status == 2, cancellationToken),
+                FailedPayments = await payments.CountAsync(x => x.Status == 7, cancellationToken),
+                RefundedPayments = await payments.CountAsync(x => x.Status == 6, cancellationToken),
 
                 TotalPaidAmount = await payments
-                    .Where(x => x.Status == 2)
+                    .Where(x => x.Status == 3)
                     .SumAsync(x => x.Amount, cancellationToken),
                 TotalRefundedAmount = await payments
-                    .Where(x => x.Status == 4)
+                    .Where(x => x.Status == 7)
                     .SumAsync(x => x.Amount, cancellationToken),
 
                 PaymentsByDate = await BuildPaymentTimeSeriesAsync(
@@ -456,10 +456,10 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
             ReportDateGroupType groupType,
             CancellationToken cancellationToken)
         {
-            var data = await _context.PaymentQuery
+            var data = await _context.PaymentTransactionQuery
                 .Where(x =>
                     !x.IsDeleted &&
-                    x.Status == 2 &&
+                    x.Status == 3 &&
                     x.CreatedAt >= fromDate &&
                     x.CreatedAt <= toDate)
                 .Select(x => new

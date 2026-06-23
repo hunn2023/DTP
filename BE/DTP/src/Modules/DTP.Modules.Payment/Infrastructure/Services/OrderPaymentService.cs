@@ -55,18 +55,25 @@ namespace DTP.Modules.Payment.Infrastructure.Services
             DateTime paidAt,
             CancellationToken cancellationToken = default)
         {
-            var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
+            try
+            {
+                var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
 
-            if (order == null)
-                return Result.Failure("Order not found.");
+                if (order == null)
+                    return Result.Failure("Order not found.");
 
-            order.MarkPaid(paymentTransactionId.ToString());
+                order.MarkPaid(paymentTransactionId.ToString());
 
-            _orderRepository.Update(order);
+                _orderRepository.Update(order);
 
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result.Success();
+                return Result.Success();
+            }
+            catch (Exception ex)
+            {
+                return Result.Failure(ex.Message);
+            }
         }
 
         public async Task<Result> MarkFulfillmentFailedAsync(Guid orderId,

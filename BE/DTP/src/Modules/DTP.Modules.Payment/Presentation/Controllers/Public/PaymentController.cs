@@ -22,7 +22,7 @@ namespace DTP.Modules.Payment.Presentation.Controllers
             _mediator = mediator;
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpGet("orders/{orderId:guid}")]
         public async Task<IActionResult> GetByOrderId(
             Guid orderId,
@@ -37,6 +37,30 @@ namespace DTP.Modules.Payment.Presentation.Controllers
 
             if (!result.IsSuccess)
                 return NotFound(result);
+
+            return Ok(result);
+        }
+
+
+        //[EnableRateLimiting("payment-create-qr")]
+        //[Authorize]
+        [HttpPost("qr")]
+        public async Task<IActionResult> CreateQr(
+           [FromBody] CreatePaymentQrRequestDto request,
+           CancellationToken cancellationToken)
+        {
+            var ip = GetIpAddress();
+
+            var result = await _mediator.Send(
+                new CreatePaymentQrCommand
+                {
+                    OrderId = request.OrderId,
+                    IpAddress = ip
+                },
+                cancellationToken);
+
+            if (!result.IsSuccess)
+                return BadRequest(result);
 
             return Ok(result);
         }

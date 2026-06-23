@@ -19,7 +19,7 @@ namespace DTP.Modules.Report.Infrastructure.Persistence
 
         public DbSet<ReportOrderReadModel> Orders => Set<ReportOrderReadModel>();
         public DbSet<ReportOrderItemReadModel> OrderItems => Set<ReportOrderItemReadModel>();
-        public DbSet<ReportPaymentReadModel> Payments => Set<ReportPaymentReadModel>();
+        public DbSet<ReportPaymentReadModel> PaymentTransactions => Set<ReportPaymentReadModel>();
         public DbSet<ReportProductReadModel> Products => Set<ReportProductReadModel>();
         public DbSet<ReportCategoryReadModel> Categories => Set<ReportCategoryReadModel>();
         public DbSet<ReportCustomerReadModel> Customers => Set<ReportCustomerReadModel>();
@@ -33,7 +33,7 @@ namespace DTP.Modules.Report.Infrastructure.Persistence
 
         public IQueryable<ReportOrderReadModel> OrderQuery => Orders.AsNoTracking();
         public IQueryable<ReportOrderItemReadModel> OrderItemQuery => OrderItems.AsNoTracking();
-        public IQueryable<ReportPaymentReadModel> PaymentQuery => Payments.AsNoTracking();
+        public IQueryable<ReportPaymentReadModel> PaymentTransactionQuery => PaymentTransactions.AsNoTracking();
         public IQueryable<ReportProductReadModel> ProductQuery => Products.AsNoTracking();
         public IQueryable<ReportCategoryReadModel> CategoryQuery => Categories.AsNoTracking();
         public IQueryable<ReportCustomerReadModel> CustomerQuery => Customers.AsNoTracking();

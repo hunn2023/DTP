@@ -22,8 +22,6 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
             _httpClient = httpClient;
         }
 
-       
-
         public async Task<IReadOnlyList<ProviderPackageProductRemoteDto>> GetPackageProductsAsync(
                 Domain.Entities.Provider provider,
                 CancellationToken cancellationToken = default)
@@ -296,96 +294,237 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
         }
 
         public async Task<PeacomConfirmOrderResponse> ConfirmOrderAsync(
+            Domain.Entities.Provider provider,
             string publicId,
             bool isConfirm,
             CancellationToken cancellationToken = default)
         {
+            EnsureHttpClientConfigured();
+
+            if (provider is null)
+                throw new ArgumentNullException(nameof(provider));
+
+            if (string.IsNullOrWhiteSpace(publicId))
+                throw new ArgumentException("publicId không được rỗng.", nameof(publicId));
+
+            if (string.IsNullOrWhiteSpace(provider.ApiKey))
+                throw new InvalidOperationException("Provider chưa cấu hình ApiKey.");
+
+            var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
             var body = new
             {
                 isConfirm
             };
 
-            var response = await _httpClient.PostAsJsonAsync(
-                $"/eip/partner/v2/order/{publicId}/confirm",
+            using var httpRequest = new HttpRequestMessage(
+                HttpMethod.Post,
+                $"eip/partner/v2/order/{Uri.EscapeDataString(publicId)}/confirm");
+
+            httpRequest.Headers.Add("apikey", provider.ApiKey);
+
+            httpRequest.Content = JsonContent.Create(
                 body,
+                options: jsonOptions);
+
+            using var response = await _httpClient.SendAsync(
+                httpRequest,
                 cancellationToken);
 
             var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException(
+                    $"Gọi Peacom CONFIRM ORDER thất bại. " +
+                    $"PublicId={publicId}. " +
+                    $"IsConfirm={isConfirm}. " +
+                    $"HttpStatus={(int)response.StatusCode} {response.ReasonPhrase}. " +
+                    $"Response={rawJson}");
+            }
 
-            var result = JsonSerializer.Deserialize<PeacomConfirmOrderResponse>(
-                rawJson,
-                new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+            PeacomConfirmOrderResponse? result;
+
+            try
+            {
+                result = JsonSerializer.Deserialize<PeacomConfirmOrderResponse>(
+                    rawJson,
+                    jsonOptions);
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException(
+                    $"Không parse được response CONFIRM ORDER Peacom. " +
+                    $"PublicId={publicId}. Response={rawJson}",
+                    ex);
+            }
 
             if (result is null)
-                throw new InvalidOperationException("Không parse được response CONFIRM ORDER Peacom.");
+            {
+                throw new InvalidOperationException(
+                    $"Không parse được response CONFIRM ORDER Peacom. " +
+                    $"PublicId={publicId}. Response={rawJson}");
+            }
 
             result.RawJson = rawJson;
 
             if (!result.Success)
-                throw new InvalidOperationException("Peacom CONFIRM ORDER thất bại.");
+            {
+                throw new InvalidOperationException(
+                    $"Peacom CONFIRM ORDER thất bại. " +
+                    $"PublicId={publicId}. IsConfirm={isConfirm}. Response={rawJson}");
+            }
 
             return result;
         }
 
         public async Task<PeacomRedeemResponse> RedeemAsync(
-            PeacomRedeemRequest request,
-            CancellationToken cancellationToken = default)
+             Domain.Entities.Provider provider,
+             PeacomRedeemRequest request,
+             CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.PostAsJsonAsync(
-                "/eip/partner/v2/redeem",
+            EnsureHttpClientConfigured();
+
+            if (provider is null)
+                throw new ArgumentNullException(nameof(provider));
+
+            if (request is null)
+                throw new ArgumentNullException(nameof(request));
+
+            if (string.IsNullOrWhiteSpace(provider.ApiKey))
+                throw new InvalidOperationException("Provider chưa cấu hình ApiKey.");
+
+            var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            using var httpRequest = new HttpRequestMessage(
+                HttpMethod.Post,
+                "eip/partner/v2/redeem");
+
+            httpRequest.Headers.Add("apikey", provider.ApiKey);
+
+            httpRequest.Content = JsonContent.Create(
                 request,
+                options: jsonOptions);
+
+            using var response = await _httpClient.SendAsync(
+                httpRequest,
                 cancellationToken);
 
             var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException(
+                    $"Gọi Peacom REDEEM thất bại. " +
+                    $"HttpStatus={(int)response.StatusCode} {response.ReasonPhrase}. " +
+                    $"Response={rawJson}");
+            }
 
-            var result = JsonSerializer.Deserialize<PeacomRedeemResponse>(
-                rawJson,
-                new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+            PeacomRedeemResponse? result;
+
+            try
+            {
+                result = JsonSerializer.Deserialize<PeacomRedeemResponse>(
+                    rawJson,
+                    jsonOptions);
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException(
+                    $"Không parse được response REDEEM Peacom. Response={rawJson}",
+                    ex);
+            }
 
             if (result is null)
-                throw new InvalidOperationException("Không parse được response REDEEM Peacom.");
+            {
+                throw new InvalidOperationException(
+                    $"Không parse được response REDEEM Peacom. Response={rawJson}");
+            }
 
             result.RawJson = rawJson;
 
             if (!result.Success)
-                throw new InvalidOperationException("Peacom REDEEM thất bại.");
+            {
+                throw new InvalidOperationException(
+                    $"Peacom REDEEM thất bại. Response={rawJson}");
+            }
 
             return result;
         }
 
+
         public async Task<PeacomRedeemInfoResponse> GetRedeemInfoAsync(
+            Domain.Entities.Provider provider,
             string serial,
             CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.GetAsync(
-                $"/eip/partner/v2/redeem/{serial}",
+            EnsureHttpClientConfigured();
+
+            if (provider is null)
+                throw new ArgumentNullException(nameof(provider));
+
+            if (string.IsNullOrWhiteSpace(serial))
+                throw new ArgumentException("serial không được rỗng.", nameof(serial));
+
+            if (string.IsNullOrWhiteSpace(provider.ApiKey))
+                throw new InvalidOperationException("Provider chưa cấu hình ApiKey.");
+
+            var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            using var httpRequest = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"eip/partner/v2/redeem/{Uri.EscapeDataString(serial)}");
+
+            httpRequest.Headers.Add("apikey", provider.ApiKey);
+
+            using var response = await _httpClient.SendAsync(
+                httpRequest,
                 cancellationToken);
 
             var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException(
+                    $"Gọi Peacom GET REDEEM INFO thất bại. " +
+                    $"Serial={serial}. " +
+                    $"HttpStatus={(int)response.StatusCode} {response.ReasonPhrase}. " +
+                    $"Response={rawJson}");
+            }
 
-            var result = JsonSerializer.Deserialize<PeacomRedeemInfoResponse>(
-                rawJson,
-                new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+            PeacomRedeemInfoResponse? result;
+
+            try
+            {
+                result = JsonSerializer.Deserialize<PeacomRedeemInfoResponse>(
+                    rawJson,
+                    jsonOptions);
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException(
+                    $"Không parse được response GET REDEEM INFO Peacom. Serial={serial}. Response={rawJson}",
+                    ex);
+            }
 
             if (result is null)
-                throw new InvalidOperationException("Không parse được response GET REDEEM INFO Peacom.");
+            {
+                throw new InvalidOperationException(
+                    $"Không parse được response GET REDEEM INFO Peacom. Serial={serial}. Response={rawJson}");
+            }
 
             result.RawJson = rawJson;
+
+            
 
             return result;
         }
