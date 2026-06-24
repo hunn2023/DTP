@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DTP.Modules.Catalog.Presentation.Controllers.Admin
 {
     [ApiController]
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     [Route("api/admin/catalog/phone-cards")]
     public class PhoneCardsController : ControllerBase
     {

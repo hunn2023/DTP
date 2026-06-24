@@ -1,13 +1,14 @@
 ﻿using DTP.Modules.Catalog.Application.Commands.Products;
 using DTP.Modules.Catalog.Application.Queries.Products;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 
 namespace DTP.Modules.Catalog.Presentation.Controllers.Admin
 {
     [ApiController]
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "ADMIN")]
     [Route("api/admin/catalog/products")]
     public class ProductsController : ControllerBase
     {

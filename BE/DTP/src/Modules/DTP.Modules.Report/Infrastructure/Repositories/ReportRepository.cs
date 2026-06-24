@@ -123,7 +123,7 @@ namespace DTP.Modules.Report.Infrastructure.Repositories
             var paidPayments = _context.PaymentTransactionQuery
                 .Where(x =>
                     !x.IsDeleted &&
-                    x.Status == 2 &&
+                    x.Status == 3 &&
                     x.CreatedAt >= fromDate &&
                     x.CreatedAt <= toDate);
 

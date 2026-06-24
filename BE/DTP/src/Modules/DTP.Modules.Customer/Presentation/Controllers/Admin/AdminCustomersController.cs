@@ -61,14 +61,14 @@ namespace DTP.Modules.Customer.Presentation.Controllers.Admin
             [FromBody] UpdateCustomerStatusRequestDto? request,
             CancellationToken cancellationToken = default)
         {
-            //var currentUserId = GetCurrentUserId();
+            var currentUserId = GetCurrentUserId();
 
-            //if (currentUserId == Guid.Empty)            
-            //    return new UnauthorizedObjectResult(new
-            //    {
-            //        success = false,
-            //        message = "Không xác định được admin hiện tại."
-            //    });
+            if (currentUserId == Guid.Empty)
+                return new UnauthorizedObjectResult(new
+                {
+                    success = false,
+                    message = "Không xác định được admin hiện tại."
+                });
 
             var result = await _mediator.Send(new UpdateCustomerStatusCommand
             {
@@ -92,14 +92,14 @@ namespace DTP.Modules.Customer.Presentation.Controllers.Admin
             [FromBody] UpdateCustomerStatusRequestDto? request,
             CancellationToken cancellationToken = default)
         {
-            //var currentUserId = GetCurrentUserId();
+            var currentUserId = GetCurrentUserId();
 
-            //if (currentUserId == Guid.Empty)
-            //    return new UnauthorizedObjectResult(new
-            //    {
-            //        success = false,
-            //        message = "Không xác định được admin hiện tại."
-            //    });
+            if (currentUserId == Guid.Empty)
+                return new UnauthorizedObjectResult(new
+                {
+                    success = false,
+                    message = "Không xác định được admin hiện tại."
+                });
 
             var result = await _mediator.Send(new UpdateCustomerStatusCommand
             {

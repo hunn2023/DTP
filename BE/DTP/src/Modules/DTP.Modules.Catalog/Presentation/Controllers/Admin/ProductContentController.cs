@@ -3,6 +3,7 @@ using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Application.Queries.ProductContents;
 using DTP.Modules.Catalog.Domain.Enums;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,7 @@ using System.Threading.Tasks;
 namespace DTP.Modules.Catalog.Presentation.Controllers.Admin
 {
     [ApiController]
+    [Authorize(Roles = "ADMIN")]
     [Route("api/admin/product-contents")]
     public class AdminProductContentController : ControllerBase
     {

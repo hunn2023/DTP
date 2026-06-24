@@ -2,6 +2,7 @@
 using DTP.Modules.Delivery.Application.Commands.Delivery;
 using DTP.Shared.Application.Http;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -10,6 +11,7 @@ namespace DTP.Modules.Delivery.Presentation.Controllers.Admin
 {
     [ApiController]
     [Route("api/internal/deliveries")]
+    [Authorize(Roles = "ADMIN")]
     public class InternalDeliveriesController : ControllerBase
     {
         private readonly IMediator _mediator;

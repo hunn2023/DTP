@@ -12,7 +12,7 @@ namespace DTP.Modules.Auth.Presentation.Controllers
 {
     [ApiController]
     [Route("api/admin/permissions")]
-    //[Authorize]
+    [Authorize(Roles = "ADMIN")]
     public class PermissionsController : ControllerBase
     {
         private readonly IMediator _mediator;

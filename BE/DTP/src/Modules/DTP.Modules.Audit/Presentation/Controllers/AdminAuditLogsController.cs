@@ -10,7 +10,7 @@ namespace DTP.Modules.Audit.Presentation.Controllers
 {
     [ApiController]
     [Route("api/admin/audit/logs")]
-    //[Authorize]
+    [Authorize(Roles = "ADMIN")]
     public class AdminAuditLogsController : ControllerBase
     {
         private readonly IMediator _mediator;

@@ -1,6 +1,7 @@
 ﻿using DTP.Modules.Provider.Application.Commands.Providers;
 using DTP.Modules.Provider.Application.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ using System.Threading.Tasks;
 namespace DTP.Modules.Provider.Presentation.Controllers.Admin
 {
     [ApiController]
+    [Authorize(Roles = "ADMIN")]
     [Route("api/admin/provider-packages")]
     public class ProviderPackagesController : ControllerBase
     {

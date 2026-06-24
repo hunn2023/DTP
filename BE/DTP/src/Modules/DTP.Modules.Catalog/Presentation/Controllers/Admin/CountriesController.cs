@@ -1,12 +1,13 @@
 ﻿using DTP.Modules.Catalog.Application.Commands.Countries;
 using DTP.Modules.Catalog.Application.Queries.Countries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DTP.Modules.Catalog.Presentation.Controllers.Admin
 {
     [ApiController]
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "ADMIN")]
     [Route("api/admin/catalog/countries")]
     public class CountriesController : ControllerBase
     {

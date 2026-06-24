@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace DTP.Modules.Payment.Presentation.Controllers.Admin
 {
     [ApiController]
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "ADMIN")]
     [Route("api/admin/payments")]
     public class AdminPaymentsController : ControllerBase
     {

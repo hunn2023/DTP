@@ -7,7 +7,7 @@ namespace DTP.Modules.Report.Presentation.Controllers
 {
     [ApiController]
     [Route("api/admin/reports")]
-    //[Authorize]
+    [Authorize(Roles = "ADMIN")]
     public class AdminReportController : ControllerBase
     {
         private readonly IMediator _mediator;

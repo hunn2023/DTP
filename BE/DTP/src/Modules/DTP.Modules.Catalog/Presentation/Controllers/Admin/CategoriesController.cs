@@ -1,11 +1,12 @@
 ﻿using DTP.Modules.Catalog.Application.Commands.Category;
 using DTP.Modules.Catalog.Application.Queries.Category;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 namespace DTP.Modules.Catalog.Presentation.Controllers.Admin
 {
     [ApiController]
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "ADMIN")]
     [Route("api/admin/catalog/categories")]
     public class CategoriesController : ControllerBase
     {

@@ -11,7 +11,7 @@ namespace DTP.Modules.Delivery.Presentation.Controllers.Admin
 {
     [ApiController]
     [Route("api/admin/deliveries")]
-    //[Authorize]
+    [Authorize(Roles = "ADMIN")]
     public class AdminDeliveriesController : ControllerBase
     {
         private readonly IMediator _mediator;

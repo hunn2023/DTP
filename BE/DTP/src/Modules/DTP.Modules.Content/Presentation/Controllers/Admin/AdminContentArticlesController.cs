@@ -9,7 +9,7 @@ namespace DTP.Modules.Content.Presentation.Controllers.Admin
 {
     [ApiController]
     [Route("api/admin/content/articles")]
-    //[Authorize]
+    [Authorize(Roles = "ADMIN")]
     public class AdminContentArticlesController : ControllerBase
     {
         private readonly IMediator _mediator;

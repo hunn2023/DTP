@@ -2,6 +2,7 @@
 using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Application.Queries.ProductFaqs;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,7 @@ using System.Threading.Tasks;
 namespace DTP.Modules.Catalog.Presentation.Controllers.Admin
 {
     [ApiController]
+    [Authorize(Roles = "ADMIN")]
     [Route("api/admin/product-faqs")]
     public class ProductFaqController : ControllerBase
     {
