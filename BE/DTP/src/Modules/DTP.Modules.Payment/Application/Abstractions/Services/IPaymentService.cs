@@ -13,5 +13,9 @@ namespace DTP.Modules.Payment.Application.Abstractions.Services
         Task<Result<PaymentTransactionDto>> GetByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default);
+
+        Task<Result<PaymentOrderStatusDto>> GetOrderPaymentStatusAsync(
+          Guid orderId,
+          CancellationToken cancellationToken = default);
     }
 }

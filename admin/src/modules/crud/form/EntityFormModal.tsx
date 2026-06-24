@@ -201,7 +201,7 @@ const EntityFormModal = <T extends { isActive: boolean }>({
     setErrors((prev) => {
       const next = { ...prev }
       delete next[name]
-      if (slugFromName && name === 'name') delete next.slug
+      //if (slugFromName && name === 'name') delete next.slug
       return next
     })
   }

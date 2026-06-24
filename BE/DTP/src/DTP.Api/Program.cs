@@ -2,21 +2,22 @@
 using DTP.Modules.Audit;
 using DTP.Modules.Auth;
 using DTP.Modules.Catalog;
+using DTP.Modules.Chatbot;
 using DTP.Modules.Content;
+using DTP.Modules.Customer;
 using DTP.Modules.Delivery;
+using DTP.Modules.Knowledge;
 using DTP.Modules.Ordering;
 using DTP.Modules.Payment;
+using DTP.Modules.Payment.Hubs;
 using DTP.Modules.Provider;
 using DTP.Modules.Report;
-using DTP.Modules.Customer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;      
 using System.Threading.RateLimiting;
-using DTP.Modules.Chatbot;
-using DTP.Modules.Knowledge;
 ///using DTP.Modules.Customer;
 
 namespace DTP.Api
@@ -139,6 +140,8 @@ namespace DTP.Api
 
             builder.Services.AddKnowledgeModule(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
+
+            builder.Services.AddSignalR();
             builder.Services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -448,7 +451,7 @@ namespace DTP.Api
 
 
             var app = builder.Build();
-
+            app.MapHub<PaymentHub>("/hubs/payment");
             app.UseSwagger();
        
             app.UseSwaggerUI(options =>

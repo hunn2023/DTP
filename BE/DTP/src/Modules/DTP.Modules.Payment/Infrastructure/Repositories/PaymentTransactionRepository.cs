@@ -95,5 +95,16 @@ namespace DTP.Modules.Payment.Infrastructure.Repositories
                     x.Status == PaymentStatus.Pending,
                     cancellationToken);
         }
+
+        public Task<PaymentTransaction?> GetLatestByOrderIdAsync(
+          Guid orderId,
+          CancellationToken cancellationToken = default)
+        {
+            return _context.PaymentTransactions
+                .AsNoTracking()
+                .Where(x => x.OrderId == orderId)
+                .OrderByDescending(x => x.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
     }
 }

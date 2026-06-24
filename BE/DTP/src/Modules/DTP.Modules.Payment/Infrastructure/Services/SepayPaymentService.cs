@@ -33,7 +33,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
         private readonly IProviderReservationService _providerReservationService;
         private readonly IProviderFulfillmentService _providerFulfillmentService;
         private readonly SepayOptions _sepayOptions;
-
+        private readonly IPaymentRealtimeNotifier _paymentRealtimeNotifier;
         public SepayPaymentService(
             IPaymentTransactionRepository paymentRepository,
             IPaymentCallbackLogRepository callbackLogRepository,
@@ -44,12 +44,14 @@ namespace DTP.Modules.Payment.Infrastructure.Services
             IPaymentRateLimitService paymentRateLimitService,
             IProviderReservationService providerReservationService,
             IProviderFulfillmentService providerFulfillmentService,
-             IOptions<SepayOptions> sepayOptions)
+             IOptions<SepayOptions> sepayOptions,
+             IPaymentRealtimeNotifier paymentRealtimeNotifier)
         {
             _paymentRepository = paymentRepository;
             _callbackLogRepository = callbackLogRepository;
             _orderPaymentService = orderPaymentService;
             _sepayOptions = sepayOptions.Value;
+            _paymentRealtimeNotifier = paymentRealtimeNotifier;
             _paymentAuditService = paymentAuditService;
             _unitOfWork = unitOfWork;
             _mediator = mediator;
@@ -942,6 +944,14 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 _paymentRepository.Update(payment);
 
                 await _unitOfWork.SaveChangesAsync(CancellationToken.None);
+
+
+                await _paymentRealtimeNotifier.NotifyPaymentPaidAsync(
+                    payment.OrderId,
+                    payment.Id,
+                    payment.OrderCode,
+                    cancellationToken);
+
 
                 // 11. Sau khi paid, gọi Provider confirm + redeem giống VNPT ePay.
                 // Fulfillment lỗi thì không trả lỗi cho SePay, vì tiền đã nhận.

@@ -29,7 +29,7 @@ namespace DTP.Modules.Payment
 
             services.Configure<VnptEpayOptions>(
                  configuration.GetSection("Payment:VnptEpay"));
-
+            services.AddScoped<IPaymentRealtimeNotifier, PaymentRealtimeNotifier>();
 
             services.AddHttpClient<IVnptEpayClient, VnptEpayClient>((sp, client) =>
             {

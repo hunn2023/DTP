@@ -33,7 +33,12 @@ namespace DTP.Modules.Payment.Application.Abstractions.Repositories
 
 
         Task<PaymentTransaction?> GetPendingSepayByTransferContentAsync(
-    string transferContent,
-    CancellationToken cancellationToken = default);
+            string transferContent,
+            CancellationToken cancellationToken = default);
+
+
+        Task<PaymentTransaction?> GetLatestByOrderIdAsync(
+            Guid orderId,
+            CancellationToken cancellationToken = default);
     }
 }

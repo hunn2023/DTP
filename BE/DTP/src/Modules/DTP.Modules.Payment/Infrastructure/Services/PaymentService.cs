@@ -56,7 +56,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
             _providerFulfillmentService = providerFulfillmentService;
         }
 
-      
+
         public async Task<Result<PaymentTransactionDto>> GetByOrderIdAsync(
             Guid orderId,
             CancellationToken cancellationToken = default)
@@ -81,7 +81,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
             return Result<PaymentTransactionDto>.Success(Map(payment));
         }
 
-    
+
         private static PaymentTransactionDto Map(PaymentTransaction payment)
         {
             return new PaymentTransactionDto
@@ -209,6 +209,76 @@ namespace DTP.Modules.Payment.Infrastructure.Services
             {
                 // Không để lỗi audit làm fail nghiệp vụ thanh toán.
             }
+        }
+
+
+
+        public async Task<Result<PaymentOrderStatusDto>> GetOrderPaymentStatusAsync(
+            Guid orderId,
+            CancellationToken cancellationToken = default)
+        {
+            if (orderId == Guid.Empty)
+                return Result<PaymentOrderStatusDto>.Failure("OrderId không hợp lệ.");
+
+            var payment = await _paymentRepository.GetLatestByOrderIdAsync(
+                orderId,
+                cancellationToken);
+
+            if (payment == null)
+            {
+                return Result<PaymentOrderStatusDto>.Success(new PaymentOrderStatusDto
+                {
+                    OrderId = orderId,
+                    Status = "NotCreated",
+                    IsPaid = false,
+                    IsExpired = false,
+                    Message = "Chưa có giao dịch thanh toán."
+                });
+            }
+
+            var now = DateTime.UtcNow;
+
+            var isPaid = payment.Status == PaymentStatus.Paid;
+
+            var isExpired =
+                payment.Status == PaymentStatus.Expired ||
+                (
+                    payment.Status == PaymentStatus.Pending &&
+                    payment.ExpiredAt.HasValue &&
+                    payment.ExpiredAt.Value <= now
+                );
+
+            var status = payment.Status.ToString();
+
+            if (isExpired && payment.Status == PaymentStatus.Pending)
+            {
+                status = PaymentStatus.Expired.ToString();
+            }
+
+            var message = status switch
+            {
+                "Paid" => "Thanh toán thành công.",
+                "Pending" => "Đang chờ thanh toán.",
+                "Expired" => "Giao dịch thanh toán đã hết hạn.",
+                "Failed" => "Giao dịch thanh toán thất bại.",
+                _ => "Đang xử lý trạng thái thanh toán."
+            };
+
+            return Result<PaymentOrderStatusDto>.Success(new PaymentOrderStatusDto
+            {
+                OrderId = payment.OrderId,
+                OrderCode = payment.OrderCode,
+                PaymentTransactionId = payment.Id,
+                Status = status,
+                Provider = payment.Provider.ToString(),
+                Amount = payment.Amount,
+                Currency = payment.Currency,
+                IsPaid = isPaid,
+                IsExpired = isExpired,
+                PaidAt = payment.PaidAt,
+                ExpiredAt = payment.ExpiredAt,
+                Message = message
+            });
         }
     }
 }
