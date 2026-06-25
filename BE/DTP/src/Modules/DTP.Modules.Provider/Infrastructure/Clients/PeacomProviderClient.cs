@@ -9,6 +9,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace DTP.Modules.Provider.Infrastructure.Clients
@@ -88,12 +89,12 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
             if (string.IsNullOrWhiteSpace(provider.ApiKey))
                 throw new InvalidOperationException("Provider chưa cấu hình ApiKey.");
 
-            
+
             var request = new HttpRequestMessage(
                   HttpMethod.Get,
                   $"/eip/partner/v2/product/esim?sku={Uri.EscapeDataString(sku)}");
 
-         
+
             request.Headers.Add("apikey", provider.ApiKey);
 
             var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -505,9 +506,15 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
 
             try
             {
+
                 result = JsonSerializer.Deserialize<PeacomRedeemInfoResponse>(
-                    rawJson,
-                    jsonOptions);
+                   rawJson,
+                   new JsonSerializerOptions
+                   {
+                       PropertyNameCaseInsensitive = true,
+                       NumberHandling = JsonNumberHandling.AllowReadingFromString
+                   });
+
             }
             catch (JsonException ex)
             {
@@ -524,7 +531,7 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
 
             result.RawJson = rawJson;
 
-            
+
 
             return result;
         }

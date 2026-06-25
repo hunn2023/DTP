@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace DTP.Modules.Provider.Application.DTOs.Peacoms
@@ -35,7 +36,9 @@ namespace DTP.Modules.Provider.Application.DTOs.Peacoms
 
         // eSIM
         public string? Slug { get; set; }
-        //public int Volume { get; set; }
+
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+        public decimal? Volume { get; set; }
         public int? Duration { get; set; }
         public string? DurationUnit { get; set; }
         public string? Location { get; set; }
