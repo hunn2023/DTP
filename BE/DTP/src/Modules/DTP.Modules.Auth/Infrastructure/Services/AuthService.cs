@@ -1689,91 +1689,130 @@ namespace DTP.Modules.Auth.Infrastructure.Services
 
         private static string BuildRegisterOtpEmailBody(string otp)
         {
+            var safeOtp = System.Net.WebUtility.HtmlEncode(otp);
+
             return $@"
-                    <!DOCTYPE html>
-                    <html lang='vi'>
-                    <head>
-                        <meta charset='UTF-8' />
-                        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
-                        <title>Mã xác thực DTP</title>
-                    </head>
-                    <body style='margin:0;padding:0;background-color:#f7f7f7;font-family:Arial,Helvetica,sans-serif;color:#191414;'>
-                        <table width='100%' cellpadding='0' cellspacing='0' style='background-color:#f7f7f7;padding:32px 0;'>
-                            <tr>
-                                <td align='center'>
-                                    <table width='100%' cellpadding='0' cellspacing='0' style='max-width:520px;background-color:#ffffff;border-radius:8px;overflow:hidden;'>
-                                        <tr>
-                                            <td style='padding:32px 32px 20px 32px;text-align:center;'>
-                                                <div style='font-size:28px;font-weight:700;color:#111111;letter-spacing:-0.5px;'>
-                                                    DTP
-                                                </div>
-                                            </td>
-                                        </tr>
+<!DOCTYPE html>
+<html lang='vi'>
+<head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Mã xác thực EZSIM</title>
+</head>
 
-                                        <tr>
-                                            <td style='padding:8px 32px 0 32px;text-align:center;'>
-                                                <h1 style='margin:0;font-size:26px;line-height:34px;font-weight:700;color:#191414;'>
-                                                    Đây là mã xác thực của bạn
-                                                </h1>
-                                            </td>
-                                        </tr>
+<body style='margin:0;padding:0;background-color:#eef7f5;font-family:Arial,Helvetica,sans-serif;color:#111827;'>
 
-                                        <tr>
-                                            <td style='padding:20px 32px 0 32px;text-align:center;'>
-                                                <p style='margin:0;font-size:16px;line-height:24px;color:#333333;'>
-                                                    Nhập mã bên dưới để hoàn tất xác thực tài khoản DTP.
-                                                </p>
-                                            </td>
-                                        </tr>
+    <!-- Preheader -->
+    <div style='display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#eef7f5;'>
+        Mã xác thực EZSIM của bạn là {safeOtp}. Mã có hiệu lực trong 10 phút.
+    </div>
 
-                                        <tr>
-                                            <td style='padding:32px 32px 24px 32px;text-align:center;'>
-                                                <div style='
-                                                    display:inline-block;
-                                                    font-size:42px;
-                                                    line-height:52px;
-                                                    font-weight:700;
-                                                    letter-spacing:8px;
-                                                    color:#191414;
-                                                    background-color:#f1f1f1;
-                                                    padding:16px 28px;
-                                                    border-radius:6px;
-                                                '>
-                                                    {otp}
-                                                </div>
-                                            </td>
-                                        </tr>
+    <table width='100%' cellpadding='0' cellspacing='0' role='presentation'
+           style='width:100%;background-color:#eef7f5;padding:36px 16px;'>
+        <tr>
+            <td align='center'>
 
-                                        <tr>
-                                            <td style='padding:0 32px 28px 32px;text-align:center;'>
-                                                <p style='margin:0;font-size:14px;line-height:22px;color:#555555;'>
-                                                    Mã này có hiệu lực trong <strong>10 phút</strong>.
-                                                </p>
-                                            </td>
-                                        </tr>
+                <table width='100%' cellpadding='0' cellspacing='0' role='presentation'
+                       style='max-width:560px;background-color:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 12px 32px rgba(15,23,42,0.10);'>
 
-                                        <tr>
-                                            <td style='padding:0 32px 32px 32px;text-align:center;'>
-                                                <p style='margin:0;font-size:14px;line-height:22px;color:#555555;'>
-                                                    Nếu bạn không yêu cầu mã này, bạn có thể bỏ qua email.
-                                                    Không chia sẻ mã này với bất kỳ ai.
-                                                </p>
-                                            </td>
-                                        </tr>
+                    <!-- Header -->
+                    <tr>
+                        <td style='background:linear-gradient(135deg,#00b894,#00cec9);padding:34px 32px;text-align:center;'>
+                            <div style='font-size:30px;line-height:36px;font-weight:800;color:#ffffff;letter-spacing:-0.6px;'>
+                                ezsim
+                            </div>
+                            <div style='margin-top:8px;font-size:14px;line-height:20px;color:#eafffb;'>
+                                eSIM du lịch nhanh chóng, tiện lợi
+                            </div>
+                        </td>
+                    </tr>
 
-                                        <tr>
-                                            <td style='background-color:#f7f7f7;padding:24px 32px;text-align:center;'>
-                                                <p style='margin:0;font-size:12px;line-height:18px;color:#888888;'>
-                                                    Email này được gửi tự động từ DTP. Vui lòng không trả lời email này.
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </table>
-                    </body>
-                    </html>";
+                    <!-- Title -->
+                    <tr>
+                        <td style='padding:34px 32px 0 32px;text-align:center;'>
+                            <h1 style='margin:0;font-size:26px;line-height:34px;font-weight:800;color:#111827;'>
+                                Xác thực tài khoản của bạn
+                            </h1>
+                        </td>
+                    </tr>
+
+                    <!-- Description -->
+                    <tr>
+                        <td style='padding:14px 36px 0 36px;text-align:center;'>
+                            <p style='margin:0;font-size:16px;line-height:25px;color:#4b5563;'>
+                                Nhập mã bên dưới để hoàn tất đăng ký tài khoản EZSIM.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- OTP Box -->
+                    <tr>
+                        <td style='padding:32px 32px 24px 32px;text-align:center;'>
+                            <div style='
+                                display:inline-block;
+                                font-size:42px;
+                                line-height:52px;
+                                font-weight:800;
+                                letter-spacing:9px;
+                                color:#047857;
+                                background-color:#ecfdf5;
+                                border:1px solid #a7f3d0;
+                                padding:18px 30px;
+                                border-radius:14px;
+                            '>
+                                {safeOtp}
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Expired info -->
+                    <tr>
+                        <td style='padding:0 36px 26px 36px;text-align:center;'>
+                            <p style='margin:0;font-size:14px;line-height:22px;color:#374151;'>
+                                Mã này có hiệu lực trong 
+                                <strong style='color:#047857;'>10 phút</strong>.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Security note -->
+                    <tr>
+                        <td style='padding:0 32px 34px 32px;'>
+                            <table width='100%' cellpadding='0' cellspacing='0' role='presentation'
+                                   style='background-color:#f9fafb;border:1px solid #e5e7eb;border-radius:14px;'>
+                                <tr>
+                                    <td style='padding:18px 20px;text-align:left;'>
+                                        <p style='margin:0;font-size:14px;line-height:22px;color:#4b5563;'>
+                                            <strong style='color:#111827;'>Lưu ý bảo mật:</strong>
+                                            Không chia sẻ mã này với bất kỳ ai. Nếu bạn không yêu cầu mã xác thực,
+                                            bạn có thể bỏ qua email này.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style='background-color:#f3f4f6;padding:22px 32px;text-align:center;'>
+                            <p style='margin:0;font-size:12px;line-height:18px;color:#6b7280;'>
+                                Email này được gửi tự động từ EZSIM. Vui lòng không trả lời email này.
+                            </p>
+                            <p style='margin:8px 0 0 0;font-size:12px;line-height:18px;color:#9ca3af;'>
+                                © EZSIM
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>";
         }
 
 
