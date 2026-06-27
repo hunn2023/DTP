@@ -29,6 +29,7 @@ namespace DTP.Modules.Payment.Application.DTOs
 
         public string RequestId { get; set; } = default!;
 
+        public Guid PaymentProviderId { get; set; }
         public string? ProviderTransactionId { get; set; }
 
         public string? QrCode { get; set; }

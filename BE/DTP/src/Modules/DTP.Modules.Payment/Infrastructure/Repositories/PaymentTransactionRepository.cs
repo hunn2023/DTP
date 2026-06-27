@@ -39,6 +39,20 @@ namespace DTP.Modules.Payment.Infrastructure.Repositories
                     cancellationToken);
         }
 
+        public Task<PaymentTransaction?> GetPendingByTransferContentAsync(
+          Guid paymentProviderId,
+          string transferContent,
+          CancellationToken cancellationToken = default)
+        {
+            return _context.PaymentTransactions
+                .FirstOrDefaultAsync(x =>
+                    x.PaymentProviderId == paymentProviderId &&
+                    x.Status == PaymentStatus.Pending &&
+                    x.TransferContent == transferContent,
+                    cancellationToken);
+        }
+
+
         public Task<PaymentTransaction?> GetByRequestIdAsync(
             string requestId,
             CancellationToken cancellationToken = default)
@@ -48,13 +62,13 @@ namespace DTP.Modules.Payment.Infrastructure.Repositories
         }
 
         public Task<PaymentTransaction?> GetByProviderTransactionIdAsync(
-            PaymentProvider provider,
+            Guid paymentProviderId,
             string providerTransactionId,
             CancellationToken cancellationToken = default)
         {
             return _context.PaymentTransactions
                 .FirstOrDefaultAsync(
-                    x => x.Provider == provider &&
+                    x => x.PaymentProviderId == paymentProviderId &&
                          x.ProviderTransactionId == providerTransactionId,
                     cancellationToken);
         }
@@ -70,31 +84,7 @@ namespace DTP.Modules.Payment.Infrastructure.Repositories
                     cancellationToken);
         }
 
-        public Task<PaymentTransaction?> GetPendingSepayByTransferContentAsync(
-            string transferContent,
-            CancellationToken cancellationToken = default)
-        {
-            return _context.PaymentTransactions
-                .FirstOrDefaultAsync(x =>
-                    x.Provider == PaymentProvider.Sepay &&
-                    x.Status == PaymentStatus.Pending &&
-                    x.TransferContent == transferContent,
-                    cancellationToken);
-        }
 
-        public async Task<PaymentTransaction?> GetPendingVnptEpayByMapIdAndAmountAsync(
-                string mapId,
-                decimal amount,
-                CancellationToken cancellationToken = default)
-        {
-            return await _context.PaymentTransactions
-                .FirstOrDefaultAsync(x =>
-                    x.Provider == PaymentProvider.VnptEpay &&
-                    x.RequestId == mapId &&
-                    x.Amount == amount &&
-                    x.Status == PaymentStatus.Pending,
-                    cancellationToken);
-        }
 
         public Task<PaymentTransaction?> GetLatestByOrderIdAsync(
           Guid orderId,

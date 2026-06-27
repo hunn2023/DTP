@@ -34,6 +34,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
         private readonly IProviderFulfillmentService _providerFulfillmentService;
         private readonly SepayOptions _sepayOptions;
         private readonly IPaymentRealtimeNotifier _paymentRealtimeNotifier;
+        private readonly IPaymentProviderRepository _paymentProviderRepository;
         public SepayPaymentService(
             IPaymentTransactionRepository paymentRepository,
             IPaymentCallbackLogRepository callbackLogRepository,
@@ -45,7 +46,8 @@ namespace DTP.Modules.Payment.Infrastructure.Services
             IProviderReservationService providerReservationService,
             IProviderFulfillmentService providerFulfillmentService,
              IOptions<SepayOptions> sepayOptions,
-             IPaymentRealtimeNotifier paymentRealtimeNotifier)
+             IPaymentRealtimeNotifier paymentRealtimeNotifier,
+             IPaymentProviderRepository paymentProviderRepository)
         {
             _paymentRepository = paymentRepository;
             _callbackLogRepository = callbackLogRepository;
@@ -58,6 +60,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
             _paymentRateLimitService = paymentRateLimitService;
             _providerReservationService = providerReservationService;
             _providerFulfillmentService = providerFulfillmentService;
+            _paymentProviderRepository = paymentProviderRepository;
         }
 
 
@@ -395,7 +398,8 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 customerId: order.CustomerId,
                 amount: decimal.Round(order.TotalAmount, 0),
                 currency: order.Currency,
-                provider: PaymentProvider.Sepay,
+
+                paymentProviderId: new Guid(""),//TODO
                 method: PaymentMethod.BankTransferQr,
                 requestId: requestId,
                 ipAddress: ipAddress);
@@ -461,7 +465,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                     payment.Amount,
                     payment.Currency,
                     payment.RequestId,
-                    Provider = payment.Provider.ToString(),
+                    //Provider = payment.Provider.ToString(),
                     Method = payment.Method.ToString(),
                     IpAddress = ipAddress
                 },
@@ -619,6 +623,23 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                     return Result<bool>.Failure("Webhook không hợp lệ.");
                 }
 
+                var paymentProvider = await _paymentProviderRepository.GetActiveByCodeAsync( "SEPAY", cancellationToken);
+                if (paymentProvider == null)
+                {
+                     await WritePaymentAuditSafeAsync(
+                        action: "SePay Webhook Invalid",
+                        status: "Failed",
+                        entityId: null,
+                        description: "SePay webhook received but payment provider SEPAY is not configured.",
+                        newValues: new
+                        {
+                            IpAddress = ipAddress
+                        },
+                        cancellationToken: cancellationToken);
+
+                    return Result<bool>.Failure("Payment provider SEPAY is not configured.");
+                }
+
                 var sepayTransactionId = callback.Id.ToString();
                 var gateway = callback.Gateway?.Trim();
                 var transactionDate = callback.TransactionDate?.Trim();
@@ -629,8 +650,9 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 var referenceCode = callback.ReferenceCode?.Trim();
                 var code = callback.Code?.Trim();
                 var vaNumber = callback.SubAccount?.Trim();
+
                 callbackLog = new PaymentCallbackLog(
-                    provider: PaymentProvider.Sepay,
+                    paymentProvider.Id,
                     requestId: sepayTransactionId,
                     providerTransactionId: sepayTransactionId,
                     rawBody: rawBody,
@@ -680,7 +702,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
 
                 // 2. Chống trùng bằng id giao dịch SePay.
                 var isDuplicate = await _callbackLogRepository.ExistsProcessedByProviderTransactionIdAsync(
-                    PaymentProvider.Sepay,
+                    paymentProvider.Id,
                     sepayTransactionId,
                     cancellationToken);
 
@@ -792,7 +814,8 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 }
 
                 // 6. Tìm PaymentTransaction đang Pending theo TransferContent.
-                var payment = await _paymentRepository.GetPendingSepayByTransferContentAsync(
+                var payment = await _paymentRepository.GetPendingByTransferContentAsync(
+                    paymentProvider.Id,
                     transferContent,
                     cancellationToken);
 
@@ -1091,7 +1114,6 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 .ToUpperInvariant();
         }
 
-
         private async Task WritePaymentAuditSafeAsync(
             string action,
             string status,
@@ -1117,8 +1139,6 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 // Không để lỗi audit làm fail nghiệp vụ thanh toán.
             }
         }
-
-
         private string? ValidateSepayOptions()
         {
             //if (string.IsNullOrWhiteSpace(_sepayOptions.QrBaseUrl))
@@ -1160,8 +1180,6 @@ namespace DTP.Modules.Payment.Infrastructure.Services
             return $"{prefix}{cleanOrderCode}";
         }
 
-
-
         private static bool HasQrData(PaymentTransaction payment)
         {
             return !string.IsNullOrWhiteSpace(payment.QrCode) ||
@@ -1191,12 +1209,10 @@ namespace DTP.Modules.Payment.Infrastructure.Services
             };
         }
 
-
         private static string GeneratePaymentRequestId()
         {
             return $"DTP-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}"[..32];
         }
-
 
         private string BuildSepayQrImageUrl(decimal amount, string transferContent)
         {
@@ -1219,7 +1235,6 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 _sepayOptions.QrBaseUrl.Trim(),
                 query);
         }
-
 
         #endregion
     }

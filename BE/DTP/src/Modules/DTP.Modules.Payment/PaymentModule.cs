@@ -61,6 +61,15 @@ namespace DTP.Modules.Payment
 
             services.AddScoped<IProviderReservationService, ProviderReservationService>();
             services.AddScoped<ISepayPaymentService, SepayPaymentService>();
+
+            services.AddScoped<IPaymentUnitOfWork, PaymentUnitOfWork>();
+
+            services.AddScoped<IPaymentProviderRepository, PaymentProviderRepository>();
+
+            services.AddScoped<IPaymentProviderService, PaymentProviderService>();
+
+
+
             services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(PaymentModule).Assembly);

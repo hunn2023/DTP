@@ -20,7 +20,7 @@ namespace DTP.Modules.Payment.Domain.Entities
             Guid? customerId,
             decimal amount,
             string currency,
-            PaymentProvider provider,
+            Guid paymentProviderId,
             PaymentMethod method,
             string requestId,
             string ipAddress)
@@ -31,7 +31,7 @@ namespace DTP.Modules.Payment.Domain.Entities
             CustomerId = customerId;
             Amount = amount;
             Currency = currency;
-            Provider = provider;
+            PaymentProviderId = paymentProviderId;
             Method = method;
             RequestId = requestId;
             Status = PaymentStatus.Pending;
@@ -49,7 +49,9 @@ namespace DTP.Modules.Payment.Domain.Entities
 
         public string Currency { get; private set; } = "VND";
 
-        public PaymentProvider Provider { get; private set; }
+
+        public Guid PaymentProviderId { get; private set; }
+
 
         public PaymentMethod Method { get; private set; }
 

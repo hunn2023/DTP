@@ -15,7 +15,7 @@ namespace DTP.Modules.Payment.Domain.Entities
         }
 
         public PaymentCallbackLog(
-            PaymentProvider provider,
+            Guid paymentProviderId,
             string? requestId,
             string? providerTransactionId,
             string rawBody,
@@ -24,7 +24,7 @@ namespace DTP.Modules.Payment.Domain.Entities
             PaymentCallbackStatus status)
         {
             Id = Guid.NewGuid();
-            Provider = provider;
+            PaymentProviderId = paymentProviderId;
             RequestId = requestId;
             ProviderTransactionId = providerTransactionId;
             RawBody = rawBody;
@@ -34,7 +34,7 @@ namespace DTP.Modules.Payment.Domain.Entities
             ReceivedAt = DateTime.UtcNow;
         }
 
-        public PaymentProvider Provider { get; private set; }
+        public Guid PaymentProviderId { get; private set; }
 
         public Guid? PaymentTransactionId { get; private set; }
 

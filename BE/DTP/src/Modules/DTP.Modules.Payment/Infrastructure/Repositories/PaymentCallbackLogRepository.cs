@@ -17,7 +17,7 @@ namespace DTP.Modules.Payment.Infrastructure.Repositories
             _context = context;
         }
 
- 
+
         public Task<bool> ExistsProcessedAsync(
             string? requestId,
             string? providerTransactionId,
@@ -35,7 +35,7 @@ namespace DTP.Modules.Payment.Infrastructure.Repositories
 
 
         public async Task<bool> ExistsProcessedByProviderTransactionIdAsync(
-                PaymentProvider provider,
+                 Guid paymentProviderId,
                 string providerTransactionId,
                 CancellationToken cancellationToken = default)
         {
@@ -47,7 +47,7 @@ namespace DTP.Modules.Payment.Infrastructure.Repositories
             return await _context.PaymentCallbackLogs
                 .AsNoTracking()
                 .AnyAsync(x =>
-                    x.Provider == provider &&
+                    x.PaymentProviderId == paymentProviderId &&
                     x.ProviderTransactionId == providerTransactionId &&
                     x.Status == PaymentCallbackStatus.Processed,
                     cancellationToken);

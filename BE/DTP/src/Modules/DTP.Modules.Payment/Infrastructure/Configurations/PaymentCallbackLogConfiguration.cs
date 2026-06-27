@@ -13,8 +13,8 @@ namespace DTP.Modules.Payment.Infrastructure.Configurations
 
             builder.HasKey(x => x.Id);
 
-            builder.Property(x => x.Provider)
-                .HasConversion<int>()
+
+            builder.Property(x => x.PaymentProviderId)
                 .IsRequired();
 
             builder.Property(x => x.RequestId)

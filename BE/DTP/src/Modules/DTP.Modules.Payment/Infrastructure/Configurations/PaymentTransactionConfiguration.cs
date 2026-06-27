@@ -25,8 +25,7 @@ namespace DTP.Modules.Payment.Infrastructure.Configurations
                 .HasMaxLength(10)
                 .IsRequired();
 
-            builder.Property(x => x.Provider)
-                .HasConversion<int>()
+            builder.Property(x => x.PaymentProviderId)
                 .IsRequired();
 
             builder.Property(x => x.Method)
@@ -93,7 +92,7 @@ namespace DTP.Modules.Payment.Infrastructure.Configurations
             builder.HasIndex(x => x.RequestId)
                 .IsUnique();
 
-            builder.HasIndex(x => new { x.Provider, x.ProviderTransactionId });
+            builder.HasIndex(x => new { x.PaymentProviderId, x.ProviderTransactionId });
 
             builder.HasIndex(x => x.Status);
         }

@@ -20,19 +20,15 @@ namespace DTP.Modules.Payment.Application.Abstractions.Repositories
         Task<PaymentTransaction?> GetByRequestIdAsync(string requestId, CancellationToken cancellationToken = default);
 
         Task<PaymentTransaction?> GetByProviderTransactionIdAsync(
-            PaymentProvider provider,
+            Guid paymentProviderId,
             string providerTransactionId,
             CancellationToken cancellationToken = default);
 
         Task<bool> HasPaidPaymentByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default);
 
-        Task<PaymentTransaction?> GetPendingVnptEpayByMapIdAndAmountAsync(
-                string mapId,
-                decimal amount,
-                CancellationToken cancellationToken = default);
 
-
-        Task<PaymentTransaction?> GetPendingSepayByTransferContentAsync(
+        Task<PaymentTransaction?> GetPendingByTransferContentAsync(
+            Guid paymentProviderId,
             string transferContent,
             CancellationToken cancellationToken = default);
 
