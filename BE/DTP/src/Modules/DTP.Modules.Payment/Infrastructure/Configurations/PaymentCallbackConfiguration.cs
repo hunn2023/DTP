@@ -13,7 +13,7 @@ namespace DTP.Modules.Payment.Infrastructure.Configurations
     {
         public void Configure(EntityTypeBuilder<PaymentCallback> builder)
         {
-            builder.ToTable("PaymentCallbacks", "payment");
+            builder.ToTable("PaymentCallbacks");
 
             builder.HasKey(x => x.Id);
 

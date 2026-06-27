@@ -14,7 +14,7 @@ namespace DTP.Modules.Payment.Infrastructure.Configurations
     {
         public void Configure(EntityTypeBuilder<PaymentProvider> builder)
         {
-            builder.ToTable("PaymentProviders", "payment");
+            builder.ToTable("PaymentProviders");
 
             builder.HasKey(x => x.Id);
 

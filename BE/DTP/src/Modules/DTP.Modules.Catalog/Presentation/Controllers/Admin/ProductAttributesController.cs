@@ -8,7 +8,7 @@ namespace DTP.Modules.Catalog.Presentation.Controllers.Admin
 {
 
     [ApiController]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "ADMIN")]
     [Route("api/admin/catalog/product-attributes")]
     public class ProductAttributesController : ControllerBase
     {

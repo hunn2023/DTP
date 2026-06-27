@@ -15,6 +15,7 @@
     <ProjectReference Include="..\..\DTP.Shared\DTP.Shared.csproj" />
     <ProjectReference Include="..\DTP.Modules.Audit\DTP.Modules.Audit.csproj" />
     <ProjectReference Include="..\DTP.Modules.Auth\DTP.Modules.Auth.csproj" />
+    <ProjectReference Include="..\DTP.Modules.Ordering\DTP.Modules.Ordering.csproj" />
   </ItemGroup>
 
 </Project>

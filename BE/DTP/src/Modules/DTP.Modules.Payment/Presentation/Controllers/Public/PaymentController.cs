@@ -12,6 +12,7 @@ namespace DTP.Modules.Payment.Presentation.Controllers
 {
 
     [ApiController]
+    [Authorize]
     [Route("api/payments")]
     public class PaymentsController : ControllerBase
     {
