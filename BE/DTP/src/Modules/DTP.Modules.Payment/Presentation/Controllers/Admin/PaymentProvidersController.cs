@@ -13,7 +13,7 @@ namespace DTP.Modules.Payment.Presentation.Controllers.Admin
 {
     [ApiController]
     [Route("api/admin/payment-providers")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "ADMIN")]
     public class AdminPaymentProvidersController : ControllerBase
     {
         private readonly ISender _sender;
