@@ -688,6 +688,12 @@ export const menuItems: MenuItemType[] = [
         url: '/settings/products',
         icon: TbCategory,
       },
+      {
+        key: 'payment-providers',
+        label: 'Thanh toán',
+        url: '/settings/payment-providers',
+        icon: TbCreditCard,
+      },
     ],
   },
 

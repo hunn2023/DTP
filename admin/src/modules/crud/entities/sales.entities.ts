@@ -561,6 +561,7 @@ export const salesApiBackedPaths = new Set([
   '/orders/cancelled',
   '/orders/refunded',
   '/payments/transactions',
+  '/payments/providers',
   '/deliveries/list',
   '/deliveries/retry',
 ])

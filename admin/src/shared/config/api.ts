@@ -37,6 +37,7 @@ export const API_PATHS = {
     '/api/admin/catalog/product-variant-features/by-variant',
   adminOrders: '/api/admin/orders',
   adminPayments: '/api/admin/payments',
+  adminPaymentProviders: '/api/admin/payment-providers',
   adminDeliveries: '/api/admin/deliveries',
   adminUsers: '/api/admin/users',
   adminRoles: '/api/admin/roles',

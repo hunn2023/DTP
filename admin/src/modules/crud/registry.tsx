@@ -10,6 +10,7 @@ import PageFormPage from '@/features/content/pages/PageFormPage'
 import SeoPage from '@/features/content/seo/SeoPage'
 import SeoFormPage from '@/features/content/seo/SeoFormPage'
 import CarriersPage from '@/features/master-data/carriers/CarriersPage'
+import PaymentProvidersPage from '@/features/master-data/payment-providers/PaymentProvidersPage'
 import CategoriesPage from '@/features/master-data/categories/CategoriesPage'
 import CountriesPage from '@/features/master-data/countries/CountriesPage'
 import EsimPackagesPage from '@/features/products/esim-packages/EsimPackagesPage'
@@ -109,6 +110,7 @@ const redirectRoutes: RouteObject[] = [
   { path: '/providers', element: <Navigate to="/providers/list" replace /> },
   { path: '/orders', element: <Navigate to="/orders/all" replace /> },
   { path: '/payments', element: <Navigate to="/payments/transactions" replace /> },
+  { path: '/payments/providers', element: <Navigate to="/settings/payment-providers" replace /> },
   { path: '/deliveries', element: <Navigate to="/deliveries/list" replace /> },
   { path: '/customers', element: <Navigate to="/customers/list" replace /> },
   { path: '/website/content', element: <Navigate to="/website/content/posts" replace /> },
@@ -148,6 +150,11 @@ const esimWizardRoute: RouteObject = {
 const carriersRoute: RouteObject = {
   path: '/settings/carriers',
   element: <CarriersPage />,
+}
+
+const paymentProvidersRoute: RouteObject = {
+  path: '/settings/payment-providers',
+  element: <PaymentProvidersPage />,
 }
 
 const phoneCardsRoute: RouteObject = {
@@ -261,6 +268,7 @@ export const dtpAdminRoutes: RouteObject[] = [
   categoriesRoute,
   countriesRoute,
   carriersRoute,
+  paymentProvidersRoute,
   productsRoute,
   productFormRoute,
   productPricesRoute,
