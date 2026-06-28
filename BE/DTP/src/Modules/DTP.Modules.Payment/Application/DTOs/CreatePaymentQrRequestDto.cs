@@ -9,5 +9,7 @@ namespace DTP.Modules.Payment.Application.DTOs
     public class CreatePaymentQrRequestDto
     {
         public Guid OrderId { get; set; }
+
+        public string PaymentProviderCode { get; set; }
     }
 }

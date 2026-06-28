@@ -54,6 +54,7 @@ namespace DTP.Modules.Payment.Presentation.Controllers
                 new CreatePaymentQrCommand
                 {
                     OrderId = request.OrderId,
+                    PaymentProviderCode = request.PaymentProviderCode,
                     IpAddress = ip
                 },
                 cancellationToken);
