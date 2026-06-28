@@ -16,6 +16,10 @@ namespace DTP.Modules.Payment.Application.Abstractions.Repositories
         Task<IReadOnlyList<PaymentProvider>> GetAdminListAsync(
             CancellationToken cancellationToken = default);
 
+        Task<PaymentProvider?> GetByCodeAsync(
+       string code,
+       CancellationToken cancellationToken = default);
+
         Task<PaymentProvider?> GetActiveByCodeAsync(
             string code,
             CancellationToken cancellationToken = default);

@@ -439,7 +439,8 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 amount: decimal.Round(order.TotalAmount, 0),
                 currency: order.Currency,
 
-                paymentProviderId: new Guid(""),//TODO
+                 paymentProviderId: paymentProvider.Id,
+                 paymentProviderCode: paymentProvider.Code,
                 method: PaymentMethod.BankTransferQr,
                 requestId: requestId,
                 ipAddress: ipAddress);
@@ -663,19 +664,21 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                     return Result<bool>.Failure("Webhook không hợp lệ.");
                 }
 
-                var paymentProvider = await _paymentProviderRepository.GetActiveByCodeAsync( "SEPAY", cancellationToken);
+                var paymentProvider = await _paymentProviderRepository.GetByCodeAsync(
+                    "SEPAY",
+                    cancellationToken);
                 if (paymentProvider == null)
                 {
-                     await WritePaymentAuditSafeAsync(
-                        action: "SePay Webhook Invalid",
-                        status: "Failed",
-                        entityId: null,
-                        description: "SePay webhook received but payment provider SEPAY is not configured.",
-                        newValues: new
-                        {
-                            IpAddress = ipAddress
-                        },
-                        cancellationToken: cancellationToken);
+                    await WritePaymentAuditSafeAsync(
+                       action: "SePay Webhook Invalid",
+                       status: "Failed",
+                       entityId: null,
+                       description: "SePay webhook received but payment provider SEPAY is not configured.",
+                       newValues: new
+                       {
+                           IpAddress = ipAddress
+                       },
+                       cancellationToken: cancellationToken);
 
                     return Result<bool>.Failure("Payment provider SEPAY is not configured.");
                 }

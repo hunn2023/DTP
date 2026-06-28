@@ -116,5 +116,15 @@ namespace DTP.Modules.Payment.Infrastructure.Repositories
                 .ThenBy(x => x.Name)
                 .FirstOrDefaultAsync(cancellationToken);
         }
+
+        public Task<PaymentProvider?> GetByCodeAsync(
+              string code,
+              CancellationToken cancellationToken = default)
+        {
+            var normalizedCode = code.Trim().ToUpperInvariant();
+
+            return _dbContext.PaymentProviders
+                .FirstOrDefaultAsync(x => x.Code == normalizedCode, cancellationToken);
+        }
     }
 }

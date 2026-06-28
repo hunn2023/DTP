@@ -21,6 +21,7 @@ namespace DTP.Modules.Payment.Domain.Entities
             decimal amount,
             string currency,
             Guid paymentProviderId,
+            string paymentProviderCode,
             PaymentMethod method,
             string requestId,
             string ipAddress)
@@ -32,6 +33,7 @@ namespace DTP.Modules.Payment.Domain.Entities
             Amount = amount;
             Currency = currency;
             PaymentProviderId = paymentProviderId;
+            PaymentProviderCode = paymentProviderCode;
             Method = method;
             RequestId = requestId;
             Status = PaymentStatus.Pending;
