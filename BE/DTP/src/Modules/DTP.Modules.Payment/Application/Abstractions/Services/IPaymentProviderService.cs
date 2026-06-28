@@ -1,5 +1,6 @@
 ﻿using DTP.Modules.Payment.Application.DTOs;
 using DTP.Modules.Payment.Domain.Entities;
+using DTP.Modules.Payment.Infrastructure.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,5 +42,12 @@ namespace DTP.Modules.Payment.Application.Abstractions.Services
             decimal amount,
             string currency,
             CancellationToken cancellationToken = default);
+
+
+        Task<PaymentProviderValidationResult> ValidateForCreateQrAsync(
+          string? paymentProviderCode,
+          decimal amount,
+          string currency,
+          CancellationToken cancellationToken = default);
     }
 }

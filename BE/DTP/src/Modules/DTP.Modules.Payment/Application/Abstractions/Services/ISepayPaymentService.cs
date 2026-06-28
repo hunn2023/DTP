@@ -12,6 +12,7 @@ namespace DTP.Modules.Payment.Application.Abstractions.Services
     {
         Task<Result<PaymentQrResponseDto>> CreateQrAsync(
             Guid orderId,
+             string paymentProviderCode,
             string ipAddress,
             CancellationToken cancellationToken = default);
 

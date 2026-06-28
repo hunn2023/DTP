@@ -42,13 +42,7 @@ namespace DTP.Modules.Payment.Infrastructure.Repositories
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<PaymentProvider?> GetByIdAsync(
-            Guid id,
-            CancellationToken cancellationToken = default)
-        {
-            return await _dbContext.PaymentProviders
-                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-        }
+
 
         public async Task<PaymentProvider?> GetActiveByCodeAsync(
             string code,
@@ -77,6 +71,7 @@ namespace DTP.Modules.Payment.Infrastructure.Repositories
             CancellationToken cancellationToken = default)
         {
             return await _dbContext.PaymentProviders
+                .AsNoTracking()
                 .OrderBy(x => x.SortOrder)
                 .ToListAsync(cancellationToken);
         }
@@ -86,6 +81,7 @@ namespace DTP.Modules.Payment.Infrastructure.Repositories
             CancellationToken cancellationToken = default)
         {
             return await _dbContext.PaymentProviders
+                .AsNoTracking()
                 .Where(x => x.Id != excludeId && x.IsActive)
                 .OrderBy(x => x.SortOrder)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -95,7 +91,30 @@ namespace DTP.Modules.Payment.Infrastructure.Repositories
             CancellationToken cancellationToken = default)
         {
             return await _dbContext.PaymentProviders
+                .AsNoTracking()
                 .AnyAsync(x => x.IsActive && x.IsDefault, cancellationToken);
+        }
+
+
+        public Task<PaymentProvider?> GetDefaultAvailableAsync(
+           string currency,
+           decimal amount,
+           CancellationToken cancellationToken = default)
+        {
+            var normalizedCurrency = string.IsNullOrWhiteSpace(currency)
+                ? "VND"
+                : currency.Trim().ToUpperInvariant();
+
+            return _dbContext.PaymentProviders
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .Where(x => x.Currency == normalizedCurrency)
+                .Where(x => !x.MinAmount.HasValue || amount >= x.MinAmount.Value)
+                .Where(x => !x.MaxAmount.HasValue || amount <= x.MaxAmount.Value)
+                .OrderByDescending(x => x.IsDefault)
+                .ThenBy(x => x.SortOrder)
+                .ThenBy(x => x.Name)
+                .FirstOrDefaultAsync(cancellationToken);
         }
     }
 }

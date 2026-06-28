@@ -10,6 +10,8 @@ namespace DTP.Modules.Payment.Application.Commands.Payment
     {
         public Guid OrderId { get; set; }
 
+        public string PaymentProviderCode { get; set; } = default!;
+
         public string IpAddress { get; set; } = default!;
     }
 
@@ -29,6 +31,7 @@ namespace DTP.Modules.Payment.Application.Commands.Payment
         {
             return _paymentService.CreateQrAsync(
                 request.OrderId,
+                request.PaymentProviderCode,
                 request.IpAddress,
                 cancellationToken);
         }

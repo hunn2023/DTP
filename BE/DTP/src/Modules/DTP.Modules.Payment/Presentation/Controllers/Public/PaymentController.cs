@@ -23,7 +23,6 @@ namespace DTP.Modules.Payment.Presentation.Controllers
             _mediator = mediator;
         }
 
-        //[Authorize]
         [HttpGet("orders/{orderId:guid}")]
         public async Task<IActionResult> GetByOrderId(
             Guid orderId,
@@ -43,8 +42,7 @@ namespace DTP.Modules.Payment.Presentation.Controllers
         }
 
 
-        //[EnableRateLimiting("payment-create-qr")]
-        //[Authorize]
+        [EnableRateLimiting("payment-create-qr")]
         [HttpPost("qr")]
         public async Task<IActionResult> CreateQr(
            [FromBody] CreatePaymentQrRequestDto request,

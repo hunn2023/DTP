@@ -27,6 +27,7 @@ namespace DTP.Modules.Payment.Infrastructure.Services
         private readonly IPaymentCallbackLogRepository _callbackLogRepository;
         private readonly IOrderPaymentService _orderPaymentService;
         private readonly IPaymentAuditService _paymentAuditService;
+        private readonly IPaymentProviderService _paymentProviderService;
         private readonly IPaymentUnitOfWork _unitOfWork;
         private readonly IMediator _mediator;
         private readonly IPaymentRateLimitService _paymentRateLimitService;
@@ -47,7 +48,9 @@ namespace DTP.Modules.Payment.Infrastructure.Services
             IProviderFulfillmentService providerFulfillmentService,
              IOptions<SepayOptions> sepayOptions,
              IPaymentRealtimeNotifier paymentRealtimeNotifier,
-             IPaymentProviderRepository paymentProviderRepository)
+             IPaymentProviderRepository paymentProviderRepository,
+             IPaymentProviderService paymentProviderService
+             )
         {
             _paymentRepository = paymentRepository;
             _callbackLogRepository = callbackLogRepository;
@@ -61,12 +64,14 @@ namespace DTP.Modules.Payment.Infrastructure.Services
             _providerReservationService = providerReservationService;
             _providerFulfillmentService = providerFulfillmentService;
             _paymentProviderRepository = paymentProviderRepository;
+            _paymentProviderService = paymentProviderService;
         }
 
 
         #region sepay
         public async Task<Result<PaymentQrResponseDto>> CreateQrAsync(
            Guid orderId,
+           string paymentProviderCode,
            string ipAddress,
            CancellationToken cancellationToken = default)
         {
@@ -132,47 +137,47 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 ipAddress,
                 cancellationToken);
 
-            if (!_sepayOptions.Enabled)
-            {
-                await WritePaymentAuditSafeAsync(
-                    action: "Payment QR Create Failed",
-                    status: "Failed",
-                    entityId: null,
-                    description: "Create payment QR failed because SePay is disabled.",
-                    newValues: new
-                    {
-                        OrderId = orderId,
-                        order.OrderCode,
-                        IpAddress = ipAddress,
-                        Reason = "SePay disabled"
-                    },
-                    cancellationToken: cancellationToken);
+            //if (!_sepayOptions.Enabled)
+            //{
+            //    await WritePaymentAuditSafeAsync(
+            //        action: "Payment QR Create Failed",
+            //        status: "Failed",
+            //        entityId: null,
+            //        description: "Create payment QR failed because SePay is disabled.",
+            //        newValues: new
+            //        {
+            //            OrderId = orderId,
+            //            order.OrderCode,
+            //            IpAddress = ipAddress,
+            //            Reason = "SePay disabled"
+            //        },
+            //        cancellationToken: cancellationToken);
 
-                return Result<PaymentQrResponseDto>.Failure(
-                    "Cổng thanh toán SePay đang tạm tắt.");
-            }
+            //    return Result<PaymentQrResponseDto>.Failure(
+            //        "Cổng thanh toán SePay đang tạm tắt.");
+            //}
 
-            var sepayConfigError = ValidateSepayOptions();
+            //var sepayConfigError = ValidateSepayOptions();
 
-            if (!string.IsNullOrWhiteSpace(sepayConfigError))
-            {
-                await WritePaymentAuditSafeAsync(
-                    action: "Payment QR Create Failed",
-                    status: "Failed",
-                    entityId: null,
-                    description: "Create payment QR failed because SePay config is invalid.",
-                    newValues: new
-                    {
-                        OrderId = orderId,
-                        order.OrderCode,
-                        IpAddress = ipAddress,
-                        Reason = sepayConfigError
-                    },
-                    cancellationToken: cancellationToken);
+            //if (!string.IsNullOrWhiteSpace(sepayConfigError))
+            //{
+            //    await WritePaymentAuditSafeAsync(
+            //        action: "Payment QR Create Failed",
+            //        status: "Failed",
+            //        entityId: null,
+            //        description: "Create payment QR failed because SePay config is invalid.",
+            //        newValues: new
+            //        {
+            //            OrderId = orderId,
+            //            order.OrderCode,
+            //            IpAddress = ipAddress,
+            //            Reason = sepayConfigError
+            //        },
+            //        cancellationToken: cancellationToken);
 
-                return Result<PaymentQrResponseDto>.Failure(
-                    "Cấu hình SePay chưa hợp lệ.");
-            }
+            //    return Result<PaymentQrResponseDto>.Failure(
+            //        "Cấu hình SePay chưa hợp lệ.");
+            //}
 
             if (order.TotalAmount <= 0)
             {
@@ -196,27 +201,27 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                     "Số tiền thanh toán không hợp lệ.");
             }
 
-            if (!string.Equals(order.Currency, "VND", StringComparison.OrdinalIgnoreCase))
-            {
-                await WritePaymentAuditSafeAsync(
-                    action: "Payment QR Create Failed",
-                    status: "Failed",
-                    entityId: null,
-                    description: "Create payment QR failed because SePay only supports VND in this flow.",
-                    newValues: new
-                    {
-                        OrderId = orderId,
-                        order.OrderCode,
-                        order.TotalAmount,
-                        order.Currency,
-                        IpAddress = ipAddress,
-                        Reason = "Invalid currency"
-                    },
-                    cancellationToken: cancellationToken);
+            //if (!string.Equals(order.Currency, "VND", StringComparison.OrdinalIgnoreCase))
+            //{
+            //    await WritePaymentAuditSafeAsync(
+            //        action: "Payment QR Create Failed",
+            //        status: "Failed",
+            //        entityId: null,
+            //        description: "Create payment QR failed because SePay only supports VND in this flow.",
+            //        newValues: new
+            //        {
+            //            OrderId = orderId,
+            //            order.OrderCode,
+            //            order.TotalAmount,
+            //            order.Currency,
+            //            IpAddress = ipAddress,
+            //            Reason = "Invalid currency"
+            //        },
+            //        cancellationToken: cancellationToken);
 
-                return Result<PaymentQrResponseDto>.Failure(
-                    "SePay chỉ hỗ trợ thanh toán VND.");
-            }
+            //    return Result<PaymentQrResponseDto>.Failure(
+            //        "SePay chỉ hỗ trợ thanh toán VND.");
+            //}
 
             if (order.PaymentExpiredAt.HasValue &&
                 order.PaymentExpiredAt.Value < DateTime.UtcNow)
@@ -263,6 +268,41 @@ namespace DTP.Modules.Payment.Infrastructure.Services
                 return Result<PaymentQrResponseDto>.Failure(
                     "Đơn hàng đã được thanh toán.");
             }
+
+
+
+            var paymentProviderValidation = await _paymentProviderService.ValidateForCreateQrAsync(
+                    paymentProviderCode,
+                    decimal.Round(order.TotalAmount, 0),
+                    order.Currency,
+                    cancellationToken);
+
+
+            if (!paymentProviderValidation.IsValid)
+            {
+                await WritePaymentAuditSafeAsync(
+                    action: "Payment Provider Validate Failed",
+                    status: "Failed",
+                    entityId: null,
+                    description: "Create payment QR failed because payment provider is not available.",
+                    newValues: new
+                    {
+                        OrderId = orderId,
+                        order.OrderCode,
+                        order.TotalAmount,
+                        order.Currency,
+                        RequestedPaymentProviderCode = paymentProviderCode,
+                        Reason = paymentProviderValidation.Reason,
+                        IpAddress = ipAddress
+                    },
+                    cancellationToken: cancellationToken);
+
+                return Result<PaymentQrResponseDto>.Failure(
+                    paymentProviderValidation.ErrorMessage ?? "Phương thức thanh toán không khả dụng.");
+            }
+
+            var paymentProvider = paymentProviderValidation.Provider!;
+
 
             var existingPending = await _paymentRepository.GetPendingByOrderIdAsync(
                 orderId,

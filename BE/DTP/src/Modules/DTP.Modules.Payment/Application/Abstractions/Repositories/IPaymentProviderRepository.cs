@@ -32,5 +32,10 @@ namespace DTP.Modules.Payment.Application.Abstractions.Repositories
 
         Task<bool> HasActiveDefaultAsync(
             CancellationToken cancellationToken = default);
+
+        Task<PaymentProvider?> GetDefaultAvailableAsync(
+           string currency,
+           decimal amount,
+           CancellationToken cancellationToken = default);
     }
 }

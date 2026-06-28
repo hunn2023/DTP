@@ -136,5 +136,32 @@ namespace DTP.Modules.Payment.Domain.Entities
             if (minAmount.HasValue && maxAmount.HasValue && minAmount.Value > maxAmount.Value)
                 throw new InvalidOperationException("Số tiền tối thiểu không được lớn hơn số tiền tối đa.");
         }
+
+
+        public string? ValidateForCreatePayment(
+            decimal amount,
+            string currency)
+        {
+            if (!IsActive)
+                return "Phương thức thanh toán đang tạm tắt.";
+
+            if (amount <= 0)
+                return "Số tiền thanh toán không hợp lệ.";
+
+            var normalizedCurrency = string.IsNullOrWhiteSpace(currency)
+                ? "VND"
+                : currency.Trim().ToUpperInvariant();
+
+            if (!string.Equals(Currency, normalizedCurrency, StringComparison.OrdinalIgnoreCase))
+                return $"Phương thức thanh toán chỉ hỗ trợ {Currency}.";
+
+            if (MinAmount.HasValue && amount < MinAmount.Value)
+                return $"Số tiền tối thiểu cho phương thức này là {MinAmount.Value:N0} {Currency}.";
+
+            if (MaxAmount.HasValue && amount > MaxAmount.Value)
+                return $"Số tiền tối đa cho phương thức này là {MaxAmount.Value:N0} {Currency}.";
+
+            return null;
+        }
     }
 }
