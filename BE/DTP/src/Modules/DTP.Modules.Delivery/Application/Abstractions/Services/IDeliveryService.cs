@@ -42,5 +42,10 @@ namespace DTP.Modules.Delivery.Application.Abstractions.Services
         Task<Result> ResendEsimEmailAsync(
             Guid deliveryId,
             CancellationToken cancellationToken = default);
+
+        Task<Result> ApplyProviderRedeemFulfillmentAsync(
+            Guid deliveryId,
+            IReadOnlyList<DeliveryFulfillmentItemDto> items,
+            CancellationToken cancellationToken = default);
     }
 }

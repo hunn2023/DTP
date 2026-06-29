@@ -32,5 +32,9 @@ namespace DTP.Modules.Provider.Application.Abstractions.Repositories
         Task MarkEmailSentByOrderIdAsync(
             Guid orderId,
             CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<ProviderRedeem>> GetDoneNotEmailSentByOrderIdAsync(
+            Guid orderId,
+            CancellationToken cancellationToken = default);
     }
 }

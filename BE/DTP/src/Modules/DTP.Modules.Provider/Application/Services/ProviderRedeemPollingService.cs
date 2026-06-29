@@ -1,4 +1,5 @@
 ﻿using DTP.Modules.Delivery.Application.Abstractions.Services;
+using DTP.Modules.Delivery.Application.DTOs;
 using DTP.Modules.Provider.Application.Abstractions;
 using DTP.Modules.Provider.Application.Abstractions.Clients;
 using DTP.Modules.Provider.Application.Abstractions.Repositories;
@@ -17,7 +18,6 @@ namespace DTP.Modules.Provider.Application.Services
     {
         private readonly IProviderRedeemRepository _redeemRepository;
         private readonly IPeacomProviderClient _peacomClient;
-        private readonly IProviderDeliveryEmailService _emailService;
         private readonly IProviderUnitOfWork _unitOfWork;
         private readonly ILogger<ProviderRedeemPollingService> _logger;
         private readonly IProviderRepository _providerRepository;
@@ -27,7 +27,6 @@ namespace DTP.Modules.Provider.Application.Services
         public ProviderRedeemPollingService(
             IProviderRedeemRepository redeemRepository,
             IPeacomProviderClient peacomClient,
-            IProviderDeliveryEmailService emailService,
             IProviderUnitOfWork unitOfWork,
             ILogger<ProviderRedeemPollingService> logger,
             IProviderRepository providerRepository,
@@ -35,7 +34,6 @@ namespace DTP.Modules.Provider.Application.Services
         {
             _redeemRepository = redeemRepository;
             _peacomClient = peacomClient;
-            _emailService = emailService;
             _unitOfWork = unitOfWork;
             _logger = logger;
             _providerRepository = providerRepository;
@@ -138,8 +136,8 @@ namespace DTP.Modules.Provider.Application.Services
         }
 
         public async Task SendDoneRedeemEmailsAsync(
-      int take,
-      CancellationToken cancellationToken = default)
+    int take,
+    CancellationToken cancellationToken = default)
         {
             if (take <= 0)
                 take = 20;
@@ -162,6 +160,19 @@ namespace DTP.Modules.Provider.Application.Services
                         "Processing delivery for provider redeem order. OrderId={OrderId}",
                         orderId);
 
+                    var redeems = await _redeemRepository.GetDoneNotEmailSentByOrderIdAsync(
+                        orderId,
+                        cancellationToken);
+
+                    if (redeems.Count == 0)
+                    {
+                        _logger.LogWarning(
+                            "No done redeems found for delivery. OrderId={OrderId}",
+                            orderId);
+
+                        continue;
+                    }
+
                     var deliveryId = await GetOrCreateDeliveryIdAsync(
                         orderId,
                         cancellationToken);
@@ -175,6 +186,31 @@ namespace DTP.Modules.Provider.Application.Services
                         continue;
                     }
 
+                    var fulfillmentResult = await _deliveryService.ApplyProviderRedeemFulfillmentAsync(
+                        deliveryId.Value,
+                        redeems.Select(x => new DeliveryFulfillmentItemDto
+                        {
+                            OrderItemId = x.DtpOrderItemId,
+                            Sku = x.Sku,
+                            SerialNumber = x.Serial,
+                            QrCodeUrl = x.QrCodeUrl,
+                            ActivationCode = x.ActivationCode,
+                            ProviderReference = x.Serial,
+                            RawData = x.RawRedeemInfoJson
+                        }).ToList(),
+                        cancellationToken);
+
+                    if (!fulfillmentResult.IsSuccess)
+                    {
+                        _logger.LogWarning(
+                            "Apply provider redeem fulfillment failed. OrderId={OrderId}, DeliveryId={DeliveryId}, Error={Error}",
+                            orderId,
+                            deliveryId.Value,
+                            fulfillmentResult.Error);
+
+                        continue;
+                    }
+
                     var processResult = await _deliveryService.ProcessAsync(
                         deliveryId.Value,
                         WorkerIpAddress,
@@ -182,11 +218,6 @@ namespace DTP.Modules.Provider.Application.Services
 
                     if (!processResult.IsSuccess)
                     {
-                        await _deliveryService.MarkFailedAsync(
-                            deliveryId.Value,
-                            processResult.Error ?? "Delivery process failed.",
-                            cancellationToken);
-
                         _logger.LogWarning(
                             "Delivery process failed. OrderId={OrderId}, DeliveryId={DeliveryId}, Error={Error}",
                             orderId,
