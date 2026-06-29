@@ -101,17 +101,20 @@ namespace DTP.Modules.Delivery.Domain.Entities
 
         public void StartProcessing()
         {
-            if (Status == DeliveryStatus.Delivered)
+            if (Status != DeliveryStatus.Pending &&
+                Status != DeliveryStatus.Failed)
+            {
                 return;
+            }
 
             Status = DeliveryStatus.Processing;
             AttemptCount += 1;
             LastError = null;
 
-            AddHistory(
-                DeliveryStatus.Processing,
-                "Delivery processing started.",
-                null);
+            //AddHistory(
+            //    DeliveryStatus.Processing,
+            //    "Delivery processing started.",
+            //    null);
         }
 
         public void MarkDelivered(string? note = null)
@@ -127,10 +130,10 @@ namespace DTP.Modules.Delivery.Domain.Entities
                 item.MarkDelivered();
             }
 
-            AddHistory(
-                DeliveryStatus.Delivered,
-                "Delivery completed successfully.",
-                note);
+            //AddHistory(
+            //    DeliveryStatus.Delivered,
+            //    "Delivery completed successfully.",
+            //    note);
         }
 
         public void MarkFailed(string error)

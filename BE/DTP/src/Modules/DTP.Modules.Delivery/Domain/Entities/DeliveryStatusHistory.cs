@@ -20,6 +20,7 @@ namespace DTP.Modules.Delivery.Domain.Entities
             string message,
             string? detail)
         {
+            Id = Guid.NewGuid();
             DeliveryId = deliveryId;
             Status = status;
             Message = message;

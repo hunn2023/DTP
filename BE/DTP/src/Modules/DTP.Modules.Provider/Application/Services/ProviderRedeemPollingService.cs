@@ -214,7 +214,7 @@ namespace DTP.Modules.Provider.Application.Services
                     var processResult = await _deliveryService.ProcessAsync(
                         deliveryId.Value,
                         WorkerIpAddress,
-                        cancellationToken);
+                        CancellationToken.None);
 
                     if (!processResult.IsSuccess)
                     {

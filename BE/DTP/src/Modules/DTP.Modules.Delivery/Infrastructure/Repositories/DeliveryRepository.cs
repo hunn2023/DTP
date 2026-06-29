@@ -69,5 +69,16 @@ namespace DTP.Modules.Delivery.Infrastructure.Repositories
 
             return (items, total);
         }
+
+
+        public async Task<Domain.Entities.Delivery?> GetTrackingByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            return await _dbContext.Deliveries
+     .Include(x => x.Items)
+     .Include(x => x.Histories)
+     .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        }
     }
 }

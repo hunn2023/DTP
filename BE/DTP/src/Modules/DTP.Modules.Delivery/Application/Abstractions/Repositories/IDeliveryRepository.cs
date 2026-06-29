@@ -22,5 +22,10 @@ namespace DTP.Modules.Delivery.Application.Abstractions.Repositories
             int pageSize,
             CancellationToken cancellationToken = default);
 
+
+        Task<Domain.Entities.Delivery?> GetTrackingByIdAsync(
+           Guid deliveryId,
+           CancellationToken cancellationToken = default);
+
     }
 }

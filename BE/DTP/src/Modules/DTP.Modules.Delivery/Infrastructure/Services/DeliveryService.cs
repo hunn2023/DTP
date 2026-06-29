@@ -8,6 +8,7 @@ using DTP.Modules.Delivery.Domain.Enums;
 using DTP.Shared.Application;
 using DTP.Shared.Application.Delivery;
 using DTP.Shared.Application.Pagination;
+using Microsoft.EntityFrameworkCore;
 using System.Net;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -159,7 +160,7 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
                 ? "unknown"
                 : ipAddress.Trim();
 
-            var delivery = await _deliveryRepository.GetByIdAsync(
+            var delivery = await _deliveryRepository.GetTrackingByIdAsync(
                 deliveryId,
                 cancellationToken);
 
@@ -276,6 +277,19 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
                     },
                     cancellationToken: cancellationToken);
             }
+            catch (DbUpdateConcurrencyException ex)
+            {
+
+
+                foreach (var entry in ex.Entries)
+                {
+
+                    // Quan trọng: detach entity lỗi khỏi DbContext
+                    entry.State = EntityState.Detached;
+                }
+
+                return Result.Failure("Lệnh giao hàng đã được tiến trình khác xử lý. Vui lòng tải lại trạng thái.");
+            }
             catch (Exception ex)
             {
                 await WriteAuditSafeAsync(
@@ -308,19 +322,13 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
 
                 if (notDeliveredItems.Count > 0)
                 {
-                    var error = "Một số sản phẩm chưa được giao thành công.";
-
-                    delivery.MarkFailed(error);
-
-                    await _unitOfWork.SaveChangesAsync(cancellationToken);
-
                     await WriteAuditSafeAsync(
-                        action: "Delivery Partial Failed",
+                        action: "Delivery Waiting Fulfillment",
                         actionType: AuditActionType.Update,
                         status: AuditStatus.Failed,
                         entityName: "Delivery",
                         entityId: delivery.Id,
-                        description: "Some delivery items were not fulfilled.",
+                        description: "Delivery items are not fulfilled yet.",
                         newValues: new
                         {
                             delivery.Id,
@@ -338,7 +346,7 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
                         },
                         cancellationToken: cancellationToken);
 
-                    return Result.Failure(error);
+                    return Result.Failure("Delivery chưa có đủ thông tin fulfillment. Vui lòng đợi provider trả kết quả.");
                 }
 
                 delivery.MarkDelivered("Digital products delivered successfully.");
@@ -724,9 +732,9 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
 
 
         public async Task<Result> ApplyProviderRedeemFulfillmentAsync(
-    Guid deliveryId,
-    IReadOnlyList<DeliveryFulfillmentItemDto> items,
-    CancellationToken cancellationToken = default)
+            Guid deliveryId,
+            IReadOnlyList<DeliveryFulfillmentItemDto> items,
+            CancellationToken cancellationToken = default)
         {
             if (deliveryId == Guid.Empty)
                 return Result.Failure("DeliveryId không hợp lệ.");
@@ -734,7 +742,7 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
             if (items == null || items.Count == 0)
                 return Result.Failure("Không có dữ liệu fulfillment để cập nhật.");
 
-            var delivery = await _deliveryRepository.GetByIdAsync(
+            var delivery = await _deliveryRepository.GetTrackingByIdAsync(
                 deliveryId,
                 cancellationToken);
 
