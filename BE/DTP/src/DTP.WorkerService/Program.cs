@@ -1,6 +1,7 @@
 using DTP.Infrastructure.Email;
 using DTP.Modules.Audit.Application.Abstractions.Services;
 using DTP.Modules.Audit.Infrastructure;
+using DTP.Modules.Delivery.Application.Abstractions.Services;
 using DTP.Modules.Delivery.Infrastructure;
 using DTP.Modules.Ordering;
 using DTP.Modules.Ordering.Infrastructure;
@@ -29,6 +30,9 @@ namespace DTP.WorkerService
 
             builder.Services.Replace(
     ServiceDescriptor.Scoped<ICurrentAuditUserService, WorkerCurrentAuditUserService>());
+
+            builder.Services.Replace(
+    ServiceDescriptor.Scoped<IDeliveryRateLimitService, WorkerDeliveryRateLimitService>());
 
             builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
             var host = builder.Build();
