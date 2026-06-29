@@ -31,6 +31,7 @@ namespace DTP.Modules.Delivery.Infrastructure
             services.AddScoped<IDeliveryRepository, DeliveryRepository>();
 
             services.AddScoped<IDeliveryService, DeliveryService>();
+            services.AddScoped<IEsimDeliveryEmailService, EsimDeliveryEmailService>();
 
             return services;
         }
