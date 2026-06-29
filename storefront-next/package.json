@@ -7,7 +7,7 @@
     "dev:next": "next dev -p 4444",
     "dev:proxy": "node dev-proxy.js",
     "clean:fetch-cache": "node -e \"require('fs').rmSync('.next/cache/fetch-cache', { recursive: true, force: true })\"",
-    "build": "cross-env NEXT_PUBLIC_API_URL=https://api-staging.relipacheck.io.vn next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },

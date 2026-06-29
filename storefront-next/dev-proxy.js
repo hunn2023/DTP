@@ -32,8 +32,8 @@ loadEnvLocal();
 
 const PROXY_PORT = Number(process.env.API_PROXY_PORT) || 4000;
 const BACKEND_URL =
-  process.env.API_PROXY_TARGET || "https://api-staging.relipacheck.io.vn";
-
+  process.env.API_PROXY_TARGET || "https://api.ezsim.vn";
+  
 const server = http.createServer((req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
