@@ -1,4 +1,5 @@
 using DTP.Infrastructure.Email;
+using DTP.Modules.Delivery.Infrastructure;
 using DTP.Modules.Ordering;
 using DTP.Modules.Ordering.Infrastructure;
 using DTP.Modules.Provider;
@@ -19,6 +20,7 @@ namespace DTP.WorkerService
 
             builder.Services.AddOrderingWorkerModule(builder.Configuration);
             builder.Services.AddProviderWorkerModule(builder.Configuration);
+            builder.Services.AddDeliveryWorkerModule(builder.Configuration);
 
             builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
             var host = builder.Build();
