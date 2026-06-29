@@ -1,11 +1,14 @@
 using DTP.Infrastructure.Email;
+using DTP.Modules.Audit.Application.Abstractions.Services;
+using DTP.Modules.Audit.Infrastructure;
 using DTP.Modules.Delivery.Infrastructure;
 using DTP.Modules.Ordering;
 using DTP.Modules.Ordering.Infrastructure;
 using DTP.Modules.Provider;
 using DTP.Modules.Provider.Infrastructure;
-using DTP.Modules.Audit.Infrastructure;
 using DTP.Shared.Application.Emails;
+using DTP.WorkerService.Services;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace DTP.WorkerService
 {
@@ -23,6 +26,9 @@ namespace DTP.WorkerService
             builder.Services.AddOrderingWorkerModule(builder.Configuration);
             builder.Services.AddProviderWorkerModule(builder.Configuration);
             builder.Services.AddDeliveryWorkerModule(builder.Configuration);
+
+            builder.Services.Replace(
+    ServiceDescriptor.Scoped<ICurrentAuditUserService, WorkerCurrentAuditUserService>());
 
             builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
             var host = builder.Build();

@@ -28,12 +28,12 @@ namespace DTP.Modules.Audit.Infrastructure
                     configuration.GetConnectionString("DefaultConnection"));
             });
 
+
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             services.AddScoped<IAuditUnitOfWork, AuditUnitOfWork>();
 
             services.AddScoped<IAuditLogService, AuditLogService>();
             services.AddScoped<IAuditLogWriter, AuditLogWriter>();
-            services.AddScoped<ICurrentAuditUserService, CurrentAuditUserService>();
             return services;
         }
     }
