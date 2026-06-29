@@ -1,6 +1,7 @@
 ﻿using DTP.Modules.Ordering.Application.Abstractions.Services;
 using DTP.Modules.Ordering.Infrastructure.Persistence;
 using DTP.Modules.Ordering.Infrastructure.Services;
+using DTP.Shared.Application.Delivery;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +26,7 @@ namespace DTP.Modules.Ordering.Infrastructure
             });
 
             services.AddScoped<IOrderProviderReader, OrderProviderReader>();
-
+            services.AddScoped<IOrderDeliveryReader, OrderDeliveryReader>();
             return services;
         }
     }
