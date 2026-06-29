@@ -55,7 +55,6 @@ namespace DTP.Modules.Payment.Domain.Entities
         public Guid PaymentProviderId { get; private set; }
         public string PaymentProviderCode { get; private set; } = default!;
 
-        public string PaymentMethod { get; private set; } = default!;
 
         public PaymentMethod Method { get; private set; }
 
