@@ -270,13 +270,14 @@ export async function getOrderDetail(orderId: string) {
 // ─── Order History ────────────────────────────────────────────────────────────
 
 export type OrderStatus =
-  | "pending"
-  | "confirmed"
+  | "draft"
+  | "pendingPayment"
+  | "paid"
   | "processing"
-  | "shipped"
-  | "delivered"
+  | "completed"
   | "cancelled"
-  | "refunded";
+  | "failed"
+  | "fulfillmentFailed";
 
 export type OrderPaymentMethod = "cod" | "banking" | "momo" | "vnpay";
 
@@ -323,29 +324,30 @@ export interface OrderHistoryResponse {
 
 const PAGE_SIZE = 10;
 
-// Map backend integer status to string (enum starts from 1)
 function mapOrderStatus(status: number | string): OrderStatus {
   if (typeof status === "string") {
-    const lower = status.toLowerCase();
-    if (lower === "pending" || lower === "new") return "pending";
-    if (lower === "confirmed") return "confirmed";
-    if (lower === "processing") return "processing";
-    if (lower === "shipped") return "shipped";
-    if (lower === "delivered") return "delivered";
-    if (lower === "cancelled") return "cancelled";
-    if (lower === "refunded") return "refunded";
-    return "pending";
+    const normalized = status.replace(/[\s_-]/g, "").toLowerCase();
+    if (normalized === "draft") return "draft";
+    if (normalized === "pendingpayment" || normalized === "pending" || normalized === "new") return "pendingPayment";
+    if (normalized === "paid") return "paid";
+    if (normalized === "processing") return "processing";
+    if (normalized === "completed" || normalized === "delivered") return "completed";
+    if (normalized === "cancelled") return "cancelled";
+    if (normalized === "failed") return "failed";
+    if (normalized === "fulfillmentfailed") return "fulfillmentFailed";
+    return "pendingPayment";
   }
   const map: Record<number, OrderStatus> = {
-    1: "pending",
-    2: "confirmed",
-    3: "processing",
-    4: "shipped",
-    5: "delivered",
+    1: "draft",
+    2: "pendingPayment",
+    3: "paid",
+    4: "processing",
+    5: "completed",
     6: "cancelled",
-    7: "refunded",
+    7: "failed",
+    8: "fulfillmentFailed",
   };
-  return map[status] ?? "pending";
+  return map[status] ?? "pendingPayment";
 }
 
 function mapPaymentMethod(method: number | string | null | undefined): OrderPaymentMethod {
@@ -364,6 +366,25 @@ function mapPaymentMethod(method: number | string | null | undefined): OrderPaym
   if (method === 2) return "momo";
   if (method === 3) return "vnpay";
   return "banking";
+}
+
+function mapPaymentStatusCode(status: number | string | null | undefined): number | undefined {
+  if (typeof status === "number") return status;
+  if (typeof status !== "string") return undefined;
+
+  const numeric = Number(status);
+  if (Number.isInteger(numeric)) return numeric;
+
+  const normalized = status.replace(/[\s_-]/g, "").toLowerCase();
+  if (normalized === "creatingqr") return 0;
+  if (normalized === "pending") return 1;
+  if (normalized === "processing") return 2;
+  if (normalized === "paid") return 3;
+  if (normalized === "failed") return 4;
+  if (normalized === "cancelled") return 5;
+  if (normalized === "expired") return 6;
+  if (normalized === "refunded") return 7;
+  return undefined;
 }
 
 /* eslint-disable */
@@ -389,7 +410,7 @@ function mapApiOrderToHistoryItem(apiOrder: any): OrderHistoryItem {
     createdAt: apiOrder.createdAt || new Date().toISOString(),
     status: mapOrderStatus(apiOrder.status),
     paymentStatus: apiOrder.paymentStatus != null ? String(apiOrder.paymentStatus) : undefined,
-    paymentStatusCode: typeof apiOrder.paymentStatus === "number" ? apiOrder.paymentStatus : undefined,
+    paymentStatusCode: mapPaymentStatusCode(apiOrder.paymentStatus),
     paymentMethod: mapPaymentMethod(apiOrder.paymentMethod),
     totalAmount: apiOrder.totalAmount || 0,
     subTotal: apiOrder.subTotal ?? apiOrder.subtotal,
@@ -420,8 +441,8 @@ export async function getMyOrders(page: number = 1, filters: OrderFilters = {}):
   });
   if (filters.customerId) params.set("customerId", filters.customerId);
   if (filters.keyword) params.set("keyword", filters.keyword);
-  if (filters.status) params.set("status", filters.status.toString());
-  if (filters.paymentStatus) params.set("paymentStatus", filters.paymentStatus.toString());
+  if (filters.status !== undefined) params.set("status", filters.status.toString());
+  if (filters.paymentStatus !== undefined) params.set("paymentStatus", filters.paymentStatus.toString());
 
   const response = await fetchWithAuth(`/api/orders/paged?${params.toString()}`, {
     method: "GET",

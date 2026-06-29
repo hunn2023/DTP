@@ -3,18 +3,9 @@
 import { useState } from "react";
 import Icon from "@/components/ui/Icon";
 import OrderDetailModal from "@/components/account/OrderDetailModal";
-import type { OrderHistoryItem as OrderHistoryItemType, OrderStatus, OrderPaymentMethod } from "@/lib/orderApi";
+import type { OrderHistoryItem as OrderHistoryItemType, OrderPaymentMethod } from "@/lib/orderApi";
 import type { Language } from "@/lib/i18n";
-
-const STATUS_CLASSNAMES: Record<OrderStatus, string> = {
-  pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  confirmed: "bg-blue-50 text-blue-700 border-blue-200",
-  processing: "bg-indigo-50 text-indigo-700 border-indigo-200",
-  shipped: "bg-purple-50 text-purple-700 border-purple-200",
-  delivered: "bg-green-50 text-green-700 border-green-200",
-  cancelled: "bg-red-50 text-red-700 border-red-200",
-  refunded: "bg-orange-50 text-orange-700 border-orange-200",
-};
+import { getOrderStatusClassName, getOrderStatusLabel } from "@/lib/orderStatusDisplay";
 
 function formatDate(iso: string, language: Language): string {
   return new Date(iso).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US", {
@@ -35,16 +26,6 @@ interface Props {
 
 export default function OrderHistoryItem({ order, language = "vi" }: Props) {
   const [showDetail, setShowDetail] = useState(false);
-
-  const statusLabels: Record<OrderStatus, string> = {
-    pending: language === "vi" ? "Chờ xác nhận" : "Pending confirmation",
-    confirmed: language === "vi" ? "Đã xác nhận" : "Confirmed",
-    processing: language === "vi" ? "Đang xử lý" : "Processing",
-    shipped: language === "vi" ? "Đang giao" : "Shipping",
-    delivered: language === "vi" ? "Đã giao" : "Delivered",
-    cancelled: language === "vi" ? "Đã hủy" : "Cancelled",
-    refunded: language === "vi" ? "Hoàn tiền" : "Refunded",
-  };
 
   const paymentLabels: Record<OrderPaymentMethod, string> = {
     cod: "COD",
@@ -88,9 +69,9 @@ export default function OrderHistoryItem({ order, language = "vi" }: Props) {
             </span>
           </div>
           <span
-            className={`text-[11px] font-semibold border px-2.5 py-1 rounded-full whitespace-nowrap ${STATUS_CLASSNAMES[order.status]}`}
+            className={`text-[11px] font-semibold border px-2.5 py-1 rounded-full whitespace-nowrap ${getOrderStatusClassName(order.status)}`}
           >
-            {statusLabels[order.status]}
+            {getOrderStatusLabel(order.status, language)}
           </span>
         </div>
 
