@@ -98,16 +98,23 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
                   MapDeliveryType(order.DeliveryType),
                 ipAddress);
 
+
             foreach (var item in order.Items)
             {
-                delivery.AddItem(
-                    item.OrderItemId,
-                    item.ProductId,
-                    item.ProductVariantId,
-                    item.ProductName,
-                    item.Sku,
-                    item.Quantity);
+                var quantity = item.Quantity <= 0 ? 1 : item.Quantity;
+
+                for (var i = 0; i < quantity; i++)
+                {
+                    delivery.AddItem(
+                        item.OrderItemId,
+                        item.ProductId,
+                        item.ProductVariantId,
+                        item.ProductName,
+                        item.Sku,
+                        1);
+                }
             }
+
 
             await _deliveryRepository.AddAsync(delivery, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
