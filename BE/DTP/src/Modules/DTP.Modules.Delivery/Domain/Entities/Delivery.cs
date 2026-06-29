@@ -70,6 +70,7 @@ namespace DTP.Modules.Delivery.Domain.Entities
         public DateTime? EmailSentAt { get; private set; }
 
         public string? EmailError { get; private set; }
+        public Guid? ProviderRedeemId { get; private set; }
 
         public IReadOnlyCollection<DeliveryItem> Items => _items;
 
@@ -205,6 +206,13 @@ namespace DTP.Modules.Delivery.Domain.Entities
         }
 
 
+        public void AttachProviderRedeem(Guid providerRedeemId)
+        {
+            if (providerRedeemId == Guid.Empty)
+                return;
 
+            ProviderRedeemId = providerRedeemId;
+            UpdatedAt = DateTime.UtcNow;
+        }
     }
 }

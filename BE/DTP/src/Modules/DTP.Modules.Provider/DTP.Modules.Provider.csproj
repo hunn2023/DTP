@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\DTP.Shared\DTP.Shared.csproj" />
+    <ProjectReference Include="..\DTP.Modules.Delivery\DTP.Modules.Delivery.csproj" />
     <ProjectReference Include="..\DTP.Modules.Ordering\DTP.Modules.Ordering.csproj" />
   </ItemGroup>
 

@@ -55,5 +55,55 @@ namespace DTP.Modules.Provider.Infrastructure.Repositories
         {
             await _dbContext.ProviderRedeems.AddAsync(redeem, cancellationToken);
         }
+
+
+        public async Task<IReadOnlyList<Guid>> GetOrderIdsReadyForDeliveryAsync(
+    int take,
+    CancellationToken cancellationToken = default)
+        {
+            var candidateOrderIds = await _dbContext.ProviderRedeems
+                .Where(x => x.Status == "Done" && !x.EmailSent)
+                .OrderBy(x => x.UpdatedAt ?? x.CreatedAt)
+                .Select(x => x.DtpOrderId)
+                .Distinct()
+                .Take(take)
+                .ToListAsync(cancellationToken);
+
+            var readyOrderIds = new List<Guid>();
+
+            foreach (var orderId in candidateOrderIds)
+            {
+                var redeems = await _dbContext.ProviderRedeems
+                    .Where(x => x.DtpOrderId == orderId)
+                    .ToListAsync(cancellationToken);
+
+                if (redeems.Count == 0)
+                    continue;
+
+                var allDone = redeems.All(x => x.Status == "Done");
+
+                if (allDone)
+                    readyOrderIds.Add(orderId);
+            }
+
+            return readyOrderIds;
+        }
+
+        public async Task MarkEmailSentByOrderIdAsync(
+            Guid orderId,
+            CancellationToken cancellationToken = default)
+        {
+            var redeems = await _dbContext.ProviderRedeems
+                .Where(x =>
+                    x.DtpOrderId == orderId &&
+                    x.Status == "Done" &&
+                    !x.EmailSent)
+                .ToListAsync(cancellationToken);
+
+            foreach (var redeem in redeems)
+            {
+                redeem.MarkEmailSent();
+            }
+        }
     }
 }

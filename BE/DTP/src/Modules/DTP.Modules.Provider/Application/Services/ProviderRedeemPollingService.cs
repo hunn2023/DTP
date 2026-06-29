@@ -1,4 +1,5 @@
-﻿using DTP.Modules.Provider.Application.Abstractions;
+﻿using DTP.Modules.Delivery.Application.Abstractions.Services;
+using DTP.Modules.Provider.Application.Abstractions;
 using DTP.Modules.Provider.Application.Abstractions.Clients;
 using DTP.Modules.Provider.Application.Abstractions.Repositories;
 using DTP.Modules.Provider.Application.Abstractions.Services;
@@ -20,13 +21,17 @@ namespace DTP.Modules.Provider.Application.Services
         private readonly IProviderUnitOfWork _unitOfWork;
         private readonly ILogger<ProviderRedeemPollingService> _logger;
         private readonly IProviderRepository _providerRepository;
+        private readonly IDeliveryService _deliveryService;
+        private const string ProviderCode = "BLUECOM";
+        private const string WorkerIpAddress = "worker";
         public ProviderRedeemPollingService(
             IProviderRedeemRepository redeemRepository,
             IPeacomProviderClient peacomClient,
             IProviderDeliveryEmailService emailService,
             IProviderUnitOfWork unitOfWork,
             ILogger<ProviderRedeemPollingService> logger,
-            IProviderRepository providerRepository)
+            IProviderRepository providerRepository,
+            IDeliveryService deliveryService)
         {
             _redeemRepository = redeemRepository;
             _peacomClient = peacomClient;
@@ -34,6 +39,7 @@ namespace DTP.Modules.Provider.Application.Services
             _unitOfWork = unitOfWork;
             _logger = logger;
             _providerRepository = providerRepository;
+            _deliveryService = deliveryService;
         }
 
         public async Task PollPendingRedeemsAsync(
@@ -52,16 +58,13 @@ namespace DTP.Modules.Provider.Application.Services
                 _logger.LogDebug("No pending provider redeems found.");
                 return;
             }
+
             var provider = await _providerRepository.GetByCodeAsync(
-             "Bluecom",
+             ProviderCode,
              cancellationToken);
 
             if (provider is null)
-                throw new InvalidOperationException("Provider PEACOM chưa được cấu hình.");
-
-            if (!provider.IsActive)
-                throw new InvalidOperationException("Provider PEACOM đang inactive.");
-
+                throw new InvalidOperationException($"Provider {ProviderCode} chưa được cấu hình.");
 
             foreach (var redeem in redeems)
             {
@@ -135,71 +138,74 @@ namespace DTP.Modules.Provider.Application.Services
         }
 
         public async Task SendDoneRedeemEmailsAsync(
-            int take,
-            CancellationToken cancellationToken = default)
+      int take,
+      CancellationToken cancellationToken = default)
         {
             if (take <= 0)
                 take = 20;
 
-            var redeems = await _redeemRepository.GetDoneNotEmailSentAsync(
+            var orderIds = await _redeemRepository.GetOrderIdsReadyForDeliveryAsync(
                 take,
                 cancellationToken);
 
-            if (redeems.Count == 0)
+            if (orderIds.Count == 0)
             {
-                _logger.LogDebug("No done provider redeems waiting for email.");
+                _logger.LogDebug("No provider redeem orders ready for delivery.");
                 return;
             }
 
-            foreach (var redeem in redeems)
+            foreach (var orderId in orderIds)
             {
                 try
                 {
                     _logger.LogInformation(
-                        "Sending provider redeem email. Serial={Serial}, ProductType={ProductType}",
-                        redeem.Serial,
-                        redeem.ProductType);
+                        "Processing delivery for provider redeem order. OrderId={OrderId}",
+                        orderId);
 
-                    if (redeem.ProductType == 1)
+                    var deliveryId = await GetOrCreateDeliveryIdAsync(
+                        orderId,
+                        cancellationToken);
+
+                    if (deliveryId == null)
                     {
-                        if (string.IsNullOrWhiteSpace(redeem.QrCodeUrl) &&
-                            string.IsNullOrWhiteSpace(redeem.ActivationCode))
-                        {
-                            _logger.LogWarning(
-                                "Redeem is DONE but missing eSIM QR/ActivationCode. Serial={Serial}",
-                                redeem.Serial);
+                        _logger.LogWarning(
+                            "Cannot create or get delivery for order. OrderId={OrderId}",
+                            orderId);
 
-                            continue;
-                        }
-
-                        await _emailService.SendEsimEmailAsync(
-                            redeem,
-                            cancellationToken);
-                    }
-                    else
-                    {
-                        if (string.IsNullOrWhiteSpace(redeem.PolicyUrl) &&
-                            string.IsNullOrWhiteSpace(redeem.PolicyNumber))
-                        {
-                            _logger.LogWarning(
-                                "Redeem is DONE but missing insurance policy info. Serial={Serial}",
-                                redeem.Serial);
-
-                            continue;
-                        }
-
-                        await _emailService.SendInsuranceEmailAsync(
-                            redeem,
-                            cancellationToken);
+                        continue;
                     }
 
-                    redeem.MarkEmailSent();
+                    var processResult = await _deliveryService.ProcessAsync(
+                        deliveryId.Value,
+                        WorkerIpAddress,
+                        cancellationToken);
+
+                    if (!processResult.IsSuccess)
+                    {
+                        await _deliveryService.MarkFailedAsync(
+                            deliveryId.Value,
+                            processResult.Error ?? "Delivery process failed.",
+                            cancellationToken);
+
+                        _logger.LogWarning(
+                            "Delivery process failed. OrderId={OrderId}, DeliveryId={DeliveryId}, Error={Error}",
+                            orderId,
+                            deliveryId.Value,
+                            processResult.Error);
+
+                        continue;
+                    }
+
+                    await _redeemRepository.MarkEmailSentByOrderIdAsync(
+                        orderId,
+                        cancellationToken);
 
                     await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                     _logger.LogInformation(
-                        "Provider redeem email sent. Serial={Serial}",
-                        redeem.Serial);
+                        "Delivery processed successfully for provider redeem order. OrderId={OrderId}, DeliveryId={DeliveryId}",
+                        orderId,
+                        deliveryId.Value);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
@@ -207,13 +213,44 @@ namespace DTP.Modules.Provider.Application.Services
                 }
                 catch (Exception ex)
                 {
-                    // Không MarkFailed để lần sau gửi email lại.
                     _logger.LogError(
                         ex,
-                        "Send provider redeem email failed. Serial={Serial}",
-                        redeem.Serial);
+                        "Process delivery failed for provider redeem order. OrderId={OrderId}",
+                        orderId);
                 }
             }
+        }
+
+        private async Task<Guid?> GetOrCreateDeliveryIdAsync(
+            Guid orderId,
+            CancellationToken cancellationToken)
+        {
+            var existingDeliveryResult = await _deliveryService.GetByOrderIdAsync(
+                orderId,
+                cancellationToken);
+
+            if (existingDeliveryResult.IsSuccess &&
+                existingDeliveryResult.Data != null)
+            {
+                return existingDeliveryResult.Data.Id;
+            }
+
+            var createResult = await _deliveryService.CreatePendingAsync(
+                orderId,
+                WorkerIpAddress,
+                cancellationToken);
+
+            if (!createResult.IsSuccess)
+            {
+                _logger.LogWarning(
+                    "Create pending delivery failed. OrderId={OrderId}, Error={Error}",
+                    orderId,
+                    createResult.Error);
+
+                return null;
+            }
+
+            return createResult.Data;
         }
     }
 }

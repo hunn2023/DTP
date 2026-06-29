@@ -24,5 +24,13 @@ namespace DTP.Modules.Provider.Application.Abstractions.Repositories
         Task AddAsync(
             ProviderRedeem redeem,
             CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<Guid>> GetOrderIdsReadyForDeliveryAsync(
+            int take,
+            CancellationToken cancellationToken = default);
+
+        Task MarkEmailSentByOrderIdAsync(
+            Guid orderId,
+            CancellationToken cancellationToken = default);
     }
 }
