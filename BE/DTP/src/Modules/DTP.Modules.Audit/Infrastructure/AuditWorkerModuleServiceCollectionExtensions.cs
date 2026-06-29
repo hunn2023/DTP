@@ -24,8 +24,8 @@ namespace DTP.Modules.Audit.Infrastructure
                     configuration.GetConnectionString("DefaultConnection"));
             });
 
+            services.AddScoped<IAuditLogService, AuditLogService>();
             services.AddScoped<IAuditLogWriter, AuditLogWriter>();
-
             return services;
         }
     }
