@@ -39,7 +39,8 @@ namespace DTP.Api
                             "http://localhost:5173",
                             "http://localhost:3000",
                             "https://ezsim.vercel.app",
-                            "https://ezsim.vn"
+                            "https://ezsim.vn",
+                            "https://admin.ezsim.vn"
                         )
                         .AllowAnyHeader()
                         .AllowAnyMethod()
