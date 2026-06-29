@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Modules\DTP.Modules.Audit\DTP.Modules.Audit.csproj" />
     <ProjectReference Include="..\Modules\DTP.Modules.Catalog\DTP.Modules.Catalog.csproj" />
     <ProjectReference Include="..\Modules\DTP.Modules.Provider\DTP.Modules.Provider.csproj" />
   </ItemGroup>
