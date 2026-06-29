@@ -18,7 +18,6 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
         private readonly IDeliveryRepository _deliveryRepository;
         private readonly IDeliveryUnitOfWork _unitOfWork;
         private readonly IOrderDeliveryReader _orderDeliveryReader;
-        private readonly IDigitalFulfillmentService _digitalFulfillmentService;
         private readonly IAuditLogWriter _auditLogService;
         private readonly IEsimDeliveryEmailService _esimDeliveryEmailService;
         private readonly IDeliveryRateLimitService _deliveryRateLimitService;
@@ -27,7 +26,6 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
             IDeliveryRepository deliveryRepository,
             IDeliveryUnitOfWork unitOfWork,
             IOrderDeliveryReader orderDeliveryReader,
-            IDigitalFulfillmentService digitalFulfillmentService,
             IAuditLogWriter auditLogService,
             IEsimDeliveryEmailService esimDeliveryEmailService,
             IDeliveryRateLimitService deliveryRateLimitService)
@@ -35,7 +33,6 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
             _deliveryRepository = deliveryRepository;
             _unitOfWork = unitOfWork;
             _orderDeliveryReader = orderDeliveryReader;
-            _digitalFulfillmentService = digitalFulfillmentService;
             _auditLogService = auditLogService;
             _esimDeliveryEmailService = esimDeliveryEmailService;
             _deliveryRateLimitService = deliveryRateLimitService;
@@ -306,116 +303,6 @@ namespace DTP.Modules.Delivery.Infrastructure.Services
 
             try
             {
-                var fulfillment = await _digitalFulfillmentService.FulfillAsync(
-                    delivery.OrderId,
-                    cancellationToken);
-
-                if (!fulfillment.Success)
-                {
-                    var error = string.IsNullOrWhiteSpace(fulfillment.ErrorMessage)
-                        ? "Không thể xử lý giao hàng số."
-                        : fulfillment.ErrorMessage;
-
-                    delivery.MarkFailed(error);
-
-                    _deliveryRepository.Update(delivery);
-
-                    await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-                    await WriteAuditSafeAsync(
-                        action: "Delivery Failed",
-                        actionType: AuditActionType.Update,
-                        status: AuditStatus.Failed,
-                        entityName: "Delivery",
-                        entityId: delivery.Id,
-                        description: "Delivery processing failed.",
-                        newValues: new
-                        {
-                            delivery.Id,
-                            delivery.OrderId,
-                            delivery.OrderCode,
-                            delivery.Status,
-                            delivery.LastError,
-                            delivery.FailedAt,
-                            IpAddress = ipAddress,
-                            errorMessage = error,
-                        },
-                        cancellationToken: cancellationToken);
-
-                    return Result.Failure(error);
-                }
-
-                if (fulfillment.Items == null || fulfillment.Items.Count == 0)
-                {
-                    var error = "Provider không trả về dữ liệu giao hàng.";
-
-                    delivery.MarkFailed(error);
-
-                    _deliveryRepository.Update(delivery);
-
-                    await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-                    await WriteAuditSafeAsync(
-                        action: "Delivery Failed",
-                        actionType: AuditActionType.Update,
-                        status: AuditStatus.Failed,
-                        entityName: "Delivery",
-                        entityId: delivery.Id,
-                        description: "Delivery fulfillment returned empty items.",
-                        newValues: new
-                        {
-                            delivery.Id,
-                            delivery.OrderId,
-                            delivery.OrderCode,
-                            delivery.Status,
-                            delivery.LastError,
-                            IpAddress = ipAddress,
-                            errorMessage = error,
-                        },
-
-                        cancellationToken: cancellationToken);
-
-                    return Result.Failure(error);
-                }
-
-                foreach (var resultItem in fulfillment.Items)
-                {
-                    var deliveryItem = delivery.Items.FirstOrDefault(x =>
-                        x.OrderItemId == resultItem.OrderItemId);
-
-                    if (deliveryItem == null)
-                    {
-                        await WriteAuditSafeAsync(
-                            action: "Delivery Item Not Found",
-                            actionType: AuditActionType.Update,
-                            status: AuditStatus.Failed,
-                            entityName: "Delivery",
-                            entityId: delivery.Id,
-                            description: "Fulfillment result item did not match any delivery item.",
-                            newValues: new
-                            {
-                                delivery.Id,
-                                delivery.OrderId,
-                                delivery.OrderCode,
-                                resultItem.OrderItemId,
-                                IpAddress = ipAddress
-                            },
-                            cancellationToken: cancellationToken);
-
-                        continue;
-                    }
-
-                    if (deliveryItem.IsDelivered)
-                        continue;
-
-                    delivery.SetItemFulfillment(
-                        deliveryItem.Id,
-                        resultItem.QrCodeUrl,
-                        resultItem.ActivationCode,
-                        resultItem.SerialNumber,
-                        resultItem.ProviderReference,
-                        resultItem.RawData);
-                }
 
                 var notDeliveredItems = delivery.Items
                     .Where(x => !x.IsDelivered)
