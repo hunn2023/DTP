@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import CheckoutForm from "@/components/checkout/CheckoutForm";
 import { useCartStore } from "@/lib/cartStore";
@@ -10,9 +10,13 @@ import { useAuth } from "@/hooks/useAuth";
 
 export default function CheckoutContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const items = useCartStore((s) => s.items);
+  const buyNowItem = useCartStore((s) => s.buyNowItem);
   const { language } = useLanguage();
   const { isAuthenticated, initialized } = useAuth();
+  const isBuyNow = searchParams.get("buyNow") === "1";
+  const checkoutItems = isBuyNow && buyNowItem ? [buyNowItem] : items;
 
   const text = {
     cart: language === "vi" ? "Giỏ hàng" : "Cart",
@@ -45,15 +49,16 @@ export default function CheckoutContent() {
   useEffect(() => {
     if (!hydrated) return;
 
-    if (items.length === 0) {
+    if (checkoutItems.length === 0) {
       router.replace("/account/orders");
       return;
     }
 
     if (initialized && !isAuthenticated) {
-      router.replace("/login?returnUrl=/checkout");
+      const returnUrl = isBuyNow ? "/checkout?buyNow=1" : "/checkout";
+      router.replace(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
     }
-  }, [hydrated, items.length, initialized, isAuthenticated, router]);
+  }, [hydrated, checkoutItems.length, initialized, isAuthenticated, isBuyNow, router]);
 
   if (!hydrated) {
     return (
@@ -83,7 +88,7 @@ export default function CheckoutContent() {
     );
   }
 
-  if (items.length === 0) {
+  if (checkoutItems.length === 0) {
     return null;
   }
 
@@ -105,7 +110,7 @@ export default function CheckoutContent() {
           {text.checkout}
         </h1>
 
-        <CheckoutForm />
+        <CheckoutForm checkoutItems={checkoutItems} isBuyNow={isBuyNow} />
       </section>
     </>
   );

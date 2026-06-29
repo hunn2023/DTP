@@ -5,6 +5,7 @@ import Icon from "@/components/ui/Icon";
 import OrderHistoryItem from "@/components/account/OrderHistoryItem";
 import { useOrderHistory } from "@/hooks/useOrderHistory";
 import type { Language } from "@/lib/i18n";
+import { getOrderStatusOptions, getPaymentStatusOptions } from "@/lib/orderStatusDisplay";
 
 // ── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -153,25 +154,8 @@ export default function OrderHistoryList({ language = "vi" }: OrderHistoryListPr
     });
   }, [orders, keyword]);
 
-  const statusOptions: { value: number | undefined; label: string }[] = [
-    { value: undefined, label: language === "vi" ? "Tất cả trạng thái" : "All statuses" },
-    { value: 1, label: language === "vi" ? "Chờ xác nhận" : "Pending" },
-    { value: 2, label: language === "vi" ? "Đã xác nhận" : "Confirmed" },
-    { value: 3, label: language === "vi" ? "Đang xử lý" : "Processing" },
-    { value: 4, label: language === "vi" ? "Đang giao" : "Shipping" },
-    { value: 5, label: language === "vi" ? "Đã giao" : "Delivered" },
-    { value: 6, label: language === "vi" ? "Đã hủy" : "Cancelled" },
-    { value: 7, label: language === "vi" ? "Hoàn tiền" : "Refunded" },
-  ];
-
-  const paymentStatusOptions: { value: number | undefined; label: string }[] = [
-    { value: undefined, label: language === "vi" ? "Tất cả TT thanh toán" : "All payment statuses" },
-    { value: 1, label: language === "vi" ? "Chờ thanh toán" : "Pending" },
-    { value: 2, label: language === "vi" ? "Đã thanh toán" : "Paid" },
-    { value: 3, label: language === "vi" ? "Thanh toán thất bại" : "Failed" },
-    { value: 4, label: language === "vi" ? "Đã hoàn tiền" : "Refunded" },
-    { value: 5, label: language === "vi" ? "Đã hủy" : "Cancelled" },
-  ];
+  const statusOptions = getOrderStatusOptions(language);
+  const paymentStatusOptions = getPaymentStatusOptions(language);
 
   const text = {
     searchPlaceholder: language === "vi" ? "Nhập mã đơn hàng..." : "Type order code...",

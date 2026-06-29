@@ -45,7 +45,7 @@ type PaymentPaidEvent = {
 
 type PaymentSuccessSource = "signalr" | "poll";
 
-const PAYMENT_POLL_INTERVAL_MS = 60_000;
+const PAYMENT_POLL_INTERVAL_MS = 5_000;
 const SIGNALR_START_RETRIES = 4;
 
 function getQrImageUrl(data: PaymentQrData | null): string {
@@ -254,12 +254,46 @@ export default function PaymentPage({ params }: PaymentPageProps) {
     [clearBuyNowItem, clearCart, isBuyNow, orderId]
   );
 
+  const checkPaymentStatus = useCallback(
+    async (source: PaymentSuccessSource, context: string) => {
+      if (paymentHandledRef.current) return true;
+
+      paymentFlowLog("payment.status_check.start", { orderId, source, context });
+
+      const status = await getPaymentStatus(orderId);
+      const paid = isPaymentPaid(status);
+
+      paymentFlowLog("payment.status_check.result", {
+        orderId,
+        source,
+        context,
+        paid,
+        status,
+      });
+
+      if (paid) {
+        handlePaymentSuccess(source, status.paidAt);
+        return true;
+      }
+
+      return false;
+    },
+    [handlePaymentSuccess, orderId]
+  );
+
   const loadPaymentQr = useCallback(async () => {
     paymentFlowLog("qr.load.start", { orderId, paymentProviderCode: paymentProviderCode ?? null });
     setIsLoadingQr(true);
     setQrError("");
 
     try {
+      try {
+        const alreadyPaid = await checkPaymentStatus("poll", "before_qr_load");
+        if (alreadyPaid) return;
+      } catch (statusError) {
+        paymentFlowError("payment.status_check_before_qr_failed", statusError, { orderId });
+      }
+
       const data = await createPaymentQr(orderId, paymentProviderCode);
       paymentFlowLog("qr.load.success", {
         orderId,
@@ -271,6 +305,13 @@ export default function PaymentPage({ params }: PaymentPageProps) {
       setQrData(data);
     } catch (error) {
       paymentFlowError("qr.load.failed", error, { orderId });
+      try {
+        const paidAfterQrError = await checkPaymentStatus("poll", "after_qr_load_failed");
+        if (paidAfterQrError) return;
+      } catch (statusError) {
+        paymentFlowError("payment.status_check_after_qr_failed", statusError, { orderId });
+      }
+
       setQrError(
         error instanceof OrderApiError
           ? error.message
@@ -279,15 +320,13 @@ export default function PaymentPage({ params }: PaymentPageProps) {
     } finally {
       setIsLoadingQr(false);
     }
-  }, [orderId, paymentProviderCode]);
+  }, [checkPaymentStatus, orderId, paymentProviderCode]);
 
   const handleManualCheck = useCallback(async () => {
     setIsCheckingPayment(true);
     try {
-      const status = await getPaymentStatus(orderId);
-      if (isPaymentPaid(status)) {
-        handlePaymentSuccess("poll", status.paidAt);
-      } else {
+      const paid = await checkPaymentStatus("poll", "manual_check");
+      if (!paid) {
         toast.info("Chưa nhận được thanh toán. Vui lòng thử lại sau vài giây.");
       }
     } catch (error) {
@@ -296,7 +335,7 @@ export default function PaymentPage({ params }: PaymentPageProps) {
     } finally {
       setIsCheckingPayment(false);
     }
-  }, [handlePaymentSuccess, orderId]);
+  }, [checkPaymentStatus, orderId]);
 
   useEffect(() => {
     paymentFlowLog("page.mount", {
@@ -306,6 +345,27 @@ export default function PaymentPage({ params }: PaymentPageProps) {
     });
     void loadPaymentQr();
   }, [loadPaymentQr, orderId]);
+
+  useEffect(() => {
+    if (isPaid) return;
+
+    const checkOnResume = () => {
+      if (document.visibilityState !== "visible") return;
+      void checkPaymentStatus("poll", "page_resume").catch((error) => {
+        paymentFlowError("payment.status_check_on_resume_failed", error, { orderId });
+      });
+    };
+
+    window.addEventListener("focus", checkOnResume);
+    window.addEventListener("pageshow", checkOnResume);
+    document.addEventListener("visibilitychange", checkOnResume);
+
+    return () => {
+      window.removeEventListener("focus", checkOnResume);
+      window.removeEventListener("pageshow", checkOnResume);
+      document.removeEventListener("visibilitychange", checkOnResume);
+    };
+  }, [checkPaymentStatus, isPaid, orderId]);
 
   useEffect(() => {
     const expiredAt = getExpiredAt(qrData);

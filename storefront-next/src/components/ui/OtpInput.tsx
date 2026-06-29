@@ -19,16 +19,6 @@ function normalizeOtp(value: string, length: number): string {
   return value.replace(/\D/g, "").slice(0, length);
 }
 
-function getDigitFromCode(code: string): string | null {
-  if (/^Digit[0-9]$/.test(code)) {
-    return code.slice(5);
-  }
-  if (/^Numpad[0-9]$/.test(code)) {
-    return code.slice(6);
-  }
-  return null;
-}
-
 export default function OtpInput({
   value,
   onChange,
@@ -37,7 +27,7 @@ export default function OtpInput({
   autoFocus = false,
 }: OtpInputProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const autofillRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const onChangeRef = useRef(onChange);
   const valueRef = useRef(value);
 
@@ -57,7 +47,7 @@ export default function OtpInput({
 
   const focusContainer = useCallback(() => {
     if (!disabled) {
-      containerRef.current?.focus();
+      inputRef.current?.focus();
     }
   }, [disabled]);
 
@@ -66,63 +56,8 @@ export default function OtpInput({
   }, [length, value]);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container || disabled) return;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.isComposing || event.keyCode === 229) {
-        event.preventDefault();
-        return;
-      }
-
-      const digit = getDigitFromCode(event.code);
-      if (digit !== null) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-
-        const current = normalizeOtp(valueRef.current, length);
-        if (current.length < length) {
-          applyValue(current + digit);
-        }
-        return;
-      }
-
-      if (event.key === "Backspace" || event.key === "Delete") {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        applyValue(normalizeOtp(valueRef.current, length).slice(0, -1));
-        return;
-      }
-
-      if (
-        event.key.length === 1 &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        !event.altKey &&
-        event.key !== "Tab"
-      ) {
-        event.preventDefault();
-      }
-    };
-
-    const onPaste = (event: ClipboardEvent) => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      applyValue(event.clipboardData?.getData("text") ?? "");
-    };
-
-    container.addEventListener("keydown", onKeyDown, true);
-    container.addEventListener("paste", onPaste, true);
-
-    return () => {
-      container.removeEventListener("keydown", onKeyDown, true);
-      container.removeEventListener("paste", onPaste, true);
-    };
-  }, [applyValue, disabled, length]);
-
-  useEffect(() => {
     if (autoFocus && !disabled) {
-      containerRef.current?.focus();
+      inputRef.current?.focus();
     }
   }, [autoFocus, disabled]);
 
@@ -132,7 +67,6 @@ export default function OtpInput({
         ref={containerRef}
         role="group"
         aria-label="Mã OTP"
-        tabIndex={disabled ? -1 : 0}
         onClick={focusContainer}
         className={`relative inline-flex items-center justify-center gap-2 sm:gap-3 outline-none ${
           disabled ? "cursor-not-allowed" : "cursor-text"
@@ -158,21 +92,28 @@ export default function OtpInput({
             </div>
           );
         })}
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="one-time-code"
+          aria-label="Mã OTP"
+          disabled={disabled}
+          value={normalizedValue}
+          maxLength={length}
+          onFocus={(event) => {
+            const position = event.currentTarget.value.length;
+            event.currentTarget.setSelectionRange(position, position);
+          }}
+          onChange={(event) => applyValue(event.target.value)}
+          onPaste={(event) => {
+            event.preventDefault();
+            applyValue(event.clipboardData.getData("text"));
+          }}
+          className="absolute inset-0 z-10 h-full w-full cursor-text border-0 bg-transparent p-0 text-transparent opacity-0 outline-none caret-transparent"
+        />
       </div>
-
-      <input
-        ref={autofillRef}
-        type="text"
-        inputMode="numeric"
-        autoComplete="one-time-code"
-        tabIndex={-1}
-        aria-hidden
-        disabled={disabled}
-        value={normalizedValue}
-        onChange={(event) => applyValue(event.target.value)}
-        className="pointer-events-none absolute h-px w-px opacity-0"
-        style={{ left: "-9999px" }}
-      />
     </div>
   );
 }

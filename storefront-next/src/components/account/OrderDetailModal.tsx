@@ -7,30 +7,16 @@ import Icon from "@/components/ui/Icon";
 import {
   getOrderById,
   type OrderHistoryItem as OrderHistoryItemType,
-  type OrderStatus,
   type OrderPaymentMethod,
 } from "@/lib/orderApi";
 import type { Language } from "@/lib/i18n";
+import {
+  getOrderStatusLabel,
+  getPaymentStatusClassName,
+  getPaymentStatusLabel,
+} from "@/lib/orderStatusDisplay";
 
 // ── Style maps ────────────────────────────────────────────────────────────────
-
-const STATUS_CLASSNAMES: Record<OrderStatus, string> = {
-  pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  confirmed: "bg-blue-50 text-blue-700 border-blue-200",
-  processing: "bg-indigo-50 text-indigo-700 border-indigo-200",
-  shipped: "bg-purple-50 text-purple-700 border-purple-200",
-  delivered: "bg-green-50 text-green-700 border-green-200",
-  cancelled: "bg-red-50 text-red-700 border-red-200",
-  refunded: "bg-orange-50 text-orange-700 border-orange-200",
-};
-
-const PAYMENT_STATUS_CLASSNAMES: Record<number, string> = {
-  1: "bg-amber-50 text-amber-700 border-amber-200",
-  2: "bg-green-50 text-green-700 border-green-200",
-  3: "bg-red-50 text-red-700 border-red-200",
-  4: "bg-orange-50 text-orange-700 border-orange-200",
-  5: "bg-gray-100 text-gray-600 border-gray-200",
-};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -107,29 +93,11 @@ export default function OrderDetailModal({ orderId, initialOrder, language = "vi
     };
   }, [orderId, initialOrder, language]);
 
-  const statusLabels: Record<OrderStatus, string> = {
-    pending: language === "vi" ? "Chờ xác nhận" : "Pending",
-    confirmed: language === "vi" ? "Đã xác nhận" : "Confirmed",
-    processing: language === "vi" ? "Đang xử lý" : "Processing",
-    shipped: language === "vi" ? "Đang giao" : "Shipping",
-    delivered: language === "vi" ? "Đã giao" : "Delivered",
-    cancelled: language === "vi" ? "Đã hủy" : "Cancelled",
-    refunded: language === "vi" ? "Hoàn tiền" : "Refunded",
-  };
-
   const paymentMethodLabels: Record<OrderPaymentMethod, string> = {
     cod: "COD",
     banking: language === "vi" ? "Chuyển khoản" : "Bank transfer",
     momo: "MoMo",
     vnpay: "VNPay",
-  };
-
-  const paymentStatusLabels: Record<number, string> = {
-    1: language === "vi" ? "Chờ thanh toán" : "Pending",
-    2: language === "vi" ? "Đã thanh toán" : "Paid",
-    3: language === "vi" ? "Thanh toán thất bại" : "Failed",
-    4: language === "vi" ? "Đã hoàn tiền" : "Refunded",
-    5: language === "vi" ? "Đã hủy" : "Cancelled",
   };
 
   const itemTypeLabels: Record<number, string> = {
@@ -213,11 +181,11 @@ export default function OrderDetailModal({ orderId, initialOrder, language = "vi
           {order && (
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-semibold bg-white/95 px-3 py-1 rounded-full border border-white/40 text-navy">
-                {statusLabels[order.status]}
+                {getOrderStatusLabel(order.status, language)}
               </span>
               {order.paymentStatusCode != null && (
                 <span className="text-[11px] font-semibold bg-white/15 border border-white/30 px-3 py-1 rounded-full text-white">
-                  {t.paymentStatus}: {paymentStatusLabels[order.paymentStatusCode] ?? order.paymentStatus}
+                  {t.paymentStatus}: {getPaymentStatusLabel(order.paymentStatusCode, language)}
                 </span>
               )}
             </div>
@@ -275,10 +243,10 @@ export default function OrderDetailModal({ orderId, initialOrder, language = "vi
                     </p>
                     <span
                       className={`inline-block text-[11px] font-semibold border px-2 py-0.5 rounded-full ${
-                        PAYMENT_STATUS_CLASSNAMES[order.paymentStatusCode] ?? STATUS_CLASSNAMES[order.status]
+                        getPaymentStatusClassName(order.paymentStatusCode)
                       }`}
                     >
-                      {paymentStatusLabels[order.paymentStatusCode] ?? order.paymentStatus}
+                      {getPaymentStatusLabel(order.paymentStatusCode, language)}
                     </span>
                   </div>
                 )}

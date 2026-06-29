@@ -6,18 +6,14 @@ import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
-import { getOrderById, OrderHistoryItem, OrderStatus, OrderPaymentMethod } from "@/lib/orderApi";
+import { getOrderById, OrderHistoryItem, OrderPaymentMethod } from "@/lib/orderApi";
 import AccountSkeleton from "@/components/account/AccountSkeleton";
-
-const STATUS_CLASSNAMES: Record<OrderStatus, string> = {
-  pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  confirmed: "bg-blue-50 text-blue-700 border-blue-200",
-  processing: "bg-indigo-50 text-indigo-700 border-indigo-200",
-  shipped: "bg-purple-50 text-purple-700 border-purple-200",
-  delivered: "bg-green-50 text-green-700 border-green-200",
-  cancelled: "bg-red-50 text-red-700 border-red-200",
-  refunded: "bg-orange-50 text-orange-700 border-orange-200",
-};
+import {
+  getOrderStatusClassName,
+  getOrderStatusLabel,
+  getPaymentStatusClassName,
+  getPaymentStatusLabel,
+} from "@/lib/orderStatusDisplay";
 
 function formatDate(iso: string, language: string): string {
   return new Date(iso).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US", {
@@ -71,16 +67,6 @@ export default function OrderDetailClient() {
     return <AccountSkeleton />;
   }
 
-  const statusLabels: Record<OrderStatus, string> = {
-    pending: language === "vi" ? "Chờ xác nhận" : "Pending",
-    confirmed: language === "vi" ? "Đã xác nhận" : "Confirmed",
-    processing: language === "vi" ? "Đang xử lý" : "Processing",
-    shipped: language === "vi" ? "Đang giao" : "Shipping",
-    delivered: language === "vi" ? "Đã giao" : "Delivered",
-    cancelled: language === "vi" ? "Đã hủy" : "Cancelled",
-    refunded: language === "vi" ? "Hoàn tiền" : "Refunded",
-  };
-
   const paymentLabels: Record<OrderPaymentMethod, string> = {
     cod: "COD",
     banking: language === "vi" ? "Chuyển khoản" : "Bank transfer",
@@ -95,6 +81,7 @@ export default function OrderDetailClient() {
     createdAt: language === "vi" ? "Ngày đặt" : "Order date",
     status: language === "vi" ? "Trạng thái" : "Status",
     paymentMethod: language === "vi" ? "Thanh toán" : "Payment",
+    paymentStatus: language === "vi" ? "Trạng thái thanh toán" : "Payment status",
     products: language === "vi" ? "Sản phẩm" : "Products",
     quantity: language === "vi" ? "SL" : "Qty",
     price: language === "vi" ? "Đơn giá" : "Price",
@@ -171,15 +158,15 @@ export default function OrderDetailClient() {
                 </p>
               </div>
               <span
-                className={`text-xs font-semibold border px-3 py-1.5 rounded-full ${STATUS_CLASSNAMES[order.status]}`}
+                className={`text-xs font-semibold border px-3 py-1.5 rounded-full ${getOrderStatusClassName(order.status)}`}
               >
-                {statusLabels[order.status]}
+                {getOrderStatusLabel(order.status, language)}
               </span>
             </div>
           </div>
 
           {/* Info grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-6 py-5 border-b border-gray-100 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 px-6 py-5 border-b border-gray-100 text-sm">
             <div>
               <p className="text-xs text-gray-400 mb-1">{text.createdAt}</p>
               <p className="font-medium text-navy">{formatDate(order.createdAt, language)}</p>
@@ -188,6 +175,16 @@ export default function OrderDetailClient() {
               <p className="text-xs text-gray-400 mb-1">{text.paymentMethod}</p>
               <p className="font-medium text-navy">{paymentLabels[order.paymentMethod]}</p>
             </div>
+            {order.paymentStatusCode != null && (
+              <div>
+                <p className="text-xs text-gray-400 mb-1">{text.paymentStatus}</p>
+                <span
+                  className={`inline-flex text-[11px] font-semibold border px-2 py-0.5 rounded-full ${getPaymentStatusClassName(order.paymentStatusCode)}`}
+                >
+                  {getPaymentStatusLabel(order.paymentStatusCode, language)}
+                </span>
+              </div>
+            )}
             <div>
               <p className="text-xs text-gray-400 mb-1">{text.total}</p>
               <p className="font-bold text-primary text-base">{formatCurrency(order.totalAmount)}</p>

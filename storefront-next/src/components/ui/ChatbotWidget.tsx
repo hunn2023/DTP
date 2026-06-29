@@ -253,7 +253,7 @@ export default function ChatbotWidget() {
         role="dialog"
         aria-modal="true"
         aria-label="EZSIM Assistant"
-        className="chatbot-panel-enter fixed z-[350] flex min-h-0 flex-col overflow-hidden bg-white max-md:inset-0 max-md:rounded-none md:right-6 md:bottom-24 md:left-auto md:top-auto md:w-[340px] md:max-w-[calc(100dvw-2rem)] md:rounded-2xl md:border md:border-gray-200 md:shadow-2xl md:h-[min(460px,calc(100dvh-6rem))]"
+        className="chatbot-panel-enter fixed z-[350] flex min-h-0 flex-col overflow-hidden bg-white max-md:left-0 max-md:right-0 max-md:top-0 max-md:bottom-0 max-md:h-[100dvh] max-md:w-[100dvw] max-md:max-h-[100dvh] max-md:rounded-none md:right-6 md:bottom-24 md:left-auto md:top-auto md:h-[min(460px,calc(100dvh-6rem))] md:w-[340px] md:max-w-[calc(100dvw-2rem)] md:rounded-2xl md:border md:border-gray-200 md:shadow-2xl"
         style={{ transformOrigin: expandOrigin }}
       >
         <div className="gradient-primary flex shrink-0 items-center gap-3 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] md:py-3">
