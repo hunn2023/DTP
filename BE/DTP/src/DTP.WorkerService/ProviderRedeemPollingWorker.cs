@@ -79,25 +79,42 @@ namespace DTP.WorkerService
             _logger.LogInformation("ProviderRedeemPollingWorker stopped.");
         }
 
-        private async Task RunOnceAsync(
-            CancellationToken cancellationToken)
+        private async Task RunOnceAsync( CancellationToken cancellationToken)
         {
             using var scope = _scopeFactory.CreateScope();
 
             var pollingService = scope.ServiceProvider
                 .GetRequiredService<IProviderRedeemPollingService>();
 
-            _logger.LogInformation("ProviderRedeemPollingWorker polling pending redeems...");
+            try
+            {
+                _logger.LogInformation("ProviderRedeemPollingWorker polling pending redeems...");
 
-            await pollingService.PollPendingRedeemsAsync(
-                take: _options.PollBatchSize,
-                cancellationToken);
+                await pollingService.PollPendingRedeemsAsync(
+                    take: _options.PollBatchSize,
+                    cancellationToken: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "ProviderRedeemPollingWorker poll pending redeems failed.");
+            }
 
-            _logger.LogInformation("ProviderRedeemPollingWorker sending done redeem emails...");
+            try
+            {
+                _logger.LogInformation("ProviderRedeemPollingWorker processing ready deliveries...");
 
-            await pollingService.SendDoneRedeemEmailsAsync(
-                take: _options.EmailBatchSize,
-                cancellationToken);
+                await pollingService.SendDoneRedeemEmailsAsync(
+                    take: _options.EmailBatchSize,
+                    cancellationToken: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "ProviderRedeemPollingWorker process ready deliveries failed.");
+            }
 
             _logger.LogInformation("ProviderRedeemPollingWorker run completed.");
         }
