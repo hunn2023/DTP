@@ -29,6 +29,7 @@ export default function AddToCartSection({
 }: Props) {
   const router = useRouter();
   const addToCart = useCartStore((s) => s.addToCart);
+  const setBuyNowItem = useCartStore((s) => s.setBuyNowItem);
   const { triggerFlyToCart } = useCartAnimation();
   const addButtonRef = useRef<HTMLButtonElement>(null);
   const [quantity, setQuantity] = useState(1);
@@ -75,19 +76,20 @@ export default function AddToCartSection({
 
   const handleBuyNow = useCallback(async () => {
     if (!inStock || isBuyingNow) return;
+    setBuyNowItem(cartItem);
+
     if (!isAuthenticated()) {
-      router.push(`/login?returnUrl=/esim-du-lich/${productSlug}`);
+      router.push(`/login?returnUrl=${encodeURIComponent("/checkout?buyNow=1")}`);
       return;
     }
+
     setIsBuyingNow(true);
     try {
-      addToCart(cartItem);
-      triggerFlyToCart(productImage, addButtonRef.current);
-      router.push("/cart");
+      router.push("/checkout?buyNow=1");
     } finally {
       setIsBuyingNow(false);
     }
-  }, [inStock, isBuyingNow, addToCart, cartItem, triggerFlyToCart, productImage, productSlug, router]);
+  }, [inStock, isBuyingNow, setBuyNowItem, cartItem, router]);
 
   if (!inStock) {
     return (
