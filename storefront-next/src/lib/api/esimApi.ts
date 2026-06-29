@@ -312,12 +312,6 @@ async function getHomeEsimProductBySlug(slug: string): Promise<HomeEsimProduct |
   return products.find((product) => matchesProductSlug(product.slug, slug)) ?? null;
 }
 
-// TODO: mock tạm để test khi API chưa có data — bỏ khi backend trả về dữ liệu thật.
-const MOCK_DESTINATIONS: EsimCountrySummary[] = [
-  { slug: "nhat-ban", flag: "https://flagcdn.com/w160/jp.png", name: "Nhật Bản", region: "Châu Á", startingPrice: 99000, bestseller: true, packageCount: 12 },
-  { slug: "han-quoc", flag: "https://flagcdn.com/w160/kr.png", name: "Hàn Quốc", region: "Châu Á", startingPrice: 89000, bestseller: false, packageCount: 8 },
-  { slug: "thai-lan", flag: "https://flagcdn.com/w160/th.png", name: "Thái Lan", region: "Châu Á", startingPrice: 79000, bestseller: false, packageCount: 6 },
-];
 
 // Backend caps PageSize at 100; loop pages so every country is returned.
 const COUNTRIES_PAGE_SIZE = 100;
@@ -387,7 +381,7 @@ export async function getEsimCountries(): Promise<EsimCountrySummary[]> {
       }
     }
 
-    if (all.length === 0) return MOCK_DESTINATIONS;
+    if (all.length === 0) return [];
 
     // Listing links must use the canonical product slug ("esim-nhat-ban"), not the
     // country slug ("nhat-ban"), so every card points at the one prerendered detail
@@ -400,7 +394,7 @@ export async function getEsimCountries(): Promise<EsimCountrySummary[]> {
       return acc;
     }, []);
   } catch {
-    return MOCK_DESTINATIONS;
+    return [];
   }
 }
 
