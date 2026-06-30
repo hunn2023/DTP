@@ -131,7 +131,7 @@ function normalizeDelivery(raw: Raw): DeliveryRow {
     emailSent: readBoolAny(raw, 'emailSent'),
     emailSentAt: readStringAny(raw, 'emailSentAt'),
     emailError: readStringAny(raw, 'emailError'),
-    items: readArray(raw, 'items').map(normalizeDeliveryItem),
+    items: readArray(raw, 'items', 'deliveryItems', 'digitalDeliveryItems').map(normalizeDeliveryItem),
   }
 }
 
