@@ -1092,7 +1092,7 @@ namespace DTP.Modules.Ordering.Infrastructure.Services
 
         private static string GenerateOrderCode()
         {
-            return $"DTP{DateTime.UtcNow:yyyyMMddHHmmss}{Random.Shared.Next(1000, 9999)}";
+            return $"{DateTime.UtcNow:yyyyMMddHHmmss}{Random.Shared.Next(1000, 9999)}";
         }
 
         private static OrderDto Map(Order order)
