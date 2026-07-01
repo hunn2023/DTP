@@ -35,6 +35,25 @@ export function buildDeliveryColumns(handlers: DeliveryTableHandlers) {
         </div>
       ),
     }),
+    helper.accessor('items', {
+      header: 'Sản phẩm',
+      cell: ({ getValue }) => {
+        const items = getValue()
+        const firstItem = items[0]
+        if (!firstItem) return '—'
+
+        return (
+          <div>
+            <div className="fw-semibold text-truncate" style={{ maxWidth: 260 }}>
+              {firstItem.productName || '—'}
+            </div>
+            <div className="text-muted fs-xxs">
+              {items.length} item{items.length > 1 ? 's' : ''} · SL {items.reduce((total, item) => total + item.quantity, 0)}
+            </div>
+          </div>
+        )
+      },
+    }),
     helper.accessor('deliveryType', {
       header: 'Loại giao hàng',
       cell: ({ getValue }) => enumLabel(getValue(), DELIVERY_TYPE_LABELS),
@@ -44,9 +63,16 @@ export function buildDeliveryColumns(handlers: DeliveryTableHandlers) {
       cell: ({ getValue }) => enumLabel(getValue(), DELIVERY_STATUS_LABELS),
     }),
     helper.accessor('attemptCount', { header: 'Lần thử' }),
-    helper.accessor('sentAt', {
+    helper.accessor('deliveredAt', {
       header: 'Giao lúc',
       cell: ({ getValue }) => formatDateTime(getValue()),
+    }),
+    helper.accessor('emailSent', {
+      header: 'Email',
+      cell: ({ row }) => {
+        if (row.original.emailError) return row.original.emailError
+        return row.original.emailSent ? 'Đã gửi' : 'Chưa gửi'
+      },
     }),
     helper.accessor('lastError', {
       header: 'Lỗi',

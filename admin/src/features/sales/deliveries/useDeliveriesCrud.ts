@@ -67,7 +67,11 @@ export function useDeliveriesCrud({ filters = {} }: UseDeliveriesCrudParams = {}
       setDetail(row)
       setDetailLoading(true)
       try {
-        setDetail(await deliveriesApi.fetchDeliveryById(row.id))
+        const fetchedDetail = await deliveriesApi.fetchDeliveryById(row.id)
+        setDetail({
+          ...fetchedDetail,
+          items: fetchedDetail.items.length > 0 ? fetchedDetail.items : row.items,
+        })
       } catch (error) {
         setDetail(null)
         notifyError(getErrorMessage(error, 'Không tải được chi tiết giao hàng'))
