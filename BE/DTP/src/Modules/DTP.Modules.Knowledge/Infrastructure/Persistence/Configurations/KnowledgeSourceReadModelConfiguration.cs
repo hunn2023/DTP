@@ -65,4 +65,29 @@ namespace DTP.Modules.Knowledge.Infrastructure.Persistence.Configurations
             builder.Property(x => x.Answer).HasColumnType("nvarchar(max)");
         }
     }
+
+    public class ProductContentKnowledgeReadModelConfiguration
+    : IEntityTypeConfiguration<ProductContentKnowledgeReadModel>
+    {
+        public void Configure(EntityTypeBuilder<ProductContentKnowledgeReadModel> builder)
+        {
+            builder.ToTable("ProductContents", t => t.ExcludeFromMigrations());
+
+            builder.HasKey(x => x.Id);
+
+            builder.Property(x => x.Title)
+                .HasMaxLength(500);
+
+            builder.Property(x => x.Slug)
+                .HasMaxLength(500);
+
+            builder.Property(x => x.Summary)
+                .HasColumnType("nvarchar(max)");
+
+            builder.Property(x => x.BodyHtml)
+                .HasColumnType("nvarchar(max)");
+
+            builder.HasIndex(x => x.ProductId);
+        }
+    }
 }

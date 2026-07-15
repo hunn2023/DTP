@@ -2,6 +2,9 @@
 using DTP.Modules.Audit.Domain.Enums;
 using DTP.Modules.Chatbot.Application.Abstractions;
 using DTP.Modules.Chatbot.Application.DTOs;
+using DTP.Modules.Chatbot.Application.Enums;
+using DTP.Modules.Knowledge.Application.Abstractions;
+using DTP.Modules.Knowledge.Application.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -17,13 +20,16 @@ namespace DTP.Modules.Chatbot.Application.Services
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<ChatbotService> _logger;
         private readonly IChatbotRateLimitService _rateLimitService;
+        private readonly IKnowledgeSearchService _knowledgeSearchService;
         public ChatbotService(
             IChatbotAiClient aiClient,
             IChatbotCatalogReader catalogReader,
             IAuditLogWriter auditLogWriter,
             IHttpContextAccessor httpContextAccessor,
             ILogger<ChatbotService> logger,
-            IChatbotRateLimitService rateLimitService)
+            IChatbotRateLimitService rateLimitService,
+             IKnowledgeSearchService knowledgeSearchService
+            )
         {
             _aiClient = aiClient;
             _catalogReader = catalogReader;
@@ -31,6 +37,7 @@ namespace DTP.Modules.Chatbot.Application.Services
             _httpContextAccessor = httpContextAccessor;
             _logger = logger;
             _rateLimitService = rateLimitService;
+            _knowledgeSearchService = knowledgeSearchService;
         }
 
         public async Task<ChatResponseDto> SendMessageAsync(
@@ -185,25 +192,45 @@ namespace DTP.Modules.Chatbot.Application.Services
 
                 intent.OriginalQuestion ??= message;
 
-
                 ApplySmartDefaults(intent);
+
+                var route = DetermineRoute(message, intent);
+
+                if (route == ChatbotRouteType.Knowledge)
+                {
+                    return await HandleKnowledgeAsync(
+                        sessionId,
+                        message,
+                        intent,
+                        cancellationToken);
+                }
+
+                if (route == ChatbotRouteType.Mixed)
+                {
+                    return await HandleMixedAsync(
+                        sessionId,
+                        message,
+                        intent,
+                        cancellationToken);
+                }
 
                 if (!IsProductAdvice(intent))
                 {
                     var unknownMessage =
-                        "Tôi có thể tư vấn gói eSIM theo quốc gia bạn muốn đi. " +
-                        "Ví dụ: Tôi đi Thái Lan, nên mua gói nào?";
+                        "Bạn đang cần tư vấn gói eSIM hay cần hỗ trợ thông tin/cách cài đặt ạ? " +
+                        "Ví dụ: Tôi đi Thái Lan 5 ngày, hoặc: Hướng dẫn cài eSIM trên iPhone.";
 
                     return new ChatResponseDto
                     {
                         SessionId = sessionId,
                         Message = unknownMessage,
                         NeedMoreInfo = true,
-                        MissingFields = new List<string> { "country" },
+                        MissingFields = new List<string>(),
                         Intent = intent,
                         Suggestions = new List<ChatbotProductSuggestionDto>()
                     };
                 }
+
 
                 var blockingMissingFields = GetBlockingMissingFields(intent);
 
@@ -689,7 +716,356 @@ namespace DTP.Modules.Chatbot.Application.Services
 
             return $"{item.DataAmount.Value:N0} {item.DataUnit}";
         }
+
+
+
+        private static ChatbotRouteType DetermineRoute(
+            string message,
+            ChatbotIntentDto intent)
+        {
+            var isKnowledge = IsKnowledgeQuestion(message);
+            var isProduct = IsProductSearchQuestion(message, intent);
+
+            if (isKnowledge && isProduct)
+                return ChatbotRouteType.Mixed;
+
+            if (isKnowledge)
+                return ChatbotRouteType.Knowledge;
+
+            if (isProduct)
+                return ChatbotRouteType.Product;
+
+            return ChatbotRouteType.Unknown;
+        }
+
+        private static bool IsKnowledgeQuestion(string message)
+        {
+            var text = NormalizeText(message);
+
+            var keywords = new[]
+            {
+        "esim là gì",
+        "hướng dẫn",
+        "cài esim",
+        "cài đặt esim",
+        "cài đặt",
+        "kích hoạt",
+        "active esim",
+        "quét qr",
+        "mã qr",
+        "lỗi qr",
+        "không quét được",
+        "không nhận được qr",
+        "không nhận được email",
+        "iphone",
+        "android",
+        "samsung",
+        "đổi điện thoại",
+        "dùng lại được không",
+        "dùng được mấy lần",
+        "hoàn tiền",
+        "đổi trả",
+        "bảo hành",
+        "chính sách",
+        "huỷ đơn",
+        "hủy đơn",
+        "thanh toán xong",
+        "bao lâu nhận",
+        "xuất hoá đơn",
+        "xuất hóa đơn",
+        "vat",
+        "có cần cccd",
+        "có cần kyc",
+        "làm sao",
+        "như nào"
+    };
+
+            return keywords.Any(text.Contains);
+        }
+
+
+        private static bool IsProductSearchQuestion(
+            string message,
+            ChatbotIntentDto intent)
+        {
+            var text = NormalizeText(message);
+
+            var hasCountry =
+                !string.IsNullOrWhiteSpace(intent.CountryKeyword)
+                || !string.IsNullOrWhiteSpace(intent.CountryCode);
+
+            var hasProductKeyword =
+                text.Contains("mua")
+                || text.Contains("gói esim")
+                || text.Contains("gói nào")
+                || text.Contains("nên mua")
+                || text.Contains("tư vấn")
+                || text.Contains("giá")
+                || text.Contains("bao nhiêu tiền")
+                || text.Contains("data")
+                || text.Contains("gb")
+                || text.Contains("mb")
+                || text.Contains("dung lượng")
+                || text.Contains("không giới hạn")
+                || text.Contains("unlimited")
+                || text.Contains("du lịch")
+                || text.Contains("đi ");
+
+            return string.Equals(intent.IntentType, "product_advice", StringComparison.OrdinalIgnoreCase)
+                   || hasCountry
+                   || hasProductKeyword
+                   || intent.TravelDays.HasValue
+                   || intent.RequestedDataAmount.HasValue;
+        }
+
+        private static string NormalizeText(string input)
+        {
+            return (input ?? string.Empty)
+                .Trim()
+                .ToLowerInvariant();
+        }
+
+        private async Task<ChatResponseDto> HandleKnowledgeAsync(
+    string sessionId,
+    string message,
+    ChatbotIntentDto intent,
+    CancellationToken cancellationToken)
+        {
+            List<KnowledgeSearchResultDto> knowledgeResults;
+
+            try
+            {
+                knowledgeResults = await _knowledgeSearchService.SearchAsync(
+                    message,
+                    topK: 5,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Search chatbot knowledge failed.");
+
+                await WriteAuditSafeAsync(
+                    action: "Search Chatbot Knowledge Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "KnowledgeChunk",
+                    description: "Search knowledge for chatbot failed.",
+                    newValues: new
+                    {
+                        SessionId = sessionId,
+                        Message = message,
+                        Intent = intent,
+                        Request = GetRequestAuditInfo()
+                    },
+                    errorMessage: ex.Message,
+                    cancellationToken: cancellationToken);
+
+                return new ChatResponseDto
+                {
+                    SessionId = sessionId,
+                    Message = "Xin lỗi, hiện tại tôi chưa tra cứu được thông tin này. Bạn vui lòng thử lại sau.",
+                    NeedMoreInfo = false,
+                    MissingFields = new List<string>(),
+                    Intent = intent,
+                    Suggestions = new List<ChatbotProductSuggestionDto>()
+                };
+            }
+
+            if (knowledgeResults.Count == 0)
+            {
+                return new ChatResponseDto
+                {
+                    SessionId = sessionId,
+                    Message = "Tôi chưa tìm thấy thông tin chính xác trong dữ liệu hiện có. Bạn có thể nói rõ hơn câu hỏi để tôi kiểm tra lại không?",
+                    NeedMoreInfo = true,
+                    MissingFields = new List<string>(),
+                    Intent = intent,
+                    Suggestions = new List<ChatbotProductSuggestionDto>()
+                };
+            }
+
+            string answer;
+
+            try
+            {
+                answer = await _aiClient.GenerateKnowledgeAnswerAsync(
+                    message,
+                    knowledgeResults,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Generate chatbot knowledge answer failed.");
+
+                await WriteAuditSafeAsync(
+                    action: "Generate Chatbot Knowledge Answer Failed",
+                    actionType: AuditActionType.Create,
+                    status: AuditStatus.Failed,
+                    entityName: "ChatbotMessage",
+                    description: "Generate knowledge answer failed.",
+                    newValues: new
+                    {
+                        SessionId = sessionId,
+                        Message = message,
+                        Intent = intent,
+                        KnowledgeCount = knowledgeResults.Count,
+                        Request = GetRequestAuditInfo()
+                    },
+                    errorMessage: ex.Message,
+                    cancellationToken: cancellationToken);
+
+                answer = BuildKnowledgeFallbackAnswer(knowledgeResults);
+            }
+
+            await WriteAuditSafeAsync(
+                action: "Chatbot Knowledge Message Success",
+                actionType: AuditActionType.Create,
+                status: AuditStatus.Success,
+                entityName: "KnowledgeChunk",
+                description: "Chatbot answered by knowledge.",
+                newValues: new
+                {
+                    SessionId = sessionId,
+                    Message = message,
+                    Intent = intent,
+                    KnowledgeCount = knowledgeResults.Count,
+                    KnowledgeResults = knowledgeResults.Select(x => new
+                    {
+                        x.Id,
+                        x.SourceType,
+                        x.SourceId,
+                        x.Title,
+                        x.SourceUrl,
+                        x.Score
+                    }),
+                    Request = GetRequestAuditInfo()
+                },
+                cancellationToken: cancellationToken);
+
+            return new ChatResponseDto
+            {
+                SessionId = sessionId,
+                Message = answer,
+                NeedMoreInfo = false,
+                MissingFields = new List<string>(),
+                Intent = intent,
+                Suggestions = new List<ChatbotProductSuggestionDto>()
+            };
+        }
+
+        private async Task<ChatResponseDto> HandleMixedAsync(
+    string sessionId,
+    string message,
+    ChatbotIntentDto intent,
+    CancellationToken cancellationToken)
+        {
+            var blockingMissingFields = GetBlockingMissingFields(intent);
+
+            var suggestions = new List<ChatbotProductSuggestionDto>();
+            var knowledgeResults = new List<KnowledgeSearchResultDto>();
+
+            if (blockingMissingFields.Count == 0)
+            {
+                try
+                {
+                    suggestions = (await _catalogReader.SearchEsimPackagesAsync(
+                            intent,
+                            take: 3,
+                            cancellationToken))
+                        .ToList();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Search chatbot products for mixed question failed.");
+                }
+            }
+
+            try
+            {
+                knowledgeResults = await _knowledgeSearchService.SearchAsync(
+                    message,
+                    topK: 3,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Search chatbot knowledge for mixed question failed.");
+            }
+
+            if (suggestions.Count == 0 && knowledgeResults.Count == 0)
+            {
+                return new ChatResponseDto
+                {
+                    SessionId = sessionId,
+                    Message = "Bạn vui lòng cho biết thêm điểm đến, số ngày đi hoặc vấn đề cần hỗ trợ để tôi tư vấn chính xác hơn.",
+                    NeedMoreInfo = true,
+                    MissingFields = blockingMissingFields,
+                    Intent = intent,
+                    Suggestions = new List<ChatbotProductSuggestionDto>()
+                };
+            }
+
+            string answer;
+
+            try
+            {
+                answer = await _aiClient.GenerateMixedAnswerAsync(
+                    message,
+                    intent,
+                    suggestions,
+                    knowledgeResults,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Generate chatbot mixed answer failed.");
+
+                if (suggestions.Count > 0)
+                {
+                    answer = BuildFallbackAnswer(suggestions);
+                }
+                else
+                {
+                    answer = BuildKnowledgeFallbackAnswer(knowledgeResults);
+                }
+            }
+
+            return new ChatResponseDto
+            {
+                SessionId = sessionId,
+                Message = answer,
+                NeedMoreInfo = suggestions.Count == 0 && blockingMissingFields.Count > 0,
+                MissingFields = suggestions.Count > 0
+                    ? GetOptionalMissingFields(intent)
+                    : blockingMissingFields,
+                Intent = intent,
+                Suggestions = suggestions
+            };
+        }
+
+        private static string BuildKnowledgeFallbackAnswer(
+    IReadOnlyList<KnowledgeSearchResultDto> knowledgeResults)
+        {
+            if (knowledgeResults.Count == 0)
+            {
+                return "Tôi chưa tìm thấy thông tin chính xác trong dữ liệu hiện có.";
+            }
+
+            var first = knowledgeResults.First();
+
+            var content = first.Content;
+
+            if (content.Length > 600)
+            {
+                content = content[..600] + "...";
+            }
+
+            if (!string.IsNullOrWhiteSpace(first.SourceUrl))
+            {
+                return $"{content}\n\nBạn có thể xem thêm tại: {first.SourceUrl}";
+            }
+
+            return content;
+        }
     }
-
-
 }

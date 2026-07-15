@@ -25,7 +25,7 @@ namespace DTP.Modules.Knowledge.Presentation.Controllers
         }
 
         [HttpPost("reindex")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> Reindex(CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(
@@ -60,7 +60,7 @@ namespace DTP.Modules.Knowledge.Presentation.Controllers
 
 
         [HttpPost("reindex-source")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> ReindexSource(
             [FromBody] ReindexKnowledgeSourceRequest request,
             CancellationToken cancellationToken)

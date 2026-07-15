@@ -54,6 +54,12 @@ namespace DTP.Modules.Content.Infrastructure.Services
 
             await ClearRelatedCacheAsync(cancellationToken);
 
+            await _mediator.Send(
+              new ReindexKnowledgeSourceCommand(
+                  KnowledgeSourceType.ContentFaq,
+                  faq.Id),
+              cancellationToken);
+
             return Result<ContentFaqDto>.Success(Map(faq));
         }
 

@@ -11,6 +11,7 @@ namespace DTP.Modules.Knowledge.Domain.Enums
         Product = 1,
         ProductFaq = 2,
         Content = 3,
-        ContentFaq = 4
+        ContentFaq = 4,
+        ProductContent = 5
     }
 }

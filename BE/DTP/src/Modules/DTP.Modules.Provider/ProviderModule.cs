@@ -45,7 +45,7 @@ namespace DTP.Modules.Provider
 
             services.AddHttpClient<IPeacomProviderClient, PeacomProviderClient>(client =>
             {
-                client.BaseAddress = new Uri("https://dev-api.peacom.co");
+                client.BaseAddress = new Uri("https://api.peacom.co");
                 client.Timeout = TimeSpan.FromSeconds(30);
             });
 

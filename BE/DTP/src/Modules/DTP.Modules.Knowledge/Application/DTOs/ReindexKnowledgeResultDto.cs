@@ -10,6 +10,8 @@ namespace DTP.Modules.Knowledge.Application.DTOs
     {
         public int ProductCount { get; set; }
 
+        public int ProductContentCount { get; set; }
+
         public int ProductFaqCount { get; set; }
 
         public int ContentCount { get; set; }

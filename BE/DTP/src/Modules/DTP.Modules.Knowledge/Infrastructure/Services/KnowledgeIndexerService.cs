@@ -44,11 +44,13 @@ namespace DTP.Modules.Knowledge.Infrastructure.Services
             var chunks = new List<KnowledgeChunk>();
 
             var productChunks = await BuildProductChunksAsync(null, cancellationToken);
+            var productContentChunks = await BuildProductContentChunksAsync(null, null, cancellationToken);
             var productFaqChunks = await BuildProductFaqChunksAsync(null, null, cancellationToken);
             var contentChunks = await BuildContentChunksAsync(null, cancellationToken);
             var contentFaqChunks = await BuildContentFaqChunksAsync(null, null, cancellationToken);
 
             chunks.AddRange(productChunks.Chunks);
+            chunks.AddRange(productContentChunks.Chunks);
             chunks.AddRange(productFaqChunks.Chunks);
             chunks.AddRange(contentChunks.Chunks);
             chunks.AddRange(contentFaqChunks.Chunks);
@@ -70,6 +72,7 @@ namespace DTP.Modules.Knowledge.Infrastructure.Services
             return new ReindexKnowledgeResultDto
             {
                 ProductCount = productChunks.SourceCount,
+                ProductContentCount = productContentChunks.SourceCount,
                 ProductFaqCount = productFaqChunks.SourceCount,
                 ContentCount = contentChunks.SourceCount,
                 ContentFaqCount = contentFaqChunks.SourceCount,
@@ -89,17 +92,35 @@ namespace DTP.Modules.Knowledge.Infrastructure.Services
             {
                 case KnowledgeSourceType.Product:
                     {
+                        var productIds = new List<Guid> { sourceId };
+
                         var productChunks = await BuildProductChunksAsync(
-                            new List<Guid> { sourceId },
+                            productIds,
                             cancellationToken);
 
                         var productFaqChunks = await BuildProductFaqChunksAsync(
                             faqIds: null,
-                            productIds: new List<Guid> { sourceId },
+                            productIds: productIds,
+                            cancellationToken);
+
+                        var productContentChunks = await BuildProductContentChunksAsync(
+                            productContentIds: null,
+                            productIds: productIds,
                             cancellationToken);
 
                         chunks.AddRange(productChunks.Chunks);
                         chunks.AddRange(productFaqChunks.Chunks);
+                        chunks.AddRange(productContentChunks.Chunks);
+                        break;
+                    }
+                case KnowledgeSourceType.ProductContent:
+                    {
+                        var productContentChunks = await BuildProductContentChunksAsync(
+                            productContentIds: new List<Guid> { sourceId },
+                            productIds: null,
+                            cancellationToken);
+
+                        chunks.AddRange(productContentChunks.Chunks);
                         break;
                     }
 
@@ -162,6 +183,7 @@ namespace DTP.Modules.Knowledge.Infrastructure.Services
             return new ReindexKnowledgeResultDto
             {
                 ProductCount = chunks.Count(x => x.SourceType == KnowledgeSourceType.Product),
+                ProductContentCount = chunks.Count(x => x.SourceType == KnowledgeSourceType.ProductContent),
                 ProductFaqCount = chunks.Count(x => x.SourceType == KnowledgeSourceType.ProductFaq),
                 ContentCount = chunks.Count(x => x.SourceType == KnowledgeSourceType.Content),
                 ContentFaqCount = chunks.Count(x => x.SourceType == KnowledgeSourceType.ContentFaq),
@@ -185,10 +207,27 @@ namespace DTP.Modules.Knowledge.Infrastructure.Services
                             .Select(x => x.Id)
                             .ToListAsync(cancellationToken);
 
+                        var productContentIds = await _dbContext.ProductContents
+                            .AsNoTracking()
+                            .Where(x => x.ProductId == sourceId)
+                            .Select(x => x.Id)
+                            .ToListAsync(cancellationToken);
+
                         await _dbContext.KnowledgeChunks
                             .Where(x =>
                                 (x.SourceType == KnowledgeSourceType.Product && x.SourceId == sourceId) ||
-                                (x.SourceType == KnowledgeSourceType.ProductFaq && faqIds.Contains(x.SourceId)))
+                                (x.SourceType == KnowledgeSourceType.ProductFaq && faqIds.Contains(x.SourceId)) ||
+                                (x.SourceType == KnowledgeSourceType.ProductContent && productContentIds.Contains(x.SourceId)))
+                            .ExecuteDeleteAsync(cancellationToken);
+
+                        break;
+                    }
+                case KnowledgeSourceType.ProductContent:
+                    {
+                        await _dbContext.KnowledgeChunks
+                            .Where(x =>
+                                x.SourceType == KnowledgeSourceType.ProductContent &&
+                                x.SourceId == sourceId)
                             .ExecuteDeleteAsync(cancellationToken);
 
                         break;
@@ -205,9 +244,9 @@ namespace DTP.Modules.Knowledge.Infrastructure.Services
 
                 case KnowledgeSourceType.Content:
                     {
-                        var faqIds = await _dbContext.ContentFaqs
+                        var faqIds = await _dbContext.Contents
                             .AsNoTracking()
-                            .Where(x => x.ContentId == sourceId)
+                            .Where(x => x.Id == sourceId)
                             .Select(x => x.Id)
                             .ToListAsync(cancellationToken);
 
@@ -422,51 +461,119 @@ namespace DTP.Modules.Knowledge.Infrastructure.Services
                 query = query.Where(x => faqIds.Contains(x.Id));
             }
 
-            if (contentIds is { Count: > 0 })
-            {
-                query = query.Where(x => contentIds.Contains(x.ContentId));
-            }
+
 
             var faqs = await query
                 .OrderBy(x => x.SortOrder)
                 .ToListAsync(cancellationToken);
 
-            var parentContentIds = faqs
-                .Select(x => x.ContentId)
-                .Distinct()
-                .ToList();
 
-            var contents = await _dbContext.Contents
-                .AsNoTracking()
-                .Where(x => x.IsActive && !x.IsDeleted && x.IsPublished)
-                .Where(x => parentContentIds.Contains(x.Id))
-                .ToDictionaryAsync(x => x.Id, cancellationToken);
+
+            //var contents = await _dbContext.Contents
+            //    .AsNoTracking()
+            //    .Where(x => x.IsActive && !x.IsDeleted && x.IsPublished)
+            //    .ToDictionaryAsync(x => x.Id, cancellationToken);
 
             var chunks = new List<KnowledgeChunk>();
 
             foreach (var faq in faqs)
             {
-                if (!contents.TryGetValue(faq.ContentId, out var content))
-                    continue;
+                //if (!contents.TryGetValue(faq.Id, out var content))
+                //    continue;
 
                 var text = $"""
-            Loại dữ liệu: Câu hỏi thường gặp nội dung/hướng dẫn
-            Bài viết: {content.Title}
-            Câu hỏi: {faq.Question}
-            Trả lời: {faq.Answer}
-            """;
+                    Loại dữ liệu: Câu hỏi thường gặp nội dung/hướng dẫn
+                    Câu hỏi: {faq.Question}
+                    Trả lời: {faq.Answer}
+                    """;
 
                 chunks.Add(CreateChunk(
                     KnowledgeSourceType.ContentFaq,
                     faq.Id,
                     0,
-                    content.Title,
-                    content.Slug,
-                    BuildContentUrl(content.Slug),
+                    faq.Question,
+                    "",
+                    BuildContentUrl(faq.Answer),
                     text));
             }
 
             return (faqs.Count, chunks);
+        }
+
+
+        private async Task<(int SourceCount, List<KnowledgeChunk> Chunks)> BuildProductContentChunksAsync(
+    List<Guid>? productContentIds,
+    List<Guid>? productIds,
+    CancellationToken cancellationToken)
+        {
+            var query = _dbContext.ProductContents
+                .AsNoTracking()
+                .Where(x => x.IsActive && !x.IsDeleted);
+
+            if (productContentIds is { Count: > 0 })
+            {
+                query = query.Where(x => productContentIds.Contains(x.Id));
+            }
+
+            if (productIds is { Count: > 0 })
+            {
+                query = query.Where(x => productIds.Contains(x.ProductId));
+            }
+
+            var productContents = await query
+                .OrderBy(x => x.SortOrder)
+                .ToListAsync(cancellationToken);
+
+            var parentProductIds = productContents
+                .Select(x => x.ProductId)
+                .Distinct()
+                .ToList();
+
+            var products = await _dbContext.Products
+                .AsNoTracking()
+                .Where(x => x.IsActive && !x.IsDeleted)
+                .Where(x => parentProductIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id, cancellationToken);
+
+            var chunks = new List<KnowledgeChunk>();
+
+            foreach (var item in productContents)
+            {
+                if (!products.TryGetValue(item.ProductId, out var product))
+                    continue;
+
+                var text = $"""
+                    Loại dữ liệu: Nội dung sản phẩm eSIM
+                    Sản phẩm: {product.Name}
+                    Tiêu đề nội dung: {item.Title}
+                    Tóm tắt: {item.Summary}
+                    Nội dung:
+                    {item.BodyHtml}
+                    """;
+
+                var sourceUrl = BuildProductUrl(product.Slug);
+
+                var parts = _chunker.Split(
+                    text,
+                    _options.ChunkMaxChars,
+                    _options.ChunkOverlapChars);
+
+                for (var i = 0; i < parts.Count; i++)
+                {
+                    chunks.Add(CreateChunk(
+                        KnowledgeSourceType.ProductContent,
+                        item.Id,
+                        i,
+                        string.IsNullOrWhiteSpace(item.Title)
+                            ? product.Name
+                            : $"{product.Name} - {item.Title}",
+                        product.Slug,
+                        sourceUrl,
+                        parts[i]));
+                }
+            }
+
+            return (productContents.Count, chunks);
         }
 
         private KnowledgeChunk CreateChunk(

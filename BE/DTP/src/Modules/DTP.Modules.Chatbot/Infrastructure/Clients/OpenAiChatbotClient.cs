@@ -1,6 +1,7 @@
 ﻿using DTP.Modules.Chatbot.Application.Abstractions;
 using DTP.Modules.Chatbot.Application.DTOs;
 using DTP.Modules.Chatbot.Infrastructure.Options;
+using DTP.Modules.Knowledge.Application.DTOs;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -190,6 +191,105 @@ namespace DTP.Modules.Chatbot.Infrastructure.Clients
                 temperature: 0.3,
                 cancellationToken);
         }
+
+        public async Task<string> GenerateKnowledgeAnswerAsync(
+            string userMessage,
+            IReadOnlyList<KnowledgeSearchResultDto> knowledgeResults,
+            CancellationToken cancellationToken = default)
+                {
+                    var knowledgeContext = string.Join("\n\n---\n\n", knowledgeResults.Select(x => $"""
+            Nguồn: {x.SourceType}
+            Tiêu đề: {x.Title}
+            Link: {x.SourceUrl}
+            Nội dung:
+            {x.Content}
+            """));
+
+                    var systemPrompt = $"""
+            Bạn là chatbot hỗ trợ thông tin cho DTP - website bán eSIM du lịch.
+
+            Nhiệm vụ:
+            - Trả lời dựa trên Knowledge được cung cấp.
+            - Không tự bịa chính sách, giá, cam kết hoặc thông tin không có trong Knowledge.
+            - Nếu Knowledge không có thông tin, hãy nói chưa có dữ liệu chính xác.
+            - Trả lời ngắn gọn, dễ hiểu, lịch sự.
+
+            Knowledge:
+            {knowledgeContext}
+            """;
+
+            return await CreateResponseAsync(
+                systemPrompt,
+                userMessage,
+                maxOutputTokens: _options.MaxOutputTokens,
+                temperature: 0.3,
+                cancellationToken);
+        }
+
+
+        public async Task<string> GenerateMixedAnswerAsync(
+                string userMessage,
+                ChatbotIntentDto intent,
+                IReadOnlyList<ChatbotProductSuggestionDto> suggestions,
+                IReadOnlyList<KnowledgeSearchResultDto> knowledgeResults,
+                CancellationToken cancellationToken = default)
+                    {
+                        var productContext = string.Join("\n\n", suggestions.Select(x => $"""
+                Sản phẩm: {x.ProductName}
+                Gói: {x.PackageName}
+                Quốc gia: {x.CountryName}
+                Dung lượng: {(x.IsUnlimited ? "Không giới hạn" : $"{x.DataAmount} {x.DataUnit}")}
+                Thời hạn: {x.ValidityDays} ngày
+                Giá: {x.SalePrice:N0} {x.Currency}
+                Link mua: {x.BuyUrl}
+                """));
+
+                        var knowledgeContext = string.Join("\n\n---\n\n", knowledgeResults.Select(x => $"""
+                Nguồn: {x.SourceType}
+                Tiêu đề: {x.Title}
+                Link: {x.SourceUrl}
+                Nội dung:
+                {x.Content}
+                """));
+
+                        var systemPrompt = $"""
+                Bạn là chatbot tư vấn eSIM cho DTP.
+
+                Bạn có 2 loại dữ liệu:
+
+                1. Dữ liệu sản phẩm:
+                Dùng để tư vấn gói eSIM, giá, dung lượng, thời hạn sử dụng.
+
+                2. Knowledge:
+                Dùng để trả lời hướng dẫn, FAQ, chính sách, cách cài đặt, lỗi QR.
+
+                Quy tắc:
+                - Nếu khách hỏi mua gói, ưu tiên dữ liệu sản phẩm.
+                - Nếu khách hỏi hướng dẫn/cài đặt/chính sách, dùng Knowledge.
+                - Không tự bịa giá, chính sách hoặc thông tin không có trong dữ liệu.
+                - Nếu thiếu điểm đến hoặc số ngày đi, hãy hỏi lại.
+                - Trả lời ngắn gọn, dễ hiểu.
+
+                Intent:
+                Quốc gia: {intent.CountryKeyword ?? intent.CountryCode}
+                Số ngày đi: {intent.TravelDays}
+                Nhu cầu data: {intent.UsageLevel}
+
+                Dữ liệu sản phẩm:
+                {productContext}
+
+                Knowledge:
+                {knowledgeContext}
+                """;
+
+              return await CreateResponseAsync(
+                            systemPrompt,
+                            userMessage,
+                            maxOutputTokens: _options.MaxOutputTokens,
+                            temperature: 0.3,
+                            cancellationToken: cancellationToken);
+        }
+
 
         private async Task<string> CreateResponseAsync(
             string instructions,

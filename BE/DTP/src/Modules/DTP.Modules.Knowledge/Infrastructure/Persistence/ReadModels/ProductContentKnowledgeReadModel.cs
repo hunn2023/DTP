@@ -6,13 +6,19 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Knowledge.Infrastructure.Persistence.ReadModels
 {
-    public class ContentFaqKnowledgeReadModel
+    public class ProductContentKnowledgeReadModel
     {
         public Guid Id { get; set; }
 
-        public string Question { get; set; } = string.Empty;
+        public Guid ProductId { get; set; }
 
-        public string Answer { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+
+        public string? Slug { get; set; }
+
+        public string? Summary { get; set; }
+
+        public string? BodyHtml { get; set; }
 
         public int SortOrder { get; set; }
 

@@ -74,6 +74,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 productContent.ProductId,
                 cancellationToken);
 
+            await _mediator.Send(
+                new ReindexKnowledgeSourceCommand(
+                    KnowledgeSourceType.ProductContent,
+                    productContent.Id),
+                cancellationToken);
+
             return Result<ProductContentDto>.Success(MapToDto(productContent));
         }
 
@@ -114,10 +120,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
 
             await _mediator.Send(
-                new ReindexKnowledgeSourceCommand(
-                    KnowledgeSourceType.Content,
-                    productContent.Id),
-                cancellationToken);
+            new ReindexKnowledgeSourceCommand(
+                KnowledgeSourceType.ProductContent,
+                productContent.Id),
+            cancellationToken);
 
             return Result<ProductContentDto>.Success(MapToDto(productContent));
         }
@@ -144,6 +150,13 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                  productContent.Id,
                  productContent.ProductId,
                  cancellationToken);
+
+
+            await _mediator.Send(
+                new ReindexKnowledgeSourceCommand(
+                    KnowledgeSourceType.ProductContent,
+                    productContent.Id),
+                cancellationToken);
 
             return Result.Success();
         }

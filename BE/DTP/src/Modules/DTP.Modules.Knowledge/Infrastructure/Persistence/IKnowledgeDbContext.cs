@@ -17,6 +17,9 @@ namespace DTP.Modules.Knowledge.Infrastructure.Persistence
 
         DbSet<ProductFaqKnowledgeReadModel> ProductFaqs { get; }
 
+
+        DbSet<ProductContentKnowledgeReadModel> ProductContents { get; }
+
         DbSet<ContentKnowledgeReadModel> Contents { get; }
 
         DbSet<ContentFaqKnowledgeReadModel> ContentFaqs { get; }

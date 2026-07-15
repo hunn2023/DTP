@@ -75,6 +75,13 @@ namespace DTP.Modules.Content.Infrastructure.Services
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             await RemoveArticleCacheAsync(cancellationToken);
+
+            await _mediator.Send(
+                 new ReindexKnowledgeSourceCommand(
+                     KnowledgeSourceType.Content,
+                     article.Id),
+                 cancellationToken);
+
             return Result<ContentArticleDto>.Success(Map(article));
 
         }

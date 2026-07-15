@@ -26,6 +26,8 @@ namespace DTP.Modules.Knowledge.Infrastructure.Persistence
 
         public DbSet<ContentFaqKnowledgeReadModel> ContentFaqs => Set<ContentFaqKnowledgeReadModel>();
 
+        public DbSet<ProductContentKnowledgeReadModel> ProductContents => Set<ProductContentKnowledgeReadModel>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(KnowledgeDbContext).Assembly);
