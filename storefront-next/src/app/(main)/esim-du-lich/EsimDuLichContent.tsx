@@ -20,16 +20,19 @@ const COUNTRY_FLAG_CODES: Record<string, string> = {
 
 type EsimRegion = NonNullable<EsimCountrySummary["region"]>;
 
-const REGION_BADGES: Record<EsimRegion, string> = {
+const REGION_BADGES: Partial<Record<EsimRegion, string>> = {
   "Châu Á": "🌏",
   "Châu Âu": "",
   "Châu Mỹ": "🌎",
   "Châu Đại Dương": "🌊",
 };
 
-const REGION_FLAG_CODES: Partial<Record<EsimRegion, string>> = {
-  "Châu Âu": "eu",
-};
+const DEFAULT_REGION_ORDER: EsimRegion[] = [
+  "Châu Á",
+  "Châu Âu",
+  "Châu Mỹ",
+  "Châu Đại Dương",
+];
 
 const DEFAULT_VISIBLE_COUNTRIES = 50;
 export default function EsimDuLichContent({
@@ -63,18 +66,18 @@ function EsimDuLichContentInner({
       )
     : destinations;
 
-  const regionOrder: EsimRegion[] = [
-    "Châu Á",
-    "Châu Âu",
-    "Châu Mỹ",
-    "Châu Đại Dương",
-  ];
-
   const regionCounts = keywordFilteredDestinations.reduce<Record<string, number>>((acc, destination) => {
     if (!destination.region) return acc;
     acc[destination.region] = (acc[destination.region] ?? 0) + 1;
     return acc;
   }, {});
+
+  const regionOrder: EsimRegion[] = [
+    ...DEFAULT_REGION_ORDER.filter((region) => (regionCounts[region] ?? 0) > 0),
+    ...Object.keys(regionCounts)
+      .filter((region) => !DEFAULT_REGION_ORDER.includes(region))
+      .sort((a, b) => a.localeCompare(b, language === "vi" ? "vi" : "en")),
+  ];
 
   const filteredDestinations = keywordFilteredDestinations.filter(
     (destination) => !selectedRegion || destination.region === selectedRegion
@@ -117,14 +120,14 @@ function EsimDuLichContentInner({
   const displayRegionName = (region: EsimRegion) => {
     if (language === "vi") return region;
 
-    const map: Record<EsimRegion, string> = {
+    const map: Record<string, string> = {
       "Châu Á": "Asia",
       "Châu Âu": "Europe",
       "Châu Mỹ": "Americas",
       "Châu Đại Dương": "Oceania",
     };
 
-    return map[region];
+    return map[region] ?? region;
   };
 
   const text = {
@@ -239,21 +242,9 @@ function EsimDuLichContentInner({
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      {REGION_FLAG_CODES[region] ? (
-                        <span className="inline-flex h-4.5 w-7 items-center justify-center overflow-hidden rounded-sm border border-slate-200 bg-slate-100" aria-hidden>
-                          <Image
-                            src={`https://flagcdn.com/w40/${REGION_FLAG_CODES[region]}.png`}
-                            alt={region}
-                            width={28}
-                            height={18}
-                            className="h-full w-full object-cover"
-                          />
-                        </span>
-                      ) : (
-                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-xs" aria-hidden>
-                          {REGION_BADGES[region]}
-                        </span>
-                      )}
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-xs" aria-hidden>
+                        {REGION_BADGES[region] ?? "🌐"}
+                      </span>
                       {displayRegionName(region)}
                     </span>
                     <span className="text-xs">{regionCounts[region]}</span>

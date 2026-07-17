@@ -30,13 +30,18 @@ function mapApiCountryHomeToSummary(country: ApiCountryHome): EsimCountrySummary
 }
 
 function mapRegion(region: string | null): EsimCountryDetail["region"] {
-  if (!region) return null;
-  const r = region.toLowerCase();
-  if (r.includes("á") || r.includes("asia")) return "Châu Á";
-  if (r.includes("âu") || r.includes("europe")) return "Châu Âu";
-  if (r.includes("mỹ") || r.includes("america")) return "Châu Mỹ";
-  if (r.includes("đại dương") || r.includes("oceania")) return "Châu Đại Dương";
-  return null;
+  const value = region?.trim();
+  if (!value) return null;
+  const normalized = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .toLowerCase();
+  if (normalized.includes("chau a") || normalized.includes("asia")) return "Châu Á";
+  if (normalized.includes("chau au") || normalized.includes("europe")) return "Châu Âu";
+  if (normalized.includes("chau my") || normalized.includes("america")) return "Châu Mỹ";
+  if (normalized.includes("dai duong") || normalized.includes("oceania")) return "Châu Đại Dương";
+  return value;
 }
 
 function formatDataAmount(value: number): string {

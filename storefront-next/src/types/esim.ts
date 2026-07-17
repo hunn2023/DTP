@@ -51,7 +51,7 @@ export interface EsimCountryDetail {
   name: string;
   nameEn: string;
   description?: string | null;
-  region: "Châu Á" | "Châu Âu" | "Châu Mỹ" | "Châu Đại Dương" | null;
+  region: string | null;
   gradient: string;
   textColor: string;
   tagBg: string;
