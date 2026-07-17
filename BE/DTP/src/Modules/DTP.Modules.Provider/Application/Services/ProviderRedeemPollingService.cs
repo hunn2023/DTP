@@ -68,10 +68,23 @@ namespace DTP.Modules.Provider.Application.Services
             {
                 try
                 {
+                    if (!redeem.CanCallRedeemInfo())
+                    {
+                        continue;
+                    }
+
+                    redeem.MarkRedeemInfoCalled();
+
+                    // Lưu số lần gọi trước khi thực hiện HTTP request.
+                    // Nếu API timeout hoặc lỗi mạng thì lần gọi vẫn được tính.
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
                     _logger.LogInformation(
-                        "Polling redeem info. Serial={Serial}, Status={Status}",
+                        "Polling redeem info. Serial={Serial}, Status={Status}, Call={CallCount}/{MaxCallCount}",
                         redeem.Serial,
-                        redeem.Status);
+                        redeem.Status,
+                        redeem.RedeemInfoCallCount,
+                        ProviderRedeem.MaxRedeemInfoCallCount);
 
                     var info = await _peacomClient.GetRedeemInfoAsync(
                         provider,
@@ -91,7 +104,8 @@ namespace DTP.Modules.Provider.Application.Services
 
                         if (data is null)
                         {
-                            redeem.MarkFailed("Peacom redeem DONE nhưng không có data.");
+                            redeem.MarkFailed(
+                                "Peacom redeem DONE nhưng không có data.");
                         }
                         else if (info.ProductType == 1 || data.ProductType == 1)
                         {
@@ -116,21 +130,34 @@ namespace DTP.Modules.Provider.Application.Services
                     {
                         redeem.MarkFailed("Peacom redeem status = FAIL.");
                     }
+                    else if (
+                        redeem.RedeemInfoCallCount >=
+                        ProviderRedeem.MaxRedeemInfoCallCount)
+                    {
+                        redeem.MarkFailed(
+                            $"Không lấy được thông tin redeem sau " +
+                            $"{ProviderRedeem.MaxRedeemInfoCallCount} lần gọi.");
+                    }
 
                     await _unitOfWork.SaveChangesAsync(cancellationToken);
                 }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                catch (OperationCanceledException)
+                    when (cancellationToken.IsCancellationRequested)
                 {
                     throw;
                 }
                 catch (Exception ex)
                 {
-                    // Không mark Failed ngay vì có thể chỉ là lỗi mạng tạm thời.
-                    // Worker lần sau sẽ thử lại.
+                    redeem.MarkRedeemInfoError(ex.Message);
+
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
                     _logger.LogWarning(
                         ex,
-                        "Poll redeem info failed. Serial={Serial}",
-                        redeem.Serial);
+                        "Poll redeem info failed. Serial={Serial}, Call={CallCount}/{MaxCallCount}",
+                        redeem.Serial,
+                        redeem.RedeemInfoCallCount,
+                        ProviderRedeem.MaxRedeemInfoCallCount);
                 }
             }
         }

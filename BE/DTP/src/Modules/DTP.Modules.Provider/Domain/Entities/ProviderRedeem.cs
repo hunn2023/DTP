@@ -32,6 +32,11 @@ namespace DTP.Modules.Provider.Domain.Entities
 
         public string? Model { get; private set; }
 
+        public int RedeemInfoCallCount { get; private set; }
+
+        public DateTime? LastRedeemInfoCallAt { get; private set; }
+
+
         // eSIM result
         public string? Iccid { get; private set; }
 
@@ -88,6 +93,7 @@ namespace DTP.Modules.Provider.Domain.Entities
             Sku = sku;
             RedeemStatus = 0;
             Status = "Init";
+            RedeemInfoCallCount = 0;
             CreatedAt = DateTime.UtcNow;
         }
 
@@ -176,5 +182,48 @@ namespace DTP.Modules.Provider.Domain.Entities
                 _ => "Init"
             };
         }
+
+        public const int MaxRedeemInfoCallCount = 5;
+        public bool CanCallRedeemInfo()
+        {
+            return RedeemStatus != 2 &&
+                   RedeemInfoCallCount < MaxRedeemInfoCallCount;
+        }
+
+        public void MarkRedeemInfoCalled()
+        {
+            if (RedeemStatus == 2)
+                throw new InvalidOperationException(
+                    "Redeem đã hoàn thành, không cần gọi lại API.");
+
+            if (RedeemInfoCallCount >= MaxRedeemInfoCallCount)
+                throw new InvalidOperationException(
+                    $"Đã đạt số lần gọi API tối đa: {MaxRedeemInfoCallCount} lần.");
+
+            RedeemInfoCallCount++;
+            LastRedeemInfoCallAt = DateTime.UtcNow;
+            LastCheckedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+
+        public void MarkRedeemInfoError(string errorMessage)
+        {
+            ErrorMessage = errorMessage;
+            LastCheckedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
+
+            if (RedeemInfoCallCount >= MaxRedeemInfoCallCount)
+            {
+                RedeemStatus = 3;
+                Status = "Failed";
+            }
+            else
+            {
+                RedeemStatus = 1;
+                Status = "Processing";
+            }
+        }
+
     }
 }

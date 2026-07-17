@@ -31,9 +31,21 @@ namespace DTP.Modules.Provider.Infrastructure.Repositories
             int take,
             CancellationToken cancellationToken = default)
         {
+            if (take <= 0)
+                take = 20;
+
+            var now = DateTime.UtcNow;
+            var retryBefore = now.AddSeconds(-30);
+
             return await _dbContext.ProviderRedeems
-                .Where(x => x.Status == "Init" || x.Status == "Processing")
-                .OrderBy(x => x.LastCheckedAt ?? x.CreatedAt)
+                .Where(x =>
+                    x.Status != "Done" &&
+                    x.RedeemInfoCallCount < ProviderRedeem.MaxRedeemInfoCallCount &&
+                    (
+                        x.LastRedeemInfoCallAt == null ||
+                        x.LastRedeemInfoCallAt <= retryBefore
+                    ))
+                .OrderBy(x => x.LastRedeemInfoCallAt ?? x.CreatedAt)
                 .Take(take)
                 .ToListAsync(cancellationToken);
         }
