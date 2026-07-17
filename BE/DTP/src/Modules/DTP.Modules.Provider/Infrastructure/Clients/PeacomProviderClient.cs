@@ -5,6 +5,7 @@ using DTP.Modules.Provider.Application.DTOs.Peacoms;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
@@ -491,37 +492,59 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
 
 
         public async Task<PeacomRedeemInfoResponse> GetRedeemInfoAsync(
-            Domain.Entities.Provider provider,
-            string serial,
-            CancellationToken cancellationToken = default)
+             Domain.Entities.Provider provider,
+             string serial,
+             CancellationToken cancellationToken = default)
         {
             EnsureHttpClientConfigured();
 
-            if (provider is null)
-                throw new ArgumentNullException(nameof(provider));
+            ArgumentNullException.ThrowIfNull(provider);
 
             if (string.IsNullOrWhiteSpace(serial))
-                throw new ArgumentException("serial không được rỗng.", nameof(serial));
+                throw new ArgumentException("Serial không được rỗng.", nameof(serial));
 
             if (string.IsNullOrWhiteSpace(provider.ApiKey))
                 throw new InvalidOperationException("Provider chưa cấu hình ApiKey.");
 
-            var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
-            {
-                PropertyNameCaseInsensitive = true
-            };
+            serial = serial.Trim();
 
             using var httpRequest = new HttpRequestMessage(
                 HttpMethod.Get,
                 $"eip/partner/v2/redeem/{Uri.EscapeDataString(serial)}");
 
-            httpRequest.Headers.Add("apikey", provider.ApiKey);
+            httpRequest.Headers.TryAddWithoutValidation(
+                "apikey",
+                provider.ApiKey);
 
             using var response = await _httpClient.SendAsync(
                 httpRequest,
                 cancellationToken);
 
-            var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+            var rawResponse = await response.Content.ReadAsStringAsync(
+                cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.BadGateway)
+            {
+                throw new InvalidOperationException(
+                    $"Peacom trả về 502 Bad Gateway. " +
+                    $"Serial={serial}. " +
+                    $"Endpoint={httpRequest.RequestUri}. " +
+                    $"Response={rawResponse}");
+            }
+
+            if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
+            {
+                throw new InvalidOperationException(
+                    $"Peacom trả về 503 Service Unavailable. " +
+                    $"Serial={serial}. Response={rawResponse}");
+            }
+
+            if (response.StatusCode == HttpStatusCode.GatewayTimeout)
+            {
+                throw new InvalidOperationException(
+                    $"Peacom trả về 504 Gateway Timeout. " +
+                    $"Serial={serial}. Response={rawResponse}");
+            }
 
             if (!response.IsSuccessStatusCode)
             {
@@ -529,41 +552,37 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
                     $"Gọi Peacom GET REDEEM INFO thất bại. " +
                     $"Serial={serial}. " +
                     $"HttpStatus={(int)response.StatusCode} {response.ReasonPhrase}. " +
-                    $"Response={rawJson}");
+                    $"Response={rawResponse}");
             }
-
-            PeacomRedeemInfoResponse? result;
 
             try
             {
+                var result = JsonSerializer.Deserialize<PeacomRedeemInfoResponse>(
+                    rawResponse,
+                    new JsonSerializerOptions(JsonSerializerDefaults.Web)
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        NumberHandling = JsonNumberHandling.AllowReadingFromString
+                    });
 
-                result = JsonSerializer.Deserialize<PeacomRedeemInfoResponse>(
-                   rawJson,
-                   new JsonSerializerOptions
-                   {
-                       PropertyNameCaseInsensitive = true,
-                       NumberHandling = JsonNumberHandling.AllowReadingFromString
-                   });
+                if (result is null)
+                {
+                    throw new InvalidOperationException(
+                        $"Response GET REDEEM INFO Peacom là null. " +
+                        $"Serial={serial}. Response={rawResponse}");
+                }
 
+                result.RawJson = rawResponse;
+
+                return result;
             }
             catch (JsonException ex)
             {
                 throw new InvalidOperationException(
-                    $"Không parse được response GET REDEEM INFO Peacom. Serial={serial}. Response={rawJson}",
+                    $"Không parse được response GET REDEEM INFO Peacom. " +
+                    $"Serial={serial}. Response={rawResponse}",
                     ex);
             }
-
-            if (result is null)
-            {
-                throw new InvalidOperationException(
-                    $"Không parse được response GET REDEEM INFO Peacom. Serial={serial}. Response={rawJson}");
-            }
-
-            result.RawJson = rawJson;
-
-
-
-            return result;
         }
 
 
