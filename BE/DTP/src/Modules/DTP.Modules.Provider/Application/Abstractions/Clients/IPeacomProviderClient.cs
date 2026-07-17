@@ -13,6 +13,7 @@ namespace DTP.Modules.Provider.Application.Abstractions.Clients
 
         Task<IReadOnlyList<ProviderPackageProductRemoteDto>> GetPackageProductsAsync(
           Domain.Entities.Provider provider,
+             int pageSize = 100,
           CancellationToken cancellationToken = default);
 
         Task<ProviderEsimProductRemoteDto> GetProductEsimAsync(

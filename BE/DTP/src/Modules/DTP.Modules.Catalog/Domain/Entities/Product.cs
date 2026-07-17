@@ -58,7 +58,6 @@ namespace DTP.Modules.Catalog.Domain.Entities
         public Guid? CountryId { get; private set; }
 
 
-
         public Category? Category { get; private set; }
 
 

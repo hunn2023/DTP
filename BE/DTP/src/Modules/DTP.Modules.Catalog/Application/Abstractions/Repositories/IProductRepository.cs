@@ -15,6 +15,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
 
         Task<Product?> GetByCodeAsync(string code, CancellationToken cancellationToken = default);
 
+
         Task<PagedResultDto<ProductDto>> GetPublicPagedAsync(
              string? keyword,
              Guid? categoryId,

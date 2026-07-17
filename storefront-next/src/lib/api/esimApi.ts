@@ -223,15 +223,33 @@ function unwrapItems<T>(json: unknown): { items: T[]; hasNext: boolean; totalPag
 }
 
 async function getCatalogVariants(): Promise<ApiProductVariant[]> {
-  try {
-    const response = await fetchWithAuth("/api/catalog/products/variants?pageSize=500");
-    if (!response.ok) return [];
+  const all: ApiProductVariant[] = [];
+  let pageIndex = 1;
+
+  while (true) {
+    const response = await fetchWithAuth(
+      `/api/catalog/products/variants?PageIndex=${pageIndex}&PageSize=100`
+    );
+
+    if (!response.ok) break;
+
     const json = await response.json();
     const payload = json?.data ?? json;
-    return Array.isArray(payload) ? payload : payload?.items ?? [];
-  } catch {
-    return [];
+    const items: ApiProductVariant[] = Array.isArray(payload)
+      ? payload
+      : payload?.items ?? [];
+
+    all.push(...items);
+
+    const hasNext =
+      payload?.hasNextPage ??
+      pageIndex < (payload?.totalPages ?? 1);
+
+    if (!hasNext || items.length === 0) break;
+    pageIndex++;
   }
+
+  return all;
 }
 
 async function getCatalogEsimPackages(): Promise<ApiEsimPackage[]> {

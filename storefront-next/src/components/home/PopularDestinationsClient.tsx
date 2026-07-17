@@ -98,9 +98,9 @@ export default function PopularDestinationsClient({ products }: PopularDestinati
               </div>
 
               <div style={{ padding: "14px 14px 16px" }}>
-                {product.locationText && (
+                {product.region && (
                   <p className="text-gray-500 mb-1" style={{ fontSize: "12px" }}>
-                    {product.locationText}
+                    {product.region}
                   </p>
                 )}
                 <div className="font-extrabold text-navy" style={{ fontSize: "18px", letterSpacing: "-0.2px" }}>

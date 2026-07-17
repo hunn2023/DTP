@@ -23,6 +23,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             _context = context;
         }
 
+ 
         public async Task<List<ProductVariant>> GetByProductIdAsync(
             Guid productId,
             CancellationToken cancellationToken = default)

@@ -19,7 +19,7 @@ const INITIAL_FILTERS: EsimPackageFilters = {
   dataRanges: [],
   featureTags: [],
   quickTag: "all",
-  sort: "recommended",
+  sort: "price_asc",
 };
 
 type ViewMode = "grid" | "list";
@@ -92,9 +92,22 @@ export default function EsimCountryBrowser({ country, contents, faqs }: EsimCoun
     [activeGbGroup, gbGroups, filteredPackages]
   );
 
+  // Build day options without applying the current day selection, otherwise
+  // selecting one day would make the other available options disappear.
+  const availableDayPackages = useMemo(
+    () => filterEsimPackages(country.packages, { ...filters, days: [] }),
+    [country.packages, filters]
+  );
+
   const activeGroupDays = useMemo(
-    () => Array.from(new Set(activeGroupPackages.map((pkg) => pkg.days))).sort((a, b) => a - b),
-    [activeGroupPackages]
+    () => Array.from(
+      new Set(
+        availableDayPackages
+          .filter((pkg) => activeGbGroup === null || getGbGroupKey(pkg.dataGB) === activeGbGroup)
+          .map((pkg) => pkg.days)
+      )
+    ).sort((a, b) => a - b),
+    [activeGbGroup, availableDayPackages]
   );
 
   const visiblePackages = activeGroupPackages.slice(0, visibleCount);
@@ -129,6 +142,16 @@ export default function EsimCountryBrowser({ country, contents, faqs }: EsimCoun
 
   const handleSortChange = (sort: EsimPackageFilters["sort"]) => {
     setFilters((current) => ({ ...current, sort }));
+  };
+
+  const handleDayChange = (day: number) => {
+    setFilters((current) => ({
+      ...current,
+      days: current.days.includes(day)
+        ? current.days.filter((item) => item !== day)
+        : [...current.days, day],
+    }));
+    setVisibleCount(6);
   };
 
   const buildCartItem = (pkg: EsimCountryDetail["packages"][number], quantity: number) => ({
@@ -267,9 +290,19 @@ export default function EsimCountryBrowser({ country, contents, faqs }: EsimCoun
               <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-sm">
                 <span className="font-semibold text-navy text-xs">{text.daysList}:</span>
                 {activeGroupDays.map((day) => (
-                  <span key={day} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => handleDayChange(day)}
+                    aria-pressed={filters.days.includes(day)}
+                    className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                      filters.days.includes(day)
+                        ? "border-primary bg-primary text-white"
+                        : "border-slate-200 bg-slate-100 text-slate-600 hover:border-primary hover:text-primary"
+                    }`}
+                  >
                     {day} {text.daysSuffix}
-                  </span>
+                  </button>
                 ))}
               </div>
             )}

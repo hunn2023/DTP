@@ -454,14 +454,16 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         }
 
 
-        public async Task<EsimPackage?> GetByProviderPackageCodeAsync̣(
+        public Task<EsimPackage?> GetByProviderPackageCodeAsync(
+            Guid providerId,
             string providerPackageCode,
             CancellationToken cancellationToken = default)
         {
-            return await _context.EsimPackages
-                .AsNoTracking()
-                .Where(x => x.ProviderPackageCode == providerPackageCode && !x.IsDeleted)
-                .FirstOrDefaultAsync(cancellationToken);
+            return _context.EsimPackages
+                .FirstOrDefaultAsync(
+                    x => x.ProviderId == providerId &&
+                         x.ProviderPackageCode == providerPackageCode,
+                    cancellationToken);
         }
     }
 }

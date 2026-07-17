@@ -6,35 +6,52 @@ using System.Threading.Tasks;
 
 namespace DTP.Modules.Catalog.Application.DTOs
 {
-    public class ProvisionProviderEsimProductRequest
+    public sealed class ProvisionProviderEsimProductRequest
     {
-        public Guid ProviderId { get; set; }
+        public Guid ProviderId { get; init; }
 
-        public string ProviderCode { get; set; } = default!;
-        public string ProviderSku { get; set; } = default!;
-        public string? ProviderProductId { get; set; }
+        public string ProviderCode { get; init; } = null!;
 
-        public string ProductName { get; set; } = default!;
-        public string? ProductDescription { get; set; }
+        public string ProviderSku { get; init; } = null!;
 
-        public string VariantName { get; set; } = default!;
-        public string? VariantSku { get; set; }
+        public string ProviderProductId { get; init; } = null!;
 
-        public decimal Price { get; set; }
-        public string CurrencyCode { get; set; } = "VND";
+        // Dùng để gom nhiều ProviderSku vào cùng Product
+        public string ProductFamilyCode { get; init; } = null!;
 
-        public decimal? DataAmount { get; set; }
-        public string? DataUnit { get; set; }
-        public int ValidityDays { get; set; }
-        public bool IsUnlimited { get; set; }
+        public string? Slug { get; init; }
 
-        public string? CoverageType { get; set; }
-        public string? CoverageDescription { get; set; }
+        public string ProductName { get; init; } = null!;
 
-        public List<ProvisionCountryDto> Countries { get; set; } = new();
+        public string? ProductDescription { get; init; }
 
-        public List<string> Operators { get; set; } = new();
+        public string VariantName { get; init; } = null!;
 
-        public bool IsActive { get; set; } = false;
+        // Đây phải là SKU nội bộ DTP, không phải ProviderSku
+        public string VariantSku { get; init; } = null!;
+
+        public decimal Price { get; init; }
+
+        public string CurrencyCode { get; init; } = "VND";
+
+        public decimal DataAmount { get; init; }
+
+        public string DataUnit { get; init; } = "MB";
+
+        public int ValidityDays { get; init; }
+
+        public bool IsUnlimited { get; init; }
+
+        public string? CoverageType { get; init; }
+
+        public string? CoverageDescription { get; init; }
+
+        public List<ProvisionCountryDto> Countries { get; init; } = [];
+
+        public List<string> Operators { get; init; } = [];
+
+        public bool IsActive { get; init; }
+
+        public int DataType { get; init; }
     }
 }

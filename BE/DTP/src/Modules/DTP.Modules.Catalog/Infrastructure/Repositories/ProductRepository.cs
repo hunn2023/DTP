@@ -475,7 +475,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
             pageSize = pageSize <= 0 ? defaultPageSize : pageSize;
             pageSize = pageSize > maxPageSize ? maxPageSize : pageSize;
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             var query =
                 from variant in variantQuery
@@ -590,7 +590,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         public async Task<List<HomeEsimProductDto>> GetHomeEsimProductsAsync(
         CancellationToken cancellationToken = default)
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             var rows = await _context.Products
                 .AsNoTracking()

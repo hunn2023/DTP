@@ -24,49 +24,75 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
         }
 
         public async Task<IReadOnlyList<ProviderPackageProductRemoteDto>> GetPackageProductsAsync(
-                Domain.Entities.Provider provider,
-                CancellationToken cancellationToken = default)
+            Domain.Entities.Provider provider,
+            int pageSize = 100,
+            CancellationToken cancellationToken = default)
         {
             EnsureHttpClientConfigured();
 
-            var request = new HttpRequestMessage(
-                HttpMethod.Get,
-                "/eip/partner/v2/product?page=1&size=100&type=1");
+            if (pageSize <= 0)
+                pageSize = 100;
 
-            request.Headers.Add("apikey", provider.ApiKey);
+            var pageIndex = 1;
+            var products = new List<ProviderPackageProductRemoteDto>();
 
-            var response = await _httpClient.SendAsync(request, cancellationToken);
-
-            var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
+            while (true)
             {
-                throw new InvalidOperationException(
-                    $"Peacom GET PACKAGE PRODUCT thất bại. StatusCode={(int)response.StatusCode}, Body={rawJson}");
+                using var request = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    $"/eip/partner/v2/product?page={pageIndex}&size={pageSize}&type=1");
+
+                request.Headers.Add("apikey", provider.ApiKey);
+
+                using var response = await _httpClient.SendAsync(
+                    request,
+                    cancellationToken);
+
+                var rawJson = await response.Content.ReadAsStringAsync(
+                    cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new InvalidOperationException(
+                        $"Peacom GET PACKAGE PRODUCT thất bại. " +
+                        $"Page={pageIndex}, Size={pageSize}, " +
+                        $"StatusCode={(int)response.StatusCode}, Body={rawJson}");
+                }
+
+                var result = JsonSerializer.Deserialize<PeacomPackageProductResponse>(
+                    rawJson,
+                    new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                var pageData = result?.Data;
+
+                if (pageData == null || pageData.Count == 0)
+                    break;
+
+                products.AddRange(pageData.Select(x =>
+                    new ProviderPackageProductRemoteDto
+                    {
+                        Id = x.Id.ToString(),
+                        Sku = x.Sku,
+                        Name = x.Name,
+                        Price = x.Price,
+                        Description = x.Description,
+                        AvailableQty = x.AvailableQty,
+                        Type = x.Type,
+                        ImageUrl = x.ImageUrl,
+                        RawJson = JsonSerializer.Serialize(x)
+                    }));
+
+                // Số lượng trả về nhỏ hơn pageSize nghĩa là đã đến trang cuối.
+                if (pageData.Count < pageSize)
+                    break;
+
+                pageIndex++;
             }
 
-            var result = JsonSerializer.Deserialize<PeacomPackageProductResponse>(
-                rawJson,
-                new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-            if (result?.Data == null || result.Data.Count == 0)
-                return Array.Empty<ProviderPackageProductRemoteDto>();
-
-            return result.Data.Select(x => new ProviderPackageProductRemoteDto
-            {
-                Id = x.Id.ToString(),
-                Sku = x.Sku,
-                Name = x.Name,
-                Price = x.Price,
-                Description = x.Description,
-                AvailableQty = x.AvailableQty,
-                Type = x.Type,
-                ImageUrl = x.ImageUrl,
-                RawJson = JsonSerializer.Serialize(x)
-            }).ToList();
+            return products;
         }
 
         private void EnsureHttpClientConfigured()
@@ -106,6 +132,7 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
                 throw new InvalidOperationException(
                     $"Peacom GET PRODUCT ESIM thất bại. SKU={sku}, StatusCode={(int)response.StatusCode}, Body={rawJson}");
             }
+           
 
             var options = new JsonSerializerOptions
             {
@@ -149,9 +176,12 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
                 ?? result.Regional
                 ?? extraData?.Location;
 
+        
+
             return new ProviderEsimProductRemoteDto
             {
                 Sku = result.Sku,
+                Slug = extraData.Slug,
 
                 Name = !string.IsNullOrWhiteSpace(extraData?.Title)
                     ? extraData.Title
@@ -164,7 +194,7 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
                     : result.CurrencyCode,
 
                 DataAmount = dataAmount,
-
+                DataType = result.DataType,
                 DataUnit = isUnlimited
                     ? null
                     : "MB",

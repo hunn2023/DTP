@@ -583,14 +583,14 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             if (cached != null)
                 return Result<List<HomeEsimProductDto>>.Success(cached);
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             var items = await _productRepository.GetHomeEsimProductsAsync(cancellationToken);
 
             await _cacheService.SetAsync(
                 cacheKey,
                 items,
-                TimeSpan.FromMinutes(10),
+                TimeSpan.FromMinutes(1),
                 cancellationToken);
 
             return Result<List<HomeEsimProductDto>>.Success(items);

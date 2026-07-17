@@ -1,10 +1,12 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Provider.Application.Abstractions;
 using DTP.Modules.Provider.Application.Abstractions.Repositories;
+using DTP.Modules.Provider.Domain.Entities;
 using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -39,33 +41,57 @@ namespace DTP.Modules.Provider.Application.Commands.Providers
             ActivateSyncedProviderPackageCommand request,
             CancellationToken cancellationToken)
         {
-            var package = await _packageRepository.GetByIdAsync(
-                request.ProviderPackageProductId,
-                cancellationToken);
+            const int pageSize = 100;
 
-            if (package is null)
-                throw new InvalidOperationException("Provider package không tồn tại.");
+            var allItems = new List<ProviderPackageProduct>();
 
-            if (package.SyncStatus != "Provisioned" && package.SyncStatus != "Activated")
-                throw new InvalidOperationException("Package chưa được provision sang Catalog.");
+            for (var pageIndex = 1; ; pageIndex++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
 
-            var mapping = await _mappingRepository.GetByProviderSkuAsync(
-                package.ProviderId,
-                package.ProviderSku,
-                cancellationToken);
+                var (items, total) = await _packageRepository.GetPagedAsync(
+                    providerId: null,
+                    keyword: null,
+                    syncStatus: "Provisioned",
+                    pageIndex: pageIndex,
+                    pageSize: pageSize,
+                    cancellationToken: cancellationToken);
 
-            if (mapping is null)
-                throw new InvalidOperationException("Không tìm thấy mapping Catalog.");
+                if (items.Count == 0)
+                    break;
 
-            await _catalogProvisioningService.ActivateProviderProvisionedProductAsync(
-                mapping.ProductId,
-                mapping.ProductVariantId,
-                mapping.ProductPriceId,
-                mapping.EsimPackageId,
-                cancellationToken);
+                allItems.AddRange(items);
 
-            mapping.Activate();
-            package.MarkActivated();
+                if (allItems.Count >= total)
+                    break;
+            }
+
+            foreach (var item in allItems)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var mapping = await _mappingRepository.GetByProviderSkuAsync(
+                    item.ProviderId,
+                    item.ProviderSku,
+                    cancellationToken);
+
+                if (mapping is null)
+                {
+                    throw new InvalidOperationException(
+                        $"Không tìm thấy mapping Catalog cho ProviderId={item.ProviderId}, " +
+                        $"ProviderSku={item.ProviderSku}.");
+                }
+
+                await _catalogProvisioningService.ActivateProviderProvisionedProductAsync(
+                    mapping.ProductId,
+                    mapping.ProductVariantId,
+                    mapping.ProductPriceId,
+                    mapping.EsimPackageId,
+                    cancellationToken);
+
+                mapping.Activate();
+                item.MarkActivated();
+            }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

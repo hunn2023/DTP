@@ -184,7 +184,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 ? null
                 : keyword.Trim().ToLower();
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             var query = _context.Countries
                 .Where(x => x.IsActive && !x.IsDeleted)
@@ -198,7 +198,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     x.Region.ToLower() == normalizedRegion);
             }
 
-            if (!string.IsNullOrWhiteSpace(normalizedKeyword))
+             if (!string.IsNullOrWhiteSpace(normalizedKeyword))
             {
                 query = query.Where(x =>
                     x.Name.ToLower().Contains(normalizedKeyword) ||
@@ -221,11 +221,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     PackageCount = _context.EsimPackages
                         .Count(pkg =>
                             pkg.CountryId == country.Id &&
-                            pkg.IsActive),
+                            pkg.IsActive && !pkg.IsDeleted),
 
                     PriceFrom = _context.ProductPrices
                         .Where(price =>
                             price.IsActive &&
+                            !price.IsDeleted &&
                             price.SalePrice > 0 &&
                             (price.StartDate == null || price.StartDate <= now) &&
                             (price.EndDate == null || price.EndDate >= now) &&

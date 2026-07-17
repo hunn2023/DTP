@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace DTP.Modules.Provider.Presentation.Controllers.Admin
 {
     [ApiController]
-    [Authorize(Roles = "ADMIN")]
+    //[Authorize(Roles = "ADMIN")]
     [Route("api/admin/provider-packages")]
     public class ProviderPackagesController : ControllerBase
     {

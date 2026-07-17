@@ -10,13 +10,14 @@ namespace DTP.Modules.Provider.Application.DTOs
     {
         public string Sku { get; set; } = default!;
         public string Name { get; set; } = default!;
-
+        public string Slug { get; set; } = default!;
         public decimal Price { get; set; }
         public string CurrencyCode { get; set; } = "VND";
 
         public decimal? DataAmount { get; set; }
         public string? DataUnit { get; set; }
         public int ValidityDays { get; set; }
+        public int DataType { get; set; }
         public bool IsUnlimited { get; set; }
 
         public string? CoverageType { get; set; }

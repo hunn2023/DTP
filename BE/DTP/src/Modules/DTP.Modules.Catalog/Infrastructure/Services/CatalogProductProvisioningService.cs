@@ -5,6 +5,7 @@ using DTP.Modules.Catalog.Domain.Entities;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace DTP.Modules.Catalog.Infrastructure.Services
 {
@@ -39,9 +40,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             _categoryRepository = categoryRepository;
         }
 
-        public async Task<ProvisionProviderEsimProductResult> ProvisionProviderEsimProductAsync(
-    ProvisionProviderEsimProductRequest request,
-    CancellationToken cancellationToken = default)
+        public async Task<ProvisionProviderEsimProductResult>
+    ProvisionProviderEsimProductAsync(
+        ProvisionProviderEsimProductRequest request,
+        CancellationToken cancellationToken = default)
         {
             try
             {
@@ -53,7 +55,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
                 var product = await EnsureProductAsync(
                     request,
-                    mainCountry.Id,
+                    mainCountry,
                     cancellationToken);
 
                 var variant = await EnsureProductVariantAsync(
@@ -75,10 +77,15 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     cancellationToken);
 
                 await EnsureCoveragesAsync(
-                    request,
+                    mainCountry,
                     esimPackage.Id,
                     cancellationToken);
 
+                /*
+                 * Chỉ SaveChanges một lần.
+                 *
+                 * EF Core tự bọc một SaveChanges trong transaction.
+                 */
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 return new ProvisionProviderEsimProductResult
@@ -91,10 +98,17 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             }
             catch (OperationCanceledException)
             {
+                _unitOfWork.ClearTracking();
                 throw;
             }
             catch (Exception ex)
             {
+                /*
+                 * Nếu không clear, Product/ProductVariant/EsimPackage có trạng thái
+                 * Added sẽ tiếp tục bị insert lại khi xử lý SKU sau.
+                 */
+                _unitOfWork.ClearTracking();
+
                 throw new InvalidOperationException(
                     BuildProvisionExceptionMessage(request, ex),
                     ex);
@@ -223,13 +237,28 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
-        private static void ValidateRequest(ProvisionProviderEsimProductRequest request)
+
+
+
+        private static void ValidateRequest(
+    ProvisionProviderEsimProductRequest request)
         {
+            ArgumentNullException.ThrowIfNull(request);
+
+            if (request.ProviderId == Guid.Empty)
+                throw new ArgumentException("ProviderId không hợp lệ.");
+
             if (string.IsNullOrWhiteSpace(request.ProviderCode))
                 throw new ArgumentException("ProviderCode không được rỗng.");
 
             if (string.IsNullOrWhiteSpace(request.ProviderSku))
                 throw new ArgumentException("ProviderSku không được rỗng.");
+
+            if (string.IsNullOrWhiteSpace(request.ProductFamilyCode))
+            {
+                throw new ArgumentException(
+                    "ProductFamilyCode không được rỗng.");
+            }
 
             if (string.IsNullOrWhiteSpace(request.ProductName))
                 throw new ArgumentException("Tên sản phẩm không được rỗng.");
@@ -237,26 +266,47 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             if (string.IsNullOrWhiteSpace(request.VariantName))
                 throw new ArgumentException("Tên variant không được rỗng.");
 
+            if (string.IsNullOrWhiteSpace(request.VariantSku))
+                throw new ArgumentException("VariantSku không được rỗng.");
+
             if (request.ValidityDays <= 0)
                 throw new ArgumentException("ValidityDays phải lớn hơn 0.");
 
-            if (!request.IsUnlimited && request.DataAmount is null)
-                throw new ArgumentException("DataAmount không được rỗng nếu không phải unlimited.");
+            if (!request.IsUnlimited && request.DataAmount <= 0)
+            {
+                throw new ArgumentException(
+                    "DataAmount phải lớn hơn 0 nếu không phải unlimited.");
+            }
 
-            if (request.Price < 0)
-                throw new ArgumentException("Giá không hợp lệ.");
+            if (request.Price <= 0)
+                throw new ArgumentException("Giá phải lớn hơn 0.");
 
-            if (request.Countries.Count == 0)
-                throw new ArgumentException("Coverage country không được rỗng.");
+            if (request.Countries is null ||
+                request.Countries.Count == 0)
+            {
+                throw new ArgumentException(
+                    "Quốc gia chính không được rỗng.");
+            }
+
+            var firstCountry = request.Countries.First();
+
+            if (string.IsNullOrWhiteSpace(firstCountry.CountryCode))
+            {
+                throw new ArgumentException(
+                    "CountryCode chính không được rỗng.");
+            }
         }
 
+
         private async Task<Country> EnsureMainCountryAsync(
-            ProvisionProviderEsimProductRequest request,
-            CancellationToken cancellationToken)
+    ProvisionProviderEsimProductRequest request,
+    CancellationToken cancellationToken)
         {
             var firstCountry = request.Countries.First();
 
-            var countryCode = firstCountry.CountryCode.Trim().ToUpperInvariant();
+            var countryCode = firstCountry.CountryCode
+                .Trim()
+                .ToUpperInvariant();
 
             var country = await _countryRepository.GetByCodeAsync(
                 countryCode,
@@ -275,22 +325,36 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 sortOrder: 0,
                 isActive: false);
 
-            await _countryRepository.AddAsync(country, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _countryRepository.AddAsync(
+                country,
+                cancellationToken);
+
+            /*
+             * Không SaveChanges ở đây.
+             * Save cùng Product/Variant/Package ở cuối.
+             */
             return country;
         }
 
         private async Task<Product> EnsureProductAsync(
-            ProvisionProviderEsimProductRequest request,
-            Guid countryId,
-            CancellationToken cancellationToken)
+    ProvisionProviderEsimProductRequest request,
+    Country mainCountry,
+    CancellationToken cancellationToken)
         {
-            var productCode = BuildProductCode(request);
+            /*
+             * Một quốc gia chỉ có một Product.
+             */
+            var productCode = BuildProductCode(
+                mainCountry.Code);
+
+            var productSlug = BuildProductSlug(
+                mainCountry.Code);
+
+            var productName = $"eSIM {mainCountry.Name}";
 
             var category = await _categoryRepository.GetByCodeAsync(
                 "ESIM",
                 cancellationToken);
-
 
             if (category is null)
             {
@@ -298,10 +362,13 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     code: "ESIM",
                     name: "eSIM",
                     slug: "esim",
-                     null,
+                    parentId: null,
                     sortOrder: 1,
                     isActive: false);
-                await _categoryRepository.AddAsync(category, cancellationToken);
+
+                await _categoryRepository.AddAsync(
+                    category,
+                    cancellationToken);
             }
 
             var existing = await _productRepository.GetByCodeAsync(
@@ -311,9 +378,9 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             if (existing is not null)
             {
                 existing.UpdateBasicInfo(
-                    request.ProductName,
-                    GenerateSlug(request.ProductName),
-                    request.ProductDescription,
+                    name: productName,
+                    slug: productSlug,
+                    description: request.ProductDescription,
                     isActive: false);
 
                 return existing;
@@ -321,30 +388,38 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             var product = new Product(
                 code: productCode,
-                name: request.ProductName,
-                slug: GenerateSlug(request.ProductName),
+                name: productName,
+                slug: productSlug,
                 categoryId: category.Id,
-                countryId: countryId,
-                shortDescription: request.ProductDescription,
+                countryId: mainCountry.Id,
+                shortDescription: "",
                 description: request.ProductDescription,
-                locationText: request.CoverageDescription,
+                locationText: mainCountry.Name,
                 thumbnailUrl: null,
-                isFeatured: false,
-                isHot: false,
+                isFeatured: true,
+                isHot: true,
                 sortOrder: 0,
                 isActive: false);
 
-            await _productRepository.AddAsync(product, cancellationToken);
+            await _productRepository.AddAsync(
+                product,
+                cancellationToken);
 
             return product;
         }
 
         private async Task<ProductVariant> EnsureProductVariantAsync(
-            ProvisionProviderEsimProductRequest request,
-            Guid productId,
-            CancellationToken cancellationToken)
+    ProvisionProviderEsimProductRequest request,
+    Guid productId,
+    CancellationToken cancellationToken)
         {
-            var sku = request.VariantSku ?? request.ProviderSku;
+            if (string.IsNullOrWhiteSpace(request.VariantSku))
+            {
+                throw new InvalidOperationException(
+                    "VariantSku nội bộ không được rỗng.");
+            }
+
+            var sku = request.VariantSku.Trim().ToUpperInvariant();
 
             var existing = await _productVariantRepository.GetBySkuAsync(
                 sku,
@@ -352,6 +427,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             if (existing is not null)
             {
+                if (existing.ProductId != productId)
+                {
+                    throw new InvalidOperationException(
+                        $"VariantSku '{sku}' đã thuộc Product khác.");
+                }
+
                 existing.Update(
                     request.VariantName,
                     shortName: request.VariantName,
@@ -371,9 +452,23 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 sortOrder: 0,
                 isActive: false);
 
-            await _productVariantRepository.AddAsync(variant, cancellationToken);
+            await _productVariantRepository.AddAsync(
+                variant,
+                cancellationToken);
 
             return variant;
+        }
+
+        private static decimal CalculateSalePrice(decimal costPrice)
+        {
+            const decimal priceMultiplier = 1.768m;
+
+            var calculatedPrice = costPrice * priceMultiplier;
+
+            return Math.Round(
+                calculatedPrice / 1000m,
+                0,
+                MidpointRounding.AwayFromZero) * 1000m;
         }
 
         private async Task<ProductPrice> EnsureProductPriceAsync(
@@ -382,6 +477,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             Guid productVariantId,
             CancellationToken cancellationToken)
         {
+
+            var costPrice = request.Price;
+            var salePrice = CalculateSalePrice(costPrice);
+
             var existing = await _productPriceRepository.GetActiveByProductVariantAsync(
                 productId,
                 productVariantId,
@@ -392,9 +491,9 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             {
                 existing.Update(
                     originalPrice: request.Price,
-                    salePrice: request.Price,
-                    costPrice: 0,
-                    startDate: null,
+                    salePrice: salePrice,
+                    costPrice: costPrice,
+                    startDate: DateTime.Now,
                     endDate: null,
                     isActive: false);
 
@@ -406,9 +505,9 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 productVariantId: productVariantId,
                 currency: request.CurrencyCode,
                 originalPrice: request.Price,
-                salePrice: request.Price,
-                costPrice: 0,
-                startDate: null,
+                salePrice: salePrice,
+                costPrice: costPrice,
+                startDate: DateTime.Now,
                 endDate: null,
                 "",
                 isActive: false);
@@ -419,35 +518,58 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         }
 
         private async Task<EsimPackage> EnsureEsimPackageAsync(
-            ProvisionProviderEsimProductRequest request,
-            Guid productId,
-            Guid productVariantId,
-            Guid countryId,
-            CancellationToken cancellationToken)
+    ProvisionProviderEsimProductRequest request,
+    Guid productId,
+    Guid productVariantId,
+    Guid countryId,
+    CancellationToken cancellationToken)
         {
-            var providerPackageCode = request.ProviderSku;
+            var providerPackageCode = request.ProviderSku.Trim();
 
-            var existing = await _esimPackageRepository.GetByProviderPackageCodeAsync̣(
-                providerPackageCode,
-                cancellationToken);
+            /*
+             * Mỗi ProviderSku có một slug package riêng.
+             *
+             * BLUECOM + BLC-03-eSIM-XMTYT5GB-15
+             * → bluecom-blc-03-esim-xmtyt5gb-15
+             */
+            var esimPackageSlug = BuildEsimPackageSlug(
+                request.ProviderCode,
+                providerPackageCode);
+
+            var esimPackageName = BuildEsimPackageName(request);
+
+            var existing =
+                await _esimPackageRepository
+                    .GetByProviderPackageCodeAsync(
+                        request.ProviderId,
+                        providerPackageCode,
+                        cancellationToken);
 
             if (existing is not null)
             {
                 existing.Update(
-                    name: request.VariantName,
-                    slug: GenerateSlug($"{request.ProviderCode}-{request.ProviderSku}"),
+                    name: esimPackageName,
+
+                    /*
+                     * Không dùng request.Slug.
+                     * request.Slug là slug cấp Product.
+                     */
+                    slug: esimPackageSlug,
+
                     dataAmount: request.DataAmount,
-                    dataUnit: request.DataUnit ?? "GB",
+                    dataUnit: NormalizeDataUnit(request.DataUnit),
                     validityDays: request.ValidityDays,
                     isUnlimited: request.IsUnlimited,
-                    coverageType: request.CoverageType ?? "SingleCountry",
-                    coverageDescription: request.CoverageDescription,
+                    coverageType:
+                        request.CoverageType ?? "SingleCountry",
+                    coverageDescription:
+                        request.CoverageDescription,
                     activationPolicy: "ActivateWhenInstalled",
-                    speedPolicy: null,
+                    speedPolicy: "5G",
                     hotspotSupported: true,
-                    phoneNumberSupported: false,
-                    smsSupported: false,
-                    kycRequired: false,
+                    phoneNumberSupported: true,
+                    smsSupported: true,
+                    kycRequired: true,
                     qrDeliveryType: "Email",
                     sortOrder: 0,
                     isActive: false);
@@ -460,32 +582,118 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 productVariantId: productVariantId,
                 providerId: request.ProviderId,
                 countryId: countryId,
-                name: request.VariantName,
-                slug: GenerateSlug($"{request.ProviderCode}-{request.ProviderSku}"),
+                name: esimPackageName,
+
+                /*
+                 * Slug package riêng biệt.
+                 */
+                slug: esimPackageSlug,
+
                 providerPackageCode: providerPackageCode,
                 dataAmount: request.DataAmount,
-                dataUnit: request.DataUnit ?? "GB",
+                dataUnit: NormalizeDataUnit(request.DataUnit),
                 validityDays: request.ValidityDays,
                 isUnlimited: request.IsUnlimited,
-                coverageType: request.CoverageType ?? "SingleCountry",
-                coverageDescription: request.CoverageDescription,
+                coverageType:
+                    request.CoverageType ?? "SingleCountry",
+                coverageDescription:
+                    request.CoverageDescription,
                 activationPolicy: "ActivateWhenInstalled",
-                speedPolicy: null,
+                speedPolicy: "5G",
                 hotspotSupported: true,
-                phoneNumberSupported: false,
-                smsSupported: false,
-                kycRequired: false,
+                phoneNumberSupported: true,
+                smsSupported: true,
+                kycRequired: true,
                 qrDeliveryType: "Email",
                 sortOrder: 0,
                 isActive: false);
 
-            await _esimPackageRepository.AddAsync(esimPackage, cancellationToken);
+            await _esimPackageRepository.AddAsync(
+                esimPackage,
+                cancellationToken);
 
             return esimPackage;
         }
 
+        private static string BuildEsimPackageName(
+          ProvisionProviderEsimProductRequest request)
+        {
+            var countryName = request.Countries
+               .First()
+               .CountryName
+               .Trim();
+
+            if (request.IsUnlimited)
+            {
+                return $"eSIM {countryName} - Không giới hạn dung lượng " +
+                       $"trong {request.ValidityDays} ngày";
+            }
+
+            var amountText = FormatDataAmount(
+                request.DataAmount,
+                request.DataUnit);
+
+            return request.DataType switch
+            {
+                1 =>
+                    $"eSIM {countryName} - Tổng {amountText} " +
+                    $"sử dụng trong {request.ValidityDays} ngày",
+
+                2 =>
+                    $"eSIM {countryName} - {amountText}/ngày " +
+                    $"trong {request.ValidityDays} ngày",
+
+                _ =>
+                    $"eSIM {countryName} - {amountText} " +
+                    $"trong {request.ValidityDays} ngày"
+            };
+        }
+
+        private static string FormatDataPackageName(
+                int dataType,
+                decimal dataAmount,
+                string? dataUnit,
+                int validityDays)
+        {
+
+            if(dataUnit == null)
+            {
+                return $"Không giới hạn trong {validityDays} ngày";
+            }
+            var amountText = FormatDataAmount(
+                dataAmount,
+                NormalizeDataUnit(dataUnit));
+
+            return dataType switch
+            {
+                // Tổng dung lượng dùng trong toàn thời hạn
+                1 => $"Tổng {amountText} sử dụng trong {validityDays} ngày",
+
+                // Dung lượng reset mỗi ngày
+                2 => $"{amountText}/ngày trong {validityDays} ngày",
+
+                _ => $"{amountText} sử dụng trong {validityDays} ngày"
+            };
+        }
+
+        private static string FormatDataAmount(
+            decimal dataAmount,
+            string? dataUnit)
+        {
+            var normalizedUnit = NormalizeDataUnit(dataUnit);
+
+            if (normalizedUnit == "MB" &&
+                dataAmount >= 1024 &&
+                dataAmount % 1024 == 0)
+            {
+                return $"{dataAmount / 1024m:0.##}GB";
+            }
+
+            return $"{dataAmount:0.##}{normalizedUnit}";
+        }
+
         private async Task EnsureCoveragesAsync(
-            ProvisionProviderEsimProductRequest request,
+            Country country,
             Guid esimPackageId,
             CancellationToken cancellationToken)
         {
@@ -493,39 +701,49 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 esimPackageId,
                 cancellationToken);
 
-            foreach (var countryDto in request.Countries)
-            {
-                var countryCode = countryDto.CountryCode.Trim().ToUpperInvariant();
+            var coverage = new EsimPackageCoverage(
+                   esimPackageId,
+                   country.Id,
+                   country.Code,
+                   country.Name);
 
-                var country = await _countryRepository.GetByCodeAsync(
-                    countryCode,
-                    cancellationToken);
+            await _esimPackageCoverageRepository.AddAsync(
+                coverage,
+                cancellationToken);
 
-                if (country is null)
-                {
-                    country = new Country(
-                        countryCode,
-                        countryDto.CountryName,
-                        GenerateSlug(countryDto.CountryName),
-                        flagUrl: null,
-                        null,
-                        null,
-                        sortOrder: 0,
-                        isActive: false);
+            //foreach (var countryDto in request.Countries)
+            //{
+            //    var countryCode = countryDto.CountryCode.Trim().ToUpperInvariant();
 
-                    await _countryRepository.AddAsync(country, cancellationToken);
-                }
+            //    var country = await _countryRepository.GetByCodeAsync(
+            //        countryCode,
+            //        cancellationToken);
 
-                var coverage = new EsimPackageCoverage(
-                    esimPackageId,
-                    country.Id,
-                    countryCode,
-                    countryDto.CountryName);
+            //    if (country is null)
+            //    {
+            //        country = new Country(
+            //            countryCode,
+            //            countryDto.CountryName,
+            //            GenerateSlug(countryDto.CountryName),
+            //            flagUrl: null,
+            //            null,
+            //            null,
+            //            sortOrder: 0,
+            //            isActive: false);
 
-                await _esimPackageCoverageRepository.AddAsync(
-                    coverage,
-                    cancellationToken);
-            }
+            //        await _countryRepository.AddAsync(country, cancellationToken);
+            //    }
+
+            //    var coverage = new EsimPackageCoverage(
+            //        esimPackageId,
+            //        country.Id,
+            //        countryCode,
+            //        countryDto.CountryName);
+
+            //    await _esimPackageCoverageRepository.AddAsync(
+            //        coverage,
+            //        cancellationToken);
+            //}
         }
 
         private static string BuildProductCode(ProvisionProviderEsimProductRequest request)
@@ -555,6 +773,84 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             }
 
             return slug.Trim('-');
+        }
+
+        private static string BuildProductCode(string countryCode)
+        {
+            if (string.IsNullOrWhiteSpace(countryCode))
+            {
+                throw new InvalidOperationException(
+                    "CountryCode không được rỗng.");
+            }
+
+            return $"ESIM-{countryCode.Trim().ToUpperInvariant()}";
+        }
+
+
+
+
+        private static string BuildProductSlug(string countryCode)
+        {
+            if (string.IsNullOrWhiteSpace(countryCode))
+            {
+                throw new InvalidOperationException(
+                    "CountryCode không được rỗng.");
+            }
+
+            return GenerateSlug(
+                $"esim-{countryCode.Trim().ToLowerInvariant()}");
+        }
+
+        private static string NormalizeCode(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new InvalidOperationException("Code không được rỗng.");
+
+            var normalized = Regex.Replace(
+                value.Trim().ToUpperInvariant(),
+                @"[^A-Z0-9]+",
+                "-");
+
+            return normalized.Trim('-');
+        }
+
+        private static string BuildEsimPackageSlug(
+    string providerCode,
+    string providerSku)
+        {
+            if (string.IsNullOrWhiteSpace(providerCode))
+            {
+                throw new InvalidOperationException(
+                    "ProviderCode không được rỗng.");
+            }
+
+            if (string.IsNullOrWhiteSpace(providerSku))
+            {
+                throw new InvalidOperationException(
+                    "ProviderSku không được rỗng.");
+            }
+
+            return GenerateSlug(
+                $"{providerCode}-{providerSku}");
+        }
+
+        private static string NormalizeDataUnit(string? dataUnit)
+        {
+            if (string.IsNullOrWhiteSpace(dataUnit))
+                return "MB";
+
+            return dataUnit.Trim().ToUpperInvariant() switch
+            {
+                "M" => "MB",
+                "MEGABYTE" => "MB",
+                "MEGABYTES" => "MB",
+
+                "G" => "GB",
+                "GIGABYTE" => "GB",
+                "GIGABYTES" => "GB",
+
+                var value => value
+            };
         }
     }
 }

@@ -17,5 +17,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         {
             return _context.SaveChangesAsync(cancellationToken);
         }
+
+        public void ClearTracking()
+        {
+            _context.ChangeTracker.Clear();
+        }
     }
 }
