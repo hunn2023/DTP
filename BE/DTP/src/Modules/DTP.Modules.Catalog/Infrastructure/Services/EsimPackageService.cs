@@ -114,6 +114,23 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             return Result<List<EsimPackageDto>>.Success(result ?? new List<EsimPackageDto>());
         }
 
+        public async Task<Result<EsimDestinationDetailDto?>> GetDestinationDetailAsync(
+            string countrySlug,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(countrySlug))
+                return Result<EsimDestinationDetailDto?>.Failure("Slug quốc gia không hợp lệ.");
+
+            var result = await _esimPackageRepository.GetDestinationDetailAsync(
+                countrySlug,
+                cancellationToken);
+
+            if (result is null)
+                return Result<EsimDestinationDetailDto?>.Failure("Không tìm thấy quốc gia.");
+
+            return Result<EsimDestinationDetailDto?>.Success(result);
+        }
+
         public async Task<Result<PagedResultDto<EsimPackageDto>>> GetPagedAsync(
             string? keyword,
             Guid? productVariantId,

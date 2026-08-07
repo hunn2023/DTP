@@ -1,6 +1,7 @@
 ﻿using DTP.Modules.Catalog.Application.Commands.EsimPackages;
 using DTP.Modules.Catalog.Application.Queries.EsimPackages;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -37,6 +38,19 @@ namespace DTP.Modules.Catalog.Presentation.Controllers.Public
                 new GetPublicEsimPackageBySlugQuery(slug));
 
             return Ok(result);
+        }
+
+        [HttpGet("destination/{countrySlug}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetDestinationDetail(
+            string countrySlug,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new GetEsimDestinationDetailQuery(countrySlug),
+                cancellationToken);
+
+            return result.IsSuccess ? Ok(result) : NotFound(result);
         }
     }
 }

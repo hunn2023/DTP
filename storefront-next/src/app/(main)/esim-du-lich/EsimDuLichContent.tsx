@@ -22,9 +22,10 @@ type EsimRegion = NonNullable<EsimCountrySummary["region"]>;
 
 const REGION_BADGES: Partial<Record<EsimRegion, string>> = {
   "Châu Á": "🌏",
-  "Châu Âu": "",
+  "Châu Âu": "🌍",
   "Châu Mỹ": "🌎",
   "Châu Đại Dương": "🌊",
+  "Châu Phi": "🌍",
 };
 
 const DEFAULT_REGION_ORDER: EsimRegion[] = [
@@ -32,9 +33,9 @@ const DEFAULT_REGION_ORDER: EsimRegion[] = [
   "Châu Âu",
   "Châu Mỹ",
   "Châu Đại Dương",
+  "Châu Phi",
 ];
 
-const DEFAULT_VISIBLE_COUNTRIES = 50;
 export default function EsimDuLichContent({
   destinations,
 }: {
@@ -72,21 +73,14 @@ function EsimDuLichContentInner({
     return acc;
   }, {});
 
-  const regionOrder: EsimRegion[] = [
-    ...DEFAULT_REGION_ORDER.filter((region) => (regionCounts[region] ?? 0) > 0),
-    ...Object.keys(regionCounts)
-      .filter((region) => !DEFAULT_REGION_ORDER.includes(region))
-      .sort((a, b) => a.localeCompare(b, language === "vi" ? "vi" : "en")),
-  ];
+  const regionOrder: EsimRegion[] = Object.keys(regionCounts)
+    .sort((a, b) => a.localeCompare(b, language === "vi" ? "vi" : "en"));
 
   const filteredDestinations = keywordFilteredDestinations.filter(
     (destination) => !selectedRegion || destination.region === selectedRegion
   );
 
-  const visibleDestinations =
-    !keywordRaw && !selectedRegion
-      ? filteredDestinations.slice(0, DEFAULT_VISIBLE_COUNTRIES)
-      : filteredDestinations;
+  const visibleDestinations = filteredDestinations;
 
   const buildFilterHref = (next: { region?: string }) => {
     const params = new URLSearchParams();
@@ -125,6 +119,7 @@ function EsimDuLichContentInner({
       "Châu Âu": "Europe",
       "Châu Mỹ": "Americas",
       "Châu Đại Dương": "Oceania",
+      "Châu Phi": "Africa",
     };
 
     return map[region] ?? region;

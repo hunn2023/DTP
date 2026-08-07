@@ -32,6 +32,8 @@ namespace DTP.Modules.Chatbot.Application.DTOs
 
         public bool IsUnlimited { get; set; }
 
+        public bool IsDailyData { get; set; }
+
         public int ValidityDays { get; set; }
 
         public decimal SalePrice { get; set; }

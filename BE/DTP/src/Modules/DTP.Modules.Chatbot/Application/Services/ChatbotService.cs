@@ -21,6 +21,7 @@ namespace DTP.Modules.Chatbot.Application.Services
         private readonly ILogger<ChatbotService> _logger;
         private readonly IChatbotRateLimitService _rateLimitService;
         private readonly IKnowledgeSearchService _knowledgeSearchService;
+        private readonly IChatbotConversationContextStore _conversationContextStore;
         public ChatbotService(
             IChatbotAiClient aiClient,
             IChatbotCatalogReader catalogReader,
@@ -28,7 +29,8 @@ namespace DTP.Modules.Chatbot.Application.Services
             IHttpContextAccessor httpContextAccessor,
             ILogger<ChatbotService> logger,
             IChatbotRateLimitService rateLimitService,
-             IKnowledgeSearchService knowledgeSearchService
+             IKnowledgeSearchService knowledgeSearchService,
+             IChatbotConversationContextStore conversationContextStore
             )
         {
             _aiClient = aiClient;
@@ -38,6 +40,7 @@ namespace DTP.Modules.Chatbot.Application.Services
             _logger = logger;
             _rateLimitService = rateLimitService;
             _knowledgeSearchService = knowledgeSearchService;
+            _conversationContextStore = conversationContextStore;
         }
 
         public async Task<ChatResponseDto> SendMessageAsync(
@@ -192,7 +195,31 @@ namespace DTP.Modules.Chatbot.Application.Services
 
                 intent.OriginalQuestion ??= message;
 
+                try
+                {
+                    var previousIntent = await _conversationContextStore.GetAsync(
+                        sessionId,
+                        cancellationToken);
+                    MergeMissingIntentValues(intent, previousIntent);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Load chatbot conversation context failed.");
+                }
+
                 ApplySmartDefaults(intent);
+
+                try
+                {
+                    await _conversationContextStore.SetAsync(
+                        sessionId,
+                        intent,
+                        cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Save chatbot conversation context failed.");
+                }
 
                 var route = DetermineRoute(message, intent);
 
@@ -681,6 +708,31 @@ namespace DTP.Modules.Chatbot.Application.Services
             }
         }
 
+        private static void MergeMissingIntentValues(
+            ChatbotIntentDto current,
+            ChatbotIntentDto? previous)
+        {
+            if (previous == null)
+                return;
+
+            current.CountryKeyword ??= previous.CountryKeyword;
+            current.CountryCode ??= previous.CountryCode;
+            current.TravelDays ??= previous.TravelDays;
+            current.UsageLevel ??= previous.UsageLevel;
+            current.BudgetType ??= previous.BudgetType;
+            current.NeedsHotspot ??= previous.NeedsHotspot;
+            current.NeedsPhoneNumber ??= previous.NeedsPhoneNumber;
+            current.NeedsSms ??= previous.NeedsSms;
+            current.RequestedDataAmount ??= previous.RequestedDataAmount;
+            current.RequestedDataUnit ??= previous.RequestedDataUnit;
+
+            if (string.Equals(current.IntentType, "unknown", StringComparison.OrdinalIgnoreCase)
+                && !string.IsNullOrWhiteSpace(previous.IntentType))
+            {
+                current.IntentType = previous.IntentType;
+            }
+        }
+
         private static string BuildFallbackAnswer(
               IReadOnlyList<ChatbotProductSuggestionDto> suggestions)
         {
@@ -714,7 +766,8 @@ namespace DTP.Modules.Chatbot.Application.Services
             if (string.IsNullOrWhiteSpace(item.DataUnit))
                 return $"{item.DataAmount.Value:N0}";
 
-            return $"{item.DataAmount.Value:N0} {item.DataUnit}";
+            var suffix = item.IsDailyData ? "/ngày" : string.Empty;
+            return $"{item.DataAmount.Value:N0} {item.DataUnit}{suffix}";
         }
 
 

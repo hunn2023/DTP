@@ -46,6 +46,8 @@
         public List<ProductVariantFeatureDto> ProductVariantFeatures { get; set; } = new();
 
         public List<EsimPackageCarrierDto> Carriers { get; set; } = new();
+
+        public List<EsimPackageCoverageDto> Coverages { get; set; } = new();
     }
 
     public class EsimPackageCarrierDto
@@ -53,5 +55,16 @@
         public Guid CarrierId { get; set; }
 
         public string CarrierName { get; set; } = default!;
+    }
+
+    public class EsimPackageCoverageDto
+    {
+        public Guid CountryId { get; set; }
+
+        public string CountryCode { get; set; } = default!;
+
+        public string CountryName { get; set; } = default!;
+
+        public List<string> Operators { get; set; } = [];
     }
 }

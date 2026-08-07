@@ -31,6 +31,16 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyList<EsimPackageCoverage>> GetByEsimPackageIdForUpdateAsync(
+            Guid esimPackageId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _dbContext.EsimPackageCoverages
+                .Where(x => x.EsimPackageId == esimPackageId && !x.IsDeleted)
+                .OrderBy(x => x.CountryName)
+                .ToListAsync(cancellationToken);
+        }
+
         public Task<bool> ExistsAsync(
             Guid esimPackageId,
             Guid countryId,

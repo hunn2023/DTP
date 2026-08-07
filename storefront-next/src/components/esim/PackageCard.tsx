@@ -26,6 +26,7 @@ const BOOLEAN_FEATURE_ICONS: Record<string, string> = {
 
 export default function PackageCard({ pkg, onBuy, onBuyNow }: PackageCardProps) {
   const [quantity, setQuantity] = useState(1);
+  const [showAllCoverage, setShowAllCoverage] = useState(false);
   const { language } = useLanguage();
 
   const tagStyles: Record<NonNullable<EsimPackage["tagType"]>, { bg: string; color: string }> = {
@@ -46,7 +47,33 @@ export default function PackageCard({ pkg, onBuy, onBuyNow }: PackageCardProps) 
     increaseQuantity: language === "vi" ? "Tăng số lượng" : "Increase quantity",
     addToCart: language === "vi" ? "Thêm vào giỏ hàng" : "Add to cart",
     buyNow: language === "vi" ? "Đặt hàng ngay" : "Buy now",
+    coverage: language === "vi" ? "Phạm vi phủ sóng" : "Coverage",
+    countries: language === "vi" ? "quốc gia" : "countries",
+    collapse: language === "vi" ? "Thu gọn" : "Show less",
+    operators: language === "vi" ? "Nhà mạng tại điểm đến" : "Network at destination",
   };
+
+  const coverageTypeLabel = (() => {
+    if (!pkg.coverageType) return null;
+    const normalizedType = pkg.coverageType.toLowerCase();
+    if (normalizedType === "regional") return language === "vi" ? "Khu vực" : "Regional";
+    if (normalizedType === "local") return language === "vi" ? "Quốc gia" : "Local";
+    if (normalizedType === "global") return language === "vi" ? "Toàn cầu" : "Global";
+    return pkg.coverageType;
+  })();
+
+  const structuredCoverageLocations = (pkg.coverages ?? [])
+    .map((coverage) => coverage.countryName.trim())
+    .filter(Boolean);
+  const coverageLocations = structuredCoverageLocations.length > 0
+    ? structuredCoverageLocations
+    : (pkg.coverageDescription ?? "")
+        .split(/[;\n]+/)
+        .map((location) => location.trim())
+        .filter(Boolean);
+  const visibleCoverageLocations = showAllCoverage
+    ? coverageLocations
+    : coverageLocations.slice(0, 2);
 
   const translateText = (value: string) => {
     if (language === "vi") return value;
@@ -121,7 +148,7 @@ export default function PackageCard({ pkg, onBuy, onBuyNow }: PackageCardProps) 
         className="flex justify-between items-start"
         style={{ padding: "20px 20px 16px" }}
       >
-        <div>
+        <div className="min-w-0 flex-1">
           <div
             className="font-extrabold text-navy leading-none"
             style={{ fontSize: "30px", letterSpacing: "-0.5px" }}
@@ -131,12 +158,63 @@ export default function PackageCard({ pkg, onBuy, onBuyNow }: PackageCardProps) 
               {pkg.dataUnit}
             </span>
           </div>
-          <div className="text-gray-500 mt-1" style={{ fontSize: "12.5px" }}>
-            {translateText(pkg.subtitle)}
-          </div>
+          {pkg.subtitle && pkg.subtitle.toLowerCase() !== pkg.coverageType?.toLowerCase() && (
+            <div className="text-gray-500 mt-1" style={{ fontSize: "12.5px" }}>
+              {translateText(pkg.subtitle)}
+            </div>
+          )}
+          {(coverageTypeLabel || coverageLocations.length > 0) && (
+            <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/70 p-2.5">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-primary shadow-sm">
+                  <Icon icon="globe" className="text-[11px]" />
+                </span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+                  {text.coverage}
+                </span>
+                {coverageTypeLabel && (
+                  <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                    {coverageTypeLabel}
+                  </span>
+                )}
+              </div>
+
+              {coverageLocations.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {visibleCoverageLocations.map((location) => (
+                    <span
+                      key={location}
+                      className="max-w-full truncate rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm"
+                      title={location}
+                    >
+                      {location}
+                    </span>
+                  ))}
+                  {coverageLocations.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllCoverage((current) => !current)}
+                      className="rounded-full border border-primary/20 bg-white px-2.5 py-1 text-[11px] font-semibold text-primary transition hover:border-primary hover:bg-primary hover:text-white"
+                      aria-expanded={showAllCoverage}
+                    >
+                      {showAllCoverage
+                        ? text.collapse
+                        : `+${coverageLocations.length - 2} ${text.countries}`}
+                    </button>
+                  )}
+                </div>
+              )}
+              {(pkg.destinationOperators?.length ?? 0) > 0 && (
+                <div className="mt-2 border-t border-blue-100 pt-2 text-[11px] text-slate-600">
+                  <span className="font-semibold">{text.operators}:</span>{" "}
+                  {pkg.destinationOperators!.join(", ")}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <span
-          className="font-bold shrink-0"
+          className="ml-3 font-bold shrink-0"
           style={{
             background: tagStyle.bg,
             color: tagStyle.color,

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Icon from "@/components/ui/Icon";
@@ -12,19 +13,48 @@ interface PopularDestinationsClientProps {
 
 export default function PopularDestinationsClient({ products }: PopularDestinationsClientProps) {
   const { language } = useLanguage();
+  const [selectedRegion, setSelectedRegion] = useState("");
+
+  const defaultRegionOrder = ["Châu Á", "Châu Âu", "Châu Mỹ", "Châu Đại Dương", "Châu Phi"];
+  const groupedProducts = products.reduce<Record<string, HomeEsimProduct[]>>((groups, product) => {
+    const region = product.region?.trim();
+    if (!region) return groups;
+    (groups[region] ??= []).push(product);
+    return groups;
+  }, {});
+  const regions = [
+    ...defaultRegionOrder.filter((region) => groupedProducts[region]?.length),
+    ...Object.keys(groupedProducts)
+      .filter((region) => !defaultRegionOrder.includes(region))
+      .sort((left, right) => left.localeCompare(right, language === "vi" ? "vi" : "en")),
+  ];
+  const activeRegion = regions.includes(selectedRegion) ? selectedRegion : regions[0];
+  const visibleProducts = activeRegion ? groupedProducts[activeRegion].slice(0, 5) : [];
+
+  const displayRegion = (region: string) => {
+    if (language === "vi") return region;
+    const labels: Record<string, string> = {
+      "Châu Á": "Asia",
+      "Châu Âu": "Europe",
+      "Châu Mỹ": "Americas",
+      "Châu Đại Dương": "Oceania",
+      "Châu Phi": "Africa",
+    };
+    return labels[region] ?? region;
+  };
 
   const text = {
     heading: language === "vi" ? "Điểm đến nổi bật" : "Featured destinations",
     subtitle:
       language === "vi"
-        ? "Top quốc gia được mua nhiều nhất với giá tốt nhất hôm nay"
-        : "Top booked destinations with best prices today",
+        ? "Khám phá các điểm đến nổi bật theo từng châu lục"
+        : "Explore featured destinations by region",
     viewAll: language === "vi" ? "Xem tất cả 200+ quốc gia" : "View all 200+ countries",
     priceFrom: language === "vi" ? "Giá từ" : "From",
     hot: "HOT",
   };
 
-  if (products.length === 0) return null;
+  if (products.length === 0 || regions.length === 0) return null;
 
   return (
     <section style={{ padding: "0 0 64px" }}>
@@ -34,8 +64,33 @@ export default function PopularDestinationsClient({ products }: PopularDestinati
           <p className="section-subtitle">{text.subtitle}</p>
         </div>
 
+        <div className="mb-7 flex gap-2 overflow-x-auto pb-2" role="tablist" aria-label={text.heading}>
+          {regions.map((region) => {
+            const isActive = region === activeRegion;
+            return (
+              <button
+                key={region}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setSelectedRegion(region)}
+                className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                  isActive
+                    ? "border-primary bg-primary text-white shadow-sm"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-primary hover:text-primary"
+                }`}
+              >
+                {displayRegion(region)}
+                <span className={`ml-2 text-xs ${isActive ? "text-white/75" : "text-slate-400"}`}>
+                  {groupedProducts[region].length}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
-          {products.map((product, index) => (
+          {visibleProducts.map((product, index) => (
             <Link
               key={product.id}
               href={`/esim-du-lich/${product.slug}`}
@@ -46,7 +101,7 @@ export default function PopularDestinationsClient({ products }: PopularDestinati
                 overflow: "hidden",
               }}
             >
-              <div className="relative" style={{ height: "150px" }}>
+              <div className="relative overflow-hidden bg-gradient-to-br from-sky-50 via-blue-100 to-indigo-100" style={{ height: "164px" }}>
                 {product.thumbnailUrl ? (
                   <Image
                     src={product.thumbnailUrl}
@@ -54,30 +109,44 @@ export default function PopularDestinationsClient({ products }: PopularDestinati
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1280px) 33vw, 20vw"
                     priority={index < 3}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-sky-100 to-blue-200" />
+                  <div className="relative flex h-full w-full items-center justify-center">
+                    {product.flagUrl && (
+                      <>
+                        <Image
+                          src={product.flagUrl}
+                          alt=""
+                          fill
+                          sizes="320px"
+                          className="scale-125 object-cover opacity-15 blur-2xl"
+                          aria-hidden="true"
+                        />
+                        <span className="relative inline-flex h-16 w-24 overflow-hidden rounded-xl border-4 border-white shadow-lg">
+                          <Image src={product.flagUrl} alt={product.name} fill sizes="96px" className="object-cover" />
+                        </span>
+                      </>
+                    )}
+                  </div>
                 )}
-                <div
-                  className="absolute inset-x-0 bottom-0"
-                  style={{
-                    height: "64px",
-                    background: "linear-gradient(180deg, rgba(15,23,42,0) 0%, rgba(15,23,42,0.72) 100%)",
-                  }}
-                />
-                {product.flagUrl && (
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/15 via-transparent to-slate-950/5" />
+                {product.region && (
+                  <span className="absolute left-3 top-3 rounded-full border border-white/60 bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-700 shadow-sm backdrop-blur">
+                    {product.region}
+                  </span>
+                )}
+                {false && product.flagUrl && (
                   <span
-                    className="absolute top-3 left-3 inline-flex items-center justify-center rounded-md bg-white/95 border border-white/80 shadow-sm overflow-hidden"
-                    style={{ width: "38px", height: "26px" }}
+                    className="hidden"
                     aria-label={`Cờ ${product.name}`}
                   >
                     <Image
-                      src={product.flagUrl}
+                      src={product.flagUrl!}
                       alt={product.name}
-                      width={38}
-                      height={26}
-                      className="w-full h-full object-cover"
+                      width={64}
+                      height={44}
+                      className="h-full w-full object-cover"
                     />
                   </span>
                 )}
@@ -97,14 +166,22 @@ export default function PopularDestinationsClient({ products }: PopularDestinati
                 )}
               </div>
 
-              <div style={{ padding: "14px 14px 16px" }}>
-                {product.region && (
-                  <p className="text-gray-500 mb-1" style={{ fontSize: "12px" }}>
-                    {product.region}
-                  </p>
-                )}
-                <div className="font-extrabold text-navy" style={{ fontSize: "18px", letterSpacing: "-0.2px" }}>
-                  {product.name}
+              <div className="px-4 pb-4 pt-4">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  {product.flagUrl && (
+                    <span className="relative inline-flex h-5 w-7 shrink-0 overflow-hidden rounded border border-slate-200 bg-slate-50 shadow-sm">
+                      <Image
+                        src={product.flagUrl}
+                        alt={`Flag ${product.name}`}
+                        fill
+                        sizes="28px"
+                        className="object-cover"
+                      />
+                    </span>
+                  )}
+                  <div className="truncate font-extrabold text-navy" style={{ fontSize: "18px", letterSpacing: "-0.2px" }}>
+                    {product.name}
+                  </div>
                 </div>
                 <div className="flex items-center justify-between mt-2.5">
                   <div>
@@ -129,7 +206,7 @@ export default function PopularDestinationsClient({ products }: PopularDestinati
 
         <div className="mt-8 flex justify-center">
           <Link
-            href="/esim-du-lich"
+            href={`/esim-du-lich?region=${encodeURIComponent(activeRegion)}`}
             className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white gradient-primary shadow-sm hover:opacity-90 transition"
           >
             {text.viewAll} <Icon icon="arrow-right" />

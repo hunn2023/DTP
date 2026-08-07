@@ -14,6 +14,10 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
             Guid esimPackageId,
             CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyList<EsimPackageCoverage>> GetByEsimPackageIdForUpdateAsync(
+            Guid esimPackageId,
+            CancellationToken cancellationToken = default);
+
         Task<bool> ExistsAsync(
             Guid esimPackageId,
             Guid countryId,

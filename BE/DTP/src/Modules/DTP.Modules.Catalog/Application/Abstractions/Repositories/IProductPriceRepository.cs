@@ -23,7 +23,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
             CancellationToken cancellationToken = default);
 
 
-        Task<ProductPrice?> GetActiveByProductVariantAsync(
+        Task<ProductPrice?> GetByProductVariantAsync(
             Guid productId,
             Guid? productVariantId,
             string? currency,

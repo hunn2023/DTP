@@ -49,11 +49,11 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                 intent.RequestedDataUnit);
 
 
-            var countryId = await ResolveCountryIdAsync(
+            var destination = await ResolveCountryAsync(
                     intent,
                     cancellationToken);
 
-            if (!countryId.HasValue)
+            if (destination == null)
             {
                 return Array.Empty<ChatbotProductSuggestionDto>();
             }
@@ -63,11 +63,17 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                     .AsNoTracking()
                     .Where(x =>
                         x.IsActive && !x.IsDeleted &&
-                        x.CountryId == countryId.Value &&
                         x.Product.IsActive &&
                         !x.Product.IsDeleted &&
                         x.ProductVariant.IsActive &&
-                        x.Country.IsActive);
+                        !x.ProductVariant.IsDeleted &&
+                        x.Coverages.Any(coverage =>
+                            coverage.CountryId == destination.Id &&
+                            coverage.IsActive &&
+                            !coverage.IsDeleted &&
+                            coverage.Country != null &&
+                            coverage.Country.IsActive &&
+                            !coverage.Country.IsDeleted));
 
             //var query = _context.EsimPackages
             //    .AsNoTracking()
@@ -124,13 +130,20 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                                  x.DataUnit == "" ||
                                  x.DataUnit.ToUpper() == "GB" ||
                                  x.DataUnit.ToUpper() == "G") &&
-                                x.DataAmount.Value >= requestedGb
+                                x.DataAmount.Value *
+                                    (x.Name.Contains("/ngày")
+                                        ? (intent.TravelDays ?? x.ValidityDays)
+                                        : 1) >= requestedGb
                             )
                             ||
                             (
+                                x.DataUnit != null &&
                                 (x.DataUnit.ToUpper() == "MB" ||
                                  x.DataUnit.ToUpper() == "M") &&
-                                (x.DataAmount.Value / 1024m) >= requestedGb
+                                ((x.DataAmount.Value / 1024m) *
+                                    (x.Name.Contains("/ngày")
+                                        ? (intent.TravelDays ?? x.ValidityDays)
+                                        : 1)) >= requestedGb
                             )
                         )
                     ));
@@ -164,9 +177,10 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                     ProductName = x.Product.Name,
                     ProductSlug = x.Product.Slug,
 
-                    CountryCode = x.Country.Code,
-                    CountryName = x.Country.Name,
-                    FlagUrl = x.Country.FlagUrl,
+                    CountryCode = destination.Code,
+                    CountryName = destination.Name,
+                    CountrySlug = destination.Slug,
+                    FlagUrl = destination.FlagUrl,
 
                     PackageName = x.Name,
                     ProviderPackageCode = x.ProviderPackageCode,
@@ -174,6 +188,7 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                     DataAmount = x.DataAmount,
                     DataUnit = x.DataUnit,
                     IsUnlimited = x.IsUnlimited,
+                    IsDailyData = x.Name.Contains("/ngày"),
 
                     ValidityDays = x.ValidityDays,
 
@@ -206,6 +221,7 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                 .Where(p =>
                     productIds.Contains(p.ProductId) &&
                     p.IsActive &&
+                    !p.IsDeleted &&
                     p.SalePrice > 0 &&
                     (p.ProductVariantId == null || variantIds.Contains(p.ProductVariantId.Value)) &&
                     (p.StartDate == null || p.StartDate <= now) &&
@@ -262,6 +278,7 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                     DataAmount = row.DataAmount,
                     DataUnit = NormalizeDataUnit(row.DataUnit),
                     IsUnlimited = row.IsUnlimited,
+                    IsDailyData = row.IsDailyData,
 
                     ValidityDays = row.ValidityDays,
 
@@ -278,7 +295,7 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                     PhoneNumberSupported = row.PhoneNumberSupported,
                     SmsSupported = row.SmsSupported,
 
-                    BuyUrl = BuildBuyUrl(row.ProductSlug)
+                    BuyUrl = BuildBuyUrl(row.CountrySlug)
                 };
 
                 dto.Score = CalculateScore(dto, intent);
@@ -319,7 +336,7 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
         }
 
 
-        private async Task<Guid?> ResolveCountryIdAsync(
+        private async Task<DestinationProjection?> ResolveCountryAsync(
             ChatbotIntentDto intent,
             CancellationToken cancellationToken)
         {
@@ -328,22 +345,29 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
 
             if (!string.IsNullOrWhiteSpace(countryCode))
             {
-                var countryId = await _context.Countries
+                var country = await _context.Countries
                     .AsNoTracking()
                     .Where(x =>
                         x.IsActive &&
                         !x.IsDeleted &&
                         x.Code.ToUpper() == countryCode)
-                    .Select(x => (Guid?)x.Id)
+                    .Select(x => new DestinationProjection
+                    {
+                        Id = x.Id,
+                        Code = x.Code,
+                        Name = x.Name,
+                        Slug = x.Slug,
+                        FlagUrl = x.FlagUrl
+                    })
                     .FirstOrDefaultAsync(cancellationToken);
 
-                if (countryId.HasValue)
-                    return countryId;
+                if (country != null)
+                    return country;
             }
 
             if (!string.IsNullOrWhiteSpace(countryKeyword))
             {
-                var countryId = await _context.Countries
+                var country = await _context.Countries
                     .AsNoTracking()
                     .Where(x =>
                         x.IsActive &&
@@ -353,11 +377,21 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
                             x.Slug.ToLower().Contains(countryKeyword) ||
                             x.Code.ToLower().Contains(countryKeyword)
                         ))
-                    .Select(x => (Guid?)x.Id)
+                    .OrderByDescending(x => x.Name.ToLower() == countryKeyword)
+                    .ThenByDescending(x => x.Slug.ToLower() == countryKeyword)
+                    .ThenBy(x => x.Name)
+                    .Select(x => new DestinationProjection
+                    {
+                        Id = x.Id,
+                        Code = x.Code,
+                        Name = x.Name,
+                        Slug = x.Slug,
+                        FlagUrl = x.FlagUrl
+                    })
                     .FirstOrDefaultAsync(cancellationToken);
 
-                if (countryId.HasValue)
-                    return countryId;
+                if (country != null)
+                    return country;
             }
 
             return null;
@@ -394,7 +428,7 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
         {
             var score = 0;
 
-            var itemDataGb = ConvertPackageDataToGb(item);
+            var itemDataGb = ConvertPackageDataToGb(item, intent.TravelDays);
 
             var requestedDataGb = ConvertToGb(
                 intent.RequestedDataAmount,
@@ -533,12 +567,23 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
             };
         }
 
-        private static decimal? ConvertPackageDataToGb(ChatbotProductSuggestionDto item)
+        private static decimal? ConvertPackageDataToGb(
+            ChatbotProductSuggestionDto item,
+            int? travelDays = null)
         {
             if (item.IsUnlimited)
                 return null;
 
-            return ConvertToGb(item.DataAmount, item.DataUnit);
+            var amountInGb = ConvertToGb(item.DataAmount, item.DataUnit);
+
+            if (!amountInGb.HasValue || !item.IsDailyData)
+                return amountInGb;
+
+            var applicableDays = travelDays.HasValue && travelDays.Value > 0
+                ? Math.Min(travelDays.Value, item.ValidityDays)
+                : item.ValidityDays;
+
+            return amountInGb.Value * applicableDays;
         }
 
         private static decimal? ConvertToGb(decimal? amount, string? unit)
@@ -575,6 +620,8 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
 
             public string? CountryName { get; set; }
 
+            public string CountrySlug { get; set; } = string.Empty;
+
             public string? FlagUrl { get; set; }
 
             public string PackageName { get; set; } = string.Empty;
@@ -586,6 +633,8 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
             public string? DataUnit { get; set; }
 
             public bool IsUnlimited { get; set; }
+
+            public bool IsDailyData { get; set; }
 
             public int ValidityDays { get; set; }
 
@@ -600,6 +649,19 @@ namespace DTP.Modules.Chatbot.Infrastructure.Readers
             public bool PhoneNumberSupported { get; set; }
 
             public bool SmsSupported { get; set; }
+        }
+
+        private sealed class DestinationProjection
+        {
+            public Guid Id { get; set; }
+
+            public string Code { get; set; } = string.Empty;
+
+            public string Name { get; set; } = string.Empty;
+
+            public string Slug { get; set; } = string.Empty;
+
+            public string? FlagUrl { get; set; }
         }
 
         private sealed class PriceProjection

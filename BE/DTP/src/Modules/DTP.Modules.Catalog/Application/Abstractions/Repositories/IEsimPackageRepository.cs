@@ -22,6 +22,10 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Repositories
             string slug,
             CancellationToken cancellationToken = default);
 
+        Task<EsimDestinationDetailDto?> GetDestinationDetailAsync(
+            string countrySlug,
+            CancellationToken cancellationToken = default);
+
         Task<PagedResultDto<EsimPackageDto>> GetPagedAsync(
             string? keyword,
             Guid? productVariantId,

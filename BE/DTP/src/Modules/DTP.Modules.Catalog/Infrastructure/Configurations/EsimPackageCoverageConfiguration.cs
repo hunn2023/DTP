@@ -1,6 +1,8 @@
 ﻿using DTP.Modules.Catalog.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using System.Text.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +26,20 @@ namespace DTP.Modules.Catalog.Infrastructure.Configurations
             builder.Property(x => x.CountryName)
                 .HasMaxLength(255)
                 .IsRequired();
+
+            var operatorsComparer = new ValueComparer<List<string>>(
+                (left, right) => left != null && right != null && left.SequenceEqual(right),
+                value => value.Aggregate(0, (hash, item) => HashCode.Combine(hash, item.GetHashCode())),
+                value => value.ToList());
+
+            builder.Property(x => x.Operators)
+                .HasConversion(
+                    value => JsonSerializer.Serialize(value, (JsonSerializerOptions?)null),
+                    value => JsonSerializer.Deserialize<List<string>>(
+                        value,
+                        (JsonSerializerOptions?)null) ?? new List<string>())
+                .HasColumnType("nvarchar(max)")
+                .Metadata.SetValueComparer(operatorsComparer);
 
             builder.HasOne(x => x.EsimPackage)
                 .WithMany(x => x.Coverages)

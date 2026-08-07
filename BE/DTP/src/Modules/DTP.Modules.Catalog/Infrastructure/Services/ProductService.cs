@@ -574,7 +574,9 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         public async Task<Result<List<HomeEsimProductDto>>> GetHomeEsimProductsAsync(
                 CancellationToken cancellationToken = default)
         {
-            var cacheKey = "catalog:home:esim-products";
+            // Version the key when the response grouping/source changes so an
+            // older cached payload cannot reintroduce duplicate countries.
+            var cacheKey = "catalog:home:esim-products:v4";
 
             var cached = await _cacheService.GetAsync<List<HomeEsimProductDto>>(
                 cacheKey,
@@ -590,7 +592,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await _cacheService.SetAsync(
                 cacheKey,
                 items,
-                TimeSpan.FromMinutes(1),
+                TimeSpan.FromMinutes(10),
                 cancellationToken);
 
             return Result<List<HomeEsimProductDto>>.Success(items);

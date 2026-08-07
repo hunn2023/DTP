@@ -222,7 +222,8 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
          * Từ detail, DTP tự xác định:
          *
          * Product:
-         * Provider + MainCountry + FamilyCode
+         * - Local: một Product cho mỗi quốc gia.
+         * - Regional/global: một Product cho mỗi destination vùng.
          *
          * ProductVariant:
          * DataType + DataAmount + DataUnit + ValidityDays
@@ -449,7 +450,7 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
     ProviderPackageProduct package,
     ProviderEsimProductRemoteDto detail)
     {
-        var mainCountry = ResolveMainCountry(
+        var destination = ResolveProductDestination(
             package,
             detail);
 
@@ -457,7 +458,7 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
             package.ProviderSku,
             package.Model,
             detail.Slug,
-            mainCountry.Code);
+            destination.Code);
 
         var dataUnit = NormalizeDataUnit(
             detail.DataUnit);
@@ -475,8 +476,9 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
          * không dùng để chia Product.
          */
         var variantSku = BuildInternalVariantSku(
-            mainCountry.Code,
+            destination.Code,
             familyCode,
+            detail.DataType,
             detail.IsUnlimited,
             detail.DataAmount ?? 0,
             dataUnit,
@@ -495,7 +497,9 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
 
             ProductFamilyCode = familyCode,
 
-            ProductName = $"eSIM {mainCountry.Name}",
+            ProductName = $"eSIM {destination.Name}",
+            ProductDestinationCode = destination.Code,
+            ProductDestinationName = destination.Name,
             ProductDescription = detail.CoverageDescription,
             DataType = detail.DataType,
             VariantName = BuildVariantName(
@@ -506,8 +510,9 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
                 detail.ValidityDays),
 
             VariantSku = BuildInternalVariantSku(
-                mainCountry.Code,
+                destination.Code,
                 familyCode,
+                detail.DataType,
                 detail.IsUnlimited,
                 detail.DataAmount ?? 0,
                 dataUnit,
@@ -529,18 +534,49 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
             CoverageType = detail.CoverageType,
             CoverageDescription = detail.CoverageDescription,
 
-            Countries =
-                [
-                    new ProvisionCountryDto
-                    {
-                        CountryCode = mainCountry.Code,
-                        CountryName = mainCountry.Name
-                    }
-                ],
+            ActivationPolicy = detail.ActivationPolicy,
+            SpeedPolicy = detail.SpeedPolicy,
+            HotspotSupported = detail.HotspotSupported,
+            PhoneNumberSupported = detail.PhoneNumberSupported,
+            SmsSupported = detail.SmsSupported,
+            KycRequired = detail.KycRequired,
+
+            Countries = BuildProvisionCountries(detail.Countries),
 
             Operators = detail.Operators,
             IsActive = false
         };
+    }
+
+    private static List<ProvisionCountryDto> BuildProvisionCountries(
+        IReadOnlyCollection<ProviderCoverageCountryDto>? countries)
+    {
+        var result = (countries ?? Array.Empty<ProviderCoverageCountryDto>())
+            .Select(x => new
+            {
+                Code = NormalizeCountryCode(x.Code),
+                Name = x.Name?.Trim(),
+                Operators = x.Operators
+            })
+            .Where(x => !string.IsNullOrWhiteSpace(x.Code))
+            .GroupBy(x => x.Code, StringComparer.OrdinalIgnoreCase)
+            .Select(group => new ProvisionCountryDto
+            {
+                CountryCode = group.Key,
+                CountryName = group
+                    .Select(x => x.Name)
+                    .FirstOrDefault(name => !string.IsNullOrWhiteSpace(name))
+                    ?? group.Key,
+                Operators = group
+                    .SelectMany(x => x.Operators)
+                    .Where(value => !string.IsNullOrWhiteSpace(value))
+                    .Select(value => value.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList()
+            })
+            .ToList();
+
+        return result;
     }
 
 
@@ -591,17 +627,44 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
 
 
 
-    private static MainCountryInfo ResolveMainCountry(
+    private static MainCountryInfo ResolveProductDestination(
         ProviderPackageProduct package,
         ProviderEsimProductRemoteDto detail)
     {
+        var coverageCountries = detail.Countries?
+            .Where(x => !string.IsNullOrWhiteSpace(NormalizeCountryCode(x.Code)))
+            .GroupBy(
+                x => NormalizeCountryCode(x.Code),
+                StringComparer.OrdinalIgnoreCase)
+            .Select(x => x.First())
+            .ToList() ?? [];
+
+        var isRegional = coverageCountries.Count > 1 ||
+            string.Equals(detail.CoverageType, "regional", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(detail.CoverageType, "global", StringComparison.OrdinalIgnoreCase);
+
+        if (isRegional)
+        {
+            var isGlobal = string.Equals(
+                detail.CoverageType,
+                "global",
+                StringComparison.OrdinalIgnoreCase);
+            var regionName = ResolveRegionDestinationName(
+                package.Regional,
+                detail.Name,
+                coverageCountries,
+                isGlobal);
+
+            return new MainCountryInfo(
+                BuildRegionDestinationCode(coverageCountries, isGlobal),
+                regionName);
+        }
+
         /*
-         * Ưu tiên quốc gia đầu tiên được client chuẩn hóa
-         * từ GET PRODUCT ESIM.
+         * Local package chỉ có một coverage country nên phần tử đầu tiên
+         * không còn là lựa chọn mù quáng.
          */
-        var firstCountry = detail.Countries?
-            .FirstOrDefault(x =>
-                !string.IsNullOrWhiteSpace(x.Code));
+        var firstCountry = coverageCountries.FirstOrDefault();
 
         if (firstCountry is not null)
         {
@@ -647,8 +710,71 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
         }
 
         throw new InvalidOperationException(
-            $"Không xác định được quốc gia chính cho SKU " +
+            $"Không xác định được destination cho SKU " +
             $"'{package.ProviderSku}'.");
+    }
+
+    private static string BuildRegionDestinationCode(
+        IReadOnlyCollection<ProviderCoverageCountryDto> coverageCountries,
+        bool isGlobal)
+    {
+        if (isGlobal)
+            return "REG-GLOBAL";
+
+        var normalized = string.Join(
+            "-",
+            coverageCountries
+                .Select(x => NormalizeCountryCode(x.Code))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
+
+        // Country.Code is nvarchar(20). Include the "REG-" prefix in the limit.
+        if (normalized.Length <= 16)
+            return $"REG-{normalized}";
+
+        var hash = Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(
+                Encoding.UTF8.GetBytes(normalized)));
+
+        return $"REG-{hash[..16]}";
+    }
+
+    private static string ResolveRegionDestinationName(
+        string? providerRegionName,
+        string? detailName,
+        IReadOnlyCollection<ProviderCoverageCountryDto> coverageCountries,
+        bool isGlobal)
+    {
+        if (isGlobal)
+            return "Global";
+
+        var countryNames = coverageCountries
+            .Select(x => x.Name?.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var normalizedProviderRegion = providerRegionName?.Trim();
+        var providerRegionIsSingleCountry = countryNames.Any(x =>
+            string.Equals(x, normalizedProviderRegion, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(normalizedProviderRegion) &&
+            !providerRegionIsSingleCountry)
+        {
+            return normalizedProviderRegion;
+        }
+
+        if (countryNames.Count is > 0 and <= 3)
+            return string.Join(" & ", countryNames);
+
+        if (countryNames.Count > 3)
+            return $"{countryNames.Count} countries";
+
+        return !string.IsNullOrWhiteSpace(detailName)
+            ? detailName.Trim()
+            : "Regional";
     }
 
     private static string ResolveFamilyCode(
@@ -815,14 +941,20 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
     private static string BuildInternalVariantSku(
     string countryCode,
     string familyCode,
+    int dataType,
     bool isUnlimited,
     decimal dataAmount,
     string dataUnit,
     int validityDays)
     {
-        var dataType = isUnlimited
-            ? "D"
-            : "T";
+        var dataTypeKey = isUnlimited
+            ? "UNLIMITED"
+            : dataType switch
+            {
+                1 => "TOTAL",
+                2 => "DAILY",
+                _ => $"TYPE{dataType}"
+            };
 
         var amount = dataAmount
             .ToString(
@@ -835,7 +967,7 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
             "DTP",
             NormalizeKeyPart(countryCode),
             NormalizeKeyPart(familyCode),
-            $"{dataType}{amount}{NormalizeKeyPart(dataUnit)}",
+            $"{dataTypeKey}-{amount}{NormalizeKeyPart(dataUnit)}",
             $"{validityDays}D");
     }
 

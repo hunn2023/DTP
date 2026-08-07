@@ -14,6 +14,7 @@ namespace DTP.Modules.Catalog.Domain.Entities
 
         public string CountryCode { get; private set; } = default!;
         public string CountryName { get; private set; } = default!;
+        public List<string> Operators { get; private set; } = [];
 
         public bool IsActive { get; private set; }
 
@@ -30,6 +31,7 @@ namespace DTP.Modules.Catalog.Domain.Entities
             Guid countryId,
             string countryCode,
             string countryName,
+            IEnumerable<string>? operators = null,
             bool isActive = false)
         {
 
@@ -37,6 +39,11 @@ namespace DTP.Modules.Catalog.Domain.Entities
             CountryId = countryId;
             CountryCode = NormalizeCountryCode(countryCode);
             CountryName = countryName.Trim();
+            Operators = (operators ?? [])
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
             IsActive = isActive;
 
         }

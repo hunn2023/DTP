@@ -592,37 +592,46 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
         {
             var now = DateTime.Now;
 
-            var rows = await _context.Products
+            var rows = await _context.EsimPackageCoverages
                 .AsNoTracking()
-                .Where(x =>
-                    x.IsActive &&
-                    !x.IsDeleted &&
-                    x.CountryId != null &&
-                    (x.IsFeatured || x.IsHot))
+                .Where(coverage =>
+                    !coverage.IsDeleted &&
+                    coverage.Country != null &&
+                    coverage.Country.IsActive &&
+                    !coverage.Country.IsDeleted &&
+                    coverage.EsimPackage != null &&
+                    coverage.EsimPackage.IsActive &&
+                    !coverage.EsimPackage.IsDeleted &&
+                    coverage.EsimPackage.Product.IsActive &&
+                    !coverage.EsimPackage.Product.IsDeleted &&
+                    coverage.EsimPackage.ProductVariant.IsActive &&
+                    !coverage.EsimPackage.ProductVariant.IsDeleted &&
+                    (coverage.EsimPackage.Product.IsFeatured ||
+                     coverage.EsimPackage.Product.IsHot))
                 .SelectMany(
-                    product => _context.ProductPrices
+                    coverage => _context.ProductPrices
                         .Where(price =>
-                            price.ProductId == product.Id &&
+                            price.ProductId == coverage.EsimPackage!.ProductId &&
+                            price.ProductVariantId == coverage.EsimPackage.ProductVariantId &&
                             price.IsActive &&
+                            !price.IsDeleted &&
                             price.SalePrice > 0 &&
                             (price.StartDate == null || price.StartDate <= now) &&
                             (price.EndDate == null || price.EndDate >= now)),
-                    (product, price) => new
+                    (coverage, price) => new
                     {
-                        CountryId = product.Country!.Id,
-                        CountryName = product.Country.Name,
-                        CountrySlug = product.Country.Slug,
-                        FlagUrl = product.Country.FlagUrl,
-                        Region = product.Country.Region ?? "Khu vực khác",
-                        ProductId = product.Id,
-                        ProductName = product.Name,
-                        ProductSlug = product.Slug,
-                        LocationText = product.LocationText,
-                        ThumbnailUrl = product.ThumbnailUrl,
+                        CountryId = coverage.CountryId,
+                        CountryName = coverage.Country!.Name,
+                        CountrySlug = coverage.Country!.Slug,
+                        FlagUrl = coverage.Country.FlagUrl,
+                        Region = coverage.Country.Region ?? "Khu vực khác",
+                        ProductName = coverage.EsimPackage!.Product.Name,
+                        ProductCountryId = coverage.EsimPackage.Product.CountryId,
+                        ThumbnailUrl = coverage.EsimPackage.Product.ThumbnailUrl,
 
-                        IsHot = product.IsHot,
-                        IsFeatured = product.IsFeatured,
-                        SortOrder = product.SortOrder,
+                        IsHot = coverage.EsimPackage.Product.IsHot,
+                        IsFeatured = coverage.EsimPackage.Product.IsFeatured,
+                        SortOrder = coverage.EsimPackage.Product.SortOrder,
 
                         PriceFrom = price.SalePrice,
                         Currency = price.Currency
@@ -630,14 +639,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                 .ToListAsync(cancellationToken);
 
             var items = rows
-                .GroupBy(x => new
-                {
-                    x.CountryId,
-                    x.CountryName,
-                    x.Region,
-                    x.CountrySlug,
-                    x.FlagUrl
-                })
+                .GroupBy(x => x.CountryId)
                 .Select(g =>
                 {
                     var best = g
@@ -647,13 +649,29 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                         .ThenBy(x => x.ProductName)
                         .First();
 
+                    // Image selection is independent from price selection.
+                    // Prefer the product created specifically for this country;
+                    // only fall back to a regional product when it has no image.
+                    var thumbnailUrl = g
+                        .Where(x => !string.IsNullOrWhiteSpace(x.ThumbnailUrl))
+                        .OrderByDescending(x => x.ProductCountryId == x.CountryId)
+                        .ThenByDescending(x => x.IsFeatured)
+                        .ThenByDescending(x => x.IsHot)
+                        .ThenBy(x => x.SortOrder)
+                        .Select(x => x.ThumbnailUrl)
+                        .FirstOrDefault();
+
                     return new HomeEsimProductDto
                     {
-                        Id = best.ProductId,
-                        Name = best.ProductName,
-                        Slug = best.ProductSlug,
-                        LocationText = best.LocationText,
-                        ThumbnailUrl = best.ThumbnailUrl,
+                        // This endpoint returns one card per covered country.
+                        // A regional product can be selected for several countries,
+                        // so the card identity/display must come from Country rather
+                        // than from the product's main country.
+                        Id = best.CountryId,
+                        Name = $"eSIM {best.CountryName}",
+                        Slug = best.CountrySlug,
+                        LocationText = best.CountryName,
+                        ThumbnailUrl = thumbnailUrl,
 
                         CountryId = best.CountryId,
                         CountryName = best.CountryName,
@@ -669,6 +687,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     };
                 })
                 .OrderBy(x => x.CountryName)
+                .DistinctBy(x => x.CountryId)
                 .ToList();
 
             return items;

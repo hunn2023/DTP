@@ -30,7 +30,7 @@ namespace DTP.Modules.Catalog.Application.CacheKeys
         }
 
         public static string PublicBySlug(string slug)
-            => $"catalog:esim-package:{slug}";
+            => $"{PublicPrefix}:country:{slug}";
 
         public static string List(
             string? keyword,

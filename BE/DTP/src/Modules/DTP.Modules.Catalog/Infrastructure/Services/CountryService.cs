@@ -311,7 +311,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await _cacheService.SetAsync(
                 cacheKey,
                 result,
-                TimeSpan.FromMinutes(10),
+                TimeSpan.FromMinutes(2),
                 cancellationToken);
 
             return Result<PagedResultDto<HomeCountryEsimDto>>.Success(result);
@@ -327,6 +327,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             await _cacheService.RemoveByPrefixAsync(
                 "catalog:countries:",
+                cancellationToken);
+
+            await _cacheService.RemoveByPrefixAsync(
+                "catalog:home-countries:",
                 cancellationToken);
 
             await _cacheService.RemoveByPrefixAsync(

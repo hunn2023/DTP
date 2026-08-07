@@ -35,7 +35,7 @@ export default function EsimCountryView({ country, contents, faqs }: EsimCountry
       <CountryHero
         slug={country.slug}
         flag={country.flag}
-        flagCode={COUNTRY_FLAG_CODES[country.slug]}
+        flagCode={country.countryCode?.toLowerCase() || COUNTRY_FLAG_CODES[country.slug]}
         name={country.name}
         nameEn={country.nameEn}
         description={country.description}

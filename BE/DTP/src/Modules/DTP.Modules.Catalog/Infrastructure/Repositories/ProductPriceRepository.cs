@@ -96,22 +96,21 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
 
 
 
-        public async Task<ProductPrice?> GetActiveByProductVariantAsync(
+        public async Task<ProductPrice?> GetByProductVariantAsync(
             Guid productId,
             Guid? productVariantId,
             string? currency,
             CancellationToken cancellationToken = default)
         {
-            return  await _context.ProductPrices
-                .AsNoTracking()
+            return await _context.ProductPrices
                 .Where(x =>
                     x.ProductId == productId &&
                     x.ProductVariantId == productVariantId &&
-                    x.IsActive &&
                     (string.IsNullOrEmpty(currency) || x.Currency == currency)
                     && !x.IsDeleted
                     )
-                .OrderByDescending(x => x.Priority)
+                .OrderByDescending(x => x.IsActive)
+                .ThenByDescending(x => x.Priority)
                 .ThenByDescending(x => x.CreatedAt)
                 .FirstOrDefaultAsync(cancellationToken);
         }

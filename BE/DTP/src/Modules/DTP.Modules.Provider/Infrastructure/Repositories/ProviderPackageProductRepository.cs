@@ -71,5 +71,20 @@ namespace DTP.Modules.Provider.Infrastructure.Repositories
 
             return (items, total);
         }
+
+        public async Task<IReadOnlyList<ProviderPackageProduct>> GetByStatusAsync(
+            Guid providerId,
+            string syncStatus,
+            CancellationToken cancellationToken = default)
+        {
+            var normalizedStatus = syncStatus.Trim();
+
+            return await _dbContext.ProviderPackageProducts
+                .Where(x =>
+                    x.ProviderId == providerId &&
+                    x.SyncStatus == normalizedStatus)
+                .OrderBy(x => x.ProviderSku)
+                .ToListAsync(cancellationToken);
+        }
     }
 }

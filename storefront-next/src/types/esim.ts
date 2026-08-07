@@ -18,6 +18,14 @@ export interface EsimPackage {
   data: string;
   dataUnit: string;
   subtitle: string;
+  coverageType?: string | null;
+  coverageDescription?: string | null;
+  coverages?: {
+    countryCode: string;
+    countryName: string;
+    operators: string[];
+  }[];
+  destinationOperators?: string[];
   tag: string;
   tagType?: EsimPackageTagType;
   features: string[];
@@ -46,6 +54,7 @@ export interface EsimCountryStat {
 
 export interface EsimCountryDetail {
   productId?: string;
+  countryCode?: string;
   slug: string;
   flag: string;
   name: string;

@@ -142,12 +142,32 @@ export interface ApiEsimPackage {
   // Relations
   country?: ApiCountry;
   carriers?: ApiCarrier[];
+  coverages?: {
+    countryId: string;
+    countryCode: string;
+    countryName: string;
+    operators: string[];
+  }[];
   productVariantFeatures?: {
     productVariantId?: string;
     text: string;
     icon: string | null;
     sortOrder: number;
   }[];
+}
+
+export interface ApiEsimDestinationDetail {
+  countryId: string;
+  countryCode: string;
+  countryName: string;
+  countrySlug: string;
+  flagUrl: string | null;
+  region: string | null;
+  description: string | null;
+  packageCount: number;
+  priceFrom: number;
+  currency: string;
+  packages: ApiEsimPackage[];
 }
 
 // ─── Catalog: Product ─────────────────────────────────────────────────────────

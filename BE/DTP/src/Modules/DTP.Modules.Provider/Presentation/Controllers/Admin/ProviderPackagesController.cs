@@ -96,9 +96,29 @@ namespace DTP.Modules.Provider.Presentation.Controllers.Admin
                 success = result
             });
         }
+
+        [HttpPost("activate-all")]
+        public async Task<IActionResult> ActivateAll(
+            [FromBody] ActivateAllProviderPackagesRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new ActivateAllSyncedProviderPackagesCommand
+                {
+                    ProviderCode = request.ProviderCode
+                },
+                cancellationToken);
+
+            return Ok(result);
+        }
     }
 
     public class SyncProviderPackagesRequest
+    {
+        public string ProviderCode { get; set; } = default!;
+    }
+
+    public sealed class ActivateAllProviderPackagesRequest
     {
         public string ProviderCode { get; set; } = default!;
     }

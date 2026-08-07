@@ -10,5 +10,6 @@ namespace DTP.Modules.Catalog.Application.DTOs
     {
         public string CountryCode { get; set; } = default!;
         public string CountryName { get; set; } = default!;
+        public List<string> Operators { get; set; } = [];
     }
 }

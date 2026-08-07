@@ -32,7 +32,7 @@ loadEnvLocal();
 
 const PROXY_PORT = Number(process.env.API_PROXY_PORT) || 4000;
 const BACKEND_URL =
-  process.env.API_PROXY_TARGET || "https://api.ezsim.vn";
+  process.env.API_PROXY_TARGET || "http://localhost:5104";
   
 const server = http.createServer((req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");

@@ -7,7 +7,7 @@ import type {
   EsimPackageFilters,
   PackageQuickTag,
 } from "@/types/esim";
-import type { ApiCountryHome, ApiEsimPackage, ApiProduct } from "@/types/api";
+import type { ApiCountryHome, ApiEsimDestinationDetail, ApiEsimPackage, ApiProduct } from "@/types/api";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -32,6 +32,41 @@ function mapApiCountryHomeToSummary(country: ApiCountryHome): EsimCountrySummary
 function mapRegion(region: string | null): EsimCountryDetail["region"] {
   const value = region?.trim();
   return value || null;
+}
+
+const REGION_COUNTRY_CODES: Record<string, Set<string>> = {
+  "Châu Á": new Set("af am az bh bd bt bn kh cn cy ge in id ir iq il jp jo kz kw kg la lb my mv mn mm np kp kr om pk ps ph qa sa sg lk sy tw tj th tl tr tm ae uz vn ye hk mo".split(" ")),
+  "Châu Âu": new Set("al ad at by be ba bg hr cz dk ee fi fr de gr hu is ie it lv li lt lu mt md mc me nl mk no pl pt ro ru sm rs sk si es se ch ua gb va".split(" ")),
+  "Châu Mỹ": new Set("ag ar bs bb bz bo br ca cl co cr cu dm do ec sv gd gt gy ht hn jm mx ni pa py pe kn lc vc sr tt us uy ve".split(" ")),
+  "Châu Đại Dương": new Set("au fj ki mh fm nr nz pw pg ws sb to tv vu".split(" ")),
+  "Châu Phi": new Set("dz ao bj bw bf bi cv cm cf td km cg cd ci dj eg gq er sz et ga gm gh gn gw ke ls lr ly mg mw ml mr mu ma mz na ne ng rw st sn sc sl so za ss sd tz tg tn ug zm zw re".split(" ")),
+};
+
+function resolveDestinationRegion(slug: string, region?: string | null): EsimCountryDetail["region"] {
+  const normalizedRegion = region?.trim().toLowerCase();
+  const aliases: Record<string, string> = {
+    asia: "Châu Á",
+    "châu á": "Châu Á",
+    europe: "Châu Âu",
+    "châu âu": "Châu Âu",
+    americas: "Châu Mỹ",
+    america: "Châu Mỹ",
+    "châu mỹ": "Châu Mỹ",
+    oceania: "Châu Đại Dương",
+    "châu đại dương": "Châu Đại Dương",
+    africa: "Châu Phi",
+    "châu phi": "Châu Phi",
+  };
+  if (normalizedRegion && aliases[normalizedRegion]) return aliases[normalizedRegion];
+
+  const countryCode = slug.trim().toLowerCase().match(/^([a-z]{2})-/)?.[1];
+  if (countryCode) {
+    for (const [label, codes] of Object.entries(REGION_COUNTRY_CODES)) {
+      if (codes.has(countryCode)) return label;
+    }
+  }
+
+  return mapRegion(region ?? null);
 }
 
 function formatDataAmount(value: number): string {
@@ -122,6 +157,13 @@ function mapApiPackageToEsim(pkg: ApiEsimPackage): EsimPackage {
     data: dataStr,
     dataUnit: displayDataUnit,
     subtitle: pkg.coverageType || "",
+    coverageType: pkg.coverageType,
+    coverageDescription: pkg.coverageDescription,
+    coverages: (pkg.coverages ?? []).map((coverage) => ({
+      countryCode: coverage.countryCode,
+      countryName: coverage.countryName,
+      operators: coverage.operators ?? [],
+    })),
     tag: `${pkg.validityDays} NGÀY`,
     tagType: pkg.isUnlimited ? "unlimited" : undefined,
     features,
@@ -285,6 +327,20 @@ async function getCatalogEsimPackagesBySlug(slug: string): Promise<ApiEsimPackag
   }
 }
 
+async function getEsimDestinationBySlug(slug: string): Promise<ApiEsimDestinationDetail | null> {
+  try {
+    const response = await fetchWithAuth(
+      `/api/catalog/esim-packages/destination/${encodeURIComponent(slug)}`
+    );
+    if (!response.ok) return null;
+    const json = await response.json();
+    if (json?.isSuccess === false) return null;
+    return (json?.data ?? json) as ApiEsimDestinationDetail | null;
+  } catch {
+    return null;
+  }
+}
+
 async function getCatalogProductBySlug(slug: string): Promise<ApiProduct | null> {
   try {
     const response = await fetchWithAuth(`/api/catalog/products/${encodeURIComponent(slug)}`);
@@ -436,10 +492,11 @@ function buildEmptyEsimCountry(slug: string): EsimCountryDetail {
 
 export async function getEsimCountryBySlug(slug: string): Promise<EsimCountryDetail> {
   try {
-    const [allVariants, routePackages] = await Promise.all([
+    const [allVariants, destination] = await Promise.all([
       getCatalogVariants(),
-      getCatalogEsimPackagesBySlug(slug),
+      getEsimDestinationBySlug(slug),
     ]);
+    const routePackages = destination?.packages ?? await getCatalogEsimPackagesBySlug(slug);
     const variantsById = new Map(allVariants.map((v) => [v.productVariantId, v]));
     const routePackageVariantIds = new Set(routePackages.map((pkg) => pkg.productVariantId));
     const routePackageProductIds = new Set(routePackages.map((pkg) => pkg.productId));
@@ -454,23 +511,27 @@ export async function getEsimCountryBySlug(slug: string): Promise<EsimCountryDet
       getHomeEsimProductBySlug(slug),
     ]);
     const esimPackages = routePackages;
-    const productId = routePackages[0]?.productId || items[0]?.productId || productDetail?.id || product?.id || "";
+    // A package can belong to an Australia product while covering New Zealand.
+    // Only expose a page-level productId when the requested slug resolves to an
+    // actual product; package-level productIds remain available for checkout.
+    const productId = productDetail?.id || "";
 
     if (esimPackages.length === 0) {
-      if (!product) return buildEmptyEsimCountry(slug);
+      if (!destination && !product) return buildEmptyEsimCountry(slug);
       return {
-        productId: product.id,
+        productId,
+        countryCode: destination?.countryCode,
         slug,
-        flag: productDetail?.thumbnailUrl || product.flagUrl || product.thumbnailUrl || "",
-        name: productDetail?.name || product.name,
-        nameEn: productDetail?.code || product.slug || slug,
-        region: mapRegion(null),
+        flag: destination?.flagUrl || productDetail?.thumbnailUrl || product?.flagUrl || product?.thumbnailUrl || "",
+        name: destination ? `eSIM ${destination.countryName}` : productDetail?.name || product?.name || `eSIM ${slug}`,
+        nameEn: destination?.countryName || productDetail?.code || product?.slug || slug,
+        region: mapRegion(destination?.region ?? null),
         gradient: "from-blue-500 to-purple-600",
         textColor: "text-white",
         tagBg: "bg-white/20",
-        tags: [productDetail?.locationText, product.locationText].filter(Boolean) as string[],
-        stats: getProductAttributeStats(productDetail, product.packageCount, product.priceFrom),
-        description: productDetail?.description || productDetail?.shortDescription || null,
+        tags: [destination?.region, productDetail?.locationText, product?.locationText].filter(Boolean) as string[],
+        stats: getProductAttributeStats(productDetail, destination?.packageCount ?? product?.packageCount, destination?.priceFrom ?? product?.priceFrom),
+        description: destination?.description || productDetail?.description || productDetail?.shortDescription || null,
         features: [],
         packages: [],
       };
@@ -506,6 +567,10 @@ export async function getEsimCountryBySlug(slug: string): Promise<EsimCountryDet
 
       return {
         ...mapped,
+        destinationOperators: (apiPackage.coverages ?? []).find(
+          (coverage) =>
+            coverage.countryCode.toUpperCase() === destination?.countryCode.toUpperCase()
+        )?.operators ?? [],
         name: apiPackage.name || apiPackage.productVariantName || variant?.variantShortName || variant?.variantName || mapped.name,
         image: variant?.thumbnailUrl || `https://picsum.photos/seed/${apiPackage.slug}/640/480`,
         productId: apiPackage.productId,
@@ -531,17 +596,18 @@ export async function getEsimCountryBySlug(slug: string): Promise<EsimCountryDet
 
     return {
       productId,
+      countryCode: destination?.countryCode,
       slug,
-      flag: productDetail?.thumbnailUrl || first?.thumbnailUrl || product?.flagUrl || product?.thumbnailUrl || "",
-      name: productDetail?.name || first?.productName || firstPackage?.productName || product?.name || `eSIM ${firstPackage?.countryName ?? ""}`.trim(),
-      nameEn: productDetail?.code || first?.productCode || first?.productSlug || product?.slug || slug,
-      region: mapRegion(null),
+      flag: destination?.flagUrl || productDetail?.thumbnailUrl || first?.thumbnailUrl || product?.flagUrl || product?.thumbnailUrl || "",
+      name: destination ? `eSIM ${destination.countryName}` : productDetail?.name || first?.productName || firstPackage?.productName || product?.name || `eSIM ${firstPackage?.countryName ?? ""}`.trim(),
+      nameEn: destination?.countryName || productDetail?.code || first?.productCode || first?.productSlug || product?.slug || slug,
+      region: mapRegion(destination?.region ?? null),
       gradient: "from-blue-500 to-purple-600",
       textColor: "text-white",
       tagBg: "bg-white/20",
-      tags: [productDetail?.locationText, product?.locationText].filter(Boolean) as string[],
-      stats: getProductAttributeStats(productDetail, packages.length, packages.length > 0 ? Math.min(...packages.map((p) => p.price)) : product?.priceFrom),
-      description: productDetail?.description || productDetail?.shortDescription || null,
+      tags: [destination?.region, productDetail?.locationText, product?.locationText].filter(Boolean) as string[],
+      stats: getProductAttributeStats(productDetail, destination?.packageCount ?? packages.length, destination?.priceFrom || (packages.length > 0 ? Math.min(...packages.map((p) => p.price)) : product?.priceFrom)),
+      description: destination?.description || productDetail?.description || productDetail?.shortDescription || null,
       features: countryFeatures,
       packages,
     };

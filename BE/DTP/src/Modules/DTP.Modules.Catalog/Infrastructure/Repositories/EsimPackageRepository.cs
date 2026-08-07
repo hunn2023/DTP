@@ -67,13 +67,16 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
 
                         x.Product.IsActive &&
                         !x.Product.IsDeleted &&
-                        x.Product.Slug == slug &&
 
                         x.ProductVariant.IsActive &&
                         !x.ProductVariant.IsDeleted &&
 
-                        x.Country.IsActive &&
-                        !x.Country.IsDeleted)
+                        x.Coverages.Any(coverage =>
+                            !coverage.IsDeleted &&
+                            coverage.Country != null &&
+                            coverage.Country.IsActive &&
+                            !coverage.Country.IsDeleted &&
+                            coverage.Country.Slug == slug))
                  .OrderBy(x => x.SortOrder)
                  .ThenBy(x => x.Name)
                 .Select(x => new EsimPackageDto
@@ -155,15 +158,71 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                         .ToList(),
 
                     Carriers = x.Carriers
+                        .Where(c => !c.IsDeleted)
                         .OrderBy(c => c.Carrier.Name)
                         .Select(c => new EsimPackageCarrierDto
                         {
                             CarrierId = c.CarrierId,
                             CarrierName = c.Carrier.Name
                         })
+                        .ToList(),
+
+                    Coverages = x.Coverages
+                        .Where(coverage =>
+                            !coverage.IsDeleted &&
+                            coverage.Country != null &&
+                            !coverage.Country.IsDeleted)
+                        .OrderBy(coverage => coverage.CountryName)
+                        .Select(coverage => new EsimPackageCoverageDto
+                        {
+                            CountryId = coverage.CountryId,
+                            CountryCode = coverage.CountryCode,
+                            CountryName = coverage.CountryName,
+                            Operators = coverage.Operators
+                        })
                         .ToList()
                 })
                 .ToListAsync(cancellationToken);
+        }
+
+        public async Task<EsimDestinationDetailDto?> GetDestinationDetailAsync(
+            string countrySlug,
+            CancellationToken cancellationToken = default)
+        {
+            countrySlug = countrySlug.Trim().ToLowerInvariant();
+
+            var country = await _context.Countries
+                .AsNoTracking()
+                .Where(x =>
+                    x.IsActive &&
+                    !x.IsDeleted &&
+                    x.Slug == countrySlug)
+                .Select(x => new EsimDestinationDetailDto
+                {
+                    CountryId = x.Id,
+                    CountryCode = x.Code,
+                    CountryName = x.Name,
+                    CountrySlug = x.Slug,
+                    FlagUrl = x.FlagUrl,
+                    Region = x.Region,
+                    Description = x.Description
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (country is null)
+                return null;
+
+            country.Packages = await GetPublicBySlugAsync(
+                country.CountrySlug,
+                cancellationToken);
+            country.PackageCount = country.Packages.Count;
+            country.PriceFrom = country.Packages
+                .Where(x => x.SalePrice.HasValue && x.SalePrice.Value > 0)
+                .Select(x => x.SalePrice!.Value)
+                .DefaultIfEmpty(0)
+                .Min();
+
+            return country;
         }
 
         public async Task<PagedResultDto<EsimPackageDto>> GetPagedAsync(

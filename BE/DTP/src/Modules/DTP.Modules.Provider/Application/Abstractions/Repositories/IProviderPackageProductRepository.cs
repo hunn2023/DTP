@@ -26,6 +26,11 @@ namespace DTP.Modules.Provider.Application.Abstractions.Repositories
             int pageSize,
             CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyList<ProviderPackageProduct>> GetByStatusAsync(
+            Guid providerId,
+            string syncStatus,
+            CancellationToken cancellationToken = default);
+
         Task AddAsync(
             ProviderPackageProduct entity,
             CancellationToken cancellationToken = default);

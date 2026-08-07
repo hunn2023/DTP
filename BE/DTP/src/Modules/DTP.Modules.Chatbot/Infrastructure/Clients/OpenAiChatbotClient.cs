@@ -135,7 +135,9 @@ namespace DTP.Modules.Chatbot.Infrastructure.Clients
                     json,
                     JsonOptions);
 
-                return intent ?? LocalExtractIntent(message);
+                return intent == null
+                    ? LocalExtractIntent(message)
+                    : EnrichIntentFromMessage(intent, message);
             }
             catch (Exception ex)
             {
@@ -445,6 +447,16 @@ namespace DTP.Modules.Chatbot.Infrastructure.Clients
                 intent.CountryKeyword = "Trung Quốc";
                 intent.CountryCode = "CN";
             }
+            else if (lower.Contains("việt nam") || lower.Contains("vietnam"))
+            {
+                intent.CountryKeyword = "Việt Nam";
+                intent.CountryCode = "VN";
+            }
+            else if (lower.Contains("úc") || lower.Contains("australia"))
+            {
+                intent.CountryKeyword = "Australia";
+                intent.CountryCode = "AU";
+            }
 
             intent.TravelDays = ExtractTravelDays(lower);
 
@@ -482,6 +494,37 @@ namespace DTP.Modules.Chatbot.Infrastructure.Clients
                 || lower.Contains("chia sẻ mạng"))
             {
                 intent.NeedsHotspot = true;
+            }
+
+            return intent;
+        }
+
+        private static ChatbotIntentDto EnrichIntentFromMessage(
+            ChatbotIntentDto intent,
+            string message)
+        {
+            var localIntent = LocalExtractIntent(message);
+
+            intent.OriginalQuestion ??= message;
+            intent.CountryKeyword ??= localIntent.CountryKeyword;
+            intent.CountryCode ??= localIntent.CountryCode;
+            intent.TravelDays ??= localIntent.TravelDays;
+            intent.RequestedDataAmount ??= localIntent.RequestedDataAmount;
+            intent.RequestedDataUnit ??= localIntent.RequestedDataUnit;
+            intent.UsageLevel ??= localIntent.UsageLevel;
+            intent.BudgetType ??= localIntent.BudgetType;
+            intent.NeedsHotspot ??= localIntent.NeedsHotspot;
+            intent.NeedsPhoneNumber ??= localIntent.NeedsPhoneNumber;
+            intent.NeedsSms ??= localIntent.NeedsSms;
+
+            if (!string.IsNullOrWhiteSpace(intent.CountryCode)
+                && (string.IsNullOrWhiteSpace(intent.IntentType)
+                    || string.Equals(
+                        intent.IntentType,
+                        "unknown",
+                        StringComparison.OrdinalIgnoreCase)))
+            {
+                intent.IntentType = "product_advice";
             }
 
             return intent;
@@ -576,7 +619,8 @@ namespace DTP.Modules.Chatbot.Infrastructure.Clients
             if (string.IsNullOrWhiteSpace(item.DataUnit))
                 return $"{item.DataAmount.Value:N0}";
 
-            return $"{item.DataAmount.Value:N0} {item.DataUnit}";
+            var suffix = item.IsDailyData ? "/ngày" : string.Empty;
+            return $"{item.DataAmount.Value:N0} {item.DataUnit}{suffix}";
         }
     }
 }

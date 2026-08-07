@@ -218,10 +218,20 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     FlagUrl = country.FlagUrl,
                     Region = country.Region,
 
-                    PackageCount = _context.EsimPackages
-                        .Count(pkg =>
-                            pkg.CountryId == country.Id &&
-                            pkg.IsActive && !pkg.IsDeleted),
+                    PackageCount = _context.EsimPackageCoverages
+                        .Where(coverage =>
+                            coverage.CountryId == country.Id &&
+                            !coverage.IsDeleted &&
+                            coverage.EsimPackage != null &&
+                            coverage.EsimPackage.IsActive &&
+                            !coverage.EsimPackage.IsDeleted &&
+                            coverage.EsimPackage.Product.IsActive &&
+                            !coverage.EsimPackage.Product.IsDeleted &&
+                            coverage.EsimPackage.ProductVariant.IsActive &&
+                            !coverage.EsimPackage.ProductVariant.IsDeleted)
+                        .Select(coverage => coverage.EsimPackageId)
+                        .Distinct()
+                        .Count(),
 
                     PriceFrom = _context.ProductPrices
                         .Where(price =>
@@ -230,10 +240,18 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                             price.SalePrice > 0 &&
                             (price.StartDate == null || price.StartDate <= now) &&
                             (price.EndDate == null || price.EndDate >= now) &&
-                            _context.Products.Any(product =>
-                                product.Id == price.ProductId &&
-                                product.CountryId == country.Id &&
-                                product.IsActive))
+                            _context.EsimPackageCoverages.Any(coverage =>
+                                coverage.CountryId == country.Id &&
+                                !coverage.IsDeleted &&
+                                coverage.EsimPackage != null &&
+                                coverage.EsimPackage.IsActive &&
+                                !coverage.EsimPackage.IsDeleted &&
+                                coverage.EsimPackage.Product.IsActive &&
+                                !coverage.EsimPackage.Product.IsDeleted &&
+                                coverage.EsimPackage.ProductVariant.IsActive &&
+                                !coverage.EsimPackage.ProductVariant.IsDeleted &&
+                                coverage.EsimPackage.ProductId == price.ProductId &&
+                                coverage.EsimPackage.ProductVariantId == price.ProductVariantId))
                         .OrderBy(price => price.SalePrice)
                         .Select(price => price.SalePrice)
                         .FirstOrDefault(),
@@ -244,18 +262,33 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                             price.SalePrice > 0 &&
                             (price.StartDate == null || price.StartDate <= now) &&
                             (price.EndDate == null || price.EndDate >= now) &&
-                            _context.Products.Any(product =>
-                                product.Id == price.ProductId &&
-                                product.CountryId == country.Id &&
-                                product.IsActive))
+                            _context.EsimPackageCoverages.Any(coverage =>
+                                coverage.CountryId == country.Id &&
+                                !coverage.IsDeleted &&
+                                coverage.EsimPackage != null &&
+                                coverage.EsimPackage.IsActive &&
+                                !coverage.EsimPackage.IsDeleted &&
+                                coverage.EsimPackage.Product.IsActive &&
+                                !coverage.EsimPackage.Product.IsDeleted &&
+                                coverage.EsimPackage.ProductVariant.IsActive &&
+                                !coverage.EsimPackage.ProductVariant.IsDeleted &&
+                                coverage.EsimPackage.ProductId == price.ProductId &&
+                                coverage.EsimPackage.ProductVariantId == price.ProductVariantId))
                         .OrderBy(price => price.SalePrice)
                         .Select(price => price.Currency)
                         .FirstOrDefault() ?? "VND",
 
-                    IsHot = _context.Products.Any(product =>
-                        product.CountryId == country.Id &&
-                        product.IsActive &&
-                        product.IsHot)
+                    IsHot = _context.EsimPackageCoverages.Any(coverage =>
+                        coverage.CountryId == country.Id &&
+                        !coverage.IsDeleted &&
+                        coverage.EsimPackage != null &&
+                        coverage.EsimPackage.IsActive &&
+                        !coverage.EsimPackage.IsDeleted &&
+                        coverage.EsimPackage.Product.IsActive &&
+                        !coverage.EsimPackage.Product.IsDeleted &&
+                        coverage.EsimPackage.ProductVariant.IsActive &&
+                        !coverage.EsimPackage.ProductVariant.IsDeleted &&
+                        coverage.EsimPackage.Product.IsHot)
                 })
                 .Where(x => x.PackageCount > 0 && x.PriceFrom > 0);
 

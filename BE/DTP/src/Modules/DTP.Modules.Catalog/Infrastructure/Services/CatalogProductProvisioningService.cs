@@ -2,6 +2,7 @@
 using DTP.Modules.Catalog.Application.Abstractions.Services;
 using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Domain.Entities;
+using DTP.Shared.Caching;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
@@ -19,6 +20,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         private readonly IEsimPackageCoverageRepository _esimPackageCoverageRepository;
         private readonly ICatalogUnitOfWork _unitOfWork;
         private readonly ICategoryRepository _categoryRepository;
+        private readonly ICacheService _cacheService;
 
         public CatalogProductProvisioningService(
             ICountryRepository countryRepository,
@@ -28,7 +30,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             IEsimPackageRepository esimPackageRepository,
             IEsimPackageCoverageRepository esimPackageCoverageRepository,
             ICatalogUnitOfWork unitOfWork,
-            ICategoryRepository categoryRepository)
+            ICategoryRepository categoryRepository,
+            ICacheService cacheService)
         {
             _countryRepository = countryRepository;
             _productRepository = productRepository;
@@ -38,6 +41,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             _esimPackageCoverageRepository = esimPackageCoverageRepository;
             _unitOfWork = unitOfWork;
             _categoryRepository = categoryRepository;
+            _cacheService = cacheService;
         }
 
         public async Task<ProvisionProviderEsimProductResult>
@@ -77,6 +81,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     cancellationToken);
 
                 await EnsureCoveragesAsync(
+                    request,
                     mainCountry,
                     esimPackage.Id,
                     cancellationToken);
@@ -87,6 +92,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                  * EF Core tự bọc một SaveChanges trong transaction.
                  */
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await ClearPublicEsimCacheAsync(cancellationToken);
 
                 return new ProvisionProviderEsimProductResult
                 {
@@ -229,12 +235,43 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 country.Activate();
             }
 
+            var coverages = await _esimPackageCoverageRepository
+                .GetByEsimPackageIdForUpdateAsync(
+                    esimPackageId,
+                    cancellationToken);
+
+            foreach (var coverage in coverages)
+            {
+                coverage.Activate();
+
+                var coverageCountry = await _countryRepository.GetByIdAsync(
+                    coverage.CountryId,
+                    cancellationToken);
+
+                coverageCountry?.Activate();
+            }
+
             product.Activate();
             variant.Activate();
             price?.Activate();
             esimPackage.Activate();
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await ClearPublicEsimCacheAsync(cancellationToken);
+        }
+
+        private async Task ClearPublicEsimCacheAsync(
+            CancellationToken cancellationToken)
+        {
+            await _cacheService.RemoveByPrefixAsync(
+                "catalog:home:esim-products",
+                cancellationToken);
+            await _cacheService.RemoveByPrefixAsync(
+                "catalog:esim-packages:public",
+                cancellationToken);
+            await _cacheService.RemoveByPrefixAsync(
+                "catalog:countries:",
+                cancellationToken);
         }
 
 
@@ -288,13 +325,14 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     "Quốc gia chính không được rỗng.");
             }
 
-            var firstCountry = request.Countries.First();
-
-            if (string.IsNullOrWhiteSpace(firstCountry.CountryCode))
+            if (string.IsNullOrWhiteSpace(request.ProductDestinationCode))
             {
                 throw new ArgumentException(
-                    "CountryCode chính không được rỗng.");
+                    "ProductDestinationCode không được rỗng.");
             }
+
+            if (string.IsNullOrWhiteSpace(request.ProductDestinationName))
+                throw new ArgumentException("ProductDestinationName không được rỗng.");
         }
 
 
@@ -302,9 +340,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
     ProvisionProviderEsimProductRequest request,
     CancellationToken cancellationToken)
         {
-            var firstCountry = request.Countries.First();
-
-            var countryCode = firstCountry.CountryCode
+            var countryCode = request.ProductDestinationCode
                 .Trim()
                 .ToUpperInvariant();
 
@@ -317,8 +353,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             country = new Country(
                 countryCode,
-                firstCountry.CountryName,
-                GenerateSlug(firstCountry.CountryName),
+                request.ProductDestinationName.Trim(),
+                BuildCountrySlug(
+                    countryCode,
+                    request.ProductDestinationName),
                 flagUrl: null,
                 null,
                 null,
@@ -342,7 +380,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
     CancellationToken cancellationToken)
         {
             /*
-             * Một quốc gia chỉ có một Product.
+             * Một destination chỉ có một Product:
+             * country đối với local, region đối với regional/global.
              */
             var productCode = BuildProductCode(
                 mainCountry.Code);
@@ -381,7 +420,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     name: productName,
                     slug: productSlug,
                     description: request.ProductDescription,
-                    isActive: false);
+                    isActive: existing.IsActive);
 
                 return existing;
             }
@@ -438,7 +477,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     shortName: request.VariantName,
                     description: request.ProductDescription,
                     sortOrder: 0,
-                    isActive: false);
+                    isActive: existing.IsActive);
 
                 return existing;
             }
@@ -481,7 +520,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             var costPrice = request.Price;
             var salePrice = CalculateSalePrice(costPrice);
 
-            var existing = await _productPriceRepository.GetActiveByProductVariantAsync(
+            var existing = await _productPriceRepository.GetByProductVariantAsync(
                 productId,
                 productVariantId,
                 request.CurrencyCode,
@@ -495,7 +534,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     costPrice: costPrice,
                     startDate: DateTime.Now,
                     endDate: null,
-                    isActive: false);
+                    isActive: existing.IsActive);
 
                 return existing;
             }
@@ -548,13 +587,18 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             if (existing is not null)
             {
                 existing.Update(
+                    productId: productId,
+                    productVariantId: productVariantId,
+                    providerId: request.ProviderId,
+                    countryId: countryId,
                     name: esimPackageName,
 
                     /*
                      * Không dùng request.Slug.
                      * request.Slug là slug cấp Product.
-                     */
+                    */
                     slug: esimPackageSlug,
+                    providerPackageCode: providerPackageCode,
 
                     dataAmount: request.DataAmount,
                     dataUnit: NormalizeDataUnit(request.DataUnit),
@@ -564,15 +608,15 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                         request.CoverageType ?? "SingleCountry",
                     coverageDescription:
                         request.CoverageDescription,
-                    activationPolicy: "ActivateWhenInstalled",
-                    speedPolicy: "5G",
-                    hotspotSupported: true,
-                    phoneNumberSupported: true,
-                    smsSupported: true,
-                    kycRequired: true,
+                    activationPolicy: request.ActivationPolicy ?? "ActivateWhenInstalled",
+                    speedPolicy: request.SpeedPolicy,
+                    hotspotSupported: request.HotspotSupported,
+                    phoneNumberSupported: request.PhoneNumberSupported,
+                    smsSupported: request.SmsSupported,
+                    kycRequired: request.KycRequired,
                     qrDeliveryType: "Email",
                     sortOrder: 0,
-                    isActive: false);
+                    isActive: existing.IsActive);
 
                 return existing;
             }
@@ -598,12 +642,12 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     request.CoverageType ?? "SingleCountry",
                 coverageDescription:
                     request.CoverageDescription,
-                activationPolicy: "ActivateWhenInstalled",
-                speedPolicy: "5G",
-                hotspotSupported: true,
-                phoneNumberSupported: true,
-                smsSupported: true,
-                kycRequired: true,
+                activationPolicy: request.ActivationPolicy ?? "ActivateWhenInstalled",
+                speedPolicy: request.SpeedPolicy,
+                hotspotSupported: request.HotspotSupported,
+                phoneNumberSupported: request.PhoneNumberSupported,
+                smsSupported: request.SmsSupported,
+                kycRequired: request.KycRequired,
                 qrDeliveryType: "Email",
                 sortOrder: 0,
                 isActive: false);
@@ -618,14 +662,11 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         private static string BuildEsimPackageName(
           ProvisionProviderEsimProductRequest request)
         {
-            var countryName = request.Countries
-               .First()
-               .CountryName
-               .Trim();
+            var destinationName = request.ProductDestinationName.Trim();
 
             if (request.IsUnlimited)
             {
-                return $"eSIM {countryName} - Không giới hạn dung lượng " +
+                return $"eSIM {destinationName} - Không giới hạn dung lượng " +
                        $"trong {request.ValidityDays} ngày";
             }
 
@@ -636,15 +677,15 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             return request.DataType switch
             {
                 1 =>
-                    $"eSIM {countryName} - Tổng {amountText} " +
+                    $"eSIM {destinationName} - Tổng {amountText} " +
                     $"sử dụng trong {request.ValidityDays} ngày",
 
                 2 =>
-                    $"eSIM {countryName} - {amountText}/ngày " +
+                    $"eSIM {destinationName} - {amountText}/ngày " +
                     $"trong {request.ValidityDays} ngày",
 
                 _ =>
-                    $"eSIM {countryName} - {amountText} " +
+                    $"eSIM {destinationName} - {amountText} " +
                     $"trong {request.ValidityDays} ngày"
             };
         }
@@ -693,7 +734,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         }
 
         private async Task EnsureCoveragesAsync(
-            Country country,
+            ProvisionProviderEsimProductRequest request,
+            Country mainCountry,
             Guid esimPackageId,
             CancellationToken cancellationToken)
         {
@@ -701,49 +743,62 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 esimPackageId,
                 cancellationToken);
 
-            var coverage = new EsimPackageCoverage(
-                   esimPackageId,
-                   country.Id,
-                   country.Code,
-                   country.Name);
+            var countries = request.Countries
+                .Where(x => !string.IsNullOrWhiteSpace(x.CountryCode))
+                .GroupBy(
+                    x => x.CountryCode.Trim(),
+                    StringComparer.OrdinalIgnoreCase)
+                .Select(x => x.First())
+                .ToList();
 
-            await _esimPackageCoverageRepository.AddAsync(
-                coverage,
-                cancellationToken);
+            foreach (var countryDto in countries)
+            {
+                var countryCode = countryDto.CountryCode
+                    .Trim()
+                    .ToUpperInvariant();
 
-            //foreach (var countryDto in request.Countries)
-            //{
-            //    var countryCode = countryDto.CountryCode.Trim().ToUpperInvariant();
+                var country = string.Equals(
+                    countryCode,
+                    mainCountry.Code,
+                    StringComparison.OrdinalIgnoreCase)
+                    ? mainCountry
+                    : await _countryRepository.GetByCodeAsync(
+                        countryCode,
+                        cancellationToken);
 
-            //    var country = await _countryRepository.GetByCodeAsync(
-            //        countryCode,
-            //        cancellationToken);
+                if (country is null)
+                {
+                    var countryName = string.IsNullOrWhiteSpace(
+                        countryDto.CountryName)
+                        ? countryCode
+                        : countryDto.CountryName.Trim();
 
-            //    if (country is null)
-            //    {
-            //        country = new Country(
-            //            countryCode,
-            //            countryDto.CountryName,
-            //            GenerateSlug(countryDto.CountryName),
-            //            flagUrl: null,
-            //            null,
-            //            null,
-            //            sortOrder: 0,
-            //            isActive: false);
+                    country = new Country(
+                        countryCode,
+                        countryName,
+                        BuildCountrySlug(countryCode, countryName),
+                        flagUrl: null,
+                        null,
+                        null,
+                        sortOrder: 0,
+                        isActive: false);
 
-            //        await _countryRepository.AddAsync(country, cancellationToken);
-            //    }
+                    await _countryRepository.AddAsync(
+                        country,
+                        cancellationToken);
+                }
 
-            //    var coverage = new EsimPackageCoverage(
-            //        esimPackageId,
-            //        country.Id,
-            //        countryCode,
-            //        countryDto.CountryName);
+                var coverage = new EsimPackageCoverage(
+                    esimPackageId,
+                    country.Id,
+                    countryCode,
+                    country.Name,
+                    countryDto.Operators);
 
-            //    await _esimPackageCoverageRepository.AddAsync(
-            //        coverage,
-            //        cancellationToken);
-            //}
+                await _esimPackageCoverageRepository.AddAsync(
+                    coverage,
+                    cancellationToken);
+            }
         }
 
         private static string BuildProductCode(ProvisionProviderEsimProductRequest request)
@@ -773,6 +828,19 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             }
 
             return slug.Trim('-');
+        }
+
+        private static string BuildCountrySlug(
+            string countryCode,
+            string countryName)
+        {
+            // Code is unique and comes first so equal display names (for example
+            // "6 countries") cannot produce duplicate Country slugs.
+            var slug = GenerateSlug($"{countryCode}-{countryName}");
+
+            return slug.Length <= 255
+                ? slug
+                : slug[..255].TrimEnd('-');
         }
 
         private static string BuildProductCode(string countryCode)

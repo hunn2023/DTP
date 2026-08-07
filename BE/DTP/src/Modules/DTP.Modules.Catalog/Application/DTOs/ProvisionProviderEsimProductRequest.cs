@@ -23,6 +23,14 @@ namespace DTP.Modules.Catalog.Application.DTOs
 
         public string ProductName { get; init; } = null!;
 
+        // Destination used to group the Product. For a local package this is
+        // the country; for a regional package this is a synthetic region such
+        // as REG-EUROPE / Europe. It is intentionally separate from Countries,
+        // which contains only real coverage countries.
+        public string ProductDestinationCode { get; init; } = null!;
+
+        public string ProductDestinationName { get; init; } = null!;
+
         public string? ProductDescription { get; init; }
 
         public string VariantName { get; init; } = null!;
@@ -45,6 +53,18 @@ namespace DTP.Modules.Catalog.Application.DTOs
         public string? CoverageType { get; init; }
 
         public string? CoverageDescription { get; init; }
+
+        public string? ActivationPolicy { get; init; }
+
+        public string? SpeedPolicy { get; init; }
+
+        public bool HotspotSupported { get; init; }
+
+        public bool PhoneNumberSupported { get; init; }
+
+        public bool SmsSupported { get; init; }
+
+        public bool KycRequired { get; init; }
 
         public List<ProvisionCountryDto> Countries { get; init; } = [];
 
