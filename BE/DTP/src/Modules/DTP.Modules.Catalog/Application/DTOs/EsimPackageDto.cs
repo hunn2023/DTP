@@ -9,6 +9,7 @@
 
         public Guid ProductVariantId { get; set; }
         public string ProductVariantName { get; set; } = default!;
+        public string? Description { get; set; }
 
         public Guid ProviderId { get; set; }
         public string ProviderName { get; set; } = default!;

@@ -45,6 +45,8 @@ function toPayload(values: Country): countriesApi.CountryUpdatePayload {
   }
   const flagUrl = values.flagUrl.trim()
   if (flagUrl) payload.flagUrl = flagUrl
+  const thumbnailUrl = values.thumbnailUrl.trim()
+  if (thumbnailUrl) payload.thumbnailUrl = thumbnailUrl
   return payload
 }
 
@@ -52,10 +54,10 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback
 }
 
-function getSaveSuccessMessage(saveInfo: boolean, saveFlag: boolean): string {
-  if (saveInfo && saveFlag) return 'Đã cập nhật quốc gia và tải lên cờ'
+function getSaveSuccessMessage(saveInfo: boolean, saveFlag: boolean, saveThumbnail: boolean): string {
+  if (saveInfo && (saveFlag || saveThumbnail)) return 'Đã cập nhật quốc gia và hình ảnh'
   if (saveInfo) return 'Đã cập nhật quốc gia thành công'
-  return 'Đã tải lên cờ quốc gia thành công'
+  return 'Đã tải lên hình ảnh quốc gia thành công'
 }
 
 function prepareEditValues(values: Country, formConfig: EntityFormConfig<Country>): Country {
@@ -208,8 +210,8 @@ export function useCountriesCrud({ buildColumns, formConfig, pageSize = 10 }: Us
   )
 
   const saveCountryChanges = useCallback(
-    async ({ values: rawValues, flagFile, saveInfo, saveFlag }: CountrySaveChangesInput) => {
-      if (!saveInfo && !saveFlag) return
+    async ({ values: rawValues, flagFile, thumbnailFile, saveInfo, saveFlag, saveThumbnail }: CountrySaveChangesInput) => {
+      if (!saveInfo && !saveFlag && !saveThumbnail) return
 
       const countryId = rawValues.id
       if (!countryId) {
@@ -231,9 +233,14 @@ export function useCountriesCrud({ buildColumns, formConfig, pageSize = 10 }: Us
           setFormValues((prev) => (prev ? { ...prev, flagUrl: uploaded.flagUrl } : prev))
         }
 
-        notifySuccess(getSaveSuccessMessage(saveInfo, Boolean(saveFlag && flagFile)))
+        if (saveThumbnail && thumbnailFile) {
+          const uploaded = await countriesApi.uploadCountryThumbnail(countryId, thumbnailFile)
+          setFormValues((prev) => (prev ? { ...prev, thumbnailUrl: uploaded.thumbnailUrl } : prev))
+        }
+
+        notifySuccess(getSaveSuccessMessage(saveInfo, Boolean(saveFlag && flagFile), Boolean(saveThumbnail && thumbnailFile)))
         reload()
-        if (saveFlag && flagFile) closeFormModal()
+        if ((saveFlag && flagFile) || (saveThumbnail && thumbnailFile)) closeFormModal()
       } catch (e) {
         notifyError(getErrorMessage(e, 'Không lưu được thay đổi quốc gia'))
       } finally {
@@ -243,8 +250,8 @@ export function useCountriesCrud({ buildColumns, formConfig, pageSize = 10 }: Us
     [formConfig, reload, closeFormModal, notifySuccess, notifyError],
   )
 
-  const saveCreateFlag = useCallback(
-    async (file: File) => {
+  const saveCreateImages = useCallback(
+    async (flagFile?: File, thumbnailFile?: File) => {
       if (!createdCountryId) {
         notifyError('Không xác định được quốc gia để tải cờ')
         return
@@ -252,8 +259,9 @@ export function useCountriesCrud({ buildColumns, formConfig, pageSize = 10 }: Us
 
       setIsSaving(true)
       try {
-        await countriesApi.uploadCountryFlag(createdCountryId, file)
-        notifySuccess('Đã tải lên cờ quốc gia thành công')
+        if (flagFile) await countriesApi.uploadCountryFlag(createdCountryId, flagFile)
+        if (thumbnailFile) await countriesApi.uploadCountryThumbnail(createdCountryId, thumbnailFile)
+        notifySuccess('Đã tải lên hình ảnh quốc gia thành công')
         if (pagination.pageIndex === 0) {
           reload()
         } else {
@@ -376,7 +384,7 @@ export function useCountriesCrud({ buildColumns, formConfig, pageSize = 10 }: Us
     setFormTab,
     continueCreate,
     saveCountryChanges,
-    saveCreateFlag,
+    saveCreateImages,
     isLoading,
     isSaving,
     reload,

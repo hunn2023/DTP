@@ -576,7 +576,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         {
             // Version the key when the response grouping/source changes so an
             // older cached payload cannot reintroduce duplicate countries.
-            var cacheKey = "catalog:home:esim-products:v4";
+            var cacheKey = "catalog:home:esim-products";
 
             var cached = await _cacheService.GetAsync<List<HomeEsimProductDto>>(
                 cacheKey,

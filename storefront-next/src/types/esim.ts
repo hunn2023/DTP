@@ -18,6 +18,7 @@ export interface EsimPackage {
   data: string;
   dataUnit: string;
   subtitle: string;
+  description?: string | null;
   coverageType?: string | null;
   coverageDescription?: string | null;
   coverages?: {

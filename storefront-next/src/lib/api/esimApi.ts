@@ -157,6 +157,7 @@ function mapApiPackageToEsim(pkg: ApiEsimPackage): EsimPackage {
     data: dataStr,
     dataUnit: displayDataUnit,
     subtitle: pkg.coverageType || "",
+    description: pkg.description,
     coverageType: pkg.coverageType,
     coverageDescription: pkg.coverageDescription,
     coverages: (pkg.coverages ?? []).map((coverage) => ({

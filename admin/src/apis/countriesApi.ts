@@ -16,6 +16,7 @@ export type CountryDto = {
   slug: string
   code: string
   flagUrl: string
+  thumbnailUrl: string
   region: string
   description: string
   isActive: boolean
@@ -34,6 +35,7 @@ export type CountryCreatePayload = {
 
 export type CountryUpdatePayload = CountryCreatePayload & {
   flagUrl?: string
+  thumbnailUrl?: string
 }
 
 export type PagedCountriesDto = {
@@ -50,6 +52,7 @@ function normalizeDto(raw: Raw): CountryDto {
     slug: readString(raw, 'slug', 'Slug'),
     code: readString(raw, 'code', 'Code'),
     flagUrl: readString(raw, 'flagUrl', 'FlagUrl'),
+    thumbnailUrl: readString(raw, 'thumbnailUrl', 'ThumbnailUrl'),
     region: readString(raw, 'region', 'Region'),
     description: readString(raw, 'description', 'Description'),
     isActive: readBool(raw, 'isActive', 'IsActive'),
@@ -64,6 +67,7 @@ function mapDto(dto: CountryDto): Country {
     slug: dto.slug,
     isoCode: dto.code,
     flagUrl: dto.flagUrl,
+    thumbnailUrl: dto.thumbnailUrl,
     region: dto.region,
     description: dto.description,
     isActive: dto.isActive,
@@ -154,6 +158,17 @@ export async function uploadCountryFlag(countryId: string, file: File): Promise<
   formData.append('File', file)
 
   const dto = await httpPostForm<Raw>(`${API_PATHS.adminCountries}/upload`, formData, {
+    params: { countryId },
+  })
+  invalidateCountriesCache()
+  return mapDto(normalizeDto(dto))
+}
+
+export async function uploadCountryThumbnail(countryId: string, file: File): Promise<Country> {
+  const formData = new FormData()
+  formData.append('File', file)
+
+  const dto = await httpPostForm<Raw>(`${API_PATHS.adminCountries}/upload-thumbnail`, formData, {
     params: { countryId },
   })
   invalidateCountriesCache()

@@ -18,6 +18,8 @@ namespace DTP.Modules.Catalog.Application.DTOs
 
         public string? FlagUrl { get; set; }
 
+        public string? ThumbnailUrl { get; set; }
+
         public string? Region { get; set; }
 
         public decimal PriceFrom { get; set; }

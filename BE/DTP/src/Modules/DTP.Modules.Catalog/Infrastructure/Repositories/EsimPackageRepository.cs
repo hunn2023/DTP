@@ -88,6 +88,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
 
                     ProductVariantId = x.ProductVariantId,
                     ProductVariantName = x.ProductVariant.Name,
+                    Description = x.ProductVariant.Description,
 
                     ProviderId = x.ProviderId,
 
@@ -273,6 +274,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
 
                     ProductVariantId = x.ProductVariantId,
                     ProductVariantName = x.ProductVariant.Name,
+                    Description = x.ProductVariant.Description,
 
                     ProviderId = x.ProviderId,
 
@@ -444,6 +446,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
 
                     ProductVariantId = x.ProductVariantId,
                     ProductVariantName = x.ProductVariant.Name,
+                    Description = x.ProductVariant.Description,
 
                     ProviderId = x.ProviderId,
 

@@ -36,6 +36,7 @@ export type Country = {
   slug: string
   isoCode: string
   flagUrl: string
+  thumbnailUrl: string
   region: string
   description: string
   sortOrder: number

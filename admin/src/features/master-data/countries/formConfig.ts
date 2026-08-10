@@ -11,6 +11,7 @@ export const countryFormConfig: EntityFormConfig<Country> = {
     slug: '',
     isoCode: '',
     flagUrl: '',
+    thumbnailUrl: '',
     region: '',
     description: '',
     sortOrder: 1,

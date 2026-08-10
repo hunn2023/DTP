@@ -32,6 +32,9 @@ namespace DTP.Modules.Catalog.Infrastructure.Configurations
             builder.Property(x => x.FlagUrl)
                 .HasMaxLength(500);
 
+            builder.Property(x => x.ThumbnailUrl)
+                .HasMaxLength(1000);
+
             builder.HasIndex(x => x.Code).IsUnique();
             builder.HasIndex(x => x.Slug).IsUnique();
         }

@@ -93,6 +93,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     Name = x.Name,
                     Slug = x.Slug,
                     FlagUrl = x.FlagUrl,
+                    ThumbnailUrl = x.ThumbnailUrl,
                     SortOrder = x.SortOrder,
                     IsActive = x.IsActive
                 })
@@ -144,6 +145,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     Name = x.Name,
                     Slug = x.Slug,
                     FlagUrl = x.FlagUrl,
+                    ThumbnailUrl = x.ThumbnailUrl,
                     SortOrder = x.SortOrder,
                     IsActive = x.IsActive,
                     Region = x.Region,
@@ -216,6 +218,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                     Name = country.Name,
                     Slug = country.Slug,
                     FlagUrl = country.FlagUrl,
+                    ThumbnailUrl = country.ThumbnailUrl,
                     Region = country.Region,
 
                     PackageCount = _context.EsimPackageCoverages

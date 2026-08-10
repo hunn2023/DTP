@@ -18,7 +18,7 @@ namespace DTP.Modules.Provider.Application.Services;
 
 public sealed class ProviderPackageSyncService : IProviderPackageSyncService
 {
-    private const int PackagePageSize = 100;
+    private const int EsimPageSize = 100;
 
     private readonly IProviderRepository _providerRepository;
     private readonly IProviderPackageProductRepository _packageRepository;
@@ -78,10 +78,10 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
 
         /*
          * =========================================================
-         * BƯỚC 1: GET PACKAGE PRODUCT
+         * BƯỚC 1: GET PRODUCT ESIM PHÂN TRANG
          * =========================================================
          *
-         * Chỉ lấy danh sách package thô:
+         * Một API trả cả thông tin package và detail eSIM:
          * - ProviderSku
          * - ProviderProductId
          * - Tên provider
@@ -90,23 +90,23 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
          *
          * Không tạo Product/ProductVariant ở bước này.
          */
-        IReadOnlyList<ProviderPackageProductRemoteDto> remotePackages;
+        IReadOnlyList<ProviderEsimProductRemoteDto> remoteProducts;
 
         try
         {
-            remotePackages =
-                await _peacomProviderClient.GetPackageProductsAsync(
+            remoteProducts =
+                await _peacomProviderClient.GetEsimProductsAsync(
                     provider,
-                    PackagePageSize,
+                     EsimPageSize,
                     cancellationToken)
-                ?? Array.Empty<ProviderPackageProductRemoteDto>();
+                ?? Array.Empty<ProviderEsimProductRemoteDto>();
 
-            syncResult.Total = remotePackages.Count;
+            syncResult.Total = remoteProducts.Count;
 
             await AddApiLogAsync(
                 provider.Id,
-                endpoint: "GET PACKAGE PRODUCT",
-                response: $"Total: {remotePackages.Count}",
+                endpoint: "GET PRODUCT ESIM",
+                response: $"Total: {remoteProducts.Count}",
                 statusCode: 200,
                 isSuccess: true,
                 errorMessage: null,
@@ -122,15 +122,15 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
         {
             await AddApiErrorLogSafeAsync(
                 provider.Id,
-                "GET PACKAGE PRODUCT",
+                "GET PRODUCT ESIM",
                 ex,
                 cancellationToken);
 
             return Result<ProviderPackageSyncResult>.Failure(
-                $"Lỗi khi gọi GET PACKAGE PRODUCT: {ex.Message}");
+                $"Lỗi khi gọi GET PRODUCT ESIM: {ex.Message}");
         }
 
-        if (remotePackages.Count == 0)
+        if (remoteProducts.Count == 0)
         {
             return Result<ProviderPackageSyncResult>.Success(syncResult);
         }
@@ -138,7 +138,7 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
         /*
          * Loại package SKU rỗng và SKU trùng.
          */
-        var distinctRemotePackages = remotePackages
+        var distinctRemoteProducts = remoteProducts
             .Where(x =>
             {
                 if (!string.IsNullOrWhiteSpace(x.Sku))
@@ -160,8 +160,8 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
          * Dictionary giữ entity vừa upsert.
          * Vòng lấy detail không cần query lại database.
          */
-        var syncedPackages =
-            new Dictionary<string, ProviderPackageProduct>(
+        var syncedProducts =
+            new Dictionary<string, (ProviderPackageProduct Package, ProviderEsimProductRemoteDto Detail)>(
                 StringComparer.OrdinalIgnoreCase);
 
         /*
@@ -169,20 +169,20 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
          * BƯỚC 2: UPSERT PACKAGE THÔ
          * =========================================================
          */
-        foreach (var remotePackage in distinctRemotePackages)
+        foreach (var remoteProduct in distinctRemoteProducts)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var providerSku = remotePackage.Sku.Trim();
+            var providerSku = remoteProduct.Sku.Trim();
 
             try
             {
                 var package = await UpsertProviderPackageAsync(
                     provider,
-                    remotePackage,
+                    remoteProduct,
                     cancellationToken);
 
-                syncedPackages[providerSku] = package;
+                syncedProducts[providerSku] = (package, remoteProduct);
                 syncResult.Synced++;
             }
             catch (OperationCanceledException)
@@ -214,11 +214,10 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
 
         /*
          * =========================================================
-         * BƯỚC 3: GET PRODUCT ESIM
+         * BƯỚC 3: PROVISION PRODUCT ESIM
          * =========================================================
          *
-         * API này trả detail của cùng ProviderSku.
-         *
+         * Detail đã được lấy cùng danh sách ở bước 1.
          * Từ detail, DTP tự xác định:
          *
          * Product:
@@ -228,18 +227,20 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
          * ProductVariant:
          * DataType + DataAmount + DataUnit + ValidityDays
          */
-        foreach (var entry in syncedPackages)
+        foreach (var entry in syncedProducts)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             var providerSku = entry.Key;
-            var package = entry.Value;
+            var package = entry.Value.Package;
+            var detail = entry.Value.Detail;
 
             try
             {
                 await ProcessPackageDetailAsync(
                     provider,
                     package,
+                    detail,
                     cancellationToken);
 
                 syncResult.Provisioned++;
@@ -269,41 +270,9 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
     private async Task ProcessPackageDetailAsync(
         Domain.Entities.Provider provider,
         ProviderPackageProduct package,
+        ProviderEsimProductRemoteDto detail,
         CancellationToken cancellationToken)
     {
-        /*
-         * Gọi API ngoài trước, không mở transaction database.
-         */
-        ProviderEsimProductRemoteDto detail;
-
-        try
-        {
-            detail = await _peacomProviderClient.GetProductEsimAsync(
-                provider,
-                package.ProviderSku,
-                cancellationToken);
-
-            if (detail is null)
-            {
-                throw new InvalidOperationException(
-                    "Provider không trả về dữ liệu chi tiết.");
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            await AddApiErrorLogSafeAsync(
-                provider.Id,
-                $"GET PRODUCT ESIM - {package.ProviderSku}",
-                ex,
-                cancellationToken);
-
-            throw;
-        }
-
         ValidateDetailSku(package, detail);
 
         /*
@@ -355,7 +324,7 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
 
     private async Task<ProviderPackageProduct> UpsertProviderPackageAsync(
         Domain.Entities.Provider provider,
-        ProviderPackageProductRemoteDto remotePackage,
+        ProviderEsimProductRemoteDto remotePackage,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(remotePackage.Sku))
@@ -500,7 +469,9 @@ public sealed class ProviderPackageSyncService : IProviderPackageSyncService
             ProductName = $"eSIM {destination.Name}",
             ProductDestinationCode = destination.Code,
             ProductDestinationName = destination.Name,
-            ProductDescription = detail.CoverageDescription,
+            ProductDescription = !string.IsNullOrWhiteSpace(detail.Description)
+                ? detail.Description.Trim()
+                : detail.CoverageDescription,
             DataType = detail.DataType,
             VariantName = BuildVariantName(
                 detail.DataType,

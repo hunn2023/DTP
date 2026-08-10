@@ -624,6 +624,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                         CountryName = coverage.Country!.Name,
                         CountrySlug = coverage.Country!.Slug,
                         FlagUrl = coverage.Country.FlagUrl,
+                        CountryThumbnailUrl = coverage.Country.ThumbnailUrl,
                         Region = coverage.Country.Region ?? "Khu vực khác",
                         ProductName = coverage.EsimPackage!.Product.Name,
                         ProductCountryId = coverage.EsimPackage.Product.CountryId,
@@ -671,7 +672,11 @@ namespace DTP.Modules.Catalog.Infrastructure.Repositories
                         Name = $"eSIM {best.CountryName}",
                         Slug = best.CountrySlug,
                         LocationText = best.CountryName,
-                        ThumbnailUrl = thumbnailUrl,
+                        ThumbnailUrl = !string.IsNullOrWhiteSpace(best.CountryThumbnailUrl)
+                            ? best.CountryThumbnailUrl
+                            : !string.IsNullOrWhiteSpace(thumbnailUrl)
+                                ? thumbnailUrl
+                                : best.FlagUrl,
 
                         CountryId = best.CountryId,
                         CountryName = best.CountryName,

@@ -105,6 +105,15 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
       try {
         const result = await esimPackagesApi.fetchEsimPackagesPage(pageIndex + 1, size, filters)
         if (seq !== loadSeqRef.current) return
+
+        const lastPageIndex = Math.max(0, Math.ceil(result.totalCount / size) - 1)
+        if (pageIndex > lastPageIndex) {
+          setPagination((current) =>
+            current.pageIndex === pageIndex ? { ...current, pageIndex: lastPageIndex } : current,
+          )
+          return
+        }
+
         setData(result.items)
         setTotalCount(result.totalCount)
 
@@ -148,12 +157,18 @@ export function useEsimPackagesCrud({ buildColumns, pageSize = 10 }: UseEsimPack
           prev.map((item) => (item.id === row.id ? { ...item, isActive: !item.isActive } : item)),
         )
         notifySuccess(!row.isActive ? 'Đã bật hiển thị gói eSIM' : 'Đã ẩn gói eSIM')
-        if (row.isActive) reload()
+        if (row.isActive) {
+          if (data.length === 1 && pagination.pageIndex > 0) {
+            setPagination((current) => ({ ...current, pageIndex: current.pageIndex - 1 }))
+          } else {
+            reload()
+          }
+        }
       } catch (e) {
         notifyError(getErrorMessage(e, 'Không cập nhật được trạng thái'))
       }
     },
-    [reload, notifySuccess, notifyError],
+    [data.length, pagination.pageIndex, reload, notifySuccess, notifyError],
   )
 
   const requestDelete = useCallback((id: string) => {

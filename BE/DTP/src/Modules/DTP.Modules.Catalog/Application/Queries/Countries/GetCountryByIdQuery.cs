@@ -42,6 +42,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Countries
                 Name = countries.Name,
                 Slug = countries.Slug,
                 FlagUrl = countries.FlagUrl,
+                ThumbnailUrl = countries.ThumbnailUrl,
                 SortOrder = countries.SortOrder,
                 IsActive = countries.IsActive
             };

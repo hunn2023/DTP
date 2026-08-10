@@ -38,4 +38,26 @@ namespace DTP.Modules.Catalog.Application.Commands.Countries
                 cancellationToken);
         }
     }
+
+    public class UploadCountryThumbnailCommand : IRequest<Result<CountryDto>>
+    {
+        public Guid CountryId { get; set; }
+        public IFormFile File { get; set; } = default!;
+    }
+
+    public class UploadCountryThumbnailCommandHandler
+        : IRequestHandler<UploadCountryThumbnailCommand, Result<CountryDto>>
+    {
+        private readonly ICountryService _countryService;
+
+        public UploadCountryThumbnailCommandHandler(ICountryService countryService)
+        {
+            _countryService = countryService;
+        }
+
+        public Task<Result<CountryDto>> Handle(
+            UploadCountryThumbnailCommand request,
+            CancellationToken cancellationToken) =>
+            _countryService.UploadThumbnailAsync(request.CountryId, request.File, cancellationToken);
+    }
 }

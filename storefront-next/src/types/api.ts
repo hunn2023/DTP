@@ -111,6 +111,7 @@ export interface ApiEsimPackage {
   productName?: string | null;
   productVariantId: string;
   productVariantName?: string | null;
+  description?: string | null;
   providerId: string;
   providerName?: string | null;
   countryId: string;

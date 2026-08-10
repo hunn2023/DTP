@@ -22,7 +22,7 @@ type CountryFormModalProps = {
   onTabChange: (tab: 'info' | 'flag') => void
   onContinueCreate: (values: Country) => void
   onSaveChanges: (input: CountrySaveChangesInput) => void
-  onSaveCreateFlag: (file: File) => void
+  onSaveCreateImages: (flagFile?: File, thumbnailFile?: File) => void
 }
 
 function getFieldValue(values: Country, name: keyof Country): string {
@@ -107,11 +107,12 @@ const CountryFormModal = ({
   onTabChange,
   onContinueCreate,
   onSaveChanges,
-  onSaveCreateFlag,
+  onSaveCreateImages,
 }: CountryFormModalProps) => {
   const [values, setValues] = useState<Country>(initialValues)
   const [errors, setErrors] = useState<Partial<Record<keyof Country, string>>>({})
   const [flagFiles, setFlagFiles] = useState<File[] | undefined>()
+  const [thumbnailFiles, setThumbnailFiles] = useState<File[] | undefined>()
   const baselineRef = useRef<Country>(initialValues)
   const readOnly = mode === 'view'
   const fields = countryFormConfig.fields
@@ -122,6 +123,7 @@ const CountryFormModal = ({
       setValues(initialValues)
       setErrors({})
       setFlagFiles(undefined)
+      setThumbnailFiles(undefined)
     }
   }, [show, initialValues])
 
@@ -169,8 +171,10 @@ const CountryFormModal = ({
     onSaveChanges({
       values,
       flagFile: flagFiles?.[0],
+      thumbnailFile: thumbnailFiles?.[0],
       saveInfo: true,
       saveFlag: Boolean(flagFiles?.[0]),
+      saveThumbnail: Boolean(thumbnailFiles?.[0]),
     })
   }
 
@@ -179,18 +183,20 @@ const CountryFormModal = ({
     if (readOnly) return
 
     if (mode === 'create') {
-      const file = flagFiles?.[0]
-      if (!file) {
-        setErrors((prev) => ({ ...prev, flagUrl: 'Vui lòng chọn ảnh cờ' }))
+      const flagFile = flagFiles?.[0]
+      const thumbnailFile = thumbnailFiles?.[0]
+      if (!flagFile && !thumbnailFile) {
+        setErrors((prev) => ({ ...prev, thumbnailUrl: 'Vui lòng chọn ít nhất một hình ảnh' }))
         return
       }
-      onSaveCreateFlag(file)
+      onSaveCreateImages(flagFile, thumbnailFile)
       return
     }
 
     const infoDirty = isCountryInfoDirty(values, baselineRef.current)
     const flagFile = flagFiles?.[0]
-    if (!infoDirty && !flagFile) {
+    const thumbnailFile = thumbnailFiles?.[0]
+    if (!infoDirty && !flagFile && !thumbnailFile) {
       setErrors((prev) => ({ ...prev, flagUrl: 'Không có thay đổi để lưu' }))
       return
     }
@@ -198,8 +204,10 @@ const CountryFormModal = ({
     onSaveChanges({
       values,
       flagFile,
+      thumbnailFile,
       saveInfo: infoDirty,
       saveFlag: Boolean(flagFile),
+      saveThumbnail: Boolean(thumbnailFile),
     })
   }
 
@@ -218,7 +226,7 @@ const CountryFormModal = ({
             </Nav.Item>
             <Nav.Item>
               <Nav.Link eventKey="flag" disabled={!canOpenFlagTab}>
-                Cờ quốc gia
+                Hình ảnh
               </Nav.Link>
             </Nav.Item>
           </Nav>
@@ -260,6 +268,11 @@ const CountryFormModal = ({
                   ) : (
                     <p className="text-muted mb-0">Chưa có ảnh cờ</p>
                   )}
+                  {values.thumbnailUrl ? (
+                    <img src={values.thumbnailUrl} alt={`${values.name} thumbnail`} className="country-flag-tab__image mt-3" />
+                  ) : (
+                    <p className="text-muted mb-0 mt-3">Chưa có ảnh thumbnail</p>
+                  )}
                 </div>
               ) : (
                 <Form id="country-flag-form" onSubmit={handleFlagSubmit} className="country-flag-tab">
@@ -281,6 +294,24 @@ const CountryFormModal = ({
                     />
                   </div>
                   {errors.flagUrl && <div className="text-danger fs-xs mt-2">{errors.flagUrl}</div>}
+                  {values.thumbnailUrl && !thumbnailFiles?.length && (
+                    <div className="country-flag-tab__current mt-3">
+                      <Form.Label className="fw-semibold">Thumbnail hiện tại</Form.Label>
+                      <img src={values.thumbnailUrl} alt={`${values.name} thumbnail`} className="country-flag-tab__image" />
+                    </div>
+                  )}
+                  <div className="country-flag-tab__upload w-100 mt-3">
+                    <Form.Label className="fw-semibold">Tải lên ảnh thumbnail</Form.Label>
+                    <FileUploader
+                      files={thumbnailFiles}
+                      setFiles={setThumbnailFiles}
+                      accept={{ 'image/*': ['.png', '.jpg', '.jpeg', '.webp'] }}
+                      maxSize={10 * 1024 * 1024}
+                      maxFileCount={1}
+                      className="country-flag-tab__dropzone"
+                    />
+                  </div>
+                  {errors.thumbnailUrl && <div className="text-danger fs-xs mt-2">{errors.thumbnailUrl}</div>}
                 </Form>
               )}
             </Tab.Pane>

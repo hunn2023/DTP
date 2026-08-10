@@ -7,9 +7,9 @@ import { useCartStore } from "@/lib/cartStore";
 import { useCartAnimation } from "@/components/ui/CartAnimation";
 import { useLanguage } from "@/hooks/useLanguage";
 import { filterEsimPackages } from "@/lib/api/esimApi";
-import type { EsimCountryDetail, EsimPackageFilters, PackageQuickTag } from "@/types/esim";
+import type { EsimCountryDetail, EsimPackageFilters } from "@/types/esim";
 import Sidebar from "./Sidebar";
-import QuickPills from "./QuickPills";
+import CoverageScopePills, { getPackageCoverageScope, type CoverageScope } from "./CoverageScopePills";
 import PackageCard from "./PackageCard";
 import InfoTabs from "./InfoTabs";
 import type { ProductContent, ProductFaq } from "@/types/productContent";
@@ -53,13 +53,21 @@ export default function EsimCountryBrowser({ country, contents, faqs }: EsimCoun
   const [filters, setFilters] = useState<EsimPackageFilters>(INITIAL_FILTERS);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [visibleCount, setVisibleCount] = useState(6);
+  const [coverageScope, setCoverageScope] = useState<CoverageScope>("all");
   const [activeGbGroup, setActiveGbGroup] = useState<GbGroupKey | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const gbScrollRef = useRef<HTMLDivElement>(null);
 
+  const coveragePackages = useMemo(
+    () => coverageScope === "all"
+      ? country.packages
+      : country.packages.filter((pkg) => getPackageCoverageScope(pkg) === coverageScope),
+    [country.packages, coverageScope]
+  );
+
   const filteredPackages = useMemo(
-    () => filterEsimPackages(country.packages, filters),
-    [country.packages, filters]
+    () => filterEsimPackages(coveragePackages, filters),
+    [coveragePackages, filters]
   );
 
   // Group packages by GB
@@ -95,8 +103,8 @@ export default function EsimCountryBrowser({ country, contents, faqs }: EsimCoun
   // Build day options without applying the current day selection, otherwise
   // selecting one day would make the other available options disappear.
   const availableDayPackages = useMemo(
-    () => filterEsimPackages(country.packages, { ...filters, days: [] }),
-    [country.packages, filters]
+    () => filterEsimPackages(coveragePackages, { ...filters, days: [] }),
+    [coveragePackages, filters]
   );
 
   const activeGroupDays = useMemo(
@@ -122,8 +130,8 @@ export default function EsimCountryBrowser({ country, contents, faqs }: EsimCoun
     }, 150);
   };
 
-  const handleQuickTagChange = (quickTag: PackageQuickTag | "all") => {
-    setFilters((current) => ({ ...current, quickTag }));
+  const handleCoverageScopeChange = (scope: CoverageScope) => {
+    setCoverageScope(scope);
     setVisibleCount(6);
   };
 
@@ -136,6 +144,7 @@ export default function EsimCountryBrowser({ country, contents, faqs }: EsimCoun
 
   const handleReset = () => {
     setFilters(INITIAL_FILTERS);
+    setCoverageScope("all");
     setActiveGbGroup(null);
     setVisibleCount(6);
   };
@@ -212,7 +221,7 @@ export default function EsimCountryBrowser({ country, contents, faqs }: EsimCoun
   return (
     <div className="max-w-container mx-auto w-full overflow-x-hidden px-4 md:px-6 py-8 grid md:grid-cols-[280px_1fr] gap-6">
       <Sidebar
-        packages={country.packages}
+        packages={coveragePackages}
         appliedFilters={{
           days: filters.days,
           dataRanges: filters.dataRanges,
@@ -224,11 +233,11 @@ export default function EsimCountryBrowser({ country, contents, faqs }: EsimCoun
       />
 
       <main className="min-w-0">
-        <div className="hidden md:block">
-          <QuickPills
+        <div>
+          <CoverageScopePills
             packages={country.packages}
-            activeTag={filters.quickTag}
-            onSelect={handleQuickTagChange}
+            activeScope={coverageScope}
+            onSelect={handleCoverageScopeChange}
           />
         </div>
 

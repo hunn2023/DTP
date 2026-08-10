@@ -13,6 +13,7 @@ namespace DTP.Shared.Storage
 
         public const string Countries = "countries";
         public const string CountryFlags = "countries/flags";
+        public const string CountryThumbnails = "countries/thumbnails";
 
         public const string Carriers = "carriers";
         public const string CarrierLogos = "carriers/logos";

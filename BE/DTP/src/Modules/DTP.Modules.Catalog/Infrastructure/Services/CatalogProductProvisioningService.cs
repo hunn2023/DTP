@@ -135,17 +135,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             sb.AppendLine($"ExceptionType: {ex.GetType().FullName}");
             sb.AppendLine($"Message: {ex.Message}");
 
-            if (ex is DbUpdateException dbEx)
-            {
-                sb.AppendLine("DbUpdateException:");
-
-                foreach (var entry in dbEx.Entries)
-                {
-                    sb.AppendLine($"- Entity: {entry.Entity.GetType().Name}");
-                    sb.AppendLine($"  State: {entry.State}");
-                }
-            }
-
+            // Ghi lỗi SQL trước danh sách entity để không bị mất InnerException
+            // khi message được giới hạn độ dài ở Provider module.
             var inner = ex.InnerException;
             var level = 1;
 
@@ -179,6 +170,24 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
                 inner = inner.InnerException;
                 level++;
+            }
+
+            if (ex is DbUpdateException dbEx)
+            {
+                sb.AppendLine("DbUpdateException entries:");
+
+                foreach (var group in dbEx.Entries
+                    .GroupBy(entry => new
+                    {
+                        Entity = entry.Entity.GetType().Name,
+                        entry.State
+                    })
+                    .OrderBy(group => group.Key.Entity))
+                {
+                    sb.AppendLine(
+                        $"- Entity: {group.Key.Entity}, " +
+                        $"State: {group.Key.State}, Count: {group.Count()}");
+                }
             }
 
             return sb.ToString();
@@ -475,7 +484,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 existing.Update(
                     request.VariantName,
                     shortName: request.VariantName,
-                    description: request.ProductDescription,
+                    description: TruncateOptional(request.ProductDescription, 1000),
                     sortOrder: 0,
                     isActive: existing.IsActive);
 
@@ -487,7 +496,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 sku: sku,
                 name: request.VariantName,
                 shortName: request.VariantName,
-                description: request.ProductDescription,
+                description: TruncateOptional(request.ProductDescription, 1000),
                 sortOrder: 0,
                 isActive: false);
 
@@ -607,7 +616,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                     coverageType:
                         request.CoverageType ?? "SingleCountry",
                     coverageDescription:
-                        request.CoverageDescription,
+                        TruncateOptional(request.CoverageDescription, 1000),
                     activationPolicy: request.ActivationPolicy ?? "ActivateWhenInstalled",
                     speedPolicy: request.SpeedPolicy,
                     hotspotSupported: request.HotspotSupported,
@@ -641,7 +650,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 coverageType:
                     request.CoverageType ?? "SingleCountry",
                 coverageDescription:
-                    request.CoverageDescription,
+                    TruncateOptional(request.CoverageDescription, 1000),
                 activationPolicy: request.ActivationPolicy ?? "ActivateWhenInstalled",
                 speedPolicy: request.SpeedPolicy,
                 hotspotSupported: request.HotspotSupported,
@@ -841,6 +850,18 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             return slug.Length <= 255
                 ? slug
                 : slug[..255].TrimEnd('-');
+        }
+
+        private static string? TruncateOptional(string? value, int maximumLength)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return value;
+
+            var trimmed = value.Trim();
+
+            return trimmed.Length <= maximumLength
+                ? trimmed
+                : trimmed[..maximumLength];
         }
 
         private static string BuildProductCode(string countryCode)

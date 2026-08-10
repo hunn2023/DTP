@@ -37,6 +37,7 @@ namespace DTP.Modules.Catalog.Application.Queries.Countries
                 Name = x.Name,
                 Slug = x.Slug,
                 FlagUrl = x.FlagUrl,
+                ThumbnailUrl = x.ThumbnailUrl,
                 SortOrder = x.SortOrder,
                 IsActive = x.IsActive
             }).ToList();

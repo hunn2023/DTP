@@ -32,6 +32,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             string name,
             string slug,
             string? flagUrl,
+            string? thumbnailUrl,
             string? region,
             string? description,
             int sortOrder,
@@ -51,6 +52,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             name = name.Trim();
             slug = slug.Trim().ToLower();
             flagUrl = string.IsNullOrWhiteSpace(flagUrl) ? null : flagUrl.Trim();
+            thumbnailUrl = string.IsNullOrWhiteSpace(thumbnailUrl) ? null : thumbnailUrl.Trim();
             region = string.IsNullOrWhiteSpace(region) ? null : region.Trim();
             description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
 
@@ -78,7 +80,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 region,
                 description,
                 sortOrder,
-                isActive);
+                isActive,
+                thumbnailUrl);
 
             await _countryRepository.AddAsync(
                 country,
@@ -98,6 +101,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             string name,
             string slug,
             string? flagUrl,
+            string? thumbnailUrl,
             string? region,
             string? description,
             int sortOrder,
@@ -127,6 +131,9 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             name = name.Trim();
             slug = slug.Trim().ToLower();
             flagUrl = string.IsNullOrWhiteSpace(flagUrl) ? country.FlagUrl : flagUrl.Trim();
+            thumbnailUrl = string.IsNullOrWhiteSpace(thumbnailUrl)
+                ? country.ThumbnailUrl
+                : thumbnailUrl.Trim();
             region = string.IsNullOrWhiteSpace(region) ? null : region.Trim();
             description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
 
@@ -154,7 +161,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 region,
                 description,
                 sortOrder,
-                isActive);
+                isActive,
+                thumbnailUrl);
 
             _countryRepository.Update(country);
 
@@ -278,6 +286,34 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             return Result<CountryDto>.Success(MapToDto(country));
         }
 
+        public async Task<Result<CountryDto>> UploadThumbnailAsync(
+            Guid countryId,
+            IFormFile file,
+            CancellationToken cancellationToken = default)
+        {
+            if (countryId == Guid.Empty)
+                return Result<CountryDto>.Failure("Id quốc gia không hợp lệ.");
+
+            if (file == null || file.Length == 0)
+                return Result<CountryDto>.Failure("Vui lòng chọn file ảnh.");
+
+            var country = await _countryRepository.GetByIdAsync(countryId, cancellationToken);
+            if (country == null)
+                return Result<CountryDto>.Failure("Không tìm thấy quốc gia.");
+
+            var uploadResult = await _fileStorageService.UploadImageAsync(
+                file,
+                UploadFolders.CountryThumbnails,
+                cancellationToken);
+
+            country.UpdateThumbnail(uploadResult.Url);
+            _countryRepository.Update(country);
+            await _countryRepository.SaveChangesAsync(cancellationToken);
+            await ClearRelatedCacheAsync(cancellationToken);
+
+            return Result<CountryDto>.Success(MapToDto(country));
+        }
+
 
         public async Task<Result<PagedResultDto<HomeCountryEsimDto>>> GetHomeCountriesAsync(
             string? region,
@@ -344,6 +380,10 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             await _cacheService.RemoveByPrefixAsync(
                 "catalog:products:",
                 cancellationToken);
+
+            await _cacheService.RemoveByPrefixAsync(
+                "catalog:home:esim-products",
+                cancellationToken);
         }
 
 
@@ -357,6 +397,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 Name = country.Name,
                 Slug = country.Slug,
                 FlagUrl = country.FlagUrl,
+                ThumbnailUrl = country.ThumbnailUrl,
                 FlagKey = country.FlagKey,
                 Region = country.Region,
                 Description = country.Description,

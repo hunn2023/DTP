@@ -17,6 +17,8 @@ namespace DTP.Modules.Catalog.Application.Commands.Countries
 
         public string? FlagUrl { get; set; }
 
+        public string? ThumbnailUrl { get; set; }
+
         public string? Region { get; set; }
 
         public string? Description { get; set; }
@@ -47,6 +49,7 @@ namespace DTP.Modules.Catalog.Application.Commands.Countries
                   request.Name,
                   request.Slug,
                   request.FlagUrl,
+                  request.ThumbnailUrl,
                   request.Region,
                   request.Description,
                   request.SortOrder,

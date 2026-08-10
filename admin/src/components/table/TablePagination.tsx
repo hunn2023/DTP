@@ -22,6 +22,20 @@ export type TablePaginationProps = {
   canNextPage: boolean
 }
 
+type PaginationItem = number | 'ellipsis-start' | 'ellipsis-end'
+
+function getPaginationItems(pageCount: number, pageIndex: number): PaginationItem[] {
+  if (pageCount <= 7) return Array.from({ length: Math.max(0, pageCount) }, (_, index) => index)
+
+  const current = Math.min(Math.max(pageIndex, 0), pageCount - 1)
+  const last = pageCount - 1
+
+  if (current <= 3) return [0, 1, 2, 3, 4, 'ellipsis-end', last]
+  if (current >= last - 3) return [0, 'ellipsis-start', last - 4, last - 3, last - 2, last - 1, last]
+
+  return [0, 'ellipsis-start', current - 1, current, current + 1, 'ellipsis-end', last]
+}
+
 const TablePagination = ({
   totalItems,
   start,
@@ -46,6 +60,7 @@ const TablePagination = ({
     onPageSizeChange !== undefined
 
   const showLeftColumn = showPageSizeSelect || showInfo
+  const paginationItems = getPaginationItems(pageCount, pageIndex)
 
   return (
     <Row
@@ -79,13 +94,27 @@ const TablePagination = ({
               </button>
             </li>
 
-            {Array.from({ length: pageCount }).map((_, index) => (
-              <li key={index} className={`page-item ${pageIndex === index ? 'active' : ''}`}>
-                <button className="page-link" onClick={() => setPageIndex(index)}>
-                  {index + 1}
-                </button>
-              </li>
-            ))}
+            {paginationItems.map((item) => {
+              if (typeof item !== 'number') {
+                return (
+                  <li key={item} className="page-item disabled" aria-hidden="true">
+                    <span className="page-link">…</span>
+                  </li>
+                )
+              }
+
+              return (
+                <li key={item} className={`page-item ${pageIndex === item ? 'active' : ''}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => setPageIndex(item)}
+                    aria-label={`Trang ${item + 1}`}
+                    aria-current={pageIndex === item ? 'page' : undefined}>
+                    {item + 1}
+                  </button>
+                </li>
+              )
+            })}
 
             <li className="page-item">
               <button className="page-link" onClick={() => nextPage()} disabled={!canNextPage}>

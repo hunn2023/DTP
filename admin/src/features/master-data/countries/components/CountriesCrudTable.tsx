@@ -109,7 +109,7 @@ const CountriesCrudTable = () => {
           onTabChange={crud.setFormTab}
           onContinueCreate={(values) => void crud.continueCreate(values)}
           onSaveChanges={(input) => void crud.saveCountryChanges(input)}
-          onSaveCreateFlag={(file) => void crud.saveCreateFlag(file)}
+          onSaveCreateImages={(flagFile, thumbnailFile) => void crud.saveCreateImages(flagFile, thumbnailFile)}
         />
       )}
     </Card>

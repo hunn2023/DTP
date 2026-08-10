@@ -1,8 +1,10 @@
 ﻿using DTP.Modules.Catalog.Application.Abstractions.Repositories;
 using DTP.Modules.Catalog.Application.Abstractions.Services;
+using DTP.Modules.Catalog.Application.CacheKeys;
 using DTP.Modules.Catalog.Application.DTOs;
 using DTP.Modules.Catalog.Domain.Entities;
 using DTP.Shared.Application;
+using DTP.Shared.Caching;
 using DTP.Shared.Storage;
 using Microsoft.AspNetCore.Http;
 
@@ -13,15 +15,18 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
         private readonly IProductRepository _productRepository;
         private readonly IProductImageRepository _repository;
         private readonly IFileStorageService _fileStorageService;
+        private readonly ICacheService _cacheService;
 
         public ProductImageService(
             IProductImageRepository repository,
             IFileStorageService fileStorageService,
-            IProductRepository productRepository)
+            IProductRepository productRepository,
+            ICacheService cacheService)
         {
             _repository = repository;
             _fileStorageService = fileStorageService;
             _productRepository = productRepository;
+            _cacheService = cacheService;
         }
 
         public async Task<Result<Guid>> CreateAsync(
@@ -61,6 +66,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             await _repository.AddAsync(image, cancellationToken);
             await _repository.SaveChangesAsync(cancellationToken);
+            await SynchronizeProductThumbnailAsync(productId, cancellationToken);
+            await ClearPublicImageCachesAsync(cancellationToken);
 
             return Result<Guid>.Success(image.Id);
         }
@@ -101,6 +108,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             _repository.Update(image);
             await _repository.SaveChangesAsync(cancellationToken);
+            await SynchronizeProductThumbnailAsync(image.ProductId, cancellationToken);
+            await ClearPublicImageCachesAsync(cancellationToken);
 
             return Result.Success();
         }
@@ -167,6 +176,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             await _repository.AddAsync(image, cancellationToken);
             await _repository.SaveChangesAsync(cancellationToken);
+            await SynchronizeProductThumbnailAsync(productId, cancellationToken);
+            await ClearPublicImageCachesAsync(cancellationToken);
 
             return Result<ProductImageDto>.Success(MapToDto(image));
         }
@@ -196,6 +207,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             _repository.Update(image);
             await _repository.SaveChangesAsync(cancellationToken);
+            await SynchronizeProductThumbnailAsync(productId, cancellationToken);
+            await ClearPublicImageCachesAsync(cancellationToken);
 
             return Result.Success();
         }
@@ -224,6 +237,7 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             _repository.Update(image);
             await _repository.SaveChangesAsync(cancellationToken);
+            await ClearPublicImageCachesAsync(cancellationToken);
 
             return Result.Success();
         }
@@ -263,6 +277,8 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
 
             _repository.Update(image);
             await _repository.SaveChangesAsync(cancellationToken);
+            await SynchronizeProductThumbnailAsync(productId, cancellationToken);
+            await ClearPublicImageCachesAsync(cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(oldImageKey))
             {
@@ -319,13 +335,6 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
             _repository.Remove(image);
             await _repository.SaveChangesAsync(cancellationToken);
 
-            if (!string.IsNullOrWhiteSpace(imageKey))
-            {
-                await _fileStorageService.DeleteAsync(
-                    imageKey,
-                    cancellationToken);
-            }
-
             if (wasThumbnail)
             {
                 var remainingImages = await _repository.GetByProductIdAsync(
@@ -348,7 +357,55 @@ namespace DTP.Modules.Catalog.Infrastructure.Services
                 }
             }
 
+            await SynchronizeProductThumbnailAsync(productId, cancellationToken);
+            await ClearPublicImageCachesAsync(cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(imageKey))
+            {
+                await _fileStorageService.DeleteAsync(
+                    imageKey,
+                    cancellationToken);
+            }
+
             return Result.Success();
+        }
+
+        private async Task SynchronizeProductThumbnailAsync(
+            Guid productId,
+            CancellationToken cancellationToken)
+        {
+            var product = await _productRepository.GetByIdAsync(
+                productId,
+                cancellationToken);
+
+            if (product is null)
+                return;
+
+            var images = await _repository.GetByProductIdAsync(
+                productId,
+                cancellationToken);
+
+            var thumbnailUrl = images
+                .Where(x => x.IsActive && x.IsThumbnail && !x.IsDeleted)
+                .OrderBy(x => x.SortOrder)
+                .Select(x => x.ImageUrl)
+                .FirstOrDefault();
+
+            product.UpdateThumbnail(thumbnailUrl);
+
+            await _productRepository.SaveChangesAsync(cancellationToken);
+        }
+
+        private async Task ClearPublicImageCachesAsync(
+            CancellationToken cancellationToken)
+        {
+            await _cacheService.RemoveByPrefixAsync(
+                ProductCacheKeys.Prefix,
+                cancellationToken);
+
+            await _cacheService.RemoveByPrefixAsync(
+                "catalog:home:esim-products",
+                cancellationToken);
         }
 
         private static ProductImageDto MapToDto(ProductImage image)

@@ -12,6 +12,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
             string name,
             string slug,
             string? flagUrl,
+            string? thumbnailUrl,
             string? region,
             string? description,
             int sortOrder,
@@ -24,6 +25,7 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
             string name,
             string slug,
             string? flagUrl,
+            string? thumbnailUrl,
             string? region,
             string? description,
             int sortOrder,
@@ -46,6 +48,11 @@ namespace DTP.Modules.Catalog.Application.Abstractions.Services
             CancellationToken cancellationToken = default);
 
         Task<Result<CountryDto>> UploadFlagAsync(
+            Guid countryId,
+            IFormFile file,
+            CancellationToken cancellationToken = default);
+
+        Task<Result<CountryDto>> UploadThumbnailAsync(
             Guid countryId,
             IFormFile file,
             CancellationToken cancellationToken = default);

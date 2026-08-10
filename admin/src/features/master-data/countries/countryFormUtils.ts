@@ -17,6 +17,8 @@ export function isCountryInfoDirty(current: Country, baseline: Country): boolean
 export type CountrySaveChangesInput = {
   values: Country
   flagFile?: File
+  thumbnailFile?: File
   saveInfo: boolean
   saveFlag: boolean
+  saveThumbnail: boolean
 }

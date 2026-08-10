@@ -87,5 +87,17 @@ namespace DTP.Modules.Catalog.Presentation.Controllers.Admin
 
             return Ok(result);
         }
+
+        [HttpPost("upload-thumbnail")]
+        [RequestSizeLimit(10 * 1024 * 1024)]
+        public async Task<IActionResult> UploadThumbnail(
+            Guid countryId,
+            [FromForm] UploadCountryThumbnailCommand request,
+            CancellationToken cancellationToken)
+        {
+            request.CountryId = countryId;
+            var result = await _mediator.Send(request, cancellationToken);
+            return Ok(result);
+        }
     }
 }

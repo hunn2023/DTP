@@ -13,6 +13,8 @@ namespace DTP.Modules.Catalog.Domain.Entities
 
         public string? FlagUrl { get; private set; }
 
+        public string? ThumbnailUrl { get; private set; }
+
         public string? FlagKey { get; private set; }
 
         public string? Region { get; private set; }
@@ -35,13 +37,15 @@ namespace DTP.Modules.Catalog.Domain.Entities
             string? region,
             string? description,
             int sortOrder,
-            bool isActive)
+            bool isActive,
+            string? thumbnailUrl = null)
         {
             Id = Guid.NewGuid();
             Code = code;
             Name = name;
             Slug = slug;
             FlagUrl = flagUrl;
+            ThumbnailUrl = thumbnailUrl;
             Region = region;
             Description = description;
             SortOrder = sortOrder;
@@ -58,12 +62,14 @@ namespace DTP.Modules.Catalog.Domain.Entities
             string? region,
             string? description,
             int sortOrder,
-            bool isActive)
+            bool isActive,
+            string? thumbnailUrl = null)
         {
             Code = code;
             Name = name;
             Slug = slug;
             FlagUrl = flagUrl;
+            ThumbnailUrl = thumbnailUrl;
             Region = region;
             Description = description;
             SortOrder = sortOrder;
@@ -93,6 +99,14 @@ namespace DTP.Modules.Catalog.Domain.Entities
             FlagUrl = flagUrl;
             FlagKey = flagKey;
             UpdatedAt = DateTime.Now;
+        }
+
+        public void UpdateThumbnail(string? thumbnailUrl)
+        {
+            ThumbnailUrl = string.IsNullOrWhiteSpace(thumbnailUrl)
+                ? null
+                : thumbnailUrl.Trim();
+            SetUpdated();
         }
 
         public void Activate()

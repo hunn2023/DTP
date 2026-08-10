@@ -228,6 +228,12 @@ export default function PackageCard({ pkg, onBuy, onBuyNow }: PackageCardProps) 
         </span>
       </div>
 
+      {pkg.description && (
+        <div className="mx-5 mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12.5px] leading-relaxed text-amber-900">
+          {pkg.description}
+        </div>
+      )}
+
       {/* Boolean feature chips */}
       {chips.length > 0 && (
         <div

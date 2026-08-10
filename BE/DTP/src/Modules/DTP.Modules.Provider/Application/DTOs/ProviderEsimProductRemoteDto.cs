@@ -8,9 +8,14 @@ namespace DTP.Modules.Provider.Application.DTOs
 {
     public class ProviderEsimProductRemoteDto
     {
+        public string? Id { get; set; }
         public string Sku { get; set; } = default!;
         public string Name { get; set; } = default!;
         public string Slug { get; set; } = default!;
+        public string? Model { get; set; }
+        public string? Regional { get; set; }
+        public string? Description { get; set; }
+        public string? ImageUrl { get; set; }
         public decimal Price { get; set; }
         public string CurrencyCode { get; set; } = "VND";
 
