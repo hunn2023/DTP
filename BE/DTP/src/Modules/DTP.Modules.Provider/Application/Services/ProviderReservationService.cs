@@ -94,7 +94,7 @@ namespace DTP.Modules.Provider.Application.Services
 
                 if (mapping is null)
                     throw new InvalidOperationException($"Không tìm thấy provider mapping cho package {item.EsimPackageId}.");
-
+        
                 if (!int.TryParse(mapping.ProviderProductId, out var providerProductId))
                     throw new InvalidOperationException($"ProviderProductId không hợp lệ cho SKU {mapping.ProviderSku}.");
 

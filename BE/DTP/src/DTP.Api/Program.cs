@@ -34,11 +34,8 @@ namespace DTP.Api
                 {
                     policy
                         .WithOrigins(
-                            "https://dtp-admin-c5dd3.web.app",
-                            "https://dtpweb-94f64.web.app",
                             "http://localhost:5173",
                             "http://localhost:3000",
-                            "https://ezsim.vercel.app",
                             "https://ezsim.vn",
                             "https://admin.ezsim.vn"
                         )

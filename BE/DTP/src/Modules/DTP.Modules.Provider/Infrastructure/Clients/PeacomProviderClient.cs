@@ -244,7 +244,7 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
 
             result.RawJson = rawJson;
 
-            if (!result.Success && 1 == 10)
+            if (!result.Success)
             {
                 throw new InvalidOperationException(
                     $"Peacom CREATE ORDER thất bại. Response={rawJson}");
