@@ -244,16 +244,16 @@ namespace DTP.Modules.Provider.Infrastructure.Clients
 
             result.RawJson = rawJson;
 
-            if (!result.Success)
-            {
-                throw new InvalidOperationException(
-                    $"Peacom CREATE ORDER thất bại. Response={rawJson}");
-            }
-
             if (string.IsNullOrWhiteSpace(result.OrderPublicId))
             {
                 throw new InvalidOperationException(
-                    $"Peacom CREATE ORDER thành công nhưng không trả orderPublicId. Response={rawJson}");
+                    $"Peacom CREATE ORDER không trả orderPublicId. Response={rawJson}");
+            }
+
+            if (result.Status is 1 or 4)
+            {
+                throw new InvalidOperationException(
+                    $"Peacom CREATE ORDER trả trạng thái thất bại. Status={result.Status}. Response={rawJson}");
             }
 
             return result;

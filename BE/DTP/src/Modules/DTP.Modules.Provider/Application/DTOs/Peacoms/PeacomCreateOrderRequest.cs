@@ -23,8 +23,6 @@ namespace DTP.Modules.Provider.Application.DTOs.Peacoms
 
     public class PeacomCreateOrderResponse
     {
-        public bool Success { get; set; }
-
         public int? OrderId { get; set; }
 
         public string OrderPublicId { get; set; } = default!;
